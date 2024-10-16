@@ -116,14 +116,20 @@ public:
         Screening screening_type{Screening::ZBL};
         /// Way to calculate nuclear scattering
         scattering_calculation_t scattering_calculation{Corteo4bitTable};
-        /// Free flight path selection algorithm
-        flight_path_type_t flight_path_type{AtomicSpacing};
         /// Electronic energy loss calculation option
         eloss_calculation_t eloss_calculation{EnergyLoss};
         /// Model to use for calculating electronic straggling (if calculated)
         StragglingModel straggling_model{StragglingModel::Bohr};
         /// Way to calculate NRT vacancies in multielement materials
         nrt_calculation_t nrt_calculation{NRT_element};
+    };
+
+    /**
+     * @brief Ion transport options
+     */
+    struct transport_options {
+        /// Free flight path selection algorithm
+        flight_path_type_t flight_path_type{AtomicSpacing};
         /// The constant flight path (for algorithm flight_path_type_t=Constant) [nm]
         float flight_path_const{0.1};
         /// Minimum energy cutoff for ion transport [eV]
@@ -144,6 +150,8 @@ protected:
 
     // simulation paramenters
     parameters par_;
+    // transport options
+    transport_options tr_opt_;
 
     // components
     ion_beam* source_;
@@ -178,7 +186,7 @@ protected:
 
 public:
     mccore();
-    explicit mccore(const parameters& p);
+    mccore(const parameters& p, const transport_options& t);
     mccore(const mccore& S);
     ~mccore();
 
@@ -279,10 +287,10 @@ protected:
      * @brief Select the ion's flight path and impact parameter
      *
      * The selection is performed according to the algorithm specified by
-     * parameters::flight_path_type, which can be any of the types defined by
+     * transport_options::flight_path_type, which can be any of the types defined by
      * the mccore::flight_path_type_t enum.
      * 
-     * If parameters::flight_path_type is equal to \ref AtomicSpacing or \ref Constant
+     * If transport_options::flight_path_type is equal to \ref AtomicSpacing or \ref Constant
      * then the flight path \f$\ell\f$ is precalculated and equal to either the material's atomic radius
      * \f$ R_{at} = \left(\frac{3}{4\pi}N\right)^{1/3} \f$ or 
      * to \ref parameters::flight_path_const, respectively.
@@ -432,7 +440,7 @@ inline int mccore::getMFPtables(const atom *z1, const material *m,
     const float* & mfp_tbl   = fp_par_tbl[1];
     const float* & fpmax_tbl = fp_par_tbl[2];
 
-    switch (par_.flight_path_type)
+    switch (tr_opt_.flight_path_type)
     {
     case AtomicSpacing:
         fp = m->atomicRadius();
@@ -440,7 +448,7 @@ inline int mccore::getMFPtables(const atom *z1, const material *m,
         ipmax_tbl = &(ip0[m->id()]);
         break;
     case Constant:
-        fp = par_.flight_path_const;
+        fp = tr_opt_.flight_path_const;
         sqrt_fp = sqrtfp_const[m->id()];
         ipmax_tbl = &(ip0[m->id()]);
         break;

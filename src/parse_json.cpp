@@ -173,9 +173,11 @@ NLOHMANN_JSON_SERIALIZE_ENUM(StragglingModel, {
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::parameters,
                                           simulation_type, screening_type,
                                           scattering_calculation,
-                                          flight_path_type,
                                           eloss_calculation, straggling_model,
-                                          nrt_calculation,
+                                          nrt_calculation)
+
+MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::transport_options,
+                                          flight_path_type,
                                           flight_path_const, min_energy, min_recoil_energy,
                                           allow_sub_ml_scattering, max_mfp, max_rel_eloss)
 
@@ -209,6 +211,7 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(target::target_desc_t,
 void to_json(ojson& j, const mcdriver::options& p)
 {
     j["Simulation"] = p.Simulation;
+    j["Transport"] = p.Transport;
     j["IonBeam"] = p.IonBeam;
     j["Target"] = p.Target;
     j["Output"] = p.Output;
@@ -220,6 +223,8 @@ void from_json(const ojson& j, mcdriver::options& p)
 
     if (j.contains("Simulation"))
         p.Simulation = j["Simulation"];
+    if (j.contains("Transport"))
+        p.Transport = j["Transport"];
     if (j.contains("Output"))
         p.Output = j["Output"];
     if (j.contains(("IonBeam")))

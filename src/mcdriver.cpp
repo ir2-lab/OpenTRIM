@@ -185,15 +185,15 @@ int mcdriver::options::validate()
         }
     }
 
-    // Simulation
+    // Simulation & Transport
     if (Simulation.scattering_calculation==mccore::InvalidScatteringOption)
         throw std::invalid_argument("Invalid Simulation.scattering_calculation");
 
-    if (Simulation.flight_path_type==mccore::InvalidPath)
-        throw std::invalid_argument("Invalid Simulation.flight_path_type");
-    if (Simulation.flight_path_type==mccore::Constant &&
-        Simulation.flight_path_const<=0.f)
-        throw std::invalid_argument("Simulation.flight_path_type is \"Constant\" but Simulation.flight_path_const is negative.");
+    if (Transport.flight_path_type==mccore::InvalidPath)
+        throw std::invalid_argument("Invalid Transport.flight_path_type");
+    if (Transport.flight_path_type==mccore::Constant &&
+        Transport.flight_path_const<=0.f)
+        throw std::invalid_argument("Transport.flight_path_type is \"Constant\" but Transport.flight_path_const is negative.");
 
     if (Simulation.nrt_calculation==mccore::NRT_InvalidOption)
         throw std::invalid_argument("Invalid Simulation.nrt_calculation");
@@ -340,7 +340,7 @@ int mcdriver::options::validate()
 
 mccore* mcdriver::options::createSimulation() const
 {
-    mccore* S = new mccore(Simulation);
+    mccore* S = new mccore(Simulation, Transport);
     //S->setOutputOptions(Output);
     S->getSource().setParameters(IonBeam);
 

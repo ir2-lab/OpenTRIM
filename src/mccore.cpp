@@ -15,8 +15,8 @@ mccore::mccore() :
 {
 }
 
-mccore::mccore(const parameters &p) :
-    par_(p),
+mccore::mccore(const parameters &p, const transport_options& t) :
+    par_(p), tr_opt_(t),
     source_(new ion_beam),
     target_(new target),
     ref_count_(new int(0)),
@@ -84,9 +84,9 @@ int mccore::init() {
     sqrtfp_const.resize(nmat);
     ip0.resize(nmat);
     for(int i=0; i<nmat; i++) {
-        sqrtfp_const[i] = std::sqrt(par_.flight_path_const / materials[i]->atomicRadius());
+        sqrtfp_const[i] = std::sqrt(tr_opt_.flight_path_const / materials[i]->atomicRadius());
         ip0[i] = materials[i]->meanImpactPar();
-        if (par_.flight_path_type == Constant) ip0[i] /= sqrtfp_const[i];
+        if (tr_opt_.flight_path_type == Constant) ip0[i] /= sqrtfp_const[i];
     }
 
     /*
@@ -190,9 +190,9 @@ int mccore::init() {
     ipmax_ = ArrayNDf(natoms,nmat,nerg);
     fp_max_ = ArrayNDf(natoms,nmat,nerg);
     Tcutoff_ = ArrayNDf(natoms,nmat,nerg);
-    float delta_dedx = par_.max_rel_eloss;
-    float Tmin = par_.min_recoil_energy;
-    float mfp_ub = par_.max_mfp;
+    float delta_dedx = tr_opt_.max_rel_eloss;
+    float Tmin = tr_opt_.min_recoil_energy;
+    float mfp_ub = tr_opt_.max_mfp;
     float Tmin_rel = 0.99f; /// @TODO: make it user option
     for(int z1 = 0; z1<natoms; z1++)
     {
@@ -201,7 +201,7 @@ int mccore::init() {
             const material* m = materials[im];
             const float & N = m->atomicDensity();
             const float & Rat = m->atomicRadius();
-            float mfp_lb = par_.flight_path_type == IPP && par_.allow_sub_ml_scattering ?
+            float mfp_lb = tr_opt_.flight_path_type == IPP && tr_opt_.allow_sub_ml_scattering ?
                                0.f : Rat;
             for(dedx_index ie; ie!=ie.end(); ie++) {
                 float & mfp = mfp_(z1,im,ie);
@@ -255,7 +255,7 @@ int mccore::init() {
 //                    dedxn += scattering_matrix_(z1,z2)->stoppingPower(E,T0) * a->X();
 //                }
 //                dedxn *= N;
-//                if (par_.flight_path_type == MyFFP) dedx_(z1,im,ie) += dedxn;
+//                if (tr_opt_.flight_path_type == MyFFP) dedx_(z1,im,ie) += dedxn;
 
             } // energy
         } // material
@@ -441,7 +441,7 @@ int mccore::transport(ion* i, tally &t)
     while (1) {
 
         // Check if ion has enough energy to continue
-        if(i->erg() < par_.min_energy){ 
+        if(i->erg() < tr_opt_.min_energy) { 
             /* projectile has to stop. Store as implanted/interstitial atom*/
             t(Event::IonStop,*i);
             return 0; // history ends
@@ -599,7 +599,7 @@ bool mccore::flightPath(const ion* i, const material* mat, float& fp, float& ip,
     const float* & ipmax_tbl = fp_par_tbl[0];
     const float* & mfp_tbl   = fp_par_tbl[1];
     const float* & fpmax_tbl = fp_par_tbl[2];
-    switch (par_.flight_path_type) {
+    switch (tr_opt_.flight_path_type) {
     case AtomicSpacing:
     case Constant:
         ip = ipmax_tbl[0]*std::sqrt(rng.u01d_lopen());

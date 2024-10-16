@@ -97,6 +97,7 @@ public:
         mcdriver::parameters Driver;
         mcdriver::output_options Output;
         mccore::parameters Simulation;
+        mccore::transport_options Transport;
         ion_beam::parameters IonBeam;
         target::target_desc_t Target;
 
