@@ -1,0 +1,14 @@
+- If no active token, create Personal Access Token with api scope
+- store in passwd manager gitlab/notes
+     
+Example:
+
+curl --fail-with-body --user "gapost:<token>" \
+     --upload-file iradinapp-0.2.0-win64.7z \
+     "https://gitlab.com/api/v4/projects/<project id>/packages/generic/<package name>/<version>/<file>"
+     
+curl --fail-with-body --user "gapost:glpat-eNgb-F_QbfBGZx_ZzV1d" \
+>      --upload-file iradinapp-0.2.0-win64.7z \
+>      "https://gitlab.com/api/v4/projects/53199862/packages/generic/iradinapp_windows_binary/0.2.0/iradinapp-0.2.0-win64.7z"
+
+Reply: {"message":"201 Created"}
