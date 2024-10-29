@@ -253,52 +253,60 @@ int mcdriver::options::validate()
     }
 
     // Check Material descriptors
-    for(auto p : Target.materials) {
-        auto md = p.second;
-        auto mname = p.first;
+    std::unordered_map<std::string, int> mmap; // map material_id->index
+    for(int i=0; i<Target.materials.size(); ++i) {
+
+        auto md = Target.materials[i];
+        if (mmap.count(md.id)) {
+            std::stringstream msg;
+            msg << "Duplicate material id found: ";
+            msg << md.id;
+            throw std::invalid_argument(msg.str());
+        }
+        mmap[md.id] = i;
+
         if (md.density <= 0.f) {
             std::stringstream msg;
             msg << "Zero or negative density in material";
-            msg << mname;
+            msg << md.id;
             throw std::invalid_argument(msg.str());
         }
-        CHECK_EMPTY_VEC(md,Z,mname)
-        CHECK_EMPTY_VEC(md,M,mname)
-        CHECK_EMPTY_VEC(md,X,mname)
-        CHECK_EMPTY_VEC(md,Ed,mname)
-        CHECK_EMPTY_VEC(md,El,mname)
-        CHECK_EMPTY_VEC(md,Es,mname)
-        CHECK_EMPTY_VEC(md,Er,mname)
+        CHECK_EMPTY_VEC(md,Z,md.id)
+        CHECK_EMPTY_VEC(md,M,md.id)
+        CHECK_EMPTY_VEC(md,X,md.id)
+        CHECK_EMPTY_VEC(md,Ed,md.id)
+        CHECK_EMPTY_VEC(md,El,md.id)
+        CHECK_EMPTY_VEC(md,Es,md.id)
+        CHECK_EMPTY_VEC(md,Er,md.id)
 
         int natoms = md.Z.size();
         if (std::any_of(md.Z.begin(),
                         md.Z.end(),
                         [](int z){ return (z < 1) || (z > elements::max_atomic_num);}))
         {
-            throw std::invalid_argument("Invalid Z number in material" + mname);
+            throw std::invalid_argument("Invalid Z number in material" + md.id);
         }
 
-        CHECK_VEC_SIZE(md,M,natoms,mname)
-        CHECK_VEC_SIZE(md,X,natoms,mname)
-        CHECK_VEC_SIZE(md,Ed,natoms,mname)
-        CHECK_VEC_SIZE(md,El,natoms,mname)
-        CHECK_VEC_SIZE(md,Es,natoms,mname)
-        CHECK_VEC_SIZE(md,Er,natoms,mname)
-        CHECK_VEC_ZEROorNEG(md,M,mname)
-        CHECK_VEC_ZEROorNEG(md,X,mname)
-        CHECK_VEC_ZEROorNEG(md,Ed,mname)
-        CHECK_VEC_ZEROorNEG(md,El,mname)
-        CHECK_VEC_ZEROorNEG(md,Es,mname)
-        CHECK_VEC_ZEROorNEG(md,Er,mname)
+        CHECK_VEC_SIZE(md,M,natoms,md.id)
+        CHECK_VEC_SIZE(md,X,natoms,md.id)
+        CHECK_VEC_SIZE(md,Ed,natoms,md.id)
+        CHECK_VEC_SIZE(md,El,natoms,md.id)
+        CHECK_VEC_SIZE(md,Es,natoms,md.id)
+        CHECK_VEC_SIZE(md,Er,natoms,md.id)
+        CHECK_VEC_ZEROorNEG(md,M,md.id)
+        CHECK_VEC_ZEROorNEG(md,X,md.id)
+        CHECK_VEC_ZEROorNEG(md,Ed,md.id)
+        CHECK_VEC_ZEROorNEG(md,El,md.id)
+        CHECK_VEC_ZEROorNEG(md,Es,md.id)
+        CHECK_VEC_ZEROorNEG(md,Er,md.id)
     }
 
     // Check Region descriptors
-    for(auto p : Target.regions) {
-        auto rd = p.second;
-        auto rname = p.first;
+    for(auto rd : Target.regions) {
+        auto rname = rd.id;
 
         // check valid material
-        if (Target.materials.find(rd.material_id)==Target.materials.end()) {
+        if (!mmap.count(rd.material_id)) {
             std::stringstream msg;
             msg << "Region " << rname << " has invalid material_id: ";
             msg << rd.material_id;
@@ -348,10 +356,9 @@ mccore* mcdriver::options::createSimulation() const
 
     std::unordered_map<std::string, material*> materials_map;
 
-    for(auto p : Target.materials) {
-        material* m = T.addMaterial(p.first.c_str());
-        materials_map[p.first] = m;
-        const material::material_desc_t& md = p.second;
+    for(auto md : Target.materials) {
+        material* m = T.addMaterial(md.id.c_str());
+        materials_map[md.id] = m;
         m->setMassDensity(md.density);
         for(int i=0; i<md.Z.size(); i++)
             m->addAtom(
@@ -368,8 +375,7 @@ mccore* mcdriver::options::createSimulation() const
     G.setZ(Target.cell_count.z()*Target.cell_size.z(),
            Target.cell_count.z(), Target.periodic_bc.z());
 
-    for(auto p : Target.regions) {
-        const target::region& rd = p.second;
+    for(auto rd : Target.regions) {
         box3D box;
         box.min() = rd.min;
         box.max() = rd.max;

@@ -197,6 +197,7 @@ class material : public target_item
 public:
 
     struct material_desc_t {
+        std::string id;
         float density{1.f};
         bool isMassDensity{true};
         std::vector<int> Z;
@@ -327,6 +328,8 @@ public:
      * @ingroup TargetG
      */
     struct region {
+        /// The id of this region
+        std::string id;
         /// The id of the material that fills this region
         std::string material_id;
         /// Position of the region's lower left corner
@@ -339,8 +342,8 @@ public:
      * @brief The target_desc_t class contains all information for the target
      */
     struct target_desc_t {
-        std::unordered_map<std::string, material::material_desc_t> materials;
-        std::unordered_map<std::string, region> regions;
+        std::vector<material::material_desc_t> materials;
+        std::vector<region> regions;
         ivector3 cell_count{1, 1, 1};
         vector3 cell_size{100.f, 100.f, 100.f};
         ivector3 periodic_bc{0, 1, 1};

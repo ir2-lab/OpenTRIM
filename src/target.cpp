@@ -223,14 +223,10 @@ target::target_desc_t target::getDescription() const
     target_desc_t td;
 
     for(const material* m : materials_)
-        td.materials[m->name()] = m->getDescription();
+        td.materials.push_back(m->getDescription());
 
-    int k = 1;
-    for(const region& rd : regions_) {
-        std::string nm = "R" + std::to_string(k++);
-        //td.regions.push_back(nm);
-        td.regions[nm] = rd;
-    }
+    for(const region& rd : regions_)
+        td.regions.push_back(rd);
 
     td.cell_count = {(int)grid_.x().size() - 1,
                      (int)grid_.y().size() - 1,
