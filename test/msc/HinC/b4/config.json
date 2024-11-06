@@ -4,16 +4,21 @@
         "threads" : 8,
         "seeds" : []
     },
-    "Simulation" : {
-        "simulation_type" : "FullCascade",
-        "screening_type" : "ZBL",
-        "scattering_calculation" : "Corteo4bitTable",
-        "flight_path_type" : "IPP",   // "AtomicSpacing", "MendenhallWeller", IPP
-        "min_energy" : 1.0,
-        "min_recoil_energy" : 100.0,
-        "allow_sub_ml_scattering" : true,
-        "max_mfp" : 44,
-        "max_rel_eloss" : 1
+    "Simulation": {
+        "simulation_type": "FullCascade",
+        "screening_type": "ZBL",
+        "scattering_calculation": "Corteo4bitTable",
+        "eloss_calculation": "EnergyLoss",
+        "straggling_model": "BohrStraggling",
+        "nrt_calculation": "NRT_element"
+    },
+    "Transport": {
+        "flight_path_type": "IPP",
+        "min_energy": 1.0,
+        "min_recoil_energy": 100.0,
+        "allow_sub_ml_scattering": false,
+        "max_mfp": 44.0,
+        "max_rel_eloss": 1
     },
     "IonBeam" : {
         "ion_distribution" : "SurfaceCentered",
@@ -23,8 +28,9 @@
         "dir" : [1,0,0]
     },
     "Target" : {
-        "materials" : {
-            "C" : {
+        "materials" : [
+            {
+                "id" : "C",
                 "density" : 2.27, // g/cm^3
                 "Z" : [6],
                 "M" : [12.01],
@@ -34,14 +40,15 @@
                 "Es" : [3],
                 "Er" : [20]
             }
-        },
-        "regions" : {
-            "R1" : {
+        ],
+        "regions" : [
+            {
+                "id" : "R1",
                 "material_id" : "C",
                 "min" : [0, 0, 0],
                 "max" : [1000, 10000, 10000]
             }
-        },
+        ],
         "cell_count" : [1, 1, 1],
         "cell_size" : [440, 10000, 10000],
         "periodic_bc" : [0, 1, 1]
