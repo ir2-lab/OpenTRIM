@@ -30,7 +30,7 @@ mccore::mccore(const parameters &p, const transport_options& t) :
 }
 
 mccore::mccore(const mccore &s) :
-    par_(s.par_),
+    par_(s.par_), tr_opt_(s.tr_opt_),
     source_(s.source_),
     target_(s.target_),
     ref_count_(s.ref_count_),

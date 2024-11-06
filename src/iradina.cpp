@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
     
     tally t = D.getSim()->getTally();
     cout << endl << endl
-         << "Completed " << t.Nions() << " ion histories." << endl;
+         << "Completed " << D.ion_count() << " ion histories." << endl;
     cout << "ion/s = " << D.ips() << " (total), ";
     cout << D.ips()/D.nThreads() << " (per thread)" << endl;
 

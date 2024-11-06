@@ -51,7 +51,8 @@ void mcdriver::getOptions(options& opt) const
 {
     opt.Driver = par_;
     opt.Output = out_opts_;
-    opt.Simulation = s_->getParameters();
+    opt.Simulation = s_->getSimulationParameters();
+    opt.Transport = s_->getTransportOptions();
     opt.IonBeam = s_->getSource().getParameters();
     opt.Target = s_->getTarget().getDescription();
 }
@@ -143,7 +144,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
             std::this_thread::sleep_for(std::chrono::milliseconds(msInterval));
 
-        } while(ion_count_ < par_.max_no_ions && !(s_->abort_flag()));
+        } while(s_->ion_count() < par_.max_no_ions && !(s_->abort_flag()));
     }
 
     // wait for threads to finish...
@@ -153,11 +154,20 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     for(int i=0; i<nthreads; i++)
         s_->merge(*(sims[i]));
 
+    // report progress for the last time
+    if (cb) {
+        for(int i=0; i<nthreads; i++)
+            thread_ion_count_[i] = sims[i]->thread_ion_count();
+        ion_count_ = s_->ion_count();
+
+        cb(*this,callback_user_data);
+    }
+
     // CALC TIME/ion CLOCK_PROCESS_CPUTIME_ID
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t_end); // POSIX
     double t_secs = 1. * (t_end.tv_sec - t_start.tv_sec) / nthreads;
     t_secs += 1.e-9 * (t_end.tv_nsec - t_start.tv_nsec) / nthreads;
-    ips_ = s_->getTally().Nions()/t_secs;
+    ips_ = ion_count_/t_secs;
     end_time_ = std::time(nullptr);
 
 

@@ -207,7 +207,9 @@ public:
     size_t thread_ion_count() const { return thread_ion_counter_; }
 
     /// Returns the core simulation parameters
-    const parameters& getParameters() const { return par_; }
+    const parameters& getSimulationParameters() const { return par_; }
+    /// Returns the core simulation parameters
+    const transport_options& getTransportOptions() const { return tr_opt_; }
 
     /// Return a reference to the \ref target object
     target& getTarget() { return *target_; }
