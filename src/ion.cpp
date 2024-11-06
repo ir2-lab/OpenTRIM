@@ -97,8 +97,15 @@ BoundaryCrossing ion::propagate(float& s)
         }
     } else { // ion is bound to exit simulation
         // 1. Reduce s to just cross the boundary
-        s = distance2boundary(grid_->box(icell_),pos_,dir_);
-        x = pos_ + s*dir_;
+
+        // propagate to the boundary
+        // @ToDo more debugging needed here
+        x = pos_;
+        s = bring2boundary(grid_->box(icell_), x, dir_);
+
+        //s = distance2boundary(grid_->box(icell_),pos_,dir_);
+        //x = pos_ + s*dir_;
+
         grid_->apply_bc(x);
         // 2. still exiting ?
         if (!grid_->contains_with_bc(x)) {
