@@ -16,8 +16,8 @@ progressbar bar;
 
 void progress_callback(const mcdriver& d, void* )
 {
-//    const std::vector<uint>&  c = d.thread_ion_count();
-//    uint ct = d.ion_count();
+//    const std::vector<size_t>&  c = d.thread_ion_count();
+//    size_t ct = d.ion_count();
 //    cout << c[0];
 //    for(int i=1; i<c.size(); i++) cout << '\t' << c[i];
 //    cout << '\t' << ct

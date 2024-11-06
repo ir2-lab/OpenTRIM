@@ -223,6 +223,22 @@ public:
             A[i] = t.A[i].copy();
     }
 
+    /// @brief Copy contents to another tally
+    /// @param t another tally object
+    void copyTo(tally& t) const {
+        for(int i=0; i<A.size(); i++)
+            A[i].copyTo(t.A[i]);
+    }
+
+    /// @brief Copy contents to another tally
+    /// @param t another tally object
+    tally clone() const {
+        tally t;
+        for(int i=0; i<A.size(); i++)
+            t.A[i] = A[i].copy();
+        return t;
+    }
+
     /// @brief Score an event
     /// @param ev the event type
     /// @param i the ion causing the event

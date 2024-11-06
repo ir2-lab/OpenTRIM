@@ -10,7 +10,9 @@
 #include "event_stream.h"
 #include "dedx.h"
 
+// for thread sync
 #include <atomic>
+#include <mutex>
 
 /**
  * \defgroup MC libiradinapp shared library
@@ -166,9 +168,18 @@ protected:
     std::shared_ptr<int> ref_count_;
 
     // ion counters
-    uint max_no_ions_;
-    uint count_offset_;
-    std::atomic_uint nion_thread_; // thread safe simulated ion counter
+    size_t max_no_ions_;
+    size_t count_offset_;
+
+    // shared ion counter
+    std::shared_ptr< std::atomic_size_t > ion_counter_; // shared ion counter
+    std::atomic_size_t thread_ion_counter_; // per thread ion counter
+
+    // shared abort flag
+    std::shared_ptr< std::atomic_bool > abort_flag_; // thread safe abort simulation flag
+
+    // shared mutex for tally data
+    std::shared_ptr< std::mutex > tally_mutex_;
 
     // helper variables for flight path calc
     std::vector<float> sqrtfp_const;
@@ -191,9 +202,9 @@ public:
     ~mccore();
 
     void setMaxIons(unsigned int n) { max_no_ions_ = n; }
-    void setCountOffset(uint n) { count_offset_ = n; }
-    uint ions_done() { return nion_thread_.exchange(0); }
-    size_t ion_que_size() const { return q_.size(); }
+    void setCountOffset(size_t n) { count_offset_ = n; }
+    size_t ion_count() const { return *ion_counter_; }
+    size_t thread_ion_count() const { return thread_ion_counter_; }
 
     /// Returns the core simulation parameters
     const parameters& getParameters() const { return par_; }
@@ -210,15 +221,31 @@ public:
     const tally& getTally() const { return tally_; }
     /// Return a const reference to the tally object
     const tally& getTallyVar() const { return dtally_; }
+
+    ArrayNDd getTallyTable(int i) const;
+    ArrayNDd getTallyTableVar(int i) const;
+    void copyTallyTable(int i, ArrayNDd& A) const;
+    void copyTallyTableVar(int i, ArrayNDd& dA) const;
+
+    std::mutex* tally_mutex() { return tally_mutex_.get(); }
+
     /// Open file stream to store \ref pka_event data
     int open_pka_stream(const char* fname) {
         return pka_stream_.open(fname, pka);
+    }
+    /// Close \ref pka_event stream
+    void close_pka_stream() {
+        return pka_stream_.close();
     }
     /// Return reference to the pka stream
     const event_stream& pka_stream() { return pka_stream_; }
     /// Open file stream to store \ref exit_event data
     int open_exit_stream(const char* fname) {
         return exit_stream_.open(fname, exit_ev);
+    }
+    /// Open file stream to store \ref exit_event data
+    void close_exit_stream() {
+        exit_stream_.close();
     }
     /// Return reference to the exit stream
     const event_stream& exit_stream() { return exit_stream_; }
@@ -277,9 +304,15 @@ public:
      * @param n the number of histories to run
      * @return 0 if succesfull
      *
-     * @todo Convert run() to run(uint n)
+     * @todo Convert run() to run(size_t n)
      */
     int run();
+
+    void clear_abort_flag() { *abort_flag_ = false; }
+    void abort()            { *abort_flag_ = true; }
+    bool abort_flag() const { return *abort_flag_; }
+
+    int reset();
 
 protected:
 

@@ -61,7 +61,7 @@ class ion
     int cellid_, // current cell id
         prev_cellid_, // previous cell id
         cellid0_; // initial cell id (start of track)
-    int ion_id_; // history id
+    size_t ion_id_; // history id
     int recoil_id_; // recoil id (generation), 0=ion, 1=PKA, ...
     const atom* atom_;
     const grid3D* grid_;
@@ -182,7 +182,7 @@ public:
         recoil_id_++;
     }
     /// set history id
-    void setId(int id) {
+    void setId(size_t id) {
         ion_id_ = id;
     }
     /// reset recoil id to 0

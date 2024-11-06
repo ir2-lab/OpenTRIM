@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cassert>
 #include <vector>
+#include <cstring>
 
 /**
  * @brief A N-dimensional explicitly shared array class
@@ -92,6 +93,11 @@ class ArrayND
             for(int i = 1; i<d.size(); i++)  k = k*dim[i] + d[i];
             return k;
         }
+        void copyTo(Private& other) {
+            std::memcpy(other.buffer.data(),
+                        buffer.data(),
+                        buffer.size()*sizeof(Scalar));
+        }
     };
 
     std::shared_ptr<Private> P_;
@@ -130,6 +136,11 @@ public:
     ArrayND copy() const
     {
         return P_.get() ? ArrayND(*P_) : ArrayND();
+    }
+    /// Creates a copy of the array in memory and returns the new array
+    void copyTo(ArrayND& other) const
+    {
+        if (P_ && other.P_ && size()==other.size()) P_->copyTo(*(other.P_));
     }
     /// Returns true is the array is empty
     bool isNull() const { return P_ == nullptr; }

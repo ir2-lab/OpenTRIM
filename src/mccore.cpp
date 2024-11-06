@@ -10,8 +10,10 @@ mccore::mccore() :
     source_(new ion_beam),
     target_(new target),
     ref_count_(new int(0)),
-    count_offset_(0),
-    nion_thread_(0)
+    ion_counter_(new std::atomic_size_t(0)),
+    thread_ion_counter_(0),
+    abort_flag_(new std::atomic_bool()),
+    tally_mutex_(new std::mutex)
 {
 }
 
@@ -20,8 +22,10 @@ mccore::mccore(const parameters &p, const transport_options& t) :
     source_(new ion_beam),
     target_(new target),
     ref_count_(new int(0)),
-    count_offset_(0),
-    nion_thread_(0)
+    ion_counter_(new std::atomic_size_t(0)),
+    thread_ion_counter_(0),
+    abort_flag_(new std::atomic_bool()),
+    tally_mutex_(new std::mutex)
 {
 }
 
@@ -30,8 +34,10 @@ mccore::mccore(const mccore &s) :
     source_(s.source_),
     target_(s.target_),
     ref_count_(s.ref_count_),
-    nion_thread_(0),
-    count_offset_(0),
+    ion_counter_(s.ion_counter_),
+    thread_ion_counter_(0),
+    abort_flag_(s.abort_flag_),
+    tally_mutex_(s.tally_mutex_),
     sqrtfp_const(s.sqrtfp_const), ip0(s.ip0),
     dedx_(s.dedx_),
     de_strag_(s.de_strag_),
@@ -277,6 +283,12 @@ int mccore::init() {
     return 0;
 }
 
+int mccore::reset()
+{
+    *ion_counter_ = 0;
+    return 0;
+}
+
 ion* mccore::new_recoil(const ion* proj, const atom *target, const float& recoil_erg,
                             const vector3& dir0, const float &sqrt_mass_ratio)
 {
@@ -305,12 +317,18 @@ ion* mccore::new_recoil(const ion* proj, const atom *target, const float& recoil
 
 int mccore::run()
 {
-
-    for(int k=0; k<max_no_ions_; k++) {
+    while( !(*abort_flag_) )
+    {
+        // get the next ion id
+        size_t ion_id = ion_counter_->fetch_add(1) + 1;
+        if (ion_id > max_no_ions_) {
+            (*ion_counter_)--;
+            break;
+        }
 
         // generate ion
         ion* i = q_.new_ion();
-        i->setId(++count_offset_);
+        i->setId(ion_id);
         i->resetRecoilId();
         i->reset_counters();
         source_->source_ion(rng, *target_, *i);
@@ -347,16 +365,21 @@ int mccore::run()
         // compute total sums and
         // add this ion's tally to total score
         tion_.computeSums();
-        //assert(tion_.debugCheck(i->erg0()));
-        tally_ += tion_;
-        dtally_.addSquared(tion_);
+
+        {
+            std::lock_guard< std::mutex > lock(*tally_mutex_);
+            //assert(tion_.debugCheck(i->erg0()));
+            tally_ += tion_;
+            dtally_.addSquared(tion_);
+        }
+
         tion_.clear();
 
         // free the ion buffer
         q_.free_ion(i);
 
         // update thread counter
-        nion_thread_++;
+        thread_ion_counter_++;
 
     } // ion loop
 
@@ -715,6 +738,31 @@ void mccore::remove_stream_files()
 {
     pka_stream_.remove();
     exit_stream_.remove();
+}
+
+ArrayNDd mccore::getTallyTable(int i) const
+{
+    if (i<0 || i>=tally::tEnd) return ArrayNDd();
+    std::lock_guard< std::mutex > lock(*tally_mutex_);
+    return tally_.at(i).copy();
+}
+ArrayNDd mccore::getTallyTableVar(int i) const
+{
+    if (i<0 || i>=tally::tEnd) return ArrayNDd();
+    std::lock_guard< std::mutex > lock(*tally_mutex_);
+    return dtally_.at(i).copy();
+}
+void mccore::copyTallyTable(int i, ArrayNDd& A) const
+{
+    if (i<0 || i>=tally::tEnd) return;
+    std::lock_guard< std::mutex > lock(*tally_mutex_);
+    tally_.at(i).copyTo(A);
+}
+void mccore::copyTallyTableVar(int i, ArrayNDd& dA) const
+{
+    if (i<0 || i>=tally::tEnd) return;
+    std::lock_guard< std::mutex > lock(*tally_mutex_);
+    dtally_.at(i).copyTo(dA);
 }
 
 

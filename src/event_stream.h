@@ -7,8 +7,6 @@
 #include <vector>
 #include <fstream>
 
-typedef unsigned int uint;
-
 class event_stream;
 class ion;
 

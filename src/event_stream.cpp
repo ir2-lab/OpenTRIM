@@ -84,16 +84,16 @@ int event_stream::merge(const event_stream& ev)
     fs_.open(fname_, std::ios::out | std::ios::binary | std::ios::app );
 
     // mem buffer ~1MB
-    uint n = (1 << 10);
+    size_t n = (1 << 10);
     std::vector<float> buff(n*cols());
 
     // copy data in chunks
-    uint nrows = ev.rows(); // total rows to copy
+    size_t nrows = ev.rows(); // total rows to copy
     while (nrows) {
-        uint n1 = std::min(nrows,n); // # of rows to copy in this iter
+        size_t n1 = std::min(nrows,n); // # of rows to copy in this iter
         nrows -= n1;
         rows_ += n1;
-        uint nbytes = n1*cols()*sizeof(float);
+        size_t nbytes = n1*cols()*sizeof(float);
 
         // read from raw buffer
         ifs.read((char*)buff.data(), nbytes);

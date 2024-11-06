@@ -77,7 +77,7 @@ template<typename T>
 int dump_array(h5::File& file, const std::string& path,
                const ArrayND<T>& A, std::stringstream& var_list, 
                const std::string& desc,
-               const uint& N = 1)
+               const size_t& N = 1)
 {
     auto dset = file.createDataSet<T>(path, h5::DataSpace(A.dim()));
     dset.createAttribute("description",desc);
@@ -101,7 +101,7 @@ template<typename T>
 int dump_array(h5::File& file, const std::string& path, 
             const ArrayND<T>& A, const ArrayND<T>& dA, 
             std::stringstream& var_list, const std::string& desc,
-            const uint& N) 
+            const size_t& N)
 {
     assert(A.size()==dA.size());
     assert(N>1);
