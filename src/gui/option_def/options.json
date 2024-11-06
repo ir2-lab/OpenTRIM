@@ -1,0 +1,305 @@
+{
+    "Simulation" : [
+        {
+            "name" : "simulation_type",
+            "label" : "Simulation Type",
+            "type" : "enum",
+            "values" : ["FullCascade","Invalid1","Invalid2","IonsOnly","Cascades"],
+            "valueLabels" : ["Full Cascade","Invalid1","Invalid2","Ions Only","Cascades Only"],
+            "toolTip" : "Define the type of simulation.",
+            "whatsThis" : ["- Full Cascade: Simulate full damage cascades, follow recoils",
+                           "- Ions Only: Simulate only ions, do not follow recoils",
+                           "- Cascades Only: Simulate recoil cascades"]
+        },
+        {
+            "name" : "screening_type",
+            "label": "Screening Type",
+            "type" : "enum",
+            "values" : ["None","LenzJensen","KrC","Moliere","ZBL"],
+            "valueLabels" : ["Unscreened","Lenz-Jensen","Kr-C","Moliere","ZBL"],
+            "toolTip" : "Define the type of screening potential.",
+            "whatsThis" : ["- Unscreened: Unscreened Coulomb potential",
+                           "- Lenz-Jensen: Lenz-Jensen screening",
+                           "- Kr-C: Kr-C screening",
+                           "- Moliere - Moliere screening",
+                           "- ZBL - Ziegler-Biersack-Littmark universal screening"]
+        },
+        {
+            "name" : "scattering_calculation",
+            "label": "Scattering Calculation",
+            "type" : "enum",
+            "values" : ["Corteo4bitTable","ZBL_MAGICK"],
+            "valueLabels" : ["Corteo 4-bit interpolation","MAGICK formula"],
+            "toolTip" : "Define how ion scattering is calculated.",
+            "whatsThis" : ["- Corteo 4-bit interpolation: Using 4-bit Corteo interpolation tables",
+                           "- MAGICK formula: Analytical calculation using ZBL's formula"]
+        },
+        {
+            "name" : "eloss_calculation",
+            "label": "Energy Loss",
+            "type" : "enum",
+            "values" : ["EnergyLossOff","EnergyLoss","EnergyLossAndStraggling"],
+            "valueLabels" : ["Off", "Loss only", "Loss & Stragling"],
+            "toolTip" : "Setting for electronic energy loss calculation.",
+            "whatsThis" : ["Off: No energy loss calculation",
+                           "Loss: Only energy loss is taken into account",
+                           "Loss & Stragling: Both energy loss and straggling are calculated"]
+        },
+        {
+            "name" : "straggling_model",
+            "label": "Straggling Model",
+            "type" : "enum",
+            "values" : ["BohrStraggling","ChuStraggling","YangStraggling"],
+            "valueLabels" : ["Bohr","Chu","Yang"],
+            "toolTip" : "Model used for electronic straggling calculations.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "nrt_calculation",
+            "label": "NRT calculation",
+            "type" : "enum",
+            "values" : ["NRT_element","NRT_average"],
+            "valueLabels" : ["Per element","Average"],
+            "toolTip" : "Define how to implement NRT in multielemental targets.",
+            "whatsThis" : ["Per element: NRT calculated per recoil atom",
+                           "Average: NRT calculated using material average values"]
+        }
+    ],
+    "Transport" : [
+        {
+            "name" : "flight_path_type",
+            "label": "Flight Path Type",
+            "type" : "enum",
+            "values" : ["AtomicSpacing","Constant","MendenhallWeller","IPP"],
+            "valueLabels" : ["Monolayer","Constant","Mendenhall-Weller","IPP"],
+            "toolTip" : "Flight path selection algorithm.",
+            "whatsThis" : ["- Monolayer: Constant flight path equal to material's monolayer distance",
+                           "- Constant: User defined constant flight path",
+                           "- Mendenhall-Weller: SRIM-like path selection algorithm",
+                           "- IPP: IONS++ algorithm"]
+        },
+        {
+            "name" : "flight_path_const",
+            "label": "Const. Flight Path (nm)",
+            "type" : "float",
+            "min" : 0.001,
+            "max" : 1.0e6,
+            "digits" : 3,
+            "toolTip" : "Constant Flight Path in nm.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "max_mfp",
+            "label": "Max MFP (nm)",
+            "type" : "float",
+            "min" : 0.001,
+            "max" : 1e38,
+            "digits" : 3,
+            "toolTip" : "Maximum ion mean free path in nm.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "allow_sub_ml_scattering",
+            "label" : "Sub-ML flight path",
+            "type" : "bool",
+            "toolTip" : "Allow sub-monolayer ion flight path.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "min_recoil_energy",
+            "label": "Min recoil E (eV)",
+            "type" : "float",
+            "min" : 0.001,
+            "max" : 1e6,
+            "digits" : 3,
+            "toolTip" : "Minimum recoil energy in eV.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "max_rel_eloss",
+            "label": "Max ΔE/E",
+            "type" : "float",
+            "min" : 0.001,
+            "max" : 1.0,
+            "digits" : 3,
+            "toolTip" : "Maximum relative energy loss per flight path.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "min_energy",
+            "label" : "Min ion E (eV)",
+            "type" : "float",
+            "min" : 0.001,
+            "max" : 1.0e6,
+            "digits" : 3,
+            "toolTip" : "Lowest kinetic energy of a simulated ion.",
+            "whatsThis" : ""
+        }
+    ],
+    "IonBeam": [
+        {
+            "name" : "ion_distribution",
+            "label": "Ion Distribution",
+            "type" : "enum",
+            "values" : ["SurfaceRandom", "SurfaceCentered", "FixedPos", "VolumeCentered", "VolumeRandom"],
+            "valueLabels" : ["Surface Random", "Surface Centered", "Fixed Position", "Volume Centered", "Volume Random"],
+            "toolTip" : "Disribution of beam ions.",
+            "whatsThis" : "The entry surface is at x=0"
+        },
+        {
+            "name" : "ionZ",
+            "label": "Atomic number",
+            "type" : "int",
+            "min" : 1,
+            "max" : 92,
+            "toolTip" : "Projectile atomic number.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "ionM",
+            "label": "Mass",
+            "type" : "float",
+            "min" : 1.0,
+            "max" : 300.0,
+            "digits" : 6,
+            "toolTip" : "Projectile mass.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "ionE0",
+            "label": "Ion energy (eV)",
+            "type" : "float",
+            "min" : 1.0,
+            "max" : 1.0e10,
+            "digits" : 6,
+            "toolTip" : "Projectile ion energy in eV.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "dir",
+            "label": "Ion beam direction",
+            "type" : "vector3d",
+            "min" : 0.0,
+            "max" : 1.0,
+            "digits" : 6,
+            "toolTip" : "Ion Beam Direction.",
+            "whatsThis" : "Vector of direction cosines [nx,ny,nz], 0 <= ni <= 1"
+        },
+        {
+            "name" : "pos",
+            "label": "Position",
+            "type" : "vector3d",
+            "min" : 0.0,
+            "max" : 1.0e10,
+            "digits" : 3,
+            "toolTip" : "Ion Beam Direction.",
+            "whatsThis" : [ "Initial ion position vector [x,y,z].",
+                            "Must be either within the simulation volume or at the surface."]
+        }
+    ],
+    "Output" : [
+        {
+            "name" : "title",
+            "label": "Title",
+            "type" : "string",
+            "toolTip" : "Short title describing the simulation.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "OutputFileBaseName",
+            "label": "Output File Name",
+            "type" : "string",
+            "toolTip" : "Name of the output file without the extension.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "storage_interval",
+            "label": "Update interval (ms)",
+            "type" : "int",
+            "min" : 100,
+            "max" : 2147483647,
+            "toolTip" : "Time interval to update stored data.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "store_transmitted_ions",
+            "label": "Store transmitted ions",
+            "type" : "bool",
+            "toolTip" : "Store a table with ions that exit the simulation.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "store_pka",
+            "label": "Store PKAs",
+            "type" : "bool",
+            "toolTip" : "Store a table of PKA data.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "store_dedx",
+            "label": "Store dE/dx",
+            "type" : "bool",
+            "toolTip" : "Store stopping tables for each ion/material combination.",
+            "whatsThis" : ""
+        }
+    ],
+    "Driver" : [
+        {
+            "name" : "max_no_ions",
+            "label": "Max # of ions to simulate",
+            "type" : "int",
+            "min" : 1,
+            "max" : 2147483647,
+            "toolTip" : "Maximum number of histories to simulate.",
+            "whatsThis" : "The simulation will stop when the maximum number of histories has been reached."
+        },
+        {
+            "name" : "threads",
+            "label": "Number of threads",
+            "type" : "int",
+            "min" : 1,
+            "max" : 1000,
+            "toolTip" : "Number of execution threads.",
+            "whatsThis" : "The simulation will run in parallel the specified ."
+        },
+        {
+            "name" : "seeds",
+            "label": "Random number seed",
+            "type" : "int",
+            "min" : 0,
+            "max" : 2147483647,
+            "toolTip" : "Random number generator seed.",
+            "whatsThis" : ""
+        }
+    ],
+    "Target" : [
+        {
+            "name" : "cell_size",
+            "label": "Cell Size [lx, ly, lz] (nm)",
+            "type" : "vector3d",
+            "min" : 0.001,
+            "max" : 1.0e7,
+            "digits" : 6,
+            "toolTip" : "Size in nm of the simulation cell along the x-, y- and z-axis.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "cell_count",
+            "label": "Cell count [Nx, Ny, Nz]",
+            "type" : "ivector3d",
+            "min" : 1,
+            "max" : 1000000,
+            "toolTip" : "Number of simulation cells along the x-, y- and z-axis.",
+            "whatsThis" : ""
+        },
+        {
+            "name" : "periodic_bc",
+            "label": "Periodic boundary [x, y, z]",
+            "type" : "ivector3d",
+            "min" : 0,
+            "max" : 1,
+            "toolTip" : "Select periodic boundary conditions along the axes (0=normal, 1=periodic).",
+            "whatsThis" : ""
+        }
+    ]
+}

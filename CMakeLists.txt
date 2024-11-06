@@ -8,6 +8,10 @@ project(iradina++
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+option (BUILD_IRADINAPP_GUI "build gui" ON)
+
 message (STATUS "iradina++ version ${PROJECT_VERSION}")
 
 string(TIMESTAMP CMAKE_BUILD_TIME UTC)
@@ -22,7 +26,7 @@ add_compile_definitions(IRADINAPP_VERSION="${PROJECT_VERSION}"
                         COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}"
                         BUILD_TIME="${CMAKE_BUILD_TIME}")
 
-include (GNUInstallDirs)
+include (GNUInstallDirs) 
 
 # by default, install into $HOME/.local (not /usr/local), so that no root access (and sudo!!) is needed
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -149,6 +153,11 @@ set(installable_libs
 install(TARGETS ${installable_libs} DESTINATION lib)
 install(FILES ${IRADINAPP_HEADERS} DESTINATION include)
 install(TARGETS iradina++ DESTINATION bin)
+
+
+if (BUILD_IRADINAPP_GUI)
+  add_subdirectory (src/gui)
+endif ()
 
 
 

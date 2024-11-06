@@ -1,0 +1,198 @@
+#include "ionsui.h"
+
+#include "optionsmodel.h"
+#include "simulationoptionsview.h"
+#include "welcomeview.h"
+#include "runview.h"
+#include "mcdriverobj.h"
+
+#include <QVBoxLayout>
+
+#include <QJsonDocument>
+#include <QStatusBar>
+#include <QToolButton>
+#include <QStackedWidget>
+#include <QTextBrowser>
+#include <QLabel>
+#include <QProgressBar>
+#include <QMessageBox>
+#include <QCloseEvent>
+
+#include <QFile>
+
+#include <sstream>
+
+IonsUI::IonsUI(QWidget *parent)
+    : QWidget(parent),
+    _stackedWidget(nullptr),
+    _activeButton(nullptr)
+{
+    /* runner thread */
+    ions_driver = new McDriverObj(this);
+    ions_driver->moveToThread(&runnerThread);
+    connect(&runnerThread, &QThread::finished, ions_driver, &QObject::deleteLater);
+    /* ToDo : connect slots for start, stop etc */
+
+    runnerThread.start();
+
+    optionsModel = new OptionsModel(this);
+
+    // Load our style sheet style
+    QFile styleFile(":/styles/default.qss");
+    styleFile.open( QFile::ReadOnly );
+    QString style( styleFile.readAll() );
+
+    /* Create a layout for the sidebar */
+    QWidget * sidebar = new QWidget(this);
+    QVBoxLayout * sidebarLayout = new QVBoxLayout();
+
+    _activeButton = createSidebarButton(":/icons/assets/unknown/small-circles-forming-a-circle.svg", tr("Welcome"), 0);
+    sidebarLayout->addWidget(_activeButton);
+    sidebarLayout->addWidget(createSidebarButton(":/icons/assets/unknown/settings.svg", tr("Config"), 1));
+    sidebarLayout->addWidget(createSidebarButton(":/icons/assets/unknown/play.svg", tr("Run"), 2));
+    sidebarLayout->addWidget(createSidebarButton(":/icons/assets/unknown/presentation.svg", tr("Results"), 3));
+    sidebarLayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
+    sidebarLayout->setSpacing(0);
+    sidebarLayout->setMargin(0);
+    /* Add the sidebar layout to the sidebar widget container */
+    sidebar->setLayout(sidebarLayout);
+    sidebar->setObjectName("sidebar");
+    sidebar->setMinimumHeight(sidebarLayout->count() * 76);
+    sidebar->setStyleSheet(style);
+
+    /* Create the stacked widget + statusbar*/
+    _stackedWidget = new QStackedWidget;
+
+    statusBar = new QStatusBar;
+    statusLabel = new QLabel;
+    QRect rect = fontMetrics().boundingRect("RunningOOO");
+    statusLabel->setMinimumWidth(rect.width());
+    statusLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    progressBar = new QProgressBar;
+    progressBar->setFormat("%p%");
+    progressBar->setMinimum(0);
+    progressBar->setMaximum(1000);
+    statusBar->addWidget(statusLabel,1);
+    statusBar->addWidget(progressBar,10);
+
+    /* Create the layout */
+    QVBoxLayout * vbox = new QVBoxLayout;
+    vbox->addWidget(_stackedWidget);
+    vbox->addWidget(statusBar);
+
+    QHBoxLayout* layout = new QHBoxLayout;
+    layout->addWidget(sidebar);
+    layout->addLayout(vbox);
+    setLayout(layout);
+    layout->setSpacing(0);
+    layout->setContentsMargins(0,0,0,0);
+
+    setWindowTitle(tr("ions-gui"));
+    setGeometry(0,0, 1024, 768);
+
+    /* Create pages */
+    welcomeView = new WelcomeView(this);
+    push(tr("Welcome"),welcomeView);
+
+    optionsView = new SimulationOptionsView(this);
+    push(tr("Configuration"),optionsView);
+
+    runView = new RunView(this);
+    push(tr("Run"),runView);
+
+    resultsView = new ResultsView(this);
+    push(tr("Results"),resultsView);
+
+    optionsView->revert();
+
+    _activeButton->setChecked(true);
+    _stackedWidget->setCurrentIndex(0);
+
+}
+
+IonsUI::~IonsUI()
+{
+    if (ions_driver->status() == McDriverObj::mcRunning)
+        ions_driver->start(false);
+    runnerThread.quit();
+    runnerThread.wait();
+}
+
+void IonsUI::changeCenterWidget(bool event)
+{
+    Q_UNUSED(event);
+    QString sender = QObject::sender()->objectName();
+
+    if(_activeButton != nullptr) {
+        _activeButton->setChecked(false);
+    }
+
+    _activeButton = static_cast<QToolButton*>(QObject::sender());
+    _activeButton->setChecked(true);
+
+    _stackedWidget->setCurrentIndex(_activeButton->property("idx").toInt());
+}
+
+void IonsUI::closeEvent(QCloseEvent *event)
+{
+    McDriverObj::DriverStatus st = ions_driver->status();
+    if (st == McDriverObj::mcReset) {
+        event->accept();
+        return;
+    }
+    QString msg = st == McDriverObj::mcRunning ?
+        "Stop the running simulation, discard data & quit program?" :
+                      "Discard simulation data & quit program?";
+    int ret = QMessageBox::warning(this,
+                                   "Close IONS",msg,
+                                   QMessageBox::Ok | QMessageBox::Cancel);
+    if (ret == QMessageBox::Ok) {
+        event->accept();
+    } else {
+        event->ignore();
+    }
+}
+
+void IonsUI::push(const QString &title, QWidget *page)
+{
+    QWidget* w = new QWidget;
+    QVBoxLayout* vbox = new QVBoxLayout;
+    QLabel* lbl = new QLabel(title);
+    lbl->setStyleSheet("font-size : 20pt; font-weight : bold;");
+    vbox->addWidget(lbl);
+    vbox->addWidget(page);
+    w->setLayout(vbox);
+    _stackedWidget->addWidget(w);
+}
+
+void IonsUI::pop()
+{
+    QWidget * currentWidget = _stackedWidget->currentWidget();
+    _stackedWidget->removeWidget(currentWidget);
+
+    // delete currentWidget; currentWidget = nullptr;
+}
+
+QToolButton * IonsUI::createSidebarButton(const QString& iconPath, const QString& title, int idx)
+{
+    QIcon icon(iconPath);
+
+    QToolButton * btn = new QToolButton;
+    btn->setIcon(icon);
+    btn->setIconSize(QSize(42, 42));
+    btn->setText(title);
+    btn->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+    btn->setFixedSize(76, 76);
+    btn->setObjectName(title);
+    btn->setCheckable(true);
+    btn->setProperty("idx",idx);
+    QObject::connect(btn, SIGNAL(clicked(bool)),
+                     this, SLOT(changeCenterWidget(bool)));
+
+    return btn;
+}
+
+
+
+
+

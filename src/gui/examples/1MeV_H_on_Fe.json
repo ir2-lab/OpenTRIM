@@ -1,0 +1,57 @@
+{
+    "Driver" : {        
+        "max_no_ions" : 2000,
+        "threads" : 8,
+        "seeds" : []
+    },
+    "Simulation" : {
+        "simulation_type" : "FullCascade",
+        "screening_type" : "ZBL",
+        "scattering_calculation" : "Corteo4bitTable"
+    },
+    "Transport" : {
+        "flight_path_type" : "AtomicSpacing",   // "AtomicSpacing", "MendenhallWeller", MyFFP
+        "min_energy" : 1.0
+    },
+    "IonBeam" : {
+        "ion_distribution" : "SurfaceCentered",
+        "ionZ" : 1,
+        "ionM" : 1.00784,
+        "ionE0" : 1e6,
+        "dir" : [1,0,0]
+    },
+    "Target" : {
+        "materials" : [
+            {
+                "id" : "Fe",
+                "density" : 7.8658, // g/cm^3
+                "Z" : [26],
+                "M" : [55.845],
+                "X" : [1],
+                "Ed" : [40],
+                "El" : [3],
+                "Es" : [3],
+                "Er" : [40]
+            }
+        ],
+        "regions" : [
+            {
+                "id" : "R1",
+                "material_id" : "Fe",
+                "min" : [0, 0, 0],
+                "max" : [12000, 12000, 12000]
+            }
+        ],
+        "cell_count" : [100, 1, 1],
+        "cell_size" : [100, 10000, 10000],
+        "periodic_bc" : [0, 1, 1]
+    },
+    "Output" : {
+        "title" : "1 MeV H on Fe example",
+        "OutputFileBaseName" : "out",
+        "store_pka" : 1,
+        "store_dedx" : 1,
+        "store_transmitted_ions" : 1
+    }
+}
+

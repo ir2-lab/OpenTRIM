@@ -1,0 +1,26 @@
+<RCC>
+    <qresource prefix="/">
+        <file>option_def/options.json</file>
+        <file>isotope-data/isotopes_data.csv</file>
+        <file>styles/default.qss</file>
+        <file>examples/1MeV_H_on_Fe.json</file>
+        <file>examples/2MeV_Fe_on_Fe.json</file>
+        <file>examples/3MeV_Xe_on_UO2.json</file>
+    </qresource>
+    <qresource prefix="/icons">
+        <file>assets/unknown/settings.svg</file>
+        <file>assets/unknown/play.svg</file>
+        <file>assets/unknown/presentation.svg</file>
+        <file>assets/unknown/small-circles-forming-a-circle.svg</file>
+        <file>assets/ionicons/play-circle-outline.svg</file>
+        <file>assets/ionicons/refresh-circle-outline.svg</file>
+        <file>assets/ionicons/pause-circle-outline.svg</file>
+        <file>assets/ionicons/arrow-up-outline.svg</file>
+        <file>assets/ionicons/arrow-down-outline.svg</file>
+        <file>assets/ionicons/remove-outline.svg</file>
+        <file>assets/ionicons/add-outline.svg</file>
+        <file>assets/ionicons/checkmark-done-outline.svg</file>
+        <file>assets/lucide/chart-line.svg</file>
+        <file>assets/ionicons/document-text-outline.svg</file>
+    </qresource>
+</RCC>
