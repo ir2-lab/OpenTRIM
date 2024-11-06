@@ -36,7 +36,7 @@ std::string mcdriver::outFileName(const char* type, int thread_id)
 {
     std::stringstream ss;
     ss << out_opts_.OutputFileBaseName << '.' << type;
-    if (thread_id) ss << thread_id;
+    if (thread_id >= 0) ss << thread_id;
     return ss.str();
 }
 
@@ -68,7 +68,7 @@ void mcdriver::setOptions(const options& o)
     s_->init();
 }
 
-int mcdriver::exec(progress_callback cb, uint msInterval, void *callback_user_data)
+int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_data)
 {
     using namespace std::chrono_literals;
 
@@ -77,14 +77,11 @@ int mcdriver::exec(progress_callback cb, uint msInterval, void *callback_user_da
 
     // TIMING
     start_time_ = std::time(nullptr);
-    struct timespec t_start, t_end;
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t_start);
 
     // create simulation clones
     std::vector< mccore* > sims(nthreads);
-    sims[0] = s_;
-    for(int i=1; i<nthreads; i++) sims[i] = new mccore(*s_);
-
+    for(int i=0; i<nthreads; i++) sims[i] = new mccore(*s_);
 
     // open streams
     for(int i=0; i<nthreads; i++) {
@@ -93,9 +90,17 @@ int mcdriver::exec(progress_callback cb, uint msInterval, void *callback_user_da
         if (out_opts_.store_transmitted_ions)
             sims[i]->open_exit_stream(outFileName("exit",i).c_str());
     }
+    if (out_opts_.store_pka) {
+        s_->open_pka_stream(outFileName("pka").c_str());
+        s_->close_pka_stream();
+    }
+    if (out_opts_.store_transmitted_ions) {
+        s_->open_exit_stream(outFileName("exit").c_str());
+        s_->close_exit_stream();
+    }
 
     // if no seeds given, generate random seeds
-    std::vector<uint> myseeds = par_.seeds;
+    std::vector<unsigned int> myseeds = par_.seeds;
     if (myseeds.size() < nthreads) {
         myseeds.resize(nthreads);
         std::random_device rd;
@@ -104,48 +109,49 @@ int mcdriver::exec(progress_callback cb, uint msInterval, void *callback_user_da
 
     }
 
-    // set # ions and seed in each thread
-    unsigned int N = par_.max_no_ions;
-    unsigned int Nth = N/nthreads;
-    uint offset = 0;
+    // set max ions and seed in each thread
+    // reset abort flag
     for(int i=0; i<nthreads; i++) {
-        uint n = i==nthreads-1 ? N : Nth;
-        sims[i]->setMaxIons(n);
-        sims[i]->setCountOffset(offset);
-        offset += n;
-        N -= n;
+        sims[i]->setMaxIons(par_.max_no_ions);
         sims[i]->seed(myseeds[i]);
+        sims[i]->clear_abort_flag();
     }
 
     // create & start worker threads
-    std::vector< std::thread* > threads;
-    for(int i=0; i<nthreads; i++) {
-        threads.push_back(
-            new std::thread(&mccore::run, sims[i])
-            );
-    }
+    std::vector< std::thread > thread_pool;
+    for(int i=0; i<nthreads; i++)
+        thread_pool.emplace_back(&mccore::run, sims[i]);
+
 
     // report progress if callback function is given
     if (cb) {
         thread_ion_count_.assign(nthreads,0);
-        ion_count_ = 0;
-        while(ion_count_ < par_.max_no_ions) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(msInterval));
-            int i=0;
-            for(; i<nthreads; i++) {
-                thread_ion_count_[i] = sims[i]->ions_done();
-                ion_count_ += thread_ion_count_[i];
+        do  {
+
+            for(int i=0; i<nthreads; i++)
+                thread_ion_count_[i] = sims[i]->thread_ion_count();
+            ion_count_ = s_->ion_count();
+
+            // consolidate results
+            {
+                std::lock_guard< std::mutex > lock(*(s_->tally_mutex()));
+                for(int i=0; i<nthreads; i++)
+                    s_->merge(*(sims[i]));
             }
+
             cb(*this,callback_user_data);
-        }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(msInterval));
+
+        } while(ion_count_ < par_.max_no_ions && !(s_->abort_flag()));
     }
 
     // wait for threads to finish...
-    for(int i=0; i<nthreads; i++) threads[i]->join();
+    for(int i=0; i<nthreads; i++) thread_pool[i].join();
 
     // consolidate results
-    for(int i=1; i<nthreads; i++)
-        sims[0]->merge(*(sims[i]));
+    for(int i=0; i<nthreads; i++)
+        s_->merge(*(sims[i]));
 
     // CALC TIME/ion CLOCK_PROCESS_CPUTIME_ID
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t_end); // POSIX
@@ -154,12 +160,9 @@ int mcdriver::exec(progress_callback cb, uint msInterval, void *callback_user_da
     ips_ = s_->getTally().Nions()/t_secs;
     end_time_ = std::time(nullptr);
 
-    // delete threads
-    for(int i=0; i<nthreads; i++) {
-        delete threads[i];
-    }
+
     // delete simulation clones
-    for(int i=1; i<nthreads; i++) {
+    for(int i=0; i<nthreads; i++) {
         delete sims[i];
     }
 

@@ -342,8 +342,8 @@ public:
      * @brief The target_desc_t class contains all information for the target
      */
     struct target_desc_t {
-        std::vector<material::material_desc_t> materials;
-        std::vector<region> regions;
+        std::vector<material::material_desc_t> materials{};
+        std::vector<region> regions{};
         ivector3 cell_count{1, 1, 1};
         vector3 cell_size{100.f, 100.f, 100.f};
         ivector3 periodic_bc{0, 1, 1};

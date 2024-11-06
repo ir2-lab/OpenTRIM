@@ -151,6 +151,7 @@ protected:
     // timing
     double ips_; // ions/s
     std::time_t start_time_, end_time_;
+    struct timespec t_start, t_end;
 
     // driver parameters
     parameters par_;
@@ -160,10 +161,10 @@ protected:
     mccore* s_;
 
     // return temp file names for thread storage
-    std::string outFileName(const char* type, int thread_id);
+    std::string outFileName(const char* type, int thread_id = -1);
 
-    std::vector<uint> thread_ion_count_;
-    uint ion_count_;
+    std::vector<size_t> thread_ion_count_;
+    size_t ion_count_;
 
 
 
@@ -177,12 +178,19 @@ public:
     void setOptions(const options& o);
     std::string outFileName() const;
 
-    const output_options& outputOptions(const output_options& opts) const
+    const output_options& outputOptions() const
     { return out_opts_; }
     void setOutputOptions(const output_options& opts)
     { out_opts_ = opts; }
+    const parameters& driverOptions() const
+    { return par_; }
+    void setDriverOptions(const parameters& opts)
+    { par_ = opts; }
 
     const mccore* getSim() const { return s_; }
+
+    void abort() { if (s_) s_->abort(); }
+    void reset() { if (s_) delete s_; s_ = nullptr; }
 
     /// total ions/s
     double ips() const { return ips_; }
@@ -202,12 +210,11 @@ public:
     int save();
 
     /// ions run by each thread since last update
-    const std::vector<uint>& thread_ion_count() const { return thread_ion_count_; }
+    const std::vector<size_t>& thread_ion_count() const { return thread_ion_count_; }
     /// total ions run by all threads
-    uint ion_count() const { return ion_count_; }
+    size_t ion_count() const { return ion_count_; }
 
-    int exec(progress_callback cb = nullptr, uint msInterval = 1000, void* callback_user_data = 0);
-
+    int exec(progress_callback cb = nullptr, size_t msInterval = 1000, void* callback_user_data = 0);
 };
 
 
