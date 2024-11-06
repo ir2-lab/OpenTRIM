@@ -17,7 +17,8 @@
 #include <QProgressBar>
 #include <QMessageBox>
 #include <QCloseEvent>
-
+#include <QGuiApplication>
+#include <QScreen>
 #include <QFile>
 
 #include <sstream>
@@ -88,7 +89,11 @@ IonsUI::IonsUI(QWidget *parent)
     layout->setContentsMargins(0,0,0,0);
 
     setWindowTitle(tr("ions-gui"));
-    setGeometry(0,0, 1024, 768);
+    QPoint x0 = geometry().center();
+    QScreen* scr = QGuiApplication::screenAt(x0);
+    resize(1024, 768);
+    move(scr->geometry().center()-geometry().center());
+    //setGeometry(0,0, 1024, 768);
 
     /* Create pages */
     welcomeView = new WelcomeView(this);

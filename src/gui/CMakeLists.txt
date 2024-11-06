@@ -31,21 +31,21 @@ set(PROJECT_SOURCES
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(ionsui
+    qt_add_executable(ions-gui
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
     )
 else()
-    add_executable(ionsui
+    add_executable(ions-gui
         ${PROJECT_SOURCES}
     )
 endif()
 
-target_include_directories(ionsui PRIVATE
+target_include_directories(ions-gui PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 
-target_link_libraries(ionsui PRIVATE
+target_link_libraries(ions-gui PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qwt::Qwt
     ${IRADINAPP_LIBS}
@@ -58,7 +58,7 @@ target_link_libraries(ionsui PRIVATE
 if(${QT_VERSION} VERSION_LESS 6.1.0)
   set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.ionsui)
 endif()
-set_target_properties(ionsui PROPERTIES
+set_target_properties(ions-gui PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -66,16 +66,16 @@ set_target_properties(ionsui PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-install(TARGETS ionsui
+install(TARGETS ions-gui
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-message(STATUS "Install ionsui at ${CMAKE_INSTALL_BINDIR}")
+message(STATUS "Install ions-gui at ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
 
 if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(ionsui)
+    qt_finalize_executable(ions-gui)
 endif()
 
 

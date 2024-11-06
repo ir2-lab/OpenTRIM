@@ -1,5 +1,7 @@
 .build/
 .vscode/
+.winbuild/
+playground/
 doc/html/*
 CMakeLists.txt.user
 CMakeCache.txt

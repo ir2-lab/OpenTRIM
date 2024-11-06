@@ -7,10 +7,11 @@ The emphasis is on calculation of target damage.
 
 Iradina++ offers the following components:
 
-- A command line program for running simulations 
-- A shared library with all the C++ ion transport code, which can be linked to by external applications
-- A library of C++ classes for screened Coulomb scattering calculations 
-- A shared library containing tables of electronic stopping data
+- A GUI tool to configure, run and evaluate simulations 
+- A command line program for batch operations 
+- A C++ library with all the ion transport code, which can be linked to by external applications
+- A C++ library for screened Coulomb scattering calculations 
+- A C++ library for electronic stopping calculations 
 
 Documentation can be found here: https://ir2-lab.gitlab.io/iradinapp
 
@@ -20,10 +21,15 @@ Documentation can be found here: https://ir2-lab.gitlab.io/iradinapp
 
 On **Linux** the project can be built and installed with `cmake`.
 
-The `Eigen` and `HDF5` libraries are needed for building. Install them with
+The `Eigen` and `HDF5` libraries are needed for building. For the GUI
+component the `Qt` libraries and the `Qwt` plotting library are also needed.
+
+Install them with
 ```bash
 # Ubuntu 22.04 / DEB
 sudo apt install libeigen3-dev libhdf5-dev libhdf5-103-1 
+# for the GUI component add the following
+sudo apt install qtbase5-dev libqwt-qt5-dev libqwt-qt5-6
 
 # RHEL 9 / RPM
 sudo dnf install eigen3-devel.noarch hdf5.x86_64 hdf5-devel.x86_64
@@ -47,7 +53,9 @@ On **Windows** please download the latest binary distribution release provided a
 
 ### Usage
 
-Iradina++ provides a command line program which can be invoked by 
+The GUI application `ions-gui` can be invoked on the command line or by double-clicking the executable. Some simulation examples are included and can be used as templates. 
+
+The command line program which can be invoked by 
 
 ```
 > iradina++ [options] [-f config.json]
@@ -76,6 +84,8 @@ The program first checks and validates the configuration input.
 It then runs the simulation and saves the results into a HDF5 archive.
 
 ## Testing
+
+The GUI app contains some examples that can be used for testing.
 
 Some benchmark tests for comparison to other codes are given in folder `test/`.
 
