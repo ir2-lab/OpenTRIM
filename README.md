@@ -17,6 +17,21 @@ Documentation can be found here: https://ir2-lab.gitlab.io/iradinapp
 
 ## Getting started
 
+### Downloading the source code
+
+To clone the project use
+```
+> git clone --recurse-submodules git@gitlab.com:ir2-lab/iradinapp.git
+```
+The `recurse-submodules` option ensures that the submodule [QMatPlotWidget](https://gitlab.com/qdaq/qmatplotwidget) is also cloned in the process.
+
+Alternatively, you can use the following command to update the submodule anytime:
+```
+git submodule update --init
+``` 
+
+If you download a tarball of the project the submodule is **not** included. You will have to download it separately from https://gitlab.com/qdaq/qmatplotwidget and untar into `src/gui/qmatplotwidget`.
+
 ### Installation
 
 On **Linux** the project can be built and installed with `cmake`.
@@ -53,9 +68,13 @@ On **Windows** please download the latest binary distribution release provided a
 
 ### Usage
 
-The GUI application `ions-gui` can be invoked on the command line or by double-clicking the executable. Some simulation examples are included and can be used as templates. 
+The GUI application can be invoked from the command line 
+```
+> ions-gui
+```
+or by double-clicking the executable. Some simulation examples are included in the program and can be readily used as templates. 
 
-The command line program which can be invoked by 
+The command line program can be invoked by 
 
 ```
 > iradina++ [options] [-f config.json]
