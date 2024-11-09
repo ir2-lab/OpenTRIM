@@ -51,8 +51,25 @@ RunView::RunView(IonsUI *iui, QWidget *parent)
     /* Create & Map widgets to OptionsModel */
 
     OptionsModel* model = ionsui->optionsModel;
-    //mapper = new MyDataWidgetMapper(model,this);
+    mapper = new MyDataWidgetMapper(model,this);
 
+    // main title widget
+    QLabel* simTitleLabel = new QLabel("Simulation title:");
+    {
+        QModelIndex idxOut = model->index("Output",0);
+        QModelIndex idxTitle = model->index("title",0,idxOut);
+        OptionsItem* item = model->getItem(idxTitle);
+        simTitle = (QLineEdit*)item->createEditor(this);
+        simTitle->setReadOnly(true);
+        simTitleLabel->setToolTip(simTitle->toolTip());
+        simTitleLabel->setWhatsThis(simTitle->whatsThis());
+        mapper->addMapping(simTitle,idxTitle,item->editorSignal());
+        simTitleLabel->setStyleSheet("font-size : 14pt; font-weight : bold;");
+        simTitle->setStyleSheet("font-size : 14pt");
+    }
+
+    // These /Driver/xxx items are NOT connected to mapper
+    // because they can be overriden every time we run the sim
     QModelIndex driverOptionsIdx = model->index("Driver");
     QModelIndex idx = model->index("max_no_ions",0,driverOptionsIdx);
     OptionsItem* item = model->getItem(idx);
@@ -162,6 +179,13 @@ RunView::RunView(IonsUI *iui, QWidget *parent)
 
 
     QVBoxLayout* vbox = new QVBoxLayout;
+    {
+        QHBoxLayout* hbox = new QHBoxLayout;
+        hbox->addWidget(simTitleLabel);
+        hbox->addWidget(simTitle);
+        hbox->addStretch();
+        vbox->addLayout(hbox);
+    }
     vbox->addWidget(box1);
     vbox->addWidget(box2);
     vbox->addWidget(box3);
@@ -205,7 +229,7 @@ size_t RunView::updInterval() const
 
 void RunView::revert()
 {
-    //mapper->revert();
+    mapper->revert();
 
     OptionsModel* model = ionsui->optionsModel;
     QModelIndex driverOptionsIdx = model->index("Driver");
@@ -229,8 +253,8 @@ void RunView::start(bool b)
     McDriverObj* D = ionsui->ions_driver;
     McDriverObj::DriverStatus st = D->status();
     if (b == (st == McDriverObj::mcRunning)) return;
-    ionsui->ions_driver->start(b);
-    if (b) {
+    bool ret = D->start(b);
+    if (b && ret) {
         runTimer->start(100);
         box1->setEnabled(false);
         resetButton->setEnabled(false);

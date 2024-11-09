@@ -24,6 +24,7 @@
 #include <QWhatsThis>
 #include <QAction>
 #include <QDataWidgetMapper>
+#include <QLineEdit>
 
 SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
     : QWidget{parent}, ionsui(iui)
@@ -96,6 +97,20 @@ SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
         }
     }
 
+    // main title widget
+    QLabel* simTitleLabel = new QLabel("Simulation title:");
+    {
+        QModelIndex idxOut = model->index("Output",0);
+        QModelIndex idxTitle = model->index("title",0,idxOut);
+        OptionsItem* item = model->getItem(idxTitle);
+        simTitle = (QLineEdit*)item->createEditor(widget);
+        simTitleLabel->setToolTip(simTitle->toolTip());
+        simTitleLabel->setWhatsThis(simTitle->whatsThis());
+        mapper->addMapping(simTitle,idxTitle,item->editorSignal());
+        simTitleLabel->setStyleSheet("font-size : 14pt; font-weight : bold;");
+        simTitle->setStyleSheet("font-size : 14pt");
+    }
+
     materialsView = new MaterialsDefView(model);
     tabWidget->addTab(materialsView,"Materials");
 
@@ -125,6 +140,20 @@ SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
     helpButton->setIcon(whatsThisAction->icon());
     helpButton->setCheckable(whatsThisAction->isCheckable());
 
+    /* Layout config page */
+    QVBoxLayout* vbox = new QVBoxLayout;
+    {
+        QHBoxLayout* hbox = new QHBoxLayout;
+        hbox->addWidget(simTitleLabel);
+        hbox->addWidget(simTitle);
+        hbox->addStretch();
+        vbox->addLayout(hbox);
+    }
+    vbox->addWidget(tabWidget);
+    vbox->addWidget(buttonBox);
+    setLayout(vbox);
+    vbox->setContentsMargins(0,0,0,0);
+
     // connect the button to the slot that forwards the
     // signal to the action
     connect(helpButton, &QPushButton::clicked,
@@ -153,11 +182,7 @@ SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
     connect(model, &OptionsModel::dataChanged,
             this, &SimulationOptionsView::setModified2);
 
-    QVBoxLayout* vlayout = new QVBoxLayout;
-    vlayout->addWidget(tabWidget);
-    vlayout->addWidget(buttonBox);
-    setLayout(vlayout);
-    vlayout->setContentsMargins(0,0,0,0);
+
 
 }
 
@@ -185,12 +210,6 @@ void SimulationOptionsView::revert()
     materialsView->setWidgetData();
     targetView->setWidgetData();
     jsonView->setText(jsonOptions.toJson(QJsonDocument::Indented));
-
-//    dynamic_cast<OptionsModel*>(treeView->model())->setJsonOptions(json);
-//    treeView->expandAll();
-//    treeView->resizeColumnToContents(0);
-//    treeView->resizeColumnToContents(1);
-//    treeView->collapseAll();
 
     applyRules();
     setModified(false);

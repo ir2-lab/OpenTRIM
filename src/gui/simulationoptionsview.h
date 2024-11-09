@@ -9,6 +9,7 @@ class QLabel;
 class QTreeView;
 class QTextBrowser;
 class QTabWidget;
+class QLineEdit;
 
 class MyDataWidgetMapper;
 class MaterialsDefView;
@@ -30,6 +31,7 @@ public:
     QTreeView* treeView;
     QTextBrowser* jsonView;
     QTabWidget* tabWidget;
+    QLineEdit* simTitle;
     MyDataWidgetMapper* mapper;
     MaterialsDefView* materialsView;
     TargetGeometryView* targetView;

@@ -16,11 +16,7 @@ McDriverObj::McDriverObj(IonsUI *iui)
     ionsui_(iui),
     is_running_(false)
 {
-    QFile f(":/examples/1MeV_H_on_Fe.json");
-    f.open( QFile::ReadOnly );
     mcdriver::options opt;
-    std::stringstream is(f.readAll().constData());
-    opt.parseJSON(is);
     std::stringstream os;
     opt.printJSON(os);
     jsonOptions = QJsonDocument::fromJson(os.str().c_str());
@@ -110,7 +106,7 @@ void McDriverObj::loadJson(const QString &path)
     ionsui_->runView->revert();
 }
 
-void McDriverObj::start(bool b)
+bool McDriverObj::start(bool b)
 {
     if (is_running_) {
         if (!b) driver_->abort();
@@ -123,7 +119,7 @@ void McDriverObj::start(bool b)
         size_t updInterval = runView->updInterval();
 
         if (driver_->getSim() == nullptr) {
-            if (!validateOptions(true)) return;
+            if (!validateOptions(true)) return false;
             mcdriver::options opt;
             std::string s(jsonOptions.toJson().constData());
             std::stringstream ss(s, std::ios_base::in);
@@ -152,6 +148,7 @@ void McDriverObj::start(bool b)
 
         emit startSignal();
     }
+    return true;
 }
 
 void McDriverObj::start_()

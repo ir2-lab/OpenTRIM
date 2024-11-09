@@ -15,6 +15,8 @@
 #include <QDir>
 #include <QDialogButtonBox>
 #include <QFile>
+#include <QFileDialog>
+#include <QMessageBox>
 
 WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     : QWidget{parent}, ionsui(iui)
@@ -79,7 +81,7 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
                                                   "Open example");
         buttonBox->addButton(btOpenExample, QDialogButtonBox::AcceptRole);
         connect(btOpenExample, &QPushButton::clicked,
-                this, &WelcomeView::openExample);
+                this, &WelcomeView::onOpenExample);
 
         QVBoxLayout* vbox = new QVBoxLayout;
         vbox->addWidget(exampleList);
@@ -99,6 +101,9 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
             this, &WelcomeView::changeCenterWidget);
     connect(exampleList, &QListWidget::currentItemChanged,
             this, &WelcomeView::exampleSelected);
+
+    connect(btOpen, &QPushButton::clicked,
+            this, &WelcomeView::onOpenJson);
 }
 
 void WelcomeView::changeCenterWidget(int id)
@@ -106,7 +111,7 @@ void WelcomeView::changeCenterWidget(int id)
     stackedWidget->setCurrentIndex(id);
 }
 
-void WelcomeView::openExample()
+void WelcomeView::onOpenExample()
 {
     QListWidgetItem* i = exampleList->currentItem();
     if (!i) return;
@@ -114,7 +119,26 @@ void WelcomeView::openExample()
     if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
         f.close();
         ionsui->ions_driver->loadJson(f.fileName());
+        ionsui->setCurrentPage(IonsUI::idConfigPage);
     }
+}
+
+void WelcomeView::onOpenJson()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,
+                                            tr("Open Image"), QString(),
+                                            tr("Json Files [*.json](*.json);;All Files [*.*](*.*)"));
+    if (fileName.isNull()) return; // cancelled by user
+    QFile f(fileName);
+    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        f.close();
+        ionsui->ions_driver->loadJson(fileName);
+        ionsui->setCurrentPage(IonsUI::idConfigPage);
+    }
+    else QMessageBox::warning(this, "Open Failed",
+                             QString("Could not open file:\n%1").arg(fileName),
+                             QMessageBox::Ok);
+
 }
 
 QPushButton* WelcomeView::createButton(const QString& txt, int w, int h, int ch)

@@ -37,7 +37,7 @@ public:
 
     void loadJson(const QString& path);
 
-    void start(bool b);
+    bool start(bool b);
     void reset();
 
     void init_run_data();

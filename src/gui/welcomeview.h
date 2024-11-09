@@ -32,7 +32,8 @@ signals:
 
 private slots:
     void changeCenterWidget(int id);
-    void openExample();
+    void onOpenExample();
+    void onOpenJson();
 
 private:
     QPushButton* createButton(const QString& txt, int w, int h, int ch = 0);

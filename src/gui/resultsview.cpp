@@ -176,12 +176,25 @@ void ResultsView::updateTableData()
 
     Data.clear();
 
+//    for(int ia=0; ia<natoms; ++ia) {
+//        int n = Nx[axId];
+//        ArrayNDd Y(n);
+//        for(int i=0; i<n; ++i) {
+//            idx[axId] = i;
+//            Y[i] = A(ia, idx_(idx))/Nh;
+//        }
+//        Data.push_back(Y);
+//    }
     for(int ia=0; ia<natoms; ++ia) {
         int n = Nx[axId];
-        ArrayNDd Y(n);
+        ArrayNDd Y(2*n);
+        int j=0;
         for(int i=0; i<n; ++i) {
             idx[axId] = i;
-            Y[i] = A(ia, idx_(idx))/Nh;
+            double y = A(ia, idx_(idx))/Nh;
+            Y[j++] = y;
+            //idx[axId] = i+1;
+            Y[j++] = y;
         }
         Data.push_back(Y);
     }
@@ -267,6 +280,29 @@ void ResultsView::updateDataSelection()
 
 void ResultsView::updatePlot()
 {
+    static const char* xAxisLabel[] = { "x (nm)", "y (nm)", "z (nm)" };
+    static const char* yAxisLabel[] = {
+        "",
+        "count / ion",
+        "count / ion",
+        "count / ion",
+        "count / ion",
+        "count / ion",
+        "eV / ion",
+        "eV / ion",
+        "eV / ion",
+        "eV / ion",
+        "eV / ion",
+        "eV / ion",
+        "eV / ion",
+        "eV / ion",
+        "eV / ion",
+        "count / ion",
+        "count / ion",
+        "nm",
+        "count / ion"
+    };
+
     plotWidget->clear();
 
     int axId = axisButtonGrp->checkedId();
@@ -277,6 +313,10 @@ void ResultsView::updatePlot()
         if (plotFlag[i])
             plotWidget->plot(X[axId],Data[i],QString(),clr);
     }
+
+    plotWidget->setXlabel(xAxisLabel[axId]);
+    plotWidget->setYlabel(yAxisLabel[currentTable_]);
+    plotWidget->setTitle(tally::arrayDescription(currentTable_));
 
 }
 
@@ -292,20 +332,38 @@ void ResultsView::onSimulationCreated()
     int k = 0;
     {
         Nx[k] = grid.x().size()-1;
-        X.push_back(ArrayNDd(Nx[k]));
-        for(int i=0; i<Nx[k]; ++i) X[k][i] = grid.x()[i];
+        //X.push_back(ArrayNDd(Nx[k]));
+        //for(int i=0; i<Nx[k]; ++i) X[k][i] = grid.x()[i];
+        X.push_back(ArrayNDd(2*Nx[k]));
+        int j=0;
+        for(int i=0; i<Nx[k]; ++i) {
+            X[k][j++] = grid.x()[i];
+            X[k][j++] = grid.x()[i+1];
+        }
     }
     k=1;
     {
         Nx[k] = grid.y().size()-1;
-        X.push_back(ArrayNDd(Nx[k]));
-        for(int i=0; i<Nx[k]; ++i) X[k][i] = grid.y()[i];
+        //X.push_back(ArrayNDd(Nx[k]));
+        //for(int i=0; i<Nx[k]; ++i) X[k][i] = grid.y()[i];
+        X.push_back(ArrayNDd(2*Nx[k]));
+        int j=0;
+        for(int i=0; i<Nx[k]; ++i) {
+            X[k][j++] = grid.y()[i];
+            X[k][j++] = grid.y()[i+1];
+        }
     }
     k=2;
     {
         Nx[k] = grid.z().size()-1;
-        X.push_back(ArrayNDd(Nx[k]));
-        for(int i=0; i<Nx[k]; ++i) X[k][i] = grid.z()[i];
+        //X.push_back(ArrayNDd(Nx[k]));
+        //for(int i=0; i<Nx[k]; ++i) X[k][i] = grid.z()[i];
+        X.push_back(ArrayNDd(2*Nx[k]));
+        int j=0;
+        for(int i=0; i<Nx[k]; ++i) {
+            X[k][j++] = grid.x()[i];
+            X[k][j++] = grid.x()[i+1];
+        }
     }
 
     // atom labels

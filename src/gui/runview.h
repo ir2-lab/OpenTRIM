@@ -21,6 +21,7 @@ class RunView : public QWidget
 
 public:
 
+    QLineEdit* simTitle;
     QGroupBox* box1;
     QGroupBox* box2;
     QGroupBox* box3;
