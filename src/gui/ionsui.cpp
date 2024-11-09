@@ -20,13 +20,12 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QFile>
+#include <QButtonGroup>
 
 #include <sstream>
 
 IonsUI::IonsUI(QWidget *parent)
-    : QWidget(parent),
-    _stackedWidget(nullptr),
-    _activeButton(nullptr)
+    : QWidget(parent)
 {
     /* runner thread */
     ions_driver = new McDriverObj(this);
@@ -43,15 +42,30 @@ IonsUI::IonsUI(QWidget *parent)
     styleFile.open( QFile::ReadOnly );
     QString style( styleFile.readAll() );
 
-    /* Create a layout for the sidebar */
+    /* Create the sidebar */
     QWidget * sidebar = new QWidget(this);
     QVBoxLayout * sidebarLayout = new QVBoxLayout();
 
-    _activeButton = createSidebarButton(":/icons/assets/unknown/small-circles-forming-a-circle.svg", tr("Welcome"), 0);
-    sidebarLayout->addWidget(_activeButton);
-    sidebarLayout->addWidget(createSidebarButton(":/icons/assets/unknown/settings.svg", tr("Config"), 1));
-    sidebarLayout->addWidget(createSidebarButton(":/icons/assets/unknown/play.svg", tr("Run"), 2));
-    sidebarLayout->addWidget(createSidebarButton(":/icons/assets/unknown/presentation.svg", tr("Results"), 3));
+    pageButtonGrp = new QButtonGroup(this);
+    QString iconFolder = ":/icons/assets/unknown/";
+    QStringList icons{
+        "small-circles-forming-a-circle.svg",
+        "settings.svg",
+        "play.svg",
+        "presentation.svg"
+    };
+    QStringList titles{
+        "Welcome",
+        "Config",
+        "Run",
+        "Results"
+    };
+    for(int i=0; i<titles.count(); ++i) {
+        pageButtonGrp->addButton(
+            createSidebarButton(iconFolder + icons.at(i),
+                                titles.at(i)),i);
+        sidebarLayout->addWidget(pageButtonGrp->button(i));
+    }
     sidebarLayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
     sidebarLayout->setSpacing(0);
     sidebarLayout->setMargin(0);
@@ -110,8 +124,11 @@ IonsUI::IonsUI(QWidget *parent)
 
     optionsView->revert();
 
-    _activeButton->setChecked(true);
+    pageButtonGrp->button(0)->setChecked(true);
     _stackedWidget->setCurrentIndex(0);
+
+    connect(pageButtonGrp, &QButtonGroup::idClicked,
+            this, &IonsUI::changePage);
 
 }
 
@@ -123,19 +140,9 @@ IonsUI::~IonsUI()
     runnerThread.wait();
 }
 
-void IonsUI::changeCenterWidget(bool event)
+void IonsUI::changePage(int idx)
 {
-    Q_UNUSED(event);
-    QString sender = QObject::sender()->objectName();
-
-    if(_activeButton != nullptr) {
-        _activeButton->setChecked(false);
-    }
-
-    _activeButton = static_cast<QToolButton*>(QObject::sender());
-    _activeButton->setChecked(true);
-
-    _stackedWidget->setCurrentIndex(_activeButton->property("idx").toInt());
+    _stackedWidget->setCurrentIndex(idx);
 }
 
 void IonsUI::closeEvent(QCloseEvent *event)
@@ -178,10 +185,9 @@ void IonsUI::pop()
     // delete currentWidget; currentWidget = nullptr;
 }
 
-QToolButton * IonsUI::createSidebarButton(const QString& iconPath, const QString& title, int idx)
+QToolButton * IonsUI::createSidebarButton(const QString& iconPath, const QString& title)
 {
     QIcon icon(iconPath);
-
     QToolButton * btn = new QToolButton;
     btn->setIcon(icon);
     btn->setIconSize(QSize(42, 42));
@@ -190,12 +196,19 @@ QToolButton * IonsUI::createSidebarButton(const QString& iconPath, const QString
     btn->setFixedSize(76, 76);
     btn->setObjectName(title);
     btn->setCheckable(true);
-    btn->setProperty("idx",idx);
-    QObject::connect(btn, SIGNAL(clicked(bool)),
-                     this, SLOT(changeCenterWidget(bool)));
-
     return btn;
 }
+
+IonsUI::PageId IonsUI::currentPage() const
+{
+    return PageId(pageButtonGrp->checkedId());
+}
+
+void IonsUI::setCurrentPage(PageId id)
+{
+    pageButtonGrp->button((int)id)->click();
+}
+
 
 
 

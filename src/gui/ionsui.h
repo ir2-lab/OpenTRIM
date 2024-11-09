@@ -16,6 +16,7 @@ class QToolButton;
 class QStatusBar;
 class QProgressBar;
 class QLabel;
+class QButtonGroup;
 
 class OptionsModel;
 
@@ -33,6 +34,8 @@ public:
     SimulationOptionsView* optionsView;
     RunView* runView;
     ResultsView* resultsView;
+
+    // status bar
     QProgressBar* progressBar;
     QLabel* statusLabel;
 
@@ -43,19 +46,31 @@ public:
     void push(const QString& title, QWidget * page);
     void pop();
 
+    enum PageId {
+        idWelcomePage = 0,
+        idConfigPage = 1,
+        idRunPage = 2,
+        idResultsPage = 3
+    };
+
+    PageId currentPage() const;
+
 public slots:
-    void changeCenterWidget(bool);
+    void setCurrentPage(PageId id);
+
+private slots:
+    void changePage(int idx);
 
 protected:
     void closeEvent(QCloseEvent *event) override;
 
 
 private:
-    QToolButton * createSidebarButton(const QString& iconPath, const QString& title, int idx);
+    QToolButton * createSidebarButton(const QString& iconPath, const QString& title);
     QStackedWidget * _stackedWidget;
-    QToolButton * _activeButton;
     QStatusBar * statusBar;
     QThread runnerThread;
+    QButtonGroup* pageButtonGrp;
 };
 
 
