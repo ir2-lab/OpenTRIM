@@ -283,15 +283,6 @@ QVariant MaterialCompositionModel::headerData(int c,
         return col_labels_[c];
     if (role == Qt::DisplayRole && o == Qt::Vertical)
         return c+1;
-    if (role == Qt::SizeHintRole && o == Qt::Horizontal) {
-        QTableView tv;
-        QFontMetrics fm = tv.fontMetrics();
-        QSize sz = fm.boundingRect('O').size();
-        const int W[] = {2, 8, 6, 6, 6, 6, 6};
-        sz.rwidth() = sz.width()*W[c];
-        sz.rheight() = fm.lineSpacing()+8;
-        return sz;
-    }
     return QVariant();
 }
 
@@ -422,10 +413,10 @@ MaterialCompositionView::MaterialCompositionView(OptionsModel *m, QObject *paren
     view->setModel(model_);
     view->setItemDelegate(delegate_);
     QFontMetrics fm = view->fontMetrics();
-    QSize sz = fm.boundingRect('O').size();
+    int sz = fm.averageCharWidth();
     const int W[] = {2, 8, 6, 6, 6, 6, 6};
     for(int col=0; col<7; ++col)
-        view->setColumnWidth(col, sz.width()*W[col]);
+        view->setColumnWidth(col, sz*W[col]);
 
     selectionModel = view->selectionModel();
     connect(selectionModel, &QItemSelectionModel::selectionChanged,

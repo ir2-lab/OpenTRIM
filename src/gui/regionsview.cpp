@@ -1,4 +1,4 @@
-#include "targetgeometryview.h"
+#include "regionsview.h"
 #include "floatlineedit.h"
 #include "optionsmodel.h"
 #include "mydatawidgetmapper.h"
@@ -23,50 +23,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
-TargetGeometryView::TargetGeometryView(IonsUI *iui, QWidget *parent)
-    : QWidget{parent}, ionsui(iui)
-{
 
-    OptionsModel* model_ = ionsui->optionsModel;
-
-    targetIndex_ = model_->index("Target",1);
-
-    mapper = new MyDataWidgetMapper(model_,this);
-    QModelIndex idx = model_->index("Target",0);
-    assert(idx.isValid());
-    QWidget* widget = new QWidget;
-    QFormLayout* flayout = new QFormLayout;
-    for(int j=0; j<3; ++j) {
-        QModelIndex idx2 = model_->index(j,0,idx);
-        OptionsItem* item = model_->getItem(idx2);
-        QWidget* w = item->createEditor(widget);
-        QLabel* lbl = new QLabel(item->name(),widget);
-        lbl->setToolTip(w->toolTip());
-        lbl->setWhatsThis(w->whatsThis());
-        mapper->addMapping(w,idx2,item->editorSignal());
-        flayout->addRow(lbl,w);
-    }
-
-    QHBoxLayout* hbox = new QHBoxLayout;
-    hbox->addLayout(flayout);
-    hbox->addStretch();
-
-    QVBoxLayout* vbox = new QVBoxLayout;
-    vbox->addLayout(hbox);
-    vbox->addSpacing(20);
-    regionsView = new RegionsView(model_);
-    vbox->addWidget(regionsView);
-    setLayout(vbox);
-}
-
-
-void TargetGeometryView::setWidgetData()
-{
-    mapper->revert();
-    regionsView->revert();
-}
-
-/*****************************************************/
 RegionsModel::RegionsModel(OptionsModel *m, QObject *parent)
     : QAbstractTableModel(parent), model_(m)
 {
@@ -128,15 +85,6 @@ QVariant RegionsModel::headerData(int c,
         return col_labels_[c];
     if (role == Qt::DisplayRole && o == Qt::Vertical)
         return c+1;
-    if (role == Qt::SizeHintRole && o == Qt::Horizontal) {
-        QTableView tv;
-        QFontMetrics fm = tv.fontMetrics();
-        QSize sz = fm.boundingRect('O').size();
-        const int W[] = {20, 20, 20, 20};
-        sz.rwidth() = sz.width()*W[c];
-        sz.rheight() = fm.lineSpacing()+8;
-        return sz;
-    }
     return QVariant();
 }
 
@@ -241,22 +189,14 @@ bool RegionsModel::moveRow(int from, int to)
     model_->setData(regionsIndex_,regions);
     endInsertRows();
 
-//    if (to < from) insertRows(to, 1);
-
-//    QJsonValue r = regions[to];
-//    regions[to] = regions[from];
-//    regions[from] = r;
-
-//    QModelIndex parent = regionsIndex_.parent();
-//    beginMoveRows(parent,from,from,parent,to);
-//    model_->setData(regionsIndex_,regions);
-//    endMoveRows();
-
     return true;
 }
 
-//bool RegionsModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
-//              const QModelIndex &destinationParent, int destinationChild) override;
+void RegionsModel::resetModel()
+{
+    beginResetModel();
+    endResetModel();
+}
 
 /*********************************************************/
 RegionDelegate::RegionDelegate(QObject *parent)
@@ -410,18 +350,17 @@ RegionsView::RegionsView(OptionsModel *m, QObject *parent) :
     tableView->setModel(model_);
     tableView->setItemDelegate(delegate_);
     QFontMetrics fm = tableView->fontMetrics();
-    QSize sz = fm.boundingRect('O').size();
-    //const int W[] = {20,20,20,20};
-    int W = 10;
+    int char_w = fm.averageCharWidth();
+    const int field_w[] = {10,10,20,20};
     for(int col=0; col<4; ++col)
-        tableView->setColumnWidth(col, sz.width()*W);
+        tableView->setColumnWidth(col, char_w*field_w[col]);
 
     selectionModel = tableView->selectionModel();
     connect(selectionModel, &QItemSelectionModel::selectionChanged,
             this, &RegionsView::onSelectionChanged);
 
     QHBoxLayout* hbox = new QHBoxLayout;
-    hbox->addWidget(new QLabel("Regions "));
+    // hbox->addWidget(new QLabel("Regions "));
     QGridLayout* grid = new QGridLayout;
     grid->setSizeConstraint(QLayout::SetFixedSize);
     grid->addWidget(btAdd,0,0);
@@ -431,11 +370,11 @@ RegionsView::RegionsView(OptionsModel *m, QObject *parent) :
     hbox->addLayout(grid);
     hbox->addStretch();
 
-    QSize fsz(24,24);
-    btAdd->setFixedSize(fsz);
-    btRemove->setFixedSize(fsz);
-    btUp->setFixedSize(fsz);
-    btDown->setFixedSize(fsz);
+//    QSize fsz(24,24);
+//    btAdd->setFixedSize(fsz);
+//    btRemove->setFixedSize(fsz);
+//    btUp->setFixedSize(fsz);
+//    btDown->setFixedSize(fsz);
 
     QVBoxLayout* vbox = new QVBoxLayout;
     vbox->addLayout(hbox);
@@ -447,8 +386,10 @@ RegionsView::RegionsView(OptionsModel *m, QObject *parent) :
 
 void RegionsView::revert()
 {
-    tableView->setModel(0);
-    tableView->setModel(model_);
+    //tableView->setModel(0);
+    //tableView->setModel(model_);
+    //tableView->update(QModelIndex());
+    model_->resetModel();
     disconnect(selectionModel, &QItemSelectionModel::selectionChanged,
             this, &RegionsView::onSelectionChanged);
     selectionModel = tableView->selectionModel();
@@ -498,13 +439,19 @@ void RegionsView::moveRegionDown()
 
 void RegionsView::onSelectionChanged(const QItemSelection &selected, const QItemSelection &)
 {
+    bool st[3] = {false, false, false};
+
     int i=0, n = model_->rowCount();
     for(int i=0; i<n; ++i) {
         if (selectionModel->isRowSelected(i)) {
-            btRemove->setEnabled(true);
-            btUp->setEnabled(i>0);
-            btDown->setEnabled(i<n-1);
-            return;
+            st[0] = true;
+            st[1] = i>0;
+            st[2] = i<n-1;
+            break;
         }
     }
+
+    btRemove->setEnabled(st[0]);
+    btUp->setEnabled(st[1]);
+    btDown->setEnabled(st[2]);
 }

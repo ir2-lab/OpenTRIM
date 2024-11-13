@@ -2,7 +2,7 @@
 #include "periodictable.h"
 #include "periodictablewidget.h"
 #include "materialsdefview.h"
-#include "targetgeometryview.h"
+#include "regionsview.h"
 #include "optionsmodel.h"
 #include "mydatawidgetmapper.h"
 #include "ionsui.h"
@@ -39,24 +39,25 @@ SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
     OptionsModel* model = ionsui->optionsModel;
     mapper = new MyDataWidgetMapper(model,this);
 
-//    treeView = new QTreeView;
-//    treeView->setModel(model);
-//    treeView->setItemDelegate(new OptionsItemDelegate(this));
-//    treeView->setAlternatingRowColors(true);
-//    treeView->setEditTriggers(QAbstractItemView::AllEditTriggers);
-//    tabWidget->addTab(treeView,"Tree");
+    QStringList categories, categoryNames;
+    categories << "Simulation"
+               << "Transport"
+               << "IonBeam"
+               << "Target"
+               << "Output";
 
-    QStringList categories;
-    categories << "General"
+    categoryNames << "General"
                << "Ion Transport"
                << "Ion Source"
+               << "Target"
                << "Output";
 
     for(int i=0; i<categories.count(); ++i)
     {
         QString category = categories.at(i);
+        QString categoryName = categoryNames.at(i);
 
-        QModelIndex idx1 = model->index(i,0);
+        QModelIndex idx1 = model->index(category);
         assert(idx1.isValid());
         widget = new QWidget;
         flayout = new QFormLayout;
@@ -64,21 +65,16 @@ SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
             QModelIndex idx2 = model->index(j,0,idx1);
             OptionsItem* item = model->getItem(idx2);
             QWidget* w = item->createEditor(widget);
-            QLabel* lbl = new QLabel(item->name(),widget);
-            lbl->setToolTip(w->toolTip());
-            lbl->setWhatsThis(w->whatsThis());
-            mapper->addMapping(w,idx2,item->editorSignal());
-            flayout->addRow(lbl,w);
+            if (w) {
+                QLabel* lbl = new QLabel(item->name(),widget);
+                lbl->setToolTip(w->toolTip());
+                lbl->setWhatsThis(w->whatsThis());
+                mapper->addMapping(w,idx2,item->editorSignal());
+                flayout->addRow(lbl,w);
+            }
         }
-        QHBoxLayout* hbox = new QHBoxLayout;
-        hbox->addLayout(flayout);
-        hbox->addStretch();
-        widget->setLayout(hbox);
 
-
-        tabWidget->addTab(widget,category);
-
-        if (category == "Ion Source") {
+        if (category == "IonBeam") {
             QWidget* w = mapper->findWidget("ionZ");
             int row;
             QFormLayout::ItemRole role;
@@ -95,7 +91,45 @@ SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
             flayout->insertRow(row,(QWidget*)button,ionLabel);
             connect(button,&QPushButton::clicked,
                     this, &SimulationOptionsView::selectIonZ);
+
+            QHBoxLayout* hbox = new QHBoxLayout;
+            hbox->addLayout(flayout);
+            hbox->addStretch();
+            widget->setLayout(hbox);
         }
+        else if (category == "Target") {
+
+            QTabWidget* innerTab = new QTabWidget;
+
+            materialsView = new MaterialsDefView(model);
+            innerTab->addTab(materialsView,"Materials");
+
+            regionsView = new RegionsView(model);
+            innerTab->addTab(regionsView,"Regions");
+
+            //targetView = new TargetGeometryView(ionsui);
+            //innerTab->addTab(targetView,"Regions");
+
+            QHBoxLayout* hbox = new QHBoxLayout;
+            hbox->addLayout(flayout);
+            hbox->addStretch();
+
+            QVBoxLayout* vbox = new QVBoxLayout;
+            vbox->addLayout(hbox);
+            vbox->addSpacing(20);
+            vbox->addWidget(innerTab);
+            widget->setLayout(vbox);
+
+        } else {
+            QHBoxLayout* hbox = new QHBoxLayout;
+            hbox->addLayout(flayout);
+            hbox->addStretch();
+            widget->setLayout(hbox);
+
+        }
+
+        tabWidget->addTab(widget,categoryName);
+
     }
 
     // main title widget
@@ -112,11 +146,7 @@ SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
         simTitle->setStyleSheet("font-size : 14pt");
     }
 
-    materialsView = new MaterialsDefView(model);
-    tabWidget->addTab(materialsView,"Materials");
 
-    targetView = new TargetGeometryView(ionsui);
-    tabWidget->addTab(targetView,"Geometry");
 
     jsonView = new JSEdit;
     jsonView->setReadOnly(true);
@@ -219,7 +249,8 @@ void SimulationOptionsView::revert()
     mapper->revert();
     ionsui->runView->revert();
     materialsView->setWidgetData();
-    targetView->setWidgetData();
+    //treeView->setWidgetData();
+    regionsView->revert();
     jsonView->setPlainText(jsonOptions.toJson(QJsonDocument::Indented));
 
     applyRules();

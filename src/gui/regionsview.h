@@ -1,5 +1,5 @@
-#ifndef TARGETGEOMETRYVIEW_H
-#define TARGETGEOMETRYVIEW_H
+#ifndef REGIONSVIEW_H
+#define REGIONSVIEW_H
 
 #include <QWidget>
 #include <QStyledItemDelegate>
@@ -15,24 +15,6 @@ class OptionsModel;
 class MyDataWidgetMapper;
 class RegionsView;
 class IonsUI;
-
-class TargetGeometryView : public QWidget
-{
-    Q_OBJECT
-
-    RegionsView* regionsView;
-    MyDataWidgetMapper* mapper;
-    IonsUI* ionsui;
-    QPersistentModelIndex targetIndex_;
-
-public:
-    TargetGeometryView(IonsUI* iui, QWidget *parent = nullptr);
-
-signals:
-
-public slots:
-    void setWidgetData();
-};
 
 class RegionsModel : public QAbstractTableModel
 {
@@ -56,6 +38,8 @@ public:
     bool removeRows(int position, int rows,
                     const QModelIndex &parent = QModelIndex()) override;
     bool moveRow(int from, int to);
+
+    void resetModel();
 
 //    bool moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
 //                  const QModelIndex &destinationParent, int destinationChild) override;
@@ -113,4 +97,4 @@ public slots:
     void onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
 };
 
-#endif // TARGETGEOMETRYVIEW_H
+#endif // REGIONSVIEW_H

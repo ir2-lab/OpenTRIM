@@ -13,7 +13,8 @@ class QLineEdit;
 
 class MyDataWidgetMapper;
 class MaterialsDefView;
-class TargetGeometryView;
+//class TargetGeometryView;
+class RegionsView;
 class OptionsModel;
 class IonsUI;
 
@@ -34,7 +35,8 @@ public:
     QLineEdit* simTitle;
     MyDataWidgetMapper* mapper;
     MaterialsDefView* materialsView;
-    TargetGeometryView* targetView;
+    //TargetGeometryView* targetView;
+    RegionsView* regionsView;
 
     SimulationOptionsView(IonsUI *iui, QWidget *parent = nullptr);
 

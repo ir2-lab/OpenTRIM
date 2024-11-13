@@ -22,7 +22,7 @@ set(PROJECT_SOURCES
         optionsmodel.h optionsmodel.cpp
         floatlineedit.h floatlineedit.cpp
         mydatawidgetmapper.h mydatawidgetmapper.cpp
-        targetgeometryview.h targetgeometryview.cpp
+        regionsview.h regionsview.cpp
         welcomeview.h welcomeview.cpp
         runview.h runview.cpp
         mcdriverobj.h mcdriverobj.cpp

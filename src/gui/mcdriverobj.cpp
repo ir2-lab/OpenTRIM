@@ -96,7 +96,6 @@ void McDriverObj::loadJson(const QString &path)
         // open file and read config, no checks!
         QFile f(path);
         f.open( QFile::ReadOnly );
-        mcdriver::options opt;
         std::stringstream is(f.readAll().constData());
         bool validate = false;
         opt.parseJSON(is,validate);
