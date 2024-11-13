@@ -87,21 +87,25 @@ McDriverObj::DriverStatus McDriverObj::status() const
 
 void McDriverObj::loadJson(const QString &path)
 {
-    int ret = QMessageBox::warning(ionsui_,"Load JSON config",
-                         QString("Discard current simulation and load\n%1").arg(path),
-                         QMessageBox::Ok | QMessageBox::Cancel);
-    if (ret != QMessageBox::Ok) return;
-
     reset();
 
-    QFile f(path);
-    f.open( QFile::ReadOnly );
     mcdriver::options opt;
-    std::stringstream is(f.readAll().constData());
-    opt.parseJSON(is);
+
+    if (!path.isNull()) {
+        // path should point to a valid config file
+        // open file and read config, no checks!
+        QFile f(path);
+        f.open( QFile::ReadOnly );
+        mcdriver::options opt;
+        std::stringstream is(f.readAll().constData());
+        bool validate = false;
+        opt.parseJSON(is,validate);
+    }
+
     std::stringstream os;
     opt.printJSON(os);
     jsonOptions = QJsonDocument::fromJson(os.str().c_str());
+
     ionsui_->optionsView->revert();
     ionsui_->runView->revert();
 }

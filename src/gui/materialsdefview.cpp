@@ -123,7 +123,7 @@ void MaterialsDefView::editMaterialName()
         QJsonArray materials = model_->data(targetIndex_, Qt::EditRole).toJsonArray();
         QJsonObject m = materials.at(i).toObject();
         m["id"] = id;
-        materials.at(i) = m;
+        materials.replace(i,m);
         model_->setData(targetIndex_, materials);
     }
     setValueData(); // update material name

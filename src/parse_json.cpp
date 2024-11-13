@@ -48,22 +48,28 @@ struct adl_serializer< Eigen::AlignedVector3<T> > {
 void to_json(ojson& j, const mcdriver::options& p);
 void from_json(const ojson& j, mcdriver::options& p);
 
-int mcdriver::options::parseJSON(std::istream& js, bool doValidation)
+int mcdriver::options::parseJSON(std::istream& js, bool doValidation, std::ostream* os)
 {
-    try {
+    if (os) {
+        try {
+            ojson j = ojson::parse(js,nullptr,true,true);
+            *this = j.template get<mcdriver::options>();
+            if (doValidation) validate();
+        }
+        catch (const ojson::exception& e) {
+            *os << "Error reading json input:" << endl;
+            *os << e.what() << std::endl;
+            return -1;
+        }
+        catch (const std::invalid_argument& e) {
+            *os << "Invalid option:" << endl;
+            *os << e.what() << endl;
+            return -1;
+        }
+    } else {
         ojson j = ojson::parse(js,nullptr,true,true);
         *this = j.template get<mcdriver::options>();
         if (doValidation) validate();
-    }
-    catch (const ojson::exception& e) {
-        cerr << "Error reading json input:" << endl;
-        cerr << e.what() << std::endl;
-        return -1;
-    }
-    catch (const std::invalid_argument& e) {
-        cerr << "Invalid option:" << endl;
-        cerr << e.what() << endl;
-        return -1;
     }
     return 0;
 }

@@ -35,7 +35,7 @@ public:
 
     DriverStatus status() const;
 
-    void loadJson(const QString& path);
+    void loadJson(const QString& path = QString());
 
     bool start(bool b);
     void reset();

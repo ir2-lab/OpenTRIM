@@ -1,6 +1,7 @@
 #include "welcomeview.h"
 
 #include "ionsui.h"
+#include "mcdriver.h"
 
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -17,6 +18,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QJsonDocument>
 
 WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     : QWidget{parent}, ionsui(iui)
@@ -104,6 +106,8 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
 
     connect(btOpen, &QPushButton::clicked,
             this, &WelcomeView::onOpenJson);
+    connect(btNew, &QPushButton::clicked,
+            this, &WelcomeView::onNew);
 }
 
 void WelcomeView::changeCenterWidget(int id)
@@ -126,19 +130,76 @@ void WelcomeView::onOpenExample()
 void WelcomeView::onOpenJson()
 {
     QString fileName = QFileDialog::getOpenFileName(this,
-                                            tr("Open Image"), QString(),
+                                            tr("Open JSON configuration"), QString(),
                                             tr("Json Files [*.json](*.json);;All Files [*.*](*.*)"));
+
     if (fileName.isNull()) return; // cancelled by user
+
+    // Check the selected file
     QFile f(fileName);
-    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        f.close();
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "Open JSON",
+                             QString("Could not open file:\n%1").arg(fileName),
+                             QMessageBox::Ok);
+        return;
+    }
+
+    QByteArray json = f.readAll();
+
+    // 1. Is it valid json ??
+    QJsonParseError err;
+    QJsonDocument jdoc(QJsonDocument::fromJson(json,&err));
+    if (err.error)  {
+        QMessageBox::warning(this, "Open JSON",
+                             QString("Error parsing JSON file:\n%1\n%2 at offset %3")
+                                 .arg(fileName)
+                                 .arg(err.errorString())
+                                 .arg(err.offset),
+                             QMessageBox::Ok);
+        return;
+    }
+
+    // 2. Is it a valid IONS config ??
+    mcdriver::options opt;
+    std::istringstream is(json.constData());
+    std::ostringstream os;
+    if (opt.parseJSON(is,false,&os)!=0) {
+        QMessageBox::warning(this, "Open JSON",
+                             QString("Error parsing JSON file:\n%1\n%2")
+                                 .arg(fileName)
+                                 .arg(os.str().c_str()),
+                             QMessageBox::Ok);
+        return;
+    }
+
+    McDriverObj::DriverStatus st = ionsui->ions_driver->status();
+    QString msg = st == McDriverObj::mcRunning ?
+                      "Stop the running simulation, discard data & load new configuration?" :
+                      "Discard simulation data & load new configuration?";
+    int ret = QMessageBox::question(this,
+                                   "Open JSON",msg,
+                                   QMessageBox::Ok | QMessageBox::Cancel);
+
+    if (ret == QMessageBox::Ok) {
         ionsui->ions_driver->loadJson(fileName);
         ionsui->setCurrentPage(IonsUI::idConfigPage);
     }
-    else QMessageBox::warning(this, "Open Failed",
-                             QString("Could not open file:\n%1").arg(fileName),
-                             QMessageBox::Ok);
+}
 
+void WelcomeView::onNew()
+{
+    McDriverObj::DriverStatus st = ionsui->ions_driver->status();
+    QString msg = st == McDriverObj::mcRunning ?
+                      "Stop the running simulation, discard data & load new configuration?" :
+                      "Discard simulation data & load default configuration?";
+    int ret = QMessageBox::question(this,
+                                    "New simulation",msg,
+                                    QMessageBox::Ok | QMessageBox::Cancel);
+
+    if (ret == QMessageBox::Ok) {
+        ionsui->ions_driver->loadJson();
+        ionsui->setCurrentPage(IonsUI::idConfigPage);
+    }
 }
 
 QPushButton* WelcomeView::createButton(const QString& txt, int w, int h, int ch)

@@ -34,6 +34,7 @@ private slots:
     void changeCenterWidget(int id);
     void onOpenExample();
     void onOpenJson();
+    void onNew();
 
 private:
     QPushButton* createButton(const QString& txt, int w, int h, int ch = 0);

@@ -117,7 +117,7 @@ public:
          * @param doValidation if true the function calls validate()
          * @return 0 if succesfull, negative value otherwise
          */
-        int parseJSON(std::istream& js, bool doValidation = true);
+        int parseJSON(std::istream& js, bool doValidation = true, std::ostream *os = nullptr);
 
         /// Pretty print the options as a JSON string
         void printJSON(std::ostream& os) const;
