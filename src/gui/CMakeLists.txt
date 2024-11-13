@@ -28,6 +28,7 @@ set(PROJECT_SOURCES
         mcdriverobj.h mcdriverobj.cpp
         resultsview.h resultsview.cpp
         qmatplotwidget/src/QMatPlotWidget.h qmatplotwidget/src/QMatPlotWidget.cpp
+        jsedit/jsedit.h jsedit/jsedit.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

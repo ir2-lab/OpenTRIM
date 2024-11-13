@@ -6,7 +6,7 @@
 class QPushButton;
 class QStackedWidget;
 class QListWidget;
-class QTextBrowser;
+class JSEdit;
 class QButtonGroup;
 
 class IonsUI;
@@ -44,7 +44,7 @@ private:
     IonsUI* ionsui;
     QStackedWidget * stackedWidget;
     QListWidget * exampleList;
-    QTextBrowser* jsonView;
+    JSEdit* jsonView;
     QButtonGroup* buttonGrp;
 };
 

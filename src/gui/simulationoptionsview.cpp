@@ -17,7 +17,6 @@
 #include <QLabel>
 #include <QTabWidget>
 #include <QTreeView>
-#include <QTextBrowser>
 #include <QDialogButtonBox>
 #include <QPushButton>
 #include <QSpinBox>
@@ -25,6 +24,8 @@
 #include <QAction>
 #include <QDataWidgetMapper>
 #include <QLineEdit>
+
+#include "jsedit/jsedit.h"
 
 SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
     : QWidget{parent}, ionsui(iui)
@@ -117,7 +118,17 @@ SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
     targetView = new TargetGeometryView(ionsui);
     tabWidget->addTab(targetView,"Geometry");
 
-    jsonView = new QTextBrowser;
+    jsonView = new JSEdit;
+    jsonView->setReadOnly(true);
+    const char* hlpmsg_json[] = {
+        "Read-only view of current JSON configuration",
+        "It is updated after clicking the Apply button"
+    };
+    jsonView->setToolTip(hlpmsg_json[0]);
+    jsonView->setWhatsThis(QString("%1\n\n%2")
+                               .arg(hlpmsg_json[0])
+                               .arg(hlpmsg_json[1])
+                           );
     tabWidget->addTab(jsonView, "JSON");
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(
@@ -190,7 +201,7 @@ void SimulationOptionsView::submit()
 {
     QJsonDocument& jsonOptions = ionsui->ions_driver->jsonOptions;
     jsonOptions = mapper->model()->jsonOptions();
-    jsonView->setText(jsonOptions.toJson(QJsonDocument::Indented));
+    jsonView->setPlainText(jsonOptions.toJson(QJsonDocument::Indented));
     setModified(false);
     emit optionsChanged();
 }
@@ -209,7 +220,7 @@ void SimulationOptionsView::revert()
     ionsui->runView->revert();
     materialsView->setWidgetData();
     targetView->setWidgetData();
-    jsonView->setText(jsonOptions.toJson(QJsonDocument::Indented));
+    jsonView->setPlainText(jsonOptions.toJson(QJsonDocument::Indented));
 
     applyRules();
     setModified(false);

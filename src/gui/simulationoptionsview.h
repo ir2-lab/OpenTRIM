@@ -7,7 +7,7 @@
 class QPushButton;
 class QLabel;
 class QTreeView;
-class QTextBrowser;
+class JSEdit;
 class QTabWidget;
 class QLineEdit;
 
@@ -29,7 +29,7 @@ public:
     QPushButton* helpButton;
     QLabel* ionLabel;
     QTreeView* treeView;
-    QTextBrowser* jsonView;
+    JSEdit* jsonView;
     QTabWidget* tabWidget;
     QLineEdit* simTitle;
     MyDataWidgetMapper* mapper;

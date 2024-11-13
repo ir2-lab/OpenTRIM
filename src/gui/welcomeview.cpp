@@ -10,7 +10,6 @@
 #include <QFontMetrics>
 #include <QListWidget>
 #include <QListWidgetItem>
-#include <QTextBrowser>
 #include <QStackedWidget>
 #include <QLabel>
 #include <QDir>
@@ -19,6 +18,8 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QJsonDocument>
+
+#include "jsedit/jsedit.h"
 
 WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     : QWidget{parent}, ionsui(iui)
@@ -76,7 +77,8 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
                 ex,
                 exampleList);
         }
-        jsonView = new QTextBrowser;
+        jsonView = new JSEdit;
+        jsonView->setReadOnly(true);
 
         QDialogButtonBox* buttonBox = new QDialogButtonBox(Qt::Horizontal);
         QPushButton* btOpenExample = new QPushButton(QIcon(":/icons/assets/ionicons/checkmark-done-outline.svg"),
@@ -232,5 +234,5 @@ void WelcomeView::exampleSelected()
     QListWidgetItem* i = exampleList->currentItem();
     QFile f(QString(":/examples/%1").arg(i->text()));
     if (f.open(QIODevice::ReadOnly | QIODevice::Text))
-        jsonView->setText(f.readAll());
+        jsonView->setPlainText(f.readAll());
 }
