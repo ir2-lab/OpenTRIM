@@ -155,7 +155,7 @@ public:
     virtual void setEditorData(QWidget *editor, const QVariant& v) const override;
     virtual QVariant getEditorData(QWidget *editor) override;
     virtual const char* editorSignal() const override
-    { return "textChanged(QString)"; }
+    { return "editingFinished()"; }
 };
 
 class Vector3dOptionsItem : public FloatOptionsItem
