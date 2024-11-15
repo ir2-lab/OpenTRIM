@@ -92,10 +92,10 @@ public:
      * free flight path \f$\ell\f$ between collisions.
      */
     enum flight_path_type_t {
-        AtomicSpacing = 1,  /**< Constant, equal to interatomic distance */
-        Constant = 2,       /**< Constant, equal to user supplied value */
-        MendenhallWeller = 3, /**< Algorithm from Mendenhall-Weller NIMB2005*/
-        IPP = 4,            /**< IPP algorithm */
+        AtomicSpacing = 0,  /**< Constant, equal to interatomic distance */
+        Constant = 1,       /**< Constant, equal to user supplied value */
+        MendenhallWeller = 2, /**< Algorithm from Mendenhall-Weller NIMB2005*/
+        IPP = 3,            /**< IPP algorithm */
         InvalidPath = -1
     };
 
@@ -141,7 +141,7 @@ public:
         /// Scattering at shorter distances than interatomic distance
         bool allow_sub_ml_scattering{false};
         /// Max mfp
-        float max_mfp{std::numeric_limits<float>::max()};
+        float max_mfp{1.0e30f};
         /// Max dE/E per mfp, dE = dEdx*mfp
         float max_rel_eloss{0.05f};
     };

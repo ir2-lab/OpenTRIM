@@ -363,6 +363,16 @@ protected:
 
     friend class material;
 
+    /**
+     * @brief Fills a rectangular volume with a specific material
+     *
+     * This creates also a \ref target::region.
+     *
+     * @param box the rectangular volume
+     * @param m a pointer to the material filling the volume
+     */
+    void fill(const box3D& box, const material* m);
+
 public:
     /// Default constructor creates an empty target
     target();
@@ -399,20 +409,14 @@ public:
     /// Add a material with given name and return a pointer to the \ref material class
     material* addMaterial(const char* name);
 
+    /// Add a material from a material descriptor \ref material::material_desc_t
+    material* addMaterial(const material::material_desc_t& md);
+
     /// Return vector of atom labels, e.g. Fe in Fe2O3
     std::vector<std::string> atom_labels() const;
 
-    /**
-     * @brief Fills a rectangular volume with a specific material
-     *
-     * This creates also a \ref target::region.
-     *
-     * @param box the rectangular volume
-     * @param m a pointer to the material filling the volume
-     */
-    void fill(const box3D& box, const material* m);
-
-
+    /// Add a rectangular \ref target::region filled with a specific material
+    void addRegion(const region& r);
 
     /**
      * @brief Perform necessary initialization of all target objects.

@@ -119,8 +119,11 @@ public:
          */
         int parseJSON(std::istream& js, bool doValidation = true, std::ostream *os = nullptr);
 
-        /// Pretty print the options as a JSON string
+        /// Pretty print JSON formattet options to a stream
         void printJSON(std::ostream& os) const;
+
+        /// Return options as a JSON string
+        std::string toJSON() const;
 
         /**
          * @brief Validate the simulation options

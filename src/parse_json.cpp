@@ -129,10 +129,10 @@ NLOHMANN_JSON_SERIALIZE_ENUM(mccore::flight_path_type_t, {
                                 {mccore::Constant, "Constant"},
                                 {mccore::MendenhallWeller, "MendenhallWeller"},
                                 {mccore::IPP, "IPP"},
-                                {mccore::AtomicSpacing, 1},
-                                {mccore::Constant, 2},
-                                {mccore::MendenhallWeller, 3},
-                                {mccore::IPP, 4}
+                                {mccore::AtomicSpacing, 0},
+                                {mccore::Constant, 1},
+                                {mccore::MendenhallWeller, 2},
+                                {mccore::IPP, 3}
                             })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(mccore::scattering_calculation_t,
@@ -249,5 +249,12 @@ void mcdriver::options::printJSON(std::ostream& os) const
 {
     ojson j(*this);
     os << j.dump(4) << endl;
+}
+
+std::string mcdriver::options::toJSON() const
+{
+    std::ostringstream os;
+    printJSON(os);
+    return os.str();
 }
 

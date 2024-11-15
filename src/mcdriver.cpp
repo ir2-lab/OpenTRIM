@@ -72,6 +72,7 @@ void mcdriver::setOptions(const options& o)
 int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_data)
 {
     using namespace std::chrono_literals;
+    static const size_t msTick = 100;
 
     int nthreads = par_.threads;
     if (nthreads < 1) nthreads = 1;
@@ -127,6 +128,8 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // report progress if callback function is given
     if (cb) {
         thread_ion_count_.assign(nthreads,0);
+        size_t iTick, nTick = std::max(msInterval / msTick, 1UL);
+
         do  {
 
             for(int i=0; i<nthreads; i++)
@@ -142,7 +145,11 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
             cb(*this,callback_user_data);
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(msInterval));
+            iTick = 0;
+            while (iTick < nTick && !(s_->abort_flag())) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(msTick));
+                iTick++;
+            }
 
         } while(s_->ion_count() < par_.max_no_ions && !(s_->abort_flag()));
     }
@@ -229,11 +236,11 @@ int mcdriver::options::validate()
 
     if (std::any_of(fname.begin(),
                     fname.end(),
-                    [](unsigned char c){ return !std::isalnum(c); }))
+                    [](unsigned char c){ return !(std::isalnum(c) || c=='_'); }))
     {
         std::string msg = "Output.OutputFileBaseName=\"";
         msg += fname;
-        msg += "\" contains non alphanumeric characters.";
+        msg += "\" contains invalid characters. Valid chars=[0-9a-zA-Z_].";
         throw std::invalid_argument(msg);
     }
 
@@ -362,23 +369,10 @@ int mcdriver::options::validate()
 mccore* mcdriver::options::createSimulation() const
 {
     mccore* S = new mccore(Simulation, Transport);
-    //S->setOutputOptions(Output);
+
     S->getSource().setParameters(IonBeam);
 
     target& T = S->getTarget();
-
-    std::unordered_map<std::string, material*> materials_map;
-
-    for(auto md : Target.materials) {
-        material* m = T.addMaterial(md.id.c_str());
-        materials_map[md.id] = m;
-        m->setMassDensity(md.density);
-        for(int i=0; i<md.Z.size(); i++)
-            m->addAtom(
-                {.Z=md.Z[i],.M=md.M[i],.Ed=md.Ed[i],
-                 .El=md.El[i],.Es=md.Es[i],.Er=md.Er[i]},
-                md.X[i]);
-    }
 
     grid3D& G = T.grid();
     G.setX(Target.cell_count.x()*Target.cell_size.x(),
@@ -388,12 +382,8 @@ mccore* mcdriver::options::createSimulation() const
     G.setZ(Target.cell_count.z()*Target.cell_size.z(),
            Target.cell_count.z(), Target.periodic_bc.z());
 
-    for(auto rd : Target.regions) {
-        box3D box;
-        box.min() = rd.min;
-        box.max() = rd.max;
-        T.fill(box,materials_map[rd.material_id]);
-    }
+    for(auto md : Target.materials) T.addMaterial(md);
+    for(auto rd : Target.regions) T.addRegion(rd);
 
     return S;
 }

@@ -124,6 +124,7 @@ void material::init()
 material::material_desc_t material::getDescription() const
 {
     material_desc_t md;
+    md.id = name_;
     md.density = massDensity_;
     md.isMassDensity = true;
     for(const atom* a : atoms_) {
@@ -190,6 +191,18 @@ material* target::addMaterial(const char* name)
     return materials_.back();
 }
 
+material *target::addMaterial(const material::material_desc_t &md)
+{
+    material* m = addMaterial(md.id.c_str());
+    m->setMassDensity(md.density);
+    for(int i=0; i<md.Z.size(); i++)
+        m->addAtom(
+            {.Z=md.Z[i],.M=md.M[i],.Ed=md.Ed[i],
+             .El=md.El[i],.Es=md.Es[i],.Er=md.Er[i]},
+            md.X[i]);
+    return m;
+}
+
 void target::fill(const box3D& box, const material* m)
 {
     if (cells_.isNull() || cells_.size()!=grid_.ncells())
@@ -210,12 +223,6 @@ void target::fill(const box3D& box, const material* m)
         for(int j=ry.min().x(); j<=ry.max().x(); j++)
             for(int k=rz.min().x(); k<=rz.max().x(); k++)
                 cells_(i,j,k) = m;
-
-    region rd;
-    rd.material_id = m->name();
-    rd.min = realbox.min();
-    rd.max = realbox.max();
-    regions_.push_back( rd );
 }
 
 target::target_desc_t target::getDescription() const
@@ -225,8 +232,7 @@ target::target_desc_t target::getDescription() const
     for(const material* m : materials_)
         td.materials.push_back(m->getDescription());
 
-    for(const region& rd : regions_)
-        td.regions.push_back(rd);
+    td.regions = regions_;
 
     td.cell_count = {(int)grid_.x().size() - 1,
                      (int)grid_.y().size() - 1,
@@ -256,8 +262,25 @@ std::vector<std::string> target::atom_labels() const
             s += " in ";
             s += m->name();
         } else s += " ion";
-    }  
+    }
     return lbls;  
+}
+
+void target::addRegion(const region &r)
+{
+    regions_.push_back(r);
+    box3D box;
+    box.min() = r.min;
+    box.max() = r.max;
+    material* rm = nullptr;
+    for(material* m : materials_) {
+        if (m->name_ == r.material_id) {
+            rm = m;
+            break;
+        }
+    }
+    fill(box,rm);
+
 }
 
 
