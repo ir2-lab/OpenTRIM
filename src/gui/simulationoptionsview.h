@@ -6,7 +6,6 @@
 
 class QPushButton;
 class QLabel;
-class QTreeView;
 class JSEdit;
 class QTabWidget;
 class QLineEdit;
@@ -28,14 +27,13 @@ public:
 
     QAction* whatsThisAction;
     QPushButton* helpButton;
+    QPushButton* btSelectIon;
     QLabel* ionLabel;
-    QTreeView* treeView;
     JSEdit* jsonView;
     QTabWidget* tabWidget;
     QLineEdit* simTitle;
     MyDataWidgetMapper* mapper;
     MaterialsDefView* materialsView;
-    //TargetGeometryView* targetView;
     RegionsView* regionsView;
 
     SimulationOptionsView(IonsUI *iui, QWidget *parent = nullptr);
@@ -64,6 +62,7 @@ public slots:
     void help();
     void selectIonZ();
     void validateOptions();
+    void onDriverStatusChanged();
 
 private:
     bool modified_{false};

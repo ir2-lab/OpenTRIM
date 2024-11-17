@@ -5,6 +5,7 @@
 #include "welcomeview.h"
 #include "runview.h"
 #include "mcdriverobj.h"
+#include "simcontrolwidget.h"
 
 #include <QVBoxLayout>
 
@@ -28,9 +29,9 @@ IonsUI::IonsUI(QWidget *parent)
     : QWidget(parent)
 {
     /* runner thread */
-    ions_driver = new McDriverObj(this);
-    ions_driver->moveToThread(&runnerThread);
-    connect(&runnerThread, &QThread::finished, ions_driver, &QObject::deleteLater);
+    driverObj_ = new McDriverObj;
+    driverObj_->moveToThread(&runnerThread);
+    connect(&runnerThread, &QThread::finished, driverObj_, &QObject::deleteLater);
     /* ToDo : connect slots for start, stop etc */
 
     runnerThread.start();
@@ -90,10 +91,12 @@ IonsUI::IonsUI(QWidget *parent)
     statusBar->addWidget(statusLabel,1);
     statusBar->addWidget(progressBar,10);
 
+    ctrlWidget = new SimControlWidget(driverObj_);
+
     /* Create the layout */
     QVBoxLayout * vbox = new QVBoxLayout;
     vbox->addWidget(_stackedWidget);
-    vbox->addWidget(statusBar);
+    vbox->addWidget(ctrlWidget);
 
     QHBoxLayout* layout = new QHBoxLayout;
     layout->addWidget(sidebar);
@@ -129,13 +132,19 @@ IonsUI::IonsUI(QWidget *parent)
 
     connect(pageButtonGrp, &QButtonGroup::idClicked,
             this, &IonsUI::changePage);
+    connect(driverObj_, &McDriverObj::fileNameChanged,
+            this, &IonsUI::updateWindowTitle);
+    connect(driverObj_, &McDriverObj::modificationChanged,
+            this, &IonsUI::updateWindowTitle);
+
+    driverObj_->loadJson();
 
 }
 
 IonsUI::~IonsUI()
 {
-    if (ions_driver->status() == McDriverObj::mcRunning)
-        ions_driver->start(false);
+    if (driverObj_->status() == McDriverObj::mcRunning)
+        driverObj_->start(false);
     runnerThread.quit();
     runnerThread.wait();
 }
@@ -145,9 +154,17 @@ void IonsUI::changePage(int idx)
     _stackedWidget->setCurrentIndex(idx);
 }
 
+void IonsUI::updateWindowTitle()
+{
+    QString title(driverObj_->fileName());
+    if (driverObj_->isModified()) title += '*';
+    title += " - ions-ui";
+    setWindowTitle(title);
+}
+
 void IonsUI::closeEvent(QCloseEvent *event)
 {
-    McDriverObj::DriverStatus st = ions_driver->status();
+    McDriverObj::DriverStatus st = driverObj_->status();
     if (st == McDriverObj::mcReset) {
         event->accept();
         return;

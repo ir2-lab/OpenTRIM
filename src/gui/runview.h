@@ -5,6 +5,7 @@
 
 
 class QLineEdit;
+class QLabel;
 class QSpinBox;
 class QProgressBar;
 class QToolButton;
@@ -21,6 +22,20 @@ class RunView : public QWidget
 
 public:
 
+    explicit RunView(IonsUI* iui, QWidget *parent = nullptr);
+
+public slots:
+    void revert();
+    void onSimulationCreated();
+    void onTallyUpdate();
+    void onDriverStatusChanged();
+
+signals:
+
+private:
+
+    IonsUI* ionsui;
+    MyDataWidgetMapper* mapper;
     QLineEdit* simTitle;
     QGroupBox* box1;
     QGroupBox* box2;
@@ -29,36 +44,7 @@ public:
     QSpinBox* sbNThreads;
     QSpinBox* sbSeed;
     QSpinBox* sbUpdInterval;
-    QToolButton* startButton;
-    QToolButton* stopButton;
-    QToolButton* resetButton;
-    std::vector<QLineEdit*> simInfoItems;
     std::vector<QLineEdit*> simTotals;
-    QTimer* runTimer;
-
-    explicit RunView(IonsUI* iui, QWidget *parent = nullptr);
-
-    size_t max_ions() const;
-    int nthreads() const;
-    unsigned int seed() const;
-    size_t updInterval() const;
-
-
-public slots:
-    void revert();
-    void start(bool b);
-    void reset();
-    void onUpdateView();
-    void onRunTimer();
-    void onSimulationCreated();
-    void onTallyUpdate();
-
-signals:
-
-private:
-
-    IonsUI* ionsui;
-    MyDataWidgetMapper* mapper;
 
 };
 

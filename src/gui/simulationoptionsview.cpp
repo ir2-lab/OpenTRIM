@@ -24,6 +24,7 @@
 #include <QAction>
 #include <QDataWidgetMapper>
 #include <QLineEdit>
+#include <QMessageBox>
 
 #include "jsedit/jsedit.h"
 
@@ -85,11 +86,11 @@ SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
             if (sb)
                 sb->setReadOnly(true);
 
-            QPushButton* button = new QPushButton("Select Ion");
+            btSelectIon = new QPushButton("Select Ion");
             const Element::Isotope& H1 = PeriodicTable::at(1).isotopes()[0];
             ionLabel = new QLabel(H1.symbol);
-            flayout->insertRow(row,(QWidget*)button,ionLabel);
-            connect(button,&QPushButton::clicked,
+            flayout->insertRow(row,(QWidget*)btSelectIon,ionLabel);
+            connect(btSelectIon,&QPushButton::clicked,
                     this, &SimulationOptionsView::selectIonZ);
 
             QHBoxLayout* hbox = new QHBoxLayout;
@@ -223,17 +224,21 @@ SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
     connect(model, &OptionsModel::dataChanged,
             this, &SimulationOptionsView::setModified2);
 
+    connect(ionsui->driverObj(), &McDriverObj::configChanged,
+            this, &SimulationOptionsView::revert);
 
-
+    bool ret = connect(ionsui->driverObj(), &McDriverObj::statusChanged,
+            this, &SimulationOptionsView::onDriverStatusChanged, Qt::QueuedConnection);
+    assert(ret);
 }
 
 void SimulationOptionsView::submit()
 {
-    QJsonDocument& jsonOptions = ionsui->ions_driver->jsonOptions;
-    jsonOptions = mapper->model()->jsonOptions();
-    jsonView->setPlainText(jsonOptions.toJson(QJsonDocument::Indented));
+    const QJsonDocument& newJsonOptions = mapper->model()->jsonOptions();
+    ionsui->driverObj()->setJsonOptions(newJsonOptions);
+    jsonView->setPlainText(newJsonOptions.toJson(QJsonDocument::Indented));
     setModified(false);
-    emit optionsChanged();
+    //emit optionsChanged();
 }
 
 void SimulationOptionsView::help()
@@ -244,7 +249,7 @@ void SimulationOptionsView::help()
 
 void SimulationOptionsView::revert()
 {
-    const QJsonDocument& jsonOptions = ionsui->ions_driver->jsonOptions;
+    const QJsonDocument& jsonOptions = ionsui->driverObj()->jsonOptions();
     mapper->model()->setJsonOptions(jsonOptions);
     mapper->revert();
     ionsui->runView->revert();
@@ -259,13 +264,56 @@ void SimulationOptionsView::revert()
 
 void SimulationOptionsView::applyRules()
 {
+    // Apply option combination rules
     OptionsModel* model = mapper->model();
-    QModelIndex idx1 = model->index("Simulation");
-    QModelIndex idx2 = model->index("eloss_calculation",1,idx1);
-    int i = model->data(idx2, Qt::EditRole).toInt();
-    bool b = i == mccore::EnergyLossAndStraggling;
-    QWidget* w = mapper->findWidget("straggling_model");
+
+    QModelIndex parent, idx1, idx2;
+    int i;
+    bool b;
+    QWidget* w;
+
+    parent = model->index("Simulation");
+    idx1 = model->index("eloss_calculation",1,parent);
+    i = model->data(idx1, Qt::EditRole).toInt();
+    b = i == mccore::EnergyLossAndStraggling;
+    w = mapper->findWidget("straggling_model");
     if (w) w->setEnabled(b);
+
+    parent = model->index("Transport");
+    idx1 = model->index("flight_path_type",1,parent);
+    i = model->data(idx1, Qt::EditRole).toInt();
+    auto fp_t = mccore::flight_path_type_t(i);
+    w = mapper->findWidget("flight_path_const"); w->setEnabled(false);
+    w = mapper->findWidget("max_mfp"); w->setEnabled(false);
+    w = mapper->findWidget("allow_sub_ml_scattering"); w->setEnabled(false);
+    w = mapper->findWidget("max_rel_eloss"); w->setEnabled(false);
+    w = mapper->findWidget("min_recoil_energy"); w->setEnabled(false);
+    switch (fp_t) {
+    case mccore::AtomicSpacing:
+        break;
+    case mccore::Constant:
+        w = mapper->findWidget("flight_path_const"); w->setEnabled(true);
+        break;
+    case mccore::MendenhallWeller:
+        w = mapper->findWidget("max_rel_eloss"); w->setEnabled(true);
+        w = mapper->findWidget("min_recoil_energy"); w->setEnabled(true);
+        break;
+    case mccore::IPP:
+        w = mapper->findWidget("max_rel_eloss"); w->setEnabled(true);
+        w = mapper->findWidget("min_recoil_energy"); w->setEnabled(true);
+        w = mapper->findWidget("max_mfp"); w->setEnabled(true);
+        w = mapper->findWidget("allow_sub_ml_scattering"); w->setEnabled(true);
+        break;
+    default:
+        break;
+    }
+
+    parent = model->index("IonBeam");
+    idx1 = model->index("ion_distribution",1,parent);
+    i = model->data(idx1, Qt::EditRole).toInt();
+    auto distr_t = ion_beam::ion_distribution_t(i);
+    w = mapper->findWidget("pos");
+    w->setEnabled(distr_t == ion_beam::FixedPos);
 }
 
 void SimulationOptionsView::selectIonZ()
@@ -284,7 +332,25 @@ void SimulationOptionsView::selectIonZ()
 
 void SimulationOptionsView::validateOptions()
 {
-    ionsui->ions_driver->validateOptions();
+    QString msg;
+    bool ret = ionsui->driverObj()->validateOptions(&msg);
+    if (!ret)
+        QMessageBox::warning(ionsui,"Options validation",msg);
+    else
+        QMessageBox::information(ionsui,"Options validation","Options are OK!");
+}
+
+void SimulationOptionsView::onDriverStatusChanged()
+{
+    McDriverObj* D = ionsui->driverObj();
+    auto s = D->status();
+    // activate/deactivate widgets depending on sim status
+    bool isreset = s == McDriverObj::mcReset;
+    mapper->setEnabled(isreset);
+    btSelectIon->setEnabled(isreset);
+    materialsView->setEnabled(isreset);
+    regionsView->setEnabled(isreset);
+    if (isreset) applyRules();
 }
 
 

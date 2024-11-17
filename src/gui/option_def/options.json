@@ -67,13 +67,24 @@
     ],
     "Transport" : [
         {
+            "name" : "min_energy",
+            "label" : "Energy cutoff (eV)",
+            "type" : "float",
+            "min" : 0.001,
+            "max" : 1.0e6,
+            "digits" : 3,
+            "toolTip" : "Lowest kinetic energy of a simulated ion.",
+            "whatsThis" : ["When the energy of an ion goes below this cutoff,",
+                           "the ion history is terminated."]
+        },
+        {
             "name" : "flight_path_type",
             "label": "Flight Path Type",
             "type" : "enum",
             "values" : ["AtomicSpacing","Constant","MendenhallWeller","IPP"],
-            "valueLabels" : ["Monolayer","Constant","Mendenhall-Weller","IPP"],
+            "valueLabels" : ["Atomic Spacing","Constant","Mendenhall-Weller","IPP"],
             "toolTip" : "Flight path selection algorithm.",
-            "whatsThis" : ["- Monolayer: Constant flight path equal to material's monolayer distance",
+            "whatsThis" : ["- Atomic Spacing: Constant flight path equal to material's interatomic distance",
                            "- Constant: User defined constant flight path",
                            "- Mendenhall-Weller: SRIM-like path selection algorithm",
                            "- IPP: IONS++ algorithm"]
@@ -89,20 +100,13 @@
             "whatsThis" : ""
         },
         {
-            "name" : "max_mfp",
-            "label": "Max MFP (nm)",
+            "name" : "max_rel_eloss",
+            "label": "Max ΔE/E",
             "type" : "float",
             "min" : 0.001,
-            "max" : 1e38,
+            "max" : 1.0,
             "digits" : 3,
-            "toolTip" : "Maximum ion mean free path in nm.",
-            "whatsThis" : ""
-        },
-        {
-            "name" : "allow_sub_ml_scattering",
-            "label" : "Sub-ML flight path",
-            "type" : "bool",
-            "toolTip" : "Allow sub-monolayer ion flight path.",
+            "toolTip" : "Maximum relative energy loss per flight path.",
             "whatsThis" : ""
         },
         {
@@ -116,36 +120,24 @@
             "whatsThis" : ""
         },
         {
-            "name" : "max_rel_eloss",
-            "label": "Max ΔE/E",
+            "name" : "max_mfp",
+            "label": "Max MFP (nm)",
             "type" : "float",
             "min" : 0.001,
-            "max" : 1.0,
+            "max" : 1e30,
             "digits" : 3,
-            "toolTip" : "Maximum relative energy loss per flight path.",
+            "toolTip" : "Maximum ion mean free path in nm.",
             "whatsThis" : ""
         },
         {
-            "name" : "min_energy",
-            "label" : "Min ion E (eV)",
-            "type" : "float",
-            "min" : 0.001,
-            "max" : 1.0e6,
-            "digits" : 3,
-            "toolTip" : "Lowest kinetic energy of a simulated ion.",
+            "name" : "allow_sub_ml_scattering",
+            "label" : "Sub-ML flight path",
+            "type" : "bool",
+            "toolTip" : "Allow sub-monolayer ion flight path.",
             "whatsThis" : ""
         }
     ],
     "IonBeam": [
-        {
-            "name" : "ion_distribution",
-            "label": "Ion Distribution",
-            "type" : "enum",
-            "values" : ["SurfaceRandom", "SurfaceCentered", "FixedPos", "VolumeCentered", "VolumeRandom"],
-            "valueLabels" : ["Surface Random", "Surface Centered", "Fixed Position", "Volume Centered", "Volume Random"],
-            "toolTip" : "Disribution of beam ions.",
-            "whatsThis" : "The entry surface is at x=0"
-        },
         {
             "name" : "ionZ",
             "label": "Atomic number",
@@ -176,14 +168,13 @@
             "whatsThis" : ""
         },
         {
-            "name" : "dir",
-            "label": "Ion beam direction",
-            "type" : "vector3d",
-            "min" : 0.0,
-            "max" : 1.0,
-            "digits" : 6,
-            "toolTip" : "Ion Beam Direction.",
-            "whatsThis" : "Vector of direction cosines [nx,ny,nz], 0 <= ni <= 1"
+            "name" : "ion_distribution",
+            "label": "Ion Distribution",
+            "type" : "enum",
+            "values" : ["SurfaceRandom", "SurfaceCentered", "FixedPos", "VolumeCentered", "VolumeRandom"],
+            "valueLabels" : ["Surface Random", "Surface Centered", "Fixed Position", "Volume Centered", "Volume Random"],
+            "toolTip" : "Disribution of beam ions.",
+            "whatsThis" : "The entry surface is at x=0"
         },
         {
             "name" : "pos",
@@ -195,6 +186,16 @@
             "toolTip" : "Ion Beam Direction.",
             "whatsThis" : [ "Initial ion position vector [x,y,z].",
                             "Must be either within the simulation volume or at the surface."]
+        },
+        {
+            "name" : "dir",
+            "label": "Ion beam direction",
+            "type" : "vector3d",
+            "min" : 0.0,
+            "max" : 1.0,
+            "digits" : 6,
+            "toolTip" : "Ion Beam Direction.",
+            "whatsThis" : "Vector of direction cosines [nx,ny,nz], 0 <= ni <= 1"
         }
     ],
     "Output" : [

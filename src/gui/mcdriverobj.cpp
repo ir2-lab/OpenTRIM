@@ -1,26 +1,24 @@
 #include "mcdriverobj.h"
 
 #include "mcdriver.h"
-#include "ionsui.h"
+#include "qjsonpath/qjsonpath.h"
 
 #include <QMessageBox>
 #include <QFile>
 #include <QApplication>
+#include <QFileInfo>
 
 
 // McDriverObj should not have a parent
 // because it lives in a separate thread
-McDriverObj::McDriverObj(IonsUI *iui)
+McDriverObj::McDriverObj()
     : QObject(),
     driver_(new mcdriver),
-    ionsui_(iui),
-    is_running_(false)
+    modified_(false),
+    is_running_(false),
+    status_(0)
 {
-    mcdriver::options opt;
-    std::stringstream os;
-    opt.printJSON(os);
-    jsonOptions = QJsonDocument::fromJson(os.str().c_str());
-
+    // internal start signal connection
     connect(this, &McDriverObj::startSignal,
             this, &McDriverObj::start_,Qt::QueuedConnection);
 
@@ -29,6 +27,37 @@ McDriverObj::McDriverObj(IonsUI *iui)
 McDriverObj::~McDriverObj()
 {
     delete driver_;
+}
+
+void McDriverObj::setJsonOptions(const QJsonDocument &jdoc)
+{
+    jsonOptions_ = jdoc;
+    emit configChanged();
+    setModified(true);
+}
+
+void McDriverObj::setModified(bool b)
+{
+    if (modified_ != b) {
+        modified_ = b;
+        emit modificationChanged(b);
+    }
+}
+
+QString McDriverObj::fileName() const
+{
+    return QJsonPath::get(jsonOptions_, "Output/OutputFileBaseName").toString();
+}
+
+void McDriverObj::setFileName(const QString &s)
+{
+    if (s != fileName()) {
+        mcdriver::output_options opts = driver_->outputOptions();
+        opts.OutputFileBaseName = s.toLatin1().toStdString();
+        driver_->setOutputOptions(opts);
+        QJsonPath::set(jsonOptions_, "Output/OutputFileBaseName", s);
+        emit fileNameChanged();
+    }
 }
 
 void McDriverObj::mc_callback_(const mcdriver& d, void* p)
@@ -44,45 +73,30 @@ void McDriverObj::mc_callback_(const mcdriver& d, void* p)
     emit me->tallyUpdate();
 }
 
-bool McDriverObj::validateOptions(bool noMsgIfOK) const
+bool McDriverObj::validateOptions(QString* msg) const
 {
     mcdriver::options opt;
 
-    std::string s(jsonOptions.toJson().constData());
+    std::string s(jsonOptions_.toJson().constData());
     std::stringstream ss(s, std::ios_base::in);
 
     int ret = opt.parseJSON(ss,false);
 
     if (ret) {
-        QMessageBox::critical(ionsui_, "Options validation", "Internal error in JSON opts !!");
+        if (msg) *msg = "Internal error in JSON opts !!";
         return false;
     }
 
     bool isValid = true;
-    QString msg;
 
     try {
         opt.validate();
     } catch (const std::invalid_argument& e) {
         isValid = false;
-        msg = QString("Errors found:\n%1").arg(e.what());
+        if (msg) *msg = QString("Errors found:\n%1").arg(e.what());
     }
 
-
-    if (!isValid)
-        QMessageBox::warning(ionsui_, "Options validation", msg);
-
-    if (isValid && !noMsgIfOK)
-        QMessageBox::information(ionsui_, "Options validation","Options are OK!");
-
     return isValid;
-}
-
-McDriverObj::DriverStatus McDriverObj::status() const
-{
-    const mccore* sim = driver_->getSim();
-    if (sim == nullptr) return mcReset;
-    else return is_running_ ? mcRunning : mcIdle;
 }
 
 void McDriverObj::loadJson(const QString &path)
@@ -90,47 +104,80 @@ void McDriverObj::loadJson(const QString &path)
     reset();
 
     mcdriver::options opt;
+    opt.Output.OutputFileBaseName = "Untitled";
 
     if (!path.isNull()) {
-        // path should point to a valid config file
+        // path should point to a valid config file.
         // open file and read config, no checks!
         QFile f(path);
         f.open( QFile::ReadOnly );
         std::stringstream is(f.readAll().constData());
         bool validate = false;
         opt.parseJSON(is,validate);
+
+        QFileInfo finfo(path);
+        opt.Output.OutputFileBaseName = finfo.baseName().toStdString();
     }
 
     std::stringstream os;
     opt.printJSON(os);
-    jsonOptions = QJsonDocument::fromJson(os.str().c_str());
+    jsonOptions_ = QJsonDocument::fromJson(os.str().c_str());
 
-    ionsui_->optionsView->revert();
-    ionsui_->runView->revert();
+    setModified(false);
+
+    emit configChanged();
+    emit contentsChanged();
+    emit fileNameChanged();
+
+    //ionsui_->optionsView->revert();
+    //ionsui_->runView->revert();
 }
 
-bool McDriverObj::start(bool b)
+void McDriverObj::saveJson(const QString &fname)
+{
+    QFileInfo finfo(fname);
+    setFileName(finfo.baseName());
+
+    mcdriver::options opt;
+    if (driver_->getSim())
+        driver_->getOptions(opt); // get options from mccore object
+    else { // get from our local json
+        std::istringstream is(jsonOptions_.toJson().constData());
+        opt.parseJSON(is,false);
+    }
+    std::ofstream os(fname.toLatin1().constData());
+    opt.printJSON(os);
+
+    if (!driver_->getSim()) setModified(false);
+}
+
+void McDriverObj::saveH5(const QString &fname)
+{
+    if (!driver_->getSim()) return;
+
+    QFileInfo finfo(fname);
+    setFileName(finfo.baseName());
+
+    driver_->save();
+
+    setModified(false);
+}
+
+void McDriverObj::start(bool b)
 {
     if (is_running_) {
         if (!b) driver_->abort();
     } else if (b) {
-        // get override options
-        RunView* runView = ionsui_->runView;
-        size_t max_no_ions = runView->max_ions();
-        int nthreads = runView->nthreads();
-        unsigned int seed = runView->seed();
-        size_t updInterval = runView->updInterval();
 
         if (driver_->getSim() == nullptr) {
-            if (!validateOptions(true)) return false;
             mcdriver::options opt;
-            std::string s(jsonOptions.toJson().constData());
+            std::string s(jsonOptions_.toJson().constData());
             std::stringstream ss(s, std::ios_base::in);
             opt.parseJSON(ss,false);
-            opt.Driver.max_no_ions = max_no_ions;
+            opt.Driver.max_no_ions = max_ions_;
             // opt.Driver.seeds = ToDo fix seed
-            opt.Driver.threads = nthreads;
-            opt.Output.storage_interval = updInterval;
+            opt.Driver.threads = nThreads_;
+            opt.Output.storage_interval = updInterval_;
 
             driver_->setOptions(opt);
 
@@ -138,28 +185,29 @@ bool McDriverObj::start(bool b)
 
             emit simulationCreated();
 
+            setStatus(mcIdle);
+
         } else {
             mcdriver::parameters par = driver_->driverOptions();
-            par.max_no_ions = max_no_ions;
-            par.threads = nthreads;
+            par.max_no_ions = max_ions_;
+            par.threads = nThreads_;
             driver_->setDriverOptions(par);
 
             mcdriver::output_options opts = driver_->outputOptions();
-            opts.storage_interval = updInterval;
+            opts.storage_interval = updInterval_;
             driver_->setOutputOptions(opts);
         }
 
         emit startSignal();
     }
-    return true;
 }
 
 void McDriverObj::start_()
 {
-    size_t updInterval = ionsui_->runView->updInterval();
+    size_t updInterval = driver_->outputOptions().storage_interval;
 
     is_running_ = true;
-    emit statusUpdate();
+    setStatus(mcRunning);
 
     init_run_data();
 
@@ -173,7 +221,16 @@ void McDriverObj::start_()
     total_elapsed_ += elapsed_;
     elapsed_ = 0.;
 
-    emit statusUpdate();
+    setStatus(mcIdle);
+}
+
+void McDriverObj::setStatus(DriverStatus s)
+{
+    if (s != status()) {
+        status_ = s;
+        emit statusChanged();
+    }
+
 }
 
 void McDriverObj::init_run_data()
@@ -222,6 +279,7 @@ void McDriverObj::reset()
     }
     if (status() == mcIdle) {
         driver_->reset();
+        setStatus(mcReset);
         emit simulationDestroyed();
     }
 }

@@ -4,6 +4,7 @@
 #include "mcdriver.h"
 
 #include <QPushButton>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QButtonGroup>
@@ -18,6 +19,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QJsonDocument>
+#include <QMenu>
 
 #include "jsedit/jsedit.h"
 
@@ -30,8 +32,41 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     int w = rect.width();
     btNew =     createButton("New Simulation",w,h,0);
     btOpen =    createButton("Open Simulation",w,h,0);
-    btSave =    createButton("Save",w,h,0);
-    btSaveAs =  createButton("Save As",w,h,0);
+
+    btSave = new QToolButton;
+    btSave->setText("Save");
+    btSave->setPopupMode(QToolButton::InstantPopup);
+    btSave->setMinimumSize(QSize(w,h));
+    {
+        QMenu* toolMenu = new QMenu;
+        QAction* action;
+        actSaveJson = toolMenu->addAction("Save Config to JSON");
+        actSaveJson->setEnabled(false);
+        connect(actSaveJson, &QAction::triggered,
+                this, &WelcomeView::onSaveJson);
+        actSaveH5 = toolMenu->addAction("Save Config+Data to HDF5");
+        actSaveH5->setEnabled(false);
+        connect(actSaveH5, &QAction::triggered,
+                this, &WelcomeView::onSaveH5);
+        btSave->setMenu(toolMenu);
+    }
+
+    btSaveAs = new QToolButton;
+    btSaveAs->setText("Save As ...");
+    btSaveAs->setPopupMode(QToolButton::InstantPopup);
+    btSaveAs->setMinimumSize(QSize(w,h));
+    {
+        QMenu* toolMenu = new QMenu;
+        QAction* action;
+        actSaveJsonAs = toolMenu->addAction("Save Config to JSON As ...");
+        connect(actSaveJsonAs, &QAction::triggered,
+                this, &WelcomeView::onSaveJsonAs);
+        actSaveH5As = toolMenu->addAction("Save Config+Data to HDF5 As ...");
+        connect(actSaveH5As, &QAction::triggered,
+                this, &WelcomeView::onSaveH5As);
+        btSaveAs->setMenu(toolMenu);
+    }
+
     btRecent =  createButton("Recent",w,h,1);
     btExamples = createButton("Examples",w,h,1);
     btGettingStarted = createButton("Getting Started",w,h,1);
@@ -81,11 +116,12 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
         jsonView->setReadOnly(true);
 
         QDialogButtonBox* buttonBox = new QDialogButtonBox(Qt::Horizontal);
-        QPushButton* btOpenExample = new QPushButton(QIcon(":/icons/assets/ionicons/checkmark-done-outline.svg"),
+        btOpenExample = new QPushButton(QIcon(":/icons/assets/ionicons/checkmark-done-outline.svg"),
                                                   "Open example");
         buttonBox->addButton(btOpenExample, QDialogButtonBox::AcceptRole);
         connect(btOpenExample, &QPushButton::clicked,
                 this, &WelcomeView::onOpenExample);
+        btOpenExample->setEnabled(false);
 
         QVBoxLayout* vbox = new QVBoxLayout;
         vbox->addWidget(exampleList);
@@ -105,11 +141,20 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
             this, &WelcomeView::changeCenterWidget);
     connect(exampleList, &QListWidget::currentItemChanged,
             this, &WelcomeView::exampleSelected);
+    connect(exampleList, &QListWidget::itemDoubleClicked,
+            this, &WelcomeView::onOpenExample);
 
     connect(btOpen, &QPushButton::clicked,
             this, &WelcomeView::onOpenJson);
     connect(btNew, &QPushButton::clicked,
             this, &WelcomeView::onNew);
+
+    connect(ionsui->driverObj(),&McDriverObj::modificationChanged,
+            actSaveJson,&QAction::setEnabled);
+    connect(ionsui->driverObj(),&McDriverObj::modificationChanged,
+            this,&WelcomeView::onDriverStatusChanged);
+    connect(ionsui->driverObj(),&McDriverObj::statusChanged,
+            this,&WelcomeView::onDriverStatusChanged);
 }
 
 void WelcomeView::changeCenterWidget(int id)
@@ -119,18 +164,30 @@ void WelcomeView::changeCenterWidget(int id)
 
 void WelcomeView::onOpenExample()
 {
+    if (!userDiscardCurrentSim("Open Example")) return;
+
     QListWidgetItem* i = exampleList->currentItem();
     if (!i) return;
     QFile f(QString(":/examples/%1").arg(i->text()));
     if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
         f.close();
-        ionsui->ions_driver->loadJson(f.fileName());
+        ionsui->driverObj()->loadJson(f.fileName());
         ionsui->setCurrentPage(IonsUI::idConfigPage);
     }
 }
 
+void WelcomeView::onDriverStatusChanged()
+{
+    McDriverObj* D = ionsui->driverObj();
+    auto s = D->status();
+    actSaveH5->setEnabled(D->isModified() && s==McDriverObj::mcIdle);
+    actSaveH5As->setEnabled(s==McDriverObj::mcIdle);
+}
+
 void WelcomeView::onOpenJson()
 {
+    if (!userDiscardCurrentSim("Open JSON")) return;
+
     QString fileName = QFileDialog::getOpenFileName(this,
                                             tr("Open JSON configuration"), QString(),
                                             tr("Json Files [*.json](*.json);;All Files [*.*](*.*)"));
@@ -174,34 +231,69 @@ void WelcomeView::onOpenJson()
         return;
     }
 
-    McDriverObj::DriverStatus st = ionsui->ions_driver->status();
-    QString msg = st == McDriverObj::mcRunning ?
-                      "Stop the running simulation, discard data & load new configuration?" :
-                      "Discard simulation data & load new configuration?";
-    int ret = QMessageBox::question(this,
-                                   "Open JSON",msg,
-                                   QMessageBox::Ok | QMessageBox::Cancel);
+    ionsui->driverObj()->loadJson(fileName);
+    ionsui->setCurrentPage(IonsUI::idConfigPage);
+    // set path to loaded file
+    QFileInfo finfo(fileName);
+    QString dirPath = finfo.dir().absolutePath();
+    bool ret = QDir::setCurrent(dirPath);
 
-    if (ret == QMessageBox::Ok) {
-        ionsui->ions_driver->loadJson(fileName);
-        ionsui->setCurrentPage(IonsUI::idConfigPage);
-    }
+}
+
+void WelcomeView::onSaveJson()
+{
+    QString fname = ionsui->driverObj()->fileName();
+    fname += ".json";
+    ionsui->driverObj()->saveJson(fname);
+}
+
+void WelcomeView::onSaveJsonAs()
+{
+    QString fname = ionsui->driverObj()->fileName();
+    fname += ".json";
+    QFileInfo finfo(fname);
+    QString selectedFileName = QFileDialog::getSaveFileName(this, tr("Save JSON configuration As ..."),
+                                                    finfo.absolutePath(),
+                                                    tr("Json files [*.json](*.json);; All files (*.*)"));
+    if (selectedFileName.isNull()) return;
+    QFileInfo finfo2(selectedFileName);
+    if (finfo2.suffix().toLower() != "json") selectedFileName += ".json";
+    ionsui->driverObj()->saveJson(selectedFileName);
+
+    QString dirPath = finfo2.dir().absolutePath();
+    bool ret = QDir::setCurrent(dirPath);
+}
+
+void WelcomeView::onSaveH5()
+{
+    QString fname = ionsui->driverObj()->fileName();
+    fname += ".h5";
+    ionsui->driverObj()->saveH5(fname);
+}
+
+void WelcomeView::onSaveH5As()
+{
+    QString fname = ionsui->driverObj()->fileName();
+    fname += ".h5";
+    QFileInfo finfo(fname);
+    QString selectedFileName = QFileDialog::getSaveFileName(this, tr("Save HDF5 (Config+Data) As ..."),
+                                                            finfo.absolutePath(),
+                                                            tr("HDF5 files [*.h5](*.h5);; All files (*.*)"));
+    if (selectedFileName.isNull()) return;
+    QFileInfo finfo2(selectedFileName);
+    if (finfo2.suffix().toLower() != "h5") selectedFileName += ".h5";
+    ionsui->driverObj()->saveH5(selectedFileName);
+
+    QString dirPath = finfo2.dir().absolutePath();
+    bool ret = QDir::setCurrent(dirPath);
 }
 
 void WelcomeView::onNew()
-{
-    McDriverObj::DriverStatus st = ionsui->ions_driver->status();
-    QString msg = st == McDriverObj::mcRunning ?
-                      "Stop the running simulation, discard data & load new configuration?" :
-                      "Discard simulation data & load default configuration?";
-    int ret = QMessageBox::question(this,
-                                    "New simulation",msg,
-                                    QMessageBox::Ok | QMessageBox::Cancel);
+{    
+    if (!userDiscardCurrentSim("New simulation")) return;
 
-    if (ret == QMessageBox::Ok) {
-        ionsui->ions_driver->loadJson();
-        ionsui->setCurrentPage(IonsUI::idConfigPage);
-    }
+    ionsui->driverObj()->loadJson();
+    ionsui->setCurrentPage(IonsUI::idConfigPage);
 }
 
 QPushButton* WelcomeView::createButton(const QString& txt, int w, int h, int ch)
@@ -235,4 +327,18 @@ void WelcomeView::exampleSelected()
     QFile f(QString(":/examples/%1").arg(i->text()));
     if (f.open(QIODevice::ReadOnly | QIODevice::Text))
         jsonView->setPlainText(f.readAll());
+    btOpenExample->setEnabled(true);
+}
+
+bool WelcomeView::userDiscardCurrentSim(const QString& title)
+{
+    McDriverObj::DriverStatus st = ionsui->driverObj()->status();
+    QString msg = st == McDriverObj::mcRunning ?
+                      "Stop the running simulation & discard data?" :
+                      "Discard current simulation?";
+    return QMessageBox::question(this,
+                                 title,msg,
+                                 QMessageBox::Ok | QMessageBox::Cancel)
+           == QMessageBox::Ok;
+
 }

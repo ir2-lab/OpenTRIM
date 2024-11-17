@@ -9,7 +9,8 @@
 #include "arrays.h"
 #include "mccore.h"
 
-class IonsUI;
+#include <QTimer>
+
 class mcdriver;
 class mccore;
 class tally;
@@ -20,24 +21,34 @@ class McDriverObj : public QObject
 
 public:
 
-    QJsonDocument jsonOptions;
-
-    explicit McDriverObj(IonsUI *iui);
+    explicit McDriverObj();
     virtual ~McDriverObj() override;
 
-    bool validateOptions(bool noMsgIfOK = false) const;
+    const QJsonDocument& jsonOptions() const { return jsonOptions_; }
+    void setJsonOptions(const QJsonDocument& jdoc);
+
+    bool isModified() const { return modified_; }
+    void setModified(bool b);
+
+    QString fileName() const;
+    void setFileName(const QString& s);
+
+    bool validateOptions(QString* msg = nullptr) const;
 
     enum DriverStatus {
-        mcReset,
-        mcIdle,
-        mcRunning
+        mcReset = 0,
+        mcIdle = 1,
+        mcRunning = 2,
+        mcMax = 3
     };
 
-    DriverStatus status() const;
+    DriverStatus status() const { return (DriverStatus)int(status_); };
 
     void loadJson(const QString& path = QString());
+    void saveJson(const QString& fname);
+    void saveH5(const QString& fname);
 
-    bool start(bool b);
+    void start(bool b);
     void reset();
 
     void init_run_data();
@@ -52,24 +63,40 @@ public:
     const tally& getTally() const;
     const mccore* getSim() const;
 
+public slots:
+    void setMaxIons(int n) { max_ions_ = n; };
+    void setNThreads(int n) { nThreads_ = n; };
+    void setSeed(int n) { seed_ = n; }
+    void setUpdInterval(int n) { updInterval_ = n; }
 
 private slots:
     void start_();
 
 signals:
+    void modificationChanged(bool b);
+    void configChanged();
+    void contentsChanged();
+    void fileNameChanged();
     void simulationCreated();
     void simulationDestroyed();
     void startSignal();
 
     // these are sent from within the worker/simulation thread
     // must be connected with Qt::QueuedConn.
-    void statusUpdate();
+    void statusChanged();
     void tallyUpdate();
 
 private:
     mcdriver* driver_;
-    IonsUI* ionsui_;
+    QJsonDocument jsonOptions_;
+    bool modified_;
     std::atomic_bool is_running_;
+    std::atomic_int status_;
+
+    size_t max_ions_;
+    int nThreads_;
+    int seed_;
+    int updInterval_;
 
     // state
     typedef std::chrono::high_resolution_clock my_clock_t;
@@ -85,6 +112,8 @@ private:
     double eta_; // s
     double ips_; // ions per second
     ArrayNDd totals_;
+
+    void setStatus(DriverStatus s);
 
     static void mc_callback_(const mcdriver& d, void* p);
 };

@@ -125,11 +125,11 @@ ResultsView::ResultsView(IonsUI *iui, QWidget *parent)
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     /* connect signals */
-    connect(ionsui->ions_driver, &McDriverObj::simulationCreated,
+    connect(ionsui->driverObj(), &McDriverObj::simulationCreated,
             this, &ResultsView::onSimulationCreated);
-    connect(ionsui->ions_driver, &McDriverObj::simulationDestroyed,
+    connect(ionsui->driverObj(), &McDriverObj::simulationDestroyed,
             this, &ResultsView::onSimulationDestroyed);
-    connect(ionsui->ions_driver, &McDriverObj::tallyUpdate,
+    connect(ionsui->driverObj(), &McDriverObj::tallyUpdate,
             this, &ResultsView::onTallyUpdate, Qt::QueuedConnection);
     connect(tallyTree, &QTreeWidget::currentItemChanged,
             this, & ResultsView::onItemChanged);
@@ -203,9 +203,9 @@ void ResultsView::updateTableData()
 void ResultsView::copyTable()
 {
     ArrayNDd A0 = tally_.at(0);
-    ionsui->ions_driver->getSim()->copyTallyTable(0, A0);
+    ionsui->driverObj()->getSim()->copyTallyTable(0, A0);
     ArrayNDd A = tally_.at(currentTable_);
-    ionsui->ions_driver->getSim()->copyTallyTable(currentTable_, A);
+    ionsui->driverObj()->getSim()->copyTallyTable(currentTable_, A);
 }
 
 void ResultsView::onTallyUpdate()
@@ -322,7 +322,7 @@ void ResultsView::updatePlot()
 
 void ResultsView::onSimulationCreated()
 {
-    McDriverObj* D = ionsui->ions_driver;
+    McDriverObj* D = ionsui->driverObj();
 
     tally_ = D->getTally().clone();
 
@@ -379,6 +379,7 @@ void ResultsView::onSimulationDestroyed()
 {
     tally_ = tally();
     setCurrentTable(currentTable_);
+    plotWidget->clear();
 }
 
 void ResultsView::onItemChanged()

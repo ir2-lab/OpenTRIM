@@ -28,6 +28,7 @@ public:
 public slots:
     void revert();
     bool submit();
+    void setEnabled(bool b);
 
 private slots:
     void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight,

@@ -19,14 +19,13 @@ class QLabel;
 class QButtonGroup;
 
 class OptionsModel;
+class SimControlWidget;
 
 class IonsUI : public QWidget
 {
     Q_OBJECT
 
 public:
-
-    McDriverObj* ions_driver;
 
     OptionsModel* optionsModel;
 
@@ -42,6 +41,9 @@ public:
 
     explicit IonsUI(QWidget *parent = nullptr);
     ~IonsUI();
+
+    //const McDriverObj* driverObj() const { return ions_driver; }
+    McDriverObj* driverObj() { return driverObj_; }
 
     void push(const QString& title, QWidget * page);
     void pop();
@@ -60,6 +62,7 @@ public slots:
 
 private slots:
     void changePage(int idx);
+    void updateWindowTitle();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -67,10 +70,12 @@ protected:
 
 private:
     QToolButton * createSidebarButton(const QString& iconPath, const QString& title);
+    McDriverObj* driverObj_;
     QStackedWidget * _stackedWidget;
     QStatusBar * statusBar;
     QThread runnerThread;
     QButtonGroup* pageButtonGrp;
+    SimControlWidget* ctrlWidget;
 };
 
 

@@ -86,6 +86,15 @@ bool MyDataWidgetMapper::submit()
     return model_->submit();
 }
 
+void MyDataWidgetMapper::setEnabled(bool b)
+{
+    for (auto &m : widgetMap) {
+        if (m.widget.isNull()) continue;
+
+        m.widget->setEnabled(b);
+    }
+}
+
 static bool qContainsIndex(const QModelIndex &idx, const QModelIndex &topLeft,
                            const QModelIndex &bottomRight)
 {
