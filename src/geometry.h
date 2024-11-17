@@ -480,13 +480,24 @@ float bring2boundary(const box3D& b, vector3& pos, const vector3& dir)
 {
     assert(b.contains(pos));
 
-    float d, d1;
-    int imax = 0;
-    d = (dir.x()>0 ? b.max().x() - pos.x() : b.min().x() - pos.x()) / dir.x();
-    d1 = (dir.y()>0 ? b.max().y() - pos.y() : b.min().y() - pos.y()) / dir.y();
-    if (d1 < d) { d = d1; imax = 1; }
-    d1 = (dir.z()>0 ? b.max().z() - pos.z() : b.min().z() - pos.z()) / dir.z();
-    if (d1 < d) { d = d1; imax = 2; }
+    float d(std::numeric_limits<float>::infinity()),
+        d1;
+    int imax = -1;
+    if (dir.x() != 0.0f) {
+        d1 = dir.x()>0 ? b.max().x() - pos.x() : b.min().x() - pos.x();
+        d1 /= dir.x();
+        if (d1 < d) { d = d1; imax = 0; }
+    }
+    if (dir.y() != 0.0f) {
+        d1 = dir.y()>0 ? b.max().y() - pos.y() : b.min().y() - pos.y();
+        d1 /= dir.y();
+        if (d1 < d) { d = d1; imax = 1; }
+    }
+    if (dir.z() != 0.0f) {
+        d1 = dir.z()>0 ? b.max().z() - pos.z() : b.min().z() - pos.z();
+        d1 /= dir.z();
+        if (d1 < d) { d = d1; imax = 2; }
+    }
 
     switch (imax) {
     case 0:
