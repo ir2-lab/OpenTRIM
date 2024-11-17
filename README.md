@@ -44,7 +44,7 @@ Install them with
 # Ubuntu 22.04 / DEB
 sudo apt install libeigen3-dev libhdf5-dev libhdf5-103-1 
 # for the GUI component add the following
-sudo apt install qtbase5-dev libqwt-qt5-dev libqwt-qt5-6
+sudo apt install qtbase5-dev libqt5svg5 libqwt-qt5-dev libqwt-qt5-6
 
 # RHEL 9 / RPM
 sudo dnf install eigen3-devel.noarch hdf5.x86_64 hdf5-devel.x86_64
