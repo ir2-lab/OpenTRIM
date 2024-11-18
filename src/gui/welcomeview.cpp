@@ -134,7 +134,22 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     pushCenterWidget("Example simulations",examplePage);
 
     pushCenterWidget("Getting Started", new QWidget);
-    pushCenterWidget("About", new QWidget);
+
+    /* create about view */
+    {
+        QPlainTextEdit* about = new QPlainTextEdit;
+        about->setPlainText(
+            QString("IONS simulation\nVersion: %1\nBuild time: %2\nCompiler: %3 v%4\nSystem: %5")
+                .arg(IRADINAPP_VERSION)
+                .arg(BUILD_TIME)
+                .arg(COMPILER_ID).arg(COMPILER_VERSION)
+                .arg(SYSTEM_ID)
+            );
+        pushCenterWidget("About", about);
+    }
+
+
+
 
     /* signal/slot connections */
     connect(buttonGrp, &QButtonGroup::idClicked,
@@ -155,6 +170,9 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
             this,&WelcomeView::onDriverStatusChanged);
     connect(ionsui->driverObj(),&McDriverObj::statusChanged,
             this,&WelcomeView::onDriverStatusChanged);
+
+    btAbout->setChecked(true);
+    changeCenterWidget(3);
 }
 
 void WelcomeView::changeCenterWidget(int id)
