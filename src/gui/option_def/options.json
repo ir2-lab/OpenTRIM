@@ -191,11 +191,11 @@
             "name" : "dir",
             "label": "Ion beam direction",
             "type" : "vector3d",
-            "min" : 0.0,
-            "max" : 1.0,
-            "digits" : 6,
+            "min" : -1.0e3,
+            "max" : 1.0e3,
+            "digits" : 3,
             "toolTip" : "Ion Beam Direction.",
-            "whatsThis" : "Vector of direction cosines [nx,ny,nz], 0 <= ni <= 1"
+            "whatsThis" : "Unnormalized direction vector [nx,ny,nz]"
         }
     ],
     "Output" : [
