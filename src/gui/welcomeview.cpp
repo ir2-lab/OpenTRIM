@@ -276,10 +276,11 @@ void WelcomeView::onSaveJsonAs()
     if (selectedFileName.isNull()) return;
     QFileInfo finfo2(selectedFileName);
     if (finfo2.suffix().toLower() != "json") selectedFileName += ".json";
-    ionsui->driverObj()->saveJson(selectedFileName);
 
     QString dirPath = finfo2.dir().absolutePath();
     bool ret = QDir::setCurrent(dirPath);
+
+    ionsui->driverObj()->saveJson(selectedFileName);
 }
 
 void WelcomeView::onSaveH5()
@@ -300,10 +301,11 @@ void WelcomeView::onSaveH5As()
     if (selectedFileName.isNull()) return;
     QFileInfo finfo2(selectedFileName);
     if (finfo2.suffix().toLower() != "h5") selectedFileName += ".h5";
-    ionsui->driverObj()->saveH5(selectedFileName);
 
     QString dirPath = finfo2.dir().absolutePath();
     bool ret = QDir::setCurrent(dirPath);
+
+    ionsui->driverObj()->saveH5(selectedFileName);
 }
 
 void WelcomeView::onNew()

@@ -4,11 +4,6 @@
   - this is because the simulation changes output file name while the event buffers have the old name
   - possible solution: create the buffers in temp locations with arbitrary names independent of the simulation output file 
 
-- Fix the random seed
-  -  1 seed value (an int) is needed to set the state of the rng. 
-  -  In case of multiple threads, use rng.long_jump to set the state in each thread
-  -  Save the rng state to the h5 output file
-
 ## Enhancements
 
 - Load a saved simulation from the h5 output file. 

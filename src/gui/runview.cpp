@@ -55,7 +55,7 @@ RunView::RunView(IonsUI *iui, QWidget *parent)
     item = model->getItem(idx);
     sbNThreads = (QSpinBox *)item->createEditor(this);
 
-    idx = model->index("seeds",0,driverOptionsIdx);
+    idx = model->index("seed",0,driverOptionsIdx);
     item = model->getItem(idx);
     sbSeed = (QSpinBox *)item->createEditor(this);
 
@@ -169,7 +169,7 @@ void RunView::revert()
     idx = model->index("threads",0,driverOptionsIdx);
     item = model->getItem(idx);
     sbNThreads->setValue(item->value().toInt());
-    idx = model->index("seeds",0,driverOptionsIdx);
+    idx = model->index("seed",0,driverOptionsIdx);
     item = model->getItem(idx);
     sbSeed->setValue(item->value().toUInt());
     QModelIndex outputOptionsIdx = model->index("Output");
@@ -198,6 +198,8 @@ void RunView::onDriverStatusChanged()
     McDriverObj::DriverStatus st = D->status();
 
     box1->setEnabled(st != McDriverObj::mcRunning);
+
+    sbSeed->setEnabled(st == McDriverObj::mcReset);
 
     if (st == McDriverObj::mcReset)
         for(auto edt : simTotals) edt->setText("");

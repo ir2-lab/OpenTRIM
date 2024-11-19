@@ -63,6 +63,24 @@ class Xoshiro256Plus
         return (x << s) | (x >> (64 - s));
     }
 
+    /**
+     * Computes Stafford variant 13 of the 64-bit mixing function for
+     * MurmurHash3. This is a 64-bit hashing function with excellent avalanche
+     * statistics.
+     * http://zimbry.blogspot.com/2011/09/better-bit-mixing-improving-on.html
+     *
+     * <p> Note that if the argument {@code z} is 0, the result is 0.
+     *
+     * @param z any long value
+     *
+     * @return the result of hashing z
+     */
+    static constexpr std::uint64_t mixStafford13(std::uint64_t z) {
+        z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+        z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+        return z ^ (z >> 31);
+    }
+
 public:
 
     using state_type	= std::array<std::uint64_t, 4>;
@@ -75,6 +93,10 @@ public:
      *
      * If no seed is given then a default seed (1234567890ULL) is used.
      *
+     * Instances of @ref Xoshiro256Plus
+     * created with the same seed in the same
+     * program generate identical sequences of values.
+     *
      * @param a_seed the seed used to initialize the state
      */
     explicit Xoshiro256Plus(std::uint64_t a_seed = DefaultSeed) noexcept
@@ -82,6 +104,10 @@ public:
 
     explicit constexpr Xoshiro256Plus(state_type state) noexcept
         : m_state(state) {}
+
+    Xoshiro256Plus(const Xoshiro256Plus& other) noexcept
+        : m_state(other.m_state)
+    {}
 
     /**
      * @brief Set the internal state by a seed s
@@ -91,7 +117,7 @@ public:
      *
      * @param s the seed used initialize the state
      */
-    void seed(result_type s)
+    void randomize(result_type s)
     {
         std::mt19937_64 mt(s);
 
@@ -99,6 +125,31 @@ public:
         {
             state = static_cast<std::uint64_t>(mt());
         }
+    }
+
+    /**
+     * @brief Set the internal state by a seed s
+     *
+     * Sets the internal state using the
+     * specified value as seed.
+     *
+     * Instances of @ref Xoshiro256Plus
+     *  created with the same seed generate identical sequences of values.
+     *
+     * @param s the initial seed
+     */
+    void seed(result_type s)
+    {
+        // Using a value with irregularly spaced 1-bits to xor the seed
+        // argument tends to improve "pedestrian" seeds such as 0 or
+        // other small integers.  We may as well use SILVER_RATIO_64.
+        //
+        // The x values are then filled in as if by a SplitMix PRNG with
+        // GOLDEN_RATIO_64 as the gamma value and Stafford13 as the mixer.
+        m_state[0] = mixStafford13(s ^= SILVER_RATIO_64);
+        m_state[1] = mixStafford13(s += GOLDEN_RATIO_64);
+        m_state[2] = mixStafford13(s += GOLDEN_RATIO_64);
+        m_state[3] = mixStafford13(s + GOLDEN_RATIO_64);
     }
 
     /// Advances the state and returns the generated value
@@ -122,7 +173,12 @@ public:
      */
     constexpr void jump() noexcept
     {
-        constexpr std::uint64_t JUMP[] = { 0x180ec6d33cfd0aba, 0xd5a61266f0c9392c, 0xa9582618e03fc9aa, 0x39abdc4529b1661c };
+        constexpr std::uint64_t JUMP[] = {
+            0x180ec6d33cfd0aba,
+            0xd5a61266f0c9392c,
+            0xa9582618e03fc9aa,
+            0x39abdc4529b1661c
+        };
 
         std::uint64_t s0 = 0;
         std::uint64_t s1 = 0;
@@ -159,7 +215,12 @@ public:
      */
     constexpr void longJump() noexcept
     {
-        constexpr std::uint64_t LONG_JUMP[] = { 0x76e15d3efefdcbbf, 0xc5004e441c522fb3, 0x77710069854ee241, 0x39109bb02acbe635 };
+        constexpr std::uint64_t LONG_JUMP[] = {
+            0x76e15d3efefdcbbf,
+            0xc5004e441c522fb3,
+            0x77710069854ee241,
+            0x39109bb02acbe635
+        };
 
         std::uint64_t s0 = 0;
         std::uint64_t s1 = 0;
@@ -230,6 +291,20 @@ public:
 
 private:
     static constexpr result_type DefaultSeed = 1234567890ULL;
+
+    /**
+     * The first 64 bits of the golden ratio (1+sqrt(5))/2, forced to be odd.
+     * Useful for producing good Weyl sequences or as an arbitrary nonzero odd
+     * value.
+     */
+    static constexpr result_type GOLDEN_RATIO_64 = 0x9e3779b97f4a7c15ULL;
+
+    /**
+     * The first 64 bits of the silver ratio 1+sqrt(2), forced to be odd. Useful
+     * for producing good Weyl sequences or as an arbitrary nonzero odd value.
+     */
+    static constexpr result_type SILVER_RATIO_64 = 0x6A09E667F3BCC909ULL;
+
     state_type m_state;
 };
 
@@ -268,6 +343,10 @@ public:
     {}
     /// Quasi copy constructor, using an already defined engine
     explicit random_vars(rng_engine& e) : rng_engine(e.state())
+    {}
+    /// copy constructor
+    random_vars(const random_vars& other)
+        : Xoshiro256Plus(other)
     {}
 
     /// Single precision uniform random values in [0, 1)

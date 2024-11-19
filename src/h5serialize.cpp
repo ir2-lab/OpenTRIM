@@ -365,6 +365,15 @@ try {
     if (opt.Output.store_pka) dump_event_stream(h5f,"/pka_events",s_->pka_stream(),var_list);
     if (opt.Output.store_transmitted_ions) dump_event_stream(h5f,"/exit_events",s_->exit_stream(),var_list);
 
+    var_list << endl;
+
+    // Save the rng state
+    auto rngstate = s_->rngState();
+    // make a copy, because std::array is not supported
+    std::vector<random_vars::result_type> state_cpy(rngstate.size());
+    for(int i=0; i<rngstate.size(); ++i) state_cpy[i] = rngstate[i];
+    dump(h5f,"/rng_state",state_cpy,var_list,"random generator state");
+
     h5e::dump(h5f, "variable_list", var_list.str());
 
 }

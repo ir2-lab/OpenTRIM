@@ -44,7 +44,7 @@ mccore::mccore(const mccore &s) :
     scattering_matrix_(s.scattering_matrix_),
     mfp_(s.mfp_), ipmax_(s.ipmax_),
     fp_max_(s.fp_max_), Tcutoff_(s.Tcutoff_),
-    rng(),
+    rng(s.rng),
     pka(s.pka)
 {
     tally_.copy(s.tally_);

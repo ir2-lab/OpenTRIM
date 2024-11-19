@@ -81,9 +81,17 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     start_time_ = std::time(nullptr);
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t_start);
 
+    // If ion_count == 0, i.e. simulation starts, seed the rng
+    if (s_->ion_count() == 0) s_->seed(par_.seed);
+
     // create simulation clones
     std::vector< mccore* > sims(nthreads);
     for(int i=0; i<nthreads; i++) sims[i] = new mccore(*s_);
+
+    // jump the rng's of clones (except the 1st one)
+    for(int i=1; i<nthreads; i++) {
+        for(int j=0; j<i; ++j) sims[i]->rngJump();
+    }
 
     // open streams
     for(int i=0; i<nthreads; i++) {
@@ -101,21 +109,10 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
         s_->close_exit_stream();
     }
 
-    // if no seeds given, generate random seeds
-    std::vector<unsigned int> myseeds = par_.seeds;
-    if (myseeds.size() < nthreads) {
-        myseeds.resize(nthreads);
-        std::random_device rd;
-        for(int i = 0; i<nthreads; i++)
-            myseeds[i] = rd();
-
-    }
-
     // set max ions and seed in each thread
     // reset abort flag
     for(int i=0; i<nthreads; i++) {
         sims[i]->setMaxIons(par_.max_no_ions);
-        sims[i]->seed(myseeds[i]);
         sims[i]->clear_abort_flag();
     }
 
@@ -177,6 +174,8 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     ips_ = ion_count_/t_secs;
     end_time_ = std::time(nullptr);
 
+    // copy back rng state from 1st clone
+    s_->copyRngStateFrom(*(sims[0]));
 
     // delete simulation clones
     for(int i=0; i<nthreads; i++) {
@@ -194,16 +193,6 @@ int mcdriver::options::validate()
 
     if (Driver.threads <=0)
         throw std::invalid_argument("Simulation.threads must be 1 or larger.");
-
-    if (!Driver.seeds.empty()) {
-        if (Driver.seeds.size()!=Driver.threads) {
-            std::stringstream ss;
-            ss << "Driver.threads=" << Driver.threads << " while the # of "
-               << "Driver.seeds is " << Driver.seeds.size() << "." << std::endl
-               << "Either enter a # of seeds equal to the # of threads or no seeds at all.";
-            throw std::invalid_argument(ss.str());
-        }
-    }
 
     // Simulation & Transport
     if (Simulation.scattering_calculation==mccore::InvalidScatteringOption)

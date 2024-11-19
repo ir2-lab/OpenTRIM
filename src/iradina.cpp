@@ -87,6 +87,7 @@ int main(int argc, char* argv[])
     // cli overrides
     if (n>0) opt.Driver.max_no_ions = n;
     if (j>0) opt.Driver.threads = j;
+    if (s>0) opt.Driver.seed = s;
     if (!output_file.empty()) opt.Output.OutputFileBaseName = output_file;
     /// @todo Fix the seed cli option for iradina++
     /// if (s>0) opt.Driver.seeds = s;

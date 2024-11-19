@@ -57,7 +57,7 @@ public:
         /// Number of threads to use
         int threads{1};
         /// Seed for the random number generator
-        std::vector<unsigned int> seeds;
+        unsigned int seed{123456789};
     };
 
     /// mcdriver output options

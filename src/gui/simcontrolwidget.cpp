@@ -119,7 +119,7 @@ void SimControlWidget::onStart(bool b)
 {
     McDriverObj* D = driver_;
     McDriverObj::DriverStatus st = D->status();
-     if (b) {
+    if (b) {
         // already running ?
         if (st == McDriverObj::mcRunning) return;
         // validate

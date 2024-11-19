@@ -284,6 +284,13 @@ public:
      */
     void seed(unsigned int s) { rng.seed(s); }
 
+    void rngJump() { rng.longJump(); }
+    random_vars::state_type rngState() const { return rng.state(); }
+
+    void copyRngStateFrom(const mccore& other) {
+        rng.state(other.rng.state());
+    }
+
     /**
      * @brief Merge the results from another simulation object
      *

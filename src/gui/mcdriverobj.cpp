@@ -175,7 +175,7 @@ void McDriverObj::start(bool b)
             std::stringstream ss(s, std::ios_base::in);
             opt.parseJSON(ss,false);
             opt.Driver.max_no_ions = max_ions_;
-            // opt.Driver.seeds = ToDo fix seed
+            opt.Driver.seed = seed_;
             opt.Driver.threads = nThreads_;
             opt.Output.storage_interval = updInterval_;
 
