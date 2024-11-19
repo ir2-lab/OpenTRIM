@@ -36,6 +36,22 @@ private:
     int dec;
 };
 
+template <class T> struct num_convert;
+
+template <>
+struct num_convert<double> {
+    static double str2num(const QString& s, bool& ok) {
+        return s.toDouble(&ok);
+    }
+};
+
+template <>
+struct num_convert<int> {
+    static int str2num(const QString& s, bool& ok) {
+        return s.toInt(&ok);
+    }
+};
+
 template<class T>
 class _Vector3D_
 {
@@ -59,7 +75,7 @@ public:
     T operator[](int i) const
     { Q_ASSERT(uint(i) < 3u); return v[i]; }
 
-    QJsonValue toJsonValue()
+    QJsonValue toJsonValue() const
     {
         QJsonArray array;
         array.push_back(x());
@@ -81,6 +97,44 @@ public:
         }
         return v;
     }
+
+    static _Vector3D_ fromString(const QString& S, bool *ok = nullptr)
+    {
+        _Vector3D_ v;
+        bool myok;
+        bool& ok_ = ok ? *ok : myok;
+        ok_ = false;
+
+        QString t = S.trimmed();
+        if (t.startsWith('[')) t.remove(0,1);
+        else return v;
+
+        if (t.endsWith(']')) t.chop(1);
+        else return v;
+
+        QStringList lst = t.split(',',Qt::SkipEmptyParts);
+        if (lst.count()!=3) return v;
+
+        bool numok = true;
+        int i =0;
+        while(i<3 && numok) {
+            v[i] = num_convert<T>::str2num(lst.at(i),numok);
+            i++;
+        }
+        if (!numok) return _Vector3D_{};
+
+        ok_ = true;
+        return v;
+    }
+
+    QString toString() const
+    {
+        return QString("[ %1, %2, %3]")
+            .arg(v[0])
+            .arg(v[1])
+            .arg(v[2]);
+    }
+
 
     bool operator==(const _Vector3D_ &v1)
     {
@@ -104,50 +158,6 @@ Q_DECLARE_METATYPE(Vector3D)
 
 Q_DECLARE_TYPEINFO(IntVector3D, Q_PRIMITIVE_TYPE);
 Q_DECLARE_METATYPE(IntVector3D)
-
-inline
-IntVector3D toIntVector3D(const QString& s, bool *ok = 0)
-{
-    QByteArray ba = s.toLatin1();
-    int x,y,z;
-    int i = sscanf(ba.constData(),"[%d, %d, %d]",&x,&y,&z);
-    if (ok) *ok = (i==3);
-    if (i==3)
-        return IntVector3D(x,y,z);
-    else
-        return IntVector3D();
-}
-
-inline
-    QString toString(const IntVector3D& v)
-{
-    return QString("[ %1, %2, %3]")
-        .arg(v.x())
-        .arg(v.y())
-        .arg(v.z());
-}
-
-inline
-Vector3D toVector3D(const QString& s, bool *ok = 0)
-{
-    QByteArray ba = s.toLatin1();
-    float x,y,z;
-    int i = sscanf(ba.constData(),"[%g, %g, %g]",&x,&y,&z);
-    if (ok) *ok = (i==3);
-    if (i==3)
-        return Vector3D(x,y,z);
-    else
-        return Vector3D();
-}
-
-inline
-QString toString(const Vector3D& v, char f = 'g', int digits = 6)
-{
-    return QString("[ %1, %2, %3]")
-        .arg(v.x(),0,f,digits)
-        .arg(v.y(),0,f,digits)
-        .arg(v.z(),0,f,digits);
-}
 
 class Vector3dValidator : public QValidator
 {

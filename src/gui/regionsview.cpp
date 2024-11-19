@@ -65,11 +65,11 @@ QVariant RegionsModel::data(const QModelIndex &index, int role) const
         break;
     case 2:
         vec = Vector3D::fromJsonValue(reg["min"]);
-        V = (role == Qt::DisplayRole) ?  toString(vec) : QVariant::fromValue(vec);
+        V = (role == Qt::DisplayRole) ?  vec.toString() : QVariant::fromValue(vec);
         break;
     case 3:
         vec = Vector3D::fromJsonValue(reg["max"]);
-        V = (role == Qt::DisplayRole) ?  toString(vec) : QVariant::fromValue(vec);
+        V = (role == Qt::DisplayRole) ?  vec.toString() : QVariant::fromValue(vec);
         break;
     default:
         assert(0);

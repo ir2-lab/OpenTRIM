@@ -321,7 +321,7 @@ QVariant Vector3dOptionsItem::value() const
 }
 QVariant Vector3dOptionsItem::displayValue() const
 {
-    return toString(value().value<Vector3D>());
+    return value().value<Vector3D>().toString();
 }
 bool Vector3dOptionsItem::setValue(const QVariant& v)
 {
@@ -363,7 +363,7 @@ QVariant IVector3dOptionsItem::value() const
 }
 QVariant IVector3dOptionsItem::displayValue() const
 {
-    return toString(value().value<IntVector3D>());
+    return value().value<IntVector3D>().toString();
 }
 bool IVector3dOptionsItem::setValue(const QVariant& v)
 {

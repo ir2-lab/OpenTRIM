@@ -185,7 +185,7 @@ QValidator::State Vector3dValidator::validate(QString & input, int &) const
     if (s.back()!=']') return QValidator::Intermediate;
 
     bool ok = false;
-    Vector3D v = toVector3D(input, &ok); // returns 0.0 if !ok
+    Vector3D v = Vector3D::fromString(input, &ok); // returns 0.0 if !ok
 
     if (!ok)
         return QValidator::Intermediate;
@@ -253,7 +253,7 @@ QValidator::State IntVector3dValidator::validate(QString & input, int &) const
     if (s.back()!=']') return QValidator::Intermediate;
 
     bool ok = false;
-    IntVector3D v = toIntVector3D(input, &ok); // returns 0.0 if !ok
+    IntVector3D v = IntVector3D::fromString(input, &ok); // returns 0.0 if !ok
 
     if (!ok)
         return QValidator::Intermediate;
@@ -354,12 +354,12 @@ Vector3dLineEdit::Vector3dLineEdit(double fmin, double fmax, int decimals, QWidg
 
 void Vector3dLineEdit::setValue(const Vector3D& v)
 {
-    setText(toString(v));
+    setText(v.toString());
 }
 
 Vector3D Vector3dLineEdit::value() const
 {
-    return toVector3D(text());
+    return Vector3D::fromString(text());
 }
 
 void Vector3dLineEdit::checkInput()
@@ -393,12 +393,12 @@ IntVector3dLineEdit::IntVector3dLineEdit(int imin, int imax, QWidget* parent) :
 
 void IntVector3dLineEdit::setValue(const IntVector3D& v)
 {
-    setText(toString(v));
+    setText(v.toString());
 }
 
 IntVector3D IntVector3dLineEdit::value() const
 {
-    return toIntVector3D(text());
+    return IntVector3D::fromString(text());
 }
 
 void IntVector3dLineEdit::checkInput()
