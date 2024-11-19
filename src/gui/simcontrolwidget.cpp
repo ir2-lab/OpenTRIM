@@ -19,13 +19,13 @@ SimControlWidget::SimControlWidget(McDriverObj *d, QWidget *parent)
     /* Create Controls */
     QSize bsz(32,32);
     btStart = new QToolButton;
-    btStart->setIcon(QIcon(":/icons/assets/ionicons/play-circle-outline.svg"));
+    btStart->setIcon(QIcon(":/icons/assets/ionicons/play-circle-outline.png"));
     btStart->setIconSize(bsz);
     btStart->setCheckable(true);
     btStart->setToolTip("Run");
 
     btReset = new QToolButton;
-    btReset->setIcon(QIcon(":/icons/assets/ionicons/refresh-circle-outline.svg"));
+    btReset->setIcon(QIcon(":/icons/assets/ionicons/refresh-circle-outline.png"));
     btReset->setIconSize(bsz);
     btReset->setToolTip("Reset");
     btReset->setEnabled(false);
@@ -132,11 +132,11 @@ void SimControlWidget::onStart(bool b)
         }
         D->start(b);
         simTimer->start(100);
-        btStart->setIcon(QIcon(":/icons/assets/ionicons/pause-circle-outline.svg"));
+        btStart->setIcon(QIcon(":/icons/assets/ionicons/pause-circle-outline.png"));
     } else {
         D->start(b);
         simTimer->stop();
-        btStart->setIcon(QIcon(":/icons/assets/ionicons/play-circle-outline.svg"));
+        btStart->setIcon(QIcon(":/icons/assets/ionicons/play-circle-outline.png"));
         //runIndicator->setText("");
     }
 }
@@ -167,7 +167,7 @@ void SimControlWidget::onDriverStatusChanged()
     btReset->setEnabled(st != McDriverObj::mcReset);
     if (st != McDriverObj::mcRunning) {
         simTimer->stop();
-        btStart->setIcon(QIcon(":/icons/assets/ionicons/play-circle-outline.svg"));
+        btStart->setIcon(QIcon(":/icons/assets/ionicons/play-circle-outline.png"));
         if (btStart->isChecked()) btStart->setChecked(false);
         //runIndicator->setText("");
     }

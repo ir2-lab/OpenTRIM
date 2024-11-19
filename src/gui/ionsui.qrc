@@ -22,5 +22,8 @@
         <file>assets/ionicons/checkmark-done-outline.svg</file>
         <file>assets/lucide/chart-line.svg</file>
         <file>assets/ionicons/document-text-outline.svg</file>
+        <file>assets/ionicons/play-circle-outline.png</file>
+        <file>assets/ionicons/refresh-circle-outline.png</file>
+        <file>assets/ionicons/pause-circle-outline.png</file>
     </qresource>
 </RCC>
