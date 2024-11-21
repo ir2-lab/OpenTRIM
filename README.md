@@ -37,7 +37,7 @@ If you download a tarball of the project the submodule is **not** included. You 
 On **Linux** the project can be built and installed with `cmake`.
 
 The `Eigen` and `HDF5` libraries are needed for building. For the GUI
-component the `Qt` libraries and the `Qwt` plotting library are also needed.
+component the `Qt5` libraries and the `Qwt6` plotting library are also needed.
 
 Install them with
 ```bash
