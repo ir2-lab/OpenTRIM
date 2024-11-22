@@ -3,6 +3,8 @@
 #include "mcdriver.h"
 #include "qjsonpath/qjsonpath.h"
 
+#include <fstream>
+
 #include <QMessageBox>
 #include <QFile>
 #include <QApplication>

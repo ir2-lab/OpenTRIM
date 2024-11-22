@@ -223,20 +223,7 @@ void WelcomeView::onOpenJson()
 
     QByteArray json = f.readAll();
 
-    // 1. Is it valid json ??
-    QJsonParseError err;
-    QJsonDocument jdoc(QJsonDocument::fromJson(json,&err));
-    if (err.error)  {
-        QMessageBox::warning(this, "Open JSON",
-                             QString("Error parsing JSON file:\n%1\n%2 at offset %3")
-                                 .arg(fileName)
-                                 .arg(err.errorString())
-                                 .arg(err.offset),
-                             QMessageBox::Ok);
-        return;
-    }
-
-    // 2. Is it a valid IONS config ??
+    // Is it a valid json config ??
     mcdriver::options opt;
     std::istringstream is(json.constData());
     std::ostringstream os;
