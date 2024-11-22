@@ -3,6 +3,12 @@
 #include "ion.h"
 #include "target.h"
 
+#include <filesystem>
+#include <cstdio>
+#include <unistd.h>
+
+namespace fs = std::filesystem;
+
 void pka_event::setNatoms(int n, const std::vector<std::string>& labels)
 {
     natoms_ = n;
@@ -42,48 +48,56 @@ void pka_event::init(const ion* i)
     buff_[ofErg] = i->erg() + i->myAtom()->El(); // add lattice energy to recoil E=T-El -> T=E+El
 }
 
-int event_stream::open(const std::string& fname, const event& ev)
+int event_stream::open(const event& ev)
 {
-    close();
-    fname_ = fname;
+    close_();
+
     cols_ = ev.size();
     rows_ = 0;
     event_proto_ = event(ev);
-    fs_.open(fname_, std::ios::binary);
-    return fs_.is_open() ? 0 : -1;
+
+    auto tmpdir = fs::temp_directory_path();
+    std::string fname(tmpdir);
+    fname += "/event_stream_XXXXXX";
+
+    int fd = mkstemp(fname.data());
+    if (fd == -1) return -1;
+
+    fs_ = fdopen(fd, "w+");
+    if (fs_ == NULL) {
+        close(fd);
+        return -1;
+    }
+
+    return 0;
 }
 
-void event_stream::close()
+void event_stream::close_()
 {
-    if (fs_.is_open()) fs_.close();
+    if (fs_) {
+        std::fclose(fs_);
+        fs_=NULL;
+    }
 }
 void event_stream::write(const event* ev)
 {
-    if (fs_.is_open()) {
-        fs_.write((char*)ev->data(),ev->size()*sizeof(float));
+    if (is_open()) {
+        std::fwrite(ev->data(),sizeof ev->data()[0],
+                    ev->size(),fs_);
         rows_++;
     }
 }
 
-void event_stream::remove()
-{
-    if (!fname_.empty() && !is_open()) {
-        std::remove(fileName().c_str());
-        rows_ = 0;
-    }
-}
-
-int event_stream::merge(const event_stream& ev)
+int event_stream::merge(event_stream& ev)
 {
     if ((ev.cols() != cols()) ||
-        is_open() || ev.is_open()) return -1;
+        !is_open() || !ev.is_open()) return -1;
 
     if (ev.rows()==0) return 0;
 
-    std::ifstream ifs(ev.fileName(), std::ios::binary);
-    fs_.open(fname_, std::ios::out | std::ios::binary | std::ios::app );
+    ev.rewind();
 
-    // mem buffer ~1MB
+    // local mem buffer ~1MB
     size_t n = (1 << 10);
     std::vector<float> buff(n*cols());
 
@@ -93,19 +107,42 @@ int event_stream::merge(const event_stream& ev)
         size_t n1 = std::min(nrows,n); // # of rows to copy in this iter
         nrows -= n1;
         rows_ += n1;
-        size_t nbytes = n1*cols()*sizeof(float);
 
-        // read from raw buffer
-        ifs.read((char*)buff.data(), nbytes);
+        // read from other stream
+        ev.read(buff.data(), n1);
 
-        // write to file
-        fs_.write((char*)buff.data(), nbytes);
+        // write to this stream
+        write(buff.data(), n1);
     }
 
-    ifs.close();
-    fs_.close();
-
     return 0;  // successfully terminated
+}
+
+void event_stream::rewind()
+{
+    if (is_open()) std::rewind(fs_);
+}
+
+void event_stream::clear()
+{
+    if (is_open()) {
+        std::rewind(fs_);
+        rows_ = 0;
+    }
+}
+
+size_t event_stream::read(float *buff, size_t nevents)
+{
+    return is_open() ?
+               std::fread(buff,sizeof(float),nevents*cols_,fs_) :
+               0;
+}
+
+size_t event_stream::write(const float *buff, size_t nevents)
+{
+    return is_open() ?
+               std::fwrite(buff,sizeof(float),nevents*cols_,fs_) :
+               0;
 }
 
 exit_event::exit_event() :

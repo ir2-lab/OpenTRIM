@@ -118,7 +118,7 @@ int dump_array(h5::File& file, const std::string& path,
            dump_array(file, dpath, S, var_list, ddesc);
 }
 
-int dump_event_stream(h5::File &h5f, const std::string &grp_name, const event_stream &es,
+int dump_event_stream(h5::File &h5f, const std::string &grp_name, event_stream &es,
                       std::stringstream &var_list)
 {
     // get row, column numbers
@@ -157,7 +157,7 @@ int dump_event_stream(h5::File &h5f, const std::string &grp_name, const event_st
     std::vector<size_t> offset{0, 0};
     std::vector<size_t> count{buff_rows, ncols};
 
-    std::ifstream ifs(es.fileName(), std::ios::binary);
+    es.rewind();
 
     // copy data in chunks
     while (nrows)
@@ -166,7 +166,7 @@ int dump_event_stream(h5::File &h5f, const std::string &grp_name, const event_st
         nrows -= count[0];
 
         // read from raw file buffer
-        ifs.read((char *)buff.data(), count[0] * ncols * sizeof(float));
+        es.read(buff.data(), count[0]);
 
         // write to HDF5 file
         dataset.select(offset, count).write_raw<float>(buff.data());
@@ -174,8 +174,6 @@ int dump_event_stream(h5::File &h5f, const std::string &grp_name, const event_st
         // advance offset
         offset[0] += count[0];
     }
-
-    ifs.close();
 
     var_list << path << '\t'
              << shapeStr(dataset.getSpace()) << '\t'

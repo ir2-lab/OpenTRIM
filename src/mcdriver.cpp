@@ -93,20 +93,18 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
         for(int j=0; j<i; ++j) sims[i]->rngJump();
     }
 
-    // open streams
+    // open clone streams
     for(int i=0; i<nthreads; i++) {
         if (out_opts_.store_pka)
-            sims[i]->open_pka_stream(outFileName("pka",i).c_str());
+            sims[i]->open_pka_stream();
         if (out_opts_.store_transmitted_ions)
-            sims[i]->open_exit_stream(outFileName("exit",i).c_str());
+            sims[i]->open_exit_stream();
     }
-    if (out_opts_.store_pka) {
-        s_->open_pka_stream(outFileName("pka").c_str());
-        s_->close_pka_stream();
-    }
-    if (out_opts_.store_transmitted_ions) {
-        s_->open_exit_stream(outFileName("exit").c_str());
-        s_->close_exit_stream();
+    // If ion_count == 0, i.e. simulation starts,
+    // open the main streams
+    if (s_->ion_count() == 0) {
+        if (out_opts_.store_pka) s_->open_pka_stream();
+        if (out_opts_.store_transmitted_ions) s_->open_exit_stream();
     }
 
     // set max ions and seed in each thread
@@ -134,11 +132,8 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
             ion_count_ = s_->ion_count();
 
             // consolidate results
-            {
-                std::lock_guard< std::mutex > lock(*(s_->tally_mutex()));
-                for(int i=0; i<nthreads; i++)
-                    s_->merge(*(sims[i]));
-            }
+            for(int i=0; i<nthreads; i++)
+                s_->mergeTallies(*(sims[i]));
 
             cb(*this,callback_user_data);
 
@@ -154,9 +149,11 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // wait for threads to finish...
     for(int i=0; i<nthreads; i++) thread_pool[i].join();
 
-    // consolidate results
-    for(int i=0; i<nthreads; i++)
-        s_->merge(*(sims[i]));
+    // consolidate tallies & events
+    for(int i=0; i<nthreads; i++) {
+        s_->mergeTallies(*(sims[i]));
+        s_->mergeEvents(*(sims[i]));
+    }
 
     // report progress for the last time
     if (cb) {

@@ -362,13 +362,13 @@ int mccore::run()
             pka_stream_.write(&pka);
         } // pka loop
 
-        // compute total sums and
-        // add this ion's tally to total score
+        // compute total sums for current ion tally
         tion_.computeSums();
 
+        // add this ion's tally to total score
+        // lock the tally_mutex to allow merge operations
         {
             std::lock_guard< std::mutex > lock(*tally_mutex_);
-            //assert(tion_.debugCheck(i->erg0()));
             tally_ += tion_;
             dtally_.addSquared(tion_);
         }
@@ -382,9 +382,6 @@ int mccore::run()
         thread_ion_counter_++;
 
     } // ion loop
-
-    pka_stream_.close();
-    exit_stream_.close();
 
     return 0;
 }
@@ -726,18 +723,21 @@ void mccore::pka_mark(const ion* i, tally &t, pka_event &pka, bool start)
     }
 }
 
-void mccore::merge(const mccore& other)
+void mccore::mergeTallies(mccore& other)
 {
+    std::lock_guard< std::mutex > lock(*tally_mutex_);
     tally_ += other.tally_;
+    other.tally_.clear();
     dtally_ += other.dtally_;
-    pka_stream_.merge(other.pka_stream_);
-    exit_stream_.merge(other.exit_stream_);
+    other.dtally_.clear();
 }
 
-void mccore::remove_stream_files()
+void mccore::mergeEvents(mccore& other)
 {
-    pka_stream_.remove();
-    exit_stream_.remove();
+    pka_stream_.merge(other.pka_stream_);
+    pka_stream_.clear();
+    exit_stream_.merge(other.exit_stream_);
+    exit_stream_.clear();
 }
 
 ArrayNDd mccore::getTallyTable(int i) const

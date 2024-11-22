@@ -167,9 +167,8 @@ protected:
     // ref counter
     std::shared_ptr<int> ref_count_;
 
-    // ion counters
+    // max # of ion histories to run
     size_t max_no_ions_;
-    size_t count_offset_;
 
     // shared ion counter
     std::shared_ptr< std::atomic_size_t > ion_counter_; // shared ion counter
@@ -202,7 +201,6 @@ public:
     ~mccore();
 
     void setMaxIons(unsigned int n) { max_no_ions_ = n; }
-    void setCountOffset(size_t n) { count_offset_ = n; }
     size_t ion_count() const { return *ion_counter_; }
     size_t thread_ion_count() const { return thread_ion_counter_; }
 
@@ -221,7 +219,7 @@ public:
     const ion_beam& getSource() const { return *source_; }
     /// Return a const reference to the tally object
     const tally& getTally() const { return tally_; }
-    /// Return a const reference to the tally object
+    /// Return a const reference to the tally variance object
     const tally& getTallyVar() const { return dtally_; }
 
     ArrayNDd getTallyTable(int i) const;
@@ -229,30 +227,18 @@ public:
     void copyTallyTable(int i, ArrayNDd& A) const;
     void copyTallyTableVar(int i, ArrayNDd& dA) const;
 
-    std::mutex* tally_mutex() { return tally_mutex_.get(); }
-
     /// Open file stream to store \ref pka_event data
-    int open_pka_stream(const char* fname) {
-        return pka_stream_.open(fname, pka);
-    }
-    /// Close \ref pka_event stream
-    void close_pka_stream() {
-        return pka_stream_.close();
+    int open_pka_stream() {
+        return pka_stream_.open(pka);
     }
     /// Return reference to the pka stream
-    const event_stream& pka_stream() { return pka_stream_; }
+    event_stream& pka_stream() { return pka_stream_; }
     /// Open file stream to store \ref exit_event data
-    int open_exit_stream(const char* fname) {
-        return exit_stream_.open(fname, exit_ev);
-    }
-    /// Open file stream to store \ref exit_event data
-    void close_exit_stream() {
-        exit_stream_.close();
+    int open_exit_stream() {
+        return exit_stream_.open(exit_ev);
     }
     /// Return reference to the exit stream
-    const event_stream& exit_stream() { return exit_stream_; }
-    /// Removes stream files from the filesystem
-    void remove_stream_files();
+    event_stream& exit_stream() { return exit_stream_; }
 
     // dedx interpolators
     ArrayND<dedx_interp*> dedx() const { return dedx_; }
@@ -294,12 +280,27 @@ public:
     /**
      * @brief Merge the results from another simulation object
      *
-     * The tallies and streamed events from @p other are
-     * added to this object's tallies and event streams
+     * The tallies from @p other are
+     * added to this object's tallies.
+     *
+     * The
+     * tallies of @p are cleared.
      *
      * @param other a simulation object
      */
-    void merge(const mccore& other);
+    void mergeTallies(mccore &other);
+
+    /**
+     * @brief Merge the events from another simulation object
+     *
+     * The streamed events from @p other are
+     * added to this object's event streams.
+     *
+     * The events of @p other are cleared.
+     *
+     * @param other a simulation object
+     */
+    void mergeEvents(mccore &other);
 
     /**
      * @brief Run the specified number of ion histories

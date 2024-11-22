@@ -5,7 +5,6 @@
 #include <cstring>
 #include <string>
 #include <vector>
-#include <fstream>
 
 class event_stream;
 class ion;
@@ -87,40 +86,42 @@ class event_stream
 {
 protected:
     size_t rows_, cols_;
-    std::ofstream fs_;
-    std::string fname_;
+    std::FILE* fs_;
     event event_proto_;
 
 public:
     /// Create an empty event_stream
     event_stream() :
-        rows_(0), cols_(0)
+        rows_(0), cols_(0), fs_(NULL)
     {}
     /// Close the file, remove data and destroy the event_stream object
     virtual ~event_stream()
     {
-        close();
-        remove();
+        close_();
     }
-    /// Open event_stream with given file name and event type
-    int open(const std::string& fname, const event& ev);
+    /// Open the event_stream using @ref ev as prototype event
+    int open(const event& ev);
     /// Count of events stored in the stream (rows)
     size_t rows() const { return rows_; }
     /// Size of each event (columns)
     size_t cols() const { return cols_; }
-    /// Name of the disk file holding the event data
-    const std::string& fileName() const { return fname_; }
-    /// @brief Close the event stream
-    void close();
-    void remove();
     /// Write an event to the stream 
     void write(const event* ev);
     /// Merge data from another stream into this one 
-    int merge(const event_stream& ev);
+    int merge(event_stream &ev);
     /// Return true if the stream is open 
-    bool is_open() const { return fs_.is_open(); }
+    bool is_open() const { return fs_!=NULL; }
     /// Returns a refence to the event prototype currently saved in the stream
     const event& event_prototype() const { return event_proto_; }
+
+    void rewind();
+    void clear();
+    size_t read(float* buff, size_t nevents);
+    size_t write(const float* buff, size_t nevents);
+
+private:
+    /// @brief Close the event stream
+    void close_();
 };
 
 /**
