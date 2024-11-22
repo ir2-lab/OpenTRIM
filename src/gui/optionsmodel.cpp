@@ -242,17 +242,33 @@ BoolOptionsItem::BoolOptionsItem(const QString& key,
 QVariant BoolOptionsItem::value() const
 {
     if (P_) {
-        return QJsonPath::get(P_->jdoc, jpath_).toBool();
+        bool ret = false;
+        QJsonValue v = QJsonPath::get(P_->jdoc, jpath_);
+        if (v.isBool()) ret = v.toBool();
+        else if (v.isDouble()) ret = v.toInt();
+        return ret;
     } else return QVariant();
 }
 bool BoolOptionsItem::setValue(const QVariant& v)
 {
     if (!P_) return false;
+
     bool b = v.toBool();
-    if (b != value().toBool()) {
-        QJsonPath::set(P_->jdoc, jpath_, b);
-        return true;
+
+    QJsonValue v0 = QJsonPath::get(P_->jdoc, jpath_);
+    if (v0.isBool()) {
+        if (b != v0.toBool()) {
+            QJsonPath::set(P_->jdoc, jpath_, b);
+            return true;
+        }
+    } else if (v0.isDouble()) {
+        bool b0 = v0.toInt();
+        if (b != b0) {
+            QJsonPath::set(P_->jdoc, jpath_, int(b));
+            return true;
+        }
     }
+
     return false;
 }
 QWidget* BoolOptionsItem::createEditor(QWidget* parent) const
