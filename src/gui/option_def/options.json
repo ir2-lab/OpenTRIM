@@ -207,13 +207,6 @@
             "whatsThis" : ""
         },
         {
-            "name" : "OutputFileBaseName",
-            "label": "Output File Name",
-            "type" : "string",
-            "toolTip" : "Name of the output file without the extension.",
-            "whatsThis" : ""
-        },
-        {
             "name" : "storage_interval",
             "label": "Update interval (ms)",
             "type" : "int",

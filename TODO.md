@@ -1,8 +1,10 @@
 ## Issues
 
-- In `GUI/Save_As H5`, if there are event buffers(files) they are not copied to the new H5 
-  - this is because the simulation changes output file name while the event buffers have the old name
-  - possible solution: create the buffers in temp locations with arbitrary names independent of the simulation output file 
+## Functionality that needs to be completed
+
+- GUI / Recent files
+- GUI / Getting Started
+- GUI / About
 
 ## Enhancements
 

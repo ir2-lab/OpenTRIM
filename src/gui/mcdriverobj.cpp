@@ -101,25 +101,25 @@ bool McDriverObj::validateOptions(QString* msg) const
     return isValid;
 }
 
-void McDriverObj::loadJson(const QString &path)
+void McDriverObj::loadJsonTemplate(const QString &path)
 {
     reset();
 
     mcdriver::options opt;
-    opt.Output.OutputFileBaseName = "Untitled";
 
     if (!path.isNull()) {
-        // path should point to a valid config file.
+        // path should point to an example in resources.
         // open file and read config, no checks!
         QFile f(path);
         f.open( QFile::ReadOnly );
         std::stringstream is(f.readAll().constData());
         bool validate = false;
         opt.parseJSON(is,validate);
-
-        QFileInfo finfo(path);
-        opt.Output.OutputFileBaseName = finfo.baseName().toStdString();
     }
+
+    // In any case, this is called Untitled
+    opt.Output.OutputFileBaseName = "Untitled";
+    template_ = true;
 
     std::stringstream os;
     opt.printJSON(os);
@@ -130,9 +130,36 @@ void McDriverObj::loadJson(const QString &path)
     emit configChanged();
     emit contentsChanged();
     emit fileNameChanged();
+    emit modificationChanged(false);
+}
 
-    //ionsui_->optionsView->revert();
-    //ionsui_->runView->revert();
+void McDriverObj::loadJsonFile(const QString &path)
+{
+    reset();
+
+    mcdriver::options opt;
+
+    // path should point to a valid config file.
+    // open file and read config, no checks!
+    QFile f(path);
+    f.open( QFile::ReadOnly );
+    std::stringstream is(f.readAll().constData());
+    bool validate = false;
+    opt.parseJSON(is,validate);
+
+    QFileInfo finfo(path);
+    opt.Output.OutputFileBaseName = finfo.baseName().toStdString();
+    template_ = false;
+
+    std::stringstream os;
+    opt.printJSON(os);
+    jsonOptions_ = QJsonDocument::fromJson(os.str().c_str());
+
+    setModified(false);
+
+    emit configChanged();
+    emit contentsChanged();
+    emit fileNameChanged();
 }
 
 void McDriverObj::saveJson(const QString &fname)
@@ -150,6 +177,8 @@ void McDriverObj::saveJson(const QString &fname)
     std::ofstream os(fname.toLatin1().constData());
     opt.printJSON(os);
 
+    template_ = false;
+
     if (!driver_->getSim()) setModified(false);
 }
 
@@ -161,6 +190,8 @@ void McDriverObj::saveH5(const QString &fname)
     setFileName(finfo.baseName());
 
     driver_->save();
+
+    template_ = false;
 
     setModified(false);
 }
@@ -200,6 +231,8 @@ void McDriverObj::start(bool b)
             driver_->setOutputOptions(opts);
         }
 
+        setModified(true);
+
         emit startSignal();
     }
 }
@@ -213,6 +246,8 @@ void McDriverObj::start_()
 
     init_run_data();
 
+    emit simulationStarted(true);
+
     int ret = -1;
     if (driver_->getSim())
         ret = driver_->exec(mc_callback_,updInterval,this);
@@ -222,6 +257,8 @@ void McDriverObj::start_()
     eta_ = 0;
     total_elapsed_ += elapsed_;
     elapsed_ = 0.;
+
+    emit simulationStarted(false);
 
     setStatus(mcIdle);
 }
@@ -283,6 +320,7 @@ void McDriverObj::reset()
         driver_->reset();
         setStatus(mcReset);
         emit simulationDestroyed();
+        setModified(true);
     }
 }
 

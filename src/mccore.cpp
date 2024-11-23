@@ -735,9 +735,9 @@ void mccore::mergeTallies(mccore& other)
 void mccore::mergeEvents(mccore& other)
 {
     pka_stream_.merge(other.pka_stream_);
-    pka_stream_.clear();
+    other.pka_stream_.clear();
     exit_stream_.merge(other.exit_stream_);
-    exit_stream_.clear();
+    other.exit_stream_.clear();
 }
 
 ArrayNDd mccore::getTallyTable(int i) const

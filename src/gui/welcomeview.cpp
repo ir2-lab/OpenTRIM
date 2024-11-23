@@ -164,8 +164,8 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     connect(btNew, &QPushButton::clicked,
             this, &WelcomeView::onNew);
 
-    connect(ionsui->driverObj(),&McDriverObj::modificationChanged,
-            actSaveJson,&QAction::setEnabled);
+//    connect(ionsui->driverObj(),&McDriverObj::modificationChanged,
+//            actSaveJson,&QAction::setEnabled);
     connect(ionsui->driverObj(),&McDriverObj::modificationChanged,
             this,&WelcomeView::onDriverStatusChanged);
     connect(ionsui->driverObj(),&McDriverObj::statusChanged,
@@ -189,7 +189,7 @@ void WelcomeView::onOpenExample()
     QFile f(QString(":/examples/%1").arg(i->text()));
     if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
         f.close();
-        ionsui->driverObj()->loadJson(f.fileName());
+        ionsui->driverObj()->loadJsonTemplate(f.fileName());
         ionsui->setCurrentPage(IonsUI::idConfigPage);
     }
 }
@@ -198,7 +198,11 @@ void WelcomeView::onDriverStatusChanged()
 {
     McDriverObj* D = ionsui->driverObj();
     auto s = D->status();
-    actSaveH5->setEnabled(D->isModified() && s==McDriverObj::mcIdle);
+    actSaveJson->setEnabled(
+        (D->isModified() || D->isTemplate()));
+    actSaveH5->setEnabled(
+        (D->isModified() || D->isTemplate()) &&
+        s==McDriverObj::mcIdle);
     actSaveH5As->setEnabled(s==McDriverObj::mcIdle);
 }
 
@@ -236,17 +240,22 @@ void WelcomeView::onOpenJson()
         return;
     }
 
-    ionsui->driverObj()->loadJson(fileName);
+    ionsui->driverObj()->loadJsonFile(fileName);
     ionsui->setCurrentPage(IonsUI::idConfigPage);
+
     // set path to loaded file
     QFileInfo finfo(fileName);
     QString dirPath = finfo.dir().absolutePath();
-    bool ret = QDir::setCurrent(dirPath);
+    QDir::setCurrent(dirPath);
 
 }
 
 void WelcomeView::onSaveJson()
 {
+    if (ionsui->driverObj()->isTemplate()) {
+        onSaveJsonAs();
+        return;
+    }
     QString fname = ionsui->driverObj()->fileName();
     fname += ".json";
     ionsui->driverObj()->saveJson(fname);
@@ -258,7 +267,7 @@ void WelcomeView::onSaveJsonAs()
     fname += ".json";
     QFileInfo finfo(fname);
     QString selectedFileName = QFileDialog::getSaveFileName(this, tr("Save JSON configuration As ..."),
-                                                    finfo.absolutePath(),
+                                                    finfo.absoluteFilePath(),
                                                     tr("Json files [*.json](*.json);; All files (*.*)"));
     if (selectedFileName.isNull()) return;
     QFileInfo finfo2(selectedFileName);
@@ -272,7 +281,12 @@ void WelcomeView::onSaveJsonAs()
 
 void WelcomeView::onSaveH5()
 {
+    if (ionsui->driverObj()->isTemplate()) {
+        onSaveH5As();
+        return;
+    }
     QString fname = ionsui->driverObj()->fileName();
+
     fname += ".h5";
     ionsui->driverObj()->saveH5(fname);
 }
@@ -283,7 +297,7 @@ void WelcomeView::onSaveH5As()
     fname += ".h5";
     QFileInfo finfo(fname);
     QString selectedFileName = QFileDialog::getSaveFileName(this, tr("Save HDF5 (Config+Data) As ..."),
-                                                            finfo.absolutePath(),
+                                                            finfo.absoluteFilePath(),
                                                             tr("HDF5 files [*.h5](*.h5);; All files (*.*)"));
     if (selectedFileName.isNull()) return;
     QFileInfo finfo2(selectedFileName);
@@ -299,7 +313,7 @@ void WelcomeView::onNew()
 {    
     if (!userDiscardCurrentSim("New simulation")) return;
 
-    ionsui->driverObj()->loadJson();
+    ionsui->driverObj()->loadJsonTemplate();
     ionsui->setCurrentPage(IonsUI::idConfigPage);
 }
 

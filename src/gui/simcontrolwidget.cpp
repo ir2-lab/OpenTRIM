@@ -113,6 +113,10 @@ SimControlWidget::SimControlWidget(McDriverObj *d, QWidget *parent)
                        this, &SimControlWidget::onDriverStatusChanged, Qt::QueuedConnection);
     assert(ret);
 
+    ret = connect(driver_, &McDriverObj::simulationStarted,
+                  this, &SimControlWidget::onSimulationStarted, Qt::QueuedConnection);
+    assert(ret);
+
 }
 
 void SimControlWidget::onStart(bool b)
@@ -131,11 +135,11 @@ void SimControlWidget::onStart(bool b)
             return;
         }
         D->start(b);
-        simTimer->start(100);
+        //simTimer->start(100);
         btStart->setIcon(QIcon(":/icons/assets/ionicons/pause-circle-outline.png"));
     } else {
         D->start(b);
-        simTimer->stop();
+        //simTimer->stop();
         btStart->setIcon(QIcon(":/icons/assets/ionicons/play-circle-outline.png"));
         //runIndicator->setText("");
     }
@@ -166,7 +170,7 @@ void SimControlWidget::onDriverStatusChanged()
     McDriverObj::DriverStatus st = D->status();
     btReset->setEnabled(st != McDriverObj::mcReset);
     if (st != McDriverObj::mcRunning) {
-        simTimer->stop();
+        // simTimer->stop();
         btStart->setIcon(QIcon(":/icons/assets/ionicons/play-circle-outline.png"));
         if (btStart->isChecked()) btStart->setChecked(false);
         //runIndicator->setText("");
@@ -205,4 +209,14 @@ void SimControlWidget::onSimTimer()
     simIndicators[1]->setText(QString::number(D->ips()));
     simIndicators[2]->setText(mytimefmt_(D->elapsed()));
     simIndicators[3]->setText(mytimefmt_(D->eta(),true));
+}
+
+void SimControlWidget::onSimulationStarted(bool b)
+{
+    if (b) {
+        simTimer->start(100);
+    } else {
+        simTimer->stop();
+        onSimTimer();
+    }
 }

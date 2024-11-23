@@ -29,6 +29,7 @@ public:
 
     bool isModified() const { return modified_; }
     void setModified(bool b);
+    bool isTemplate() const { return template_; }
 
     QString fileName() const;
     void setFileName(const QString& s);
@@ -44,7 +45,11 @@ public:
 
     DriverStatus status() const { return (DriverStatus)int(status_); };
 
-    void loadJson(const QString& path = QString());
+    // load a json example or the default if path = QString()
+    void loadJsonTemplate(const QString& path = QString());
+    // load from a file on disk
+    void loadJsonFile(const QString& path);
+
     void saveJson(const QString& fname);
     void saveH5(const QString& fname);
 
@@ -80,6 +85,7 @@ signals:
     void simulationCreated();
     void simulationDestroyed();
     void startSignal();
+    void simulationStarted(bool b);
 
     // these are sent from within the worker/simulation thread
     // must be connected with Qt::QueuedConn.
@@ -90,6 +96,7 @@ private:
     mcdriver* driver_;
     QJsonDocument jsonOptions_;
     bool modified_;
+    bool template_;
     std::atomic_bool is_running_;
     std::atomic_int status_;
 

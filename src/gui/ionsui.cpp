@@ -137,7 +137,7 @@ IonsUI::IonsUI(QWidget *parent)
     connect(driverObj_, &McDriverObj::modificationChanged,
             this, &IonsUI::updateWindowTitle);
 
-    driverObj_->loadJson();
+    driverObj_->loadJsonTemplate();
 
 }
 

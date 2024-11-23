@@ -25,6 +25,7 @@ private slots:
     void onReset();
     void onDriverStatusChanged();
     void onSimTimer();
+    void onSimulationStarted(bool b);
 
 private:
     McDriverObj* driver_;
