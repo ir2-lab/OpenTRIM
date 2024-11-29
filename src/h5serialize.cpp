@@ -217,9 +217,9 @@ try {
     var_list << "Run statistics" << endl;
     const tally& t = s_->getTally();
     const tally& dt = s_->getTallyVar();
-    dump(h5f, "/run_stat/Nh", ion_count_, var_list, "# of histories");
+    dump(h5f, "/run_stat/Nh", getSim()->ion_count(), var_list, "# of histories");
     dump(h5f, "/run_stat/ips", ips_, var_list, "ion histories per second");
-    dump(h5f, "/run_stat/process_cpu_time", ion_count_/ips_*opt.Driver.threads, var_list, "total cpu time [s]");
+    dump(h5f, "/run_stat/process_cpu_time", getSim()->ion_count()/ips_*opt.Driver.threads, var_list, "total cpu time [s]");
     {
         std::stringstream ss;
         ss << std::put_time(std::localtime(&start_time_), "%c %Z");
@@ -321,11 +321,11 @@ try {
             name += tally::arrayGroup(k);
             name += "/";
             name += tally::arrayName(k);
-            ret = dump_array(h5f, name, t.at(k), dt.at(k), var_list, tally::arrayDescription(k), ion_count_)==0;
+            ret = dump_array(h5f, name, t.at(k), dt.at(k), var_list, tally::arrayDescription(k), getSim()->ion_count())==0;
             k++;
         }
 
-        dump_array(h5f, "/tally/totals/data", t.at(0), dt.at(0), var_list, "tally totals", ion_count_);
+        dump_array(h5f, "/tally/totals/data", t.at(0), dt.at(0), var_list, "tally totals", getSim()->ion_count());
         dump(h5f, "/tally/totals/column_names", t.arrayNames(), var_list, "names of totals");
 
         if (!ret) return -1;

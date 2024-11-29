@@ -1,7 +1,6 @@
 #include "mcdriver.h"
 #include "elements.h"
 
-#include <thread>
 #include <chrono>
 #include <stdexcept>
 #include <sstream>
@@ -32,19 +31,32 @@ mcdriver::~mcdriver()
     if (s_) delete s_;
 }
 
-std::string mcdriver::outFileName(const char* type, int thread_id)
-{
-    std::stringstream ss;
-    ss << out_opts_.OutputFileBaseName << '.' << type;
-    if (thread_id >= 0) ss << thread_id;
-    return ss.str();
-}
-
 std::string mcdriver::outFileName() const
 {
     std::string s(out_opts_.OutputFileBaseName);
     s += ".h5";
     return s;
+}
+
+void mcdriver::abort()
+{
+    if (s_) s_->abort();
+}
+
+void mcdriver::wait()
+{
+    for(int i=0; i<thread_pool_.size(); ++i)
+        thread_pool_[i].join();
+}
+
+void mcdriver::reset()
+{
+    if (s_) {
+        abort();
+        wait();
+        delete s_;
+        s_ = nullptr;
+    }
 }
 
 void mcdriver::getOptions(options& opt) const
@@ -85,21 +97,22 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     if (s_->ion_count() == 0) s_->seed(par_.seed);
 
     // create simulation clones
-    std::vector< mccore* > sims(nthreads);
-    for(int i=0; i<nthreads; i++) sims[i] = new mccore(*s_);
+    sim_clones_.resize(nthreads);
+    for(int i=0; i<nthreads; i++) sim_clones_[i] = new mccore(*s_);
 
     // jump the rng's of clones (except the 1st one)
     for(int i=1; i<nthreads; i++) {
-        for(int j=0; j<i; ++j) sims[i]->rngJump();
+        for(int j=0; j<i; ++j) sim_clones_[i]->rngJump();
     }
 
     // open clone streams
     for(int i=0; i<nthreads; i++) {
         if (out_opts_.store_pka)
-            sims[i]->open_pka_stream();
+            sim_clones_[i]->open_pka_stream();
         if (out_opts_.store_transmitted_ions)
-            sims[i]->open_exit_stream();
+            sim_clones_[i]->open_exit_stream();
     }
+
     // If ion_count == 0, i.e. simulation starts,
     // open the main streams
     if (s_->ion_count() == 0) {
@@ -107,38 +120,39 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
         if (out_opts_.store_transmitted_ions) s_->open_exit_stream();
     }
 
-    // set max ions and seed in each thread
-    // reset abort flag
+    // set max ions in each thread
     for(int i=0; i<nthreads; i++) {
-        sims[i]->setMaxIons(par_.max_no_ions);
-        sims[i]->clear_abort_flag();
+        sim_clones_[i]->setMaxIons(par_.max_no_ions);
     }
 
+    // clear the abort flag
+    s_->clear_abort_flag();
+
     // create & start worker threads
-    std::vector< std::thread > thread_pool;
     for(int i=0; i<nthreads; i++)
-        thread_pool.emplace_back(&mccore::run, sims[i]);
+        thread_pool_.emplace_back(&mccore::run, sim_clones_[i]);
 
 
     // report progress if callback function is given
     if (cb) {
-        thread_ion_count_.assign(nthreads,0);
         size_t iTick, nTick = std::max(msInterval / msTick, 1UL);
 
+        // waiting loop
         do  {
-
-            for(int i=0; i<nthreads; i++)
-                thread_ion_count_[i] = sims[i]->thread_ion_count();
-            ion_count_ = s_->ion_count();
 
             // consolidate results
             for(int i=0; i<nthreads; i++)
-                s_->mergeTallies(*(sims[i]));
+                s_->mergeTallies(*(sim_clones_[i]));
 
             cb(*this,callback_user_data);
 
+            // wait time in msTick intervals
+            // always checking if simulation is finished or aborted
             iTick = 0;
-            while (iTick < nTick && !(s_->abort_flag())) {
+            while (iTick < nTick &&
+                   s_->ion_count() < par_.max_no_ions &&
+                   !(s_->abort_flag()))
+            {
                 std::this_thread::sleep_for(std::chrono::milliseconds(msTick));
                 iTick++;
             }
@@ -147,20 +161,16 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     }
 
     // wait for threads to finish...
-    for(int i=0; i<nthreads; i++) thread_pool[i].join();
+    for(int i=0; i<nthreads; i++) thread_pool_[i].join();
 
     // consolidate tallies & events
     for(int i=0; i<nthreads; i++) {
-        s_->mergeTallies(*(sims[i]));
-        s_->mergeEvents(*(sims[i]));
+        s_->mergeTallies(*(sim_clones_[i]));
+        s_->mergeEvents(*(sim_clones_[i]));
     }
 
     // report progress for the last time
     if (cb) {
-        for(int i=0; i<nthreads; i++)
-            thread_ion_count_[i] = sims[i]->thread_ion_count();
-        ion_count_ = s_->ion_count();
-
         cb(*this,callback_user_data);
     }
 
@@ -168,16 +178,20 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t_end); // POSIX
     double t_secs = 1. * (t_end.tv_sec - t_start.tv_sec) / nthreads;
     t_secs += 1.e-9 * (t_end.tv_nsec - t_start.tv_nsec) / nthreads;
-    ips_ = ion_count_/t_secs;
+    ips_ = s_->ion_count()/t_secs;
     end_time_ = std::time(nullptr);
 
     // copy back rng state from 1st clone
-    s_->copyRngStateFrom(*(sims[0]));
+    s_->copyRngStateFrom(*(sim_clones_[0]));
 
     // delete simulation clones
     for(int i=0; i<nthreads; i++) {
-        delete sims[i];
+        delete sim_clones_[i];
     }
+
+    // clear threads & clone pointers
+    thread_pool_.clear();
+    sim_clones_.clear();
 
     return 0;
 }

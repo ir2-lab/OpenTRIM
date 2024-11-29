@@ -4,6 +4,7 @@
 #include "mccore.h"
 
 #include <ctime>
+#include <thread>
 
 /**
  * \defgroup Driver Driver
@@ -163,13 +164,12 @@ protected:
     // the simulation object
     mccore* s_;
 
-    // return temp file names for thread storage
-    std::string outFileName(const char* type, int thread_id = -1);
-
-    std::vector<size_t> thread_ion_count_;
-    size_t ion_count_;
-
-
+    // The following 2 are populated when the
+    // simulation runs
+    // 1. threads
+    std::vector< std::thread > thread_pool_;
+    // 2. simulation execution clones
+    std::vector< mccore* > sim_clones_;
 
 public:
 
@@ -192,8 +192,12 @@ public:
 
     const mccore* getSim() const { return s_; }
 
-    void abort() { if (s_) s_->abort(); }
-    void reset() { if (s_) delete s_; s_ = nullptr; }
+    /// Signal a running simulation to abort
+    void abort();
+    /// Wait for a running simulation to finish
+    void wait();
+    /// Reset the simulation object
+    void reset();
 
     /// total ions/s
     double ips() const { return ips_; }
@@ -211,11 +215,6 @@ public:
      * @return
      */
     int save();
-
-    /// ions run by each thread since last update
-    const std::vector<size_t>& thread_ion_count() const { return thread_ion_count_; }
-    /// total ions run by all threads
-    size_t ion_count() const { return ion_count_; }
 
     int exec(progress_callback cb = nullptr, size_t msInterval = 1000, void* callback_user_data = 0);
 };

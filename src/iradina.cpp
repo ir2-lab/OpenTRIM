@@ -23,7 +23,7 @@ void progress_callback(const mcdriver& d, void* )
 //    cout << '\t' << ct
 //         << '\t'  << d.getSim()->ion_que_size() << endl;
 
-    bar.update(d.ion_count());
+    bar.update(d.getSim()->ion_count());
 }
 
 int main(int argc, char* argv[])
@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
     
     tally t = D.getSim()->getTally();
     cout << endl << endl
-         << "Completed " << D.ion_count() << " ion histories." << endl;
+         << "Completed " << D.getSim()->ion_count() << " ion histories." << endl;
     cout << "ion/s = " << D.ips() << " (total), ";
     cout << D.ips()/D.nThreads() << " (per thread)" << endl;
 
