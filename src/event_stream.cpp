@@ -106,7 +106,6 @@ int event_stream::merge(event_stream& ev)
     while (nrows) {
         size_t n1 = std::min(nrows,n); // # of rows to copy in this iter
         nrows -= n1;
-        rows_ += n1;
 
         // read from other stream
         ev.read(buff.data(), n1);
@@ -140,9 +139,11 @@ size_t event_stream::read(float *buff, size_t nevents)
 
 size_t event_stream::write(const float *buff, size_t nevents)
 {
-    return is_open() ?
-               std::fwrite(buff,sizeof(float),nevents*cols_,fs_) :
-               0;
+    if (is_open()) {
+        rows_ += nevents;
+        return std::fwrite(buff,sizeof(float),nevents*cols_,fs_);
+    }
+    return 0;
 }
 
 exit_event::exit_event() :

@@ -182,7 +182,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     end_time_ = std::time(nullptr);
 
     // copy back rng state from 1st clone
-    s_->copyRngStateFrom(*(sim_clones_[0]));
+    s_->setRngState(sim_clones_[0]->rngState());
 
     // delete simulation clones
     for(int i=0; i<nthreads; i++) {

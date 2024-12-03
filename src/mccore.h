@@ -202,6 +202,7 @@ public:
 
     void setMaxIons(unsigned int n) { max_no_ions_ = n; }
     size_t ion_count() const { return *ion_counter_; }
+    void setIonCount(size_t n) { *ion_counter_ = n; }
     size_t thread_ion_count() const { return thread_ion_counter_; }
 
     /// Returns the core simulation parameters
@@ -221,6 +222,10 @@ public:
     const tally& getTally() const { return tally_; }
     /// Return a const reference to the tally variance object
     const tally& getTallyVar() const { return dtally_; }
+    /// Return a reference to the tally object
+    tally& getTally() { return tally_; }
+    /// Return a reference to the tally variance object
+    tally& getTallyVar() { return dtally_; }
 
     ArrayNDd getTallyTable(int i) const;
     ArrayNDd getTallyTableVar(int i) const;
@@ -272,10 +277,8 @@ public:
 
     void rngJump() { rng.longJump(); }
     random_vars::state_type rngState() const { return rng.state(); }
-
-    void copyRngStateFrom(const mccore& other) {
-        rng.state(other.rng.state());
-    }
+    void setRngState(const random_vars::state_type& s)
+    { return rng.state(s); }
 
     /**
      * @brief Merge the results from another simulation object

@@ -176,8 +176,10 @@ public:
     const ArrayNDd& Vnrt() const { return A[dpVnrt]; }
     const ArrayNDd& Vnrt_LSS() const { return A[dpVnrt_LSS]; }
 
-    /// Return the i-th tally score table
+    /// Return a const reference to the i-th tally score table
     const ArrayNDd& at(int i) const { return A[i]; }
+    /// Return a reference to the i-th tally score table
+    ArrayNDd& at(int i) { return A[i]; }
 
     /// @brief Initialize tally buffers for given # of atoms and cells 
     void init(int natoms, int ncells) {

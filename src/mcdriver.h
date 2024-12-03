@@ -209,12 +209,19 @@ public:
      *
      * For details on the structure of the output file see \ref out_file.
      *
-     * The file name is defined by output_options::OutputFileBaseName with the
-     * extension .h5 added.
-     *
-     * @return
+     * @param h5filename the output file name
+     * @param os optional stream pointer to write any error messages
+     * @return 0 if succesful
      */
-    int save();
+    int save(const std::string& h5filename, std::ostream* os = nullptr);
+
+    /**
+     * @brief Load a simulation from a HDF5 file
+     * @param h5filename the name of the file
+     * @param os optional stream pointer to write any error messages
+     * @return 0 if succesfull
+     */
+    int load(const std::string& h5filename, std::ostream* os = nullptr);
 
     int exec(progress_callback cb = nullptr, size_t msInterval = 1000, void* callback_user_data = 0);
 };

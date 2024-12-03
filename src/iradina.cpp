@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
 
     cout << "Storing results in " << D.outFileName() << " ...";
     cout.flush();
-    D.save();
+    D.save(D.outFileName(),&cerr);
     cout << " OK." << endl;
 
     return 0;
