@@ -5,10 +5,11 @@
 
 #include <fstream>
 
-#include <QMessageBox>
 #include <QFile>
 #include <QApplication>
 #include <QFileInfo>
+#include <QProgressDialog>
+#include <QElapsedTimer>
 
 
 // McDriverObj should not have a parent
@@ -24,6 +25,11 @@ McDriverObj::McDriverObj()
     connect(this, &McDriverObj::startSignal,
             this, &McDriverObj::start_,Qt::QueuedConnection);
 
+    // internal io operations signal connection
+    connect(this, &McDriverObj::loadH5_,
+            this, &McDriverObj::onLoadH5_,Qt::QueuedConnection);
+    connect(this, &McDriverObj::saveH5_,
+            this, &McDriverObj::onSaveH5_,Qt::QueuedConnection);
 }
 
 McDriverObj::~McDriverObj()
@@ -66,13 +72,26 @@ void McDriverObj::mc_callback_(const mcdriver& d, void* p)
 {
     McDriverObj* me = static_cast<McDriverObj*>(p);
 
-    ArrayNDd& totals_ = me->totals_;
-    me->driver_->getSim()->copyTallyTable(0,totals_);
-    if (me->totals_[0]>0.)
-        for(int i=1; i<totals_.size(); ++i)
-            totals_[i] /= totals_[0];
+    me->update_tally_totals_();
 
-    emit me->tallyUpdate();
+}
+
+void McDriverObj::update_tally_totals_()
+{
+    totals_ = driver_->getSim()->getTallyTable(0);
+    dtotals_ = driver_->getSim()->getTallyTableVar(0);
+    if (totals_[0]>1.) {
+        double f = 1./totals_[0];
+        double f1 = 1./(totals_[0]-1.);
+        for(int i=1; i<totals_.size(); ++i) {
+            totals_[i] *= f;
+            // error in the mean
+            // S[i] = std::sqrt((dA[i]/N-M[i]*M[i])/(N-1));
+            dtotals_[i] = std::sqrt((dtotals_[i]*f-totals_[i]*totals_[i])*f1);
+        }
+    }
+
+    emit tallyUpdate();
 }
 
 bool McDriverObj::validateOptions(QString* msg) const
@@ -160,6 +179,71 @@ void McDriverObj::loadJsonFile(const QString &path)
     emit configChanged();
     emit contentsChanged();
     emit fileNameChanged();
+
+    setStatus(mcReset);
+}
+
+bool McDriverObj::loadH5File(const QString &path)
+{
+    // Try to load the file
+    QProgressDialog dlg("Loading HDF5. Please wait ...",QString(),0,110);
+    dlg.setWindowModality(Qt::WindowModal);
+    dlg.setMinimumDuration( 0 );
+
+    io_op_active_ = true;
+    emit loadH5_(path);
+
+    // TODO
+    // Get file i/o progress indication from mcdriver
+    int k = 0;
+    QElapsedTimer tmr;
+    tmr.start();
+    while(io_op_active_) {
+        dlg.setValue(k);
+        if (tmr.hasExpired(250)) {
+            k += 10;
+            if (k>90) k=0;
+            tmr.restart();
+        }
+        QApplication::processEvents(QEventLoop::AllEvents, 100);
+    }
+
+    if (io_ret_!=0) return false;
+
+    reset();
+
+    delete driver_;
+    driver_ = test_driver_;
+    test_driver_ = nullptr;
+
+    mcdriver::options opt;
+    driver_->getOptions(opt);
+
+    QFileInfo finfo(path);
+    opt.Output.OutputFileBaseName = finfo.baseName().toStdString();
+    template_ = false;
+
+    std::stringstream os;
+    opt.printJSON(os);
+    jsonOptions_ = QJsonDocument::fromJson(os.str().c_str());
+
+    setModified(false);
+
+    init_run_data();
+
+    emit configChanged();
+    emit simulationCreated();
+    emit contentsChanged();
+    emit fileNameChanged();
+
+    setStatus(mcIdle);
+
+    return true;
+}
+
+QString McDriverObj::ioErrorMsg() const
+{
+    return QString::fromStdString(io_err_);
 }
 
 void McDriverObj::saveJson(const QString &fname)
@@ -182,18 +266,43 @@ void McDriverObj::saveJson(const QString &fname)
     if (!driver_->getSim()) setModified(false);
 }
 
-void McDriverObj::saveH5(const QString &fname)
+bool McDriverObj::saveH5(const QString &fname)
 {
-    if (!driver_->getSim()) return;
+    if (!driver_->getSim()) return false;
 
     QFileInfo finfo(fname);
     setFileName(finfo.baseName());
 
-    driver_->save();
+    // Try to save the file
+    QProgressDialog dlg("Saving HDF5. Please wait ...",QString(),0,110);
+    dlg.setWindowModality(Qt::WindowModal);
+    dlg.setMinimumDuration( 0 );
+
+    io_op_active_ = true;
+    emit saveH5_(fname);
+
+    // TODO
+    // Get file save progress indication from mcdriver
+    int k = 0;
+    QElapsedTimer tmr;
+    tmr.start();
+    while(io_op_active_) {
+        dlg.setValue(k);
+        if (tmr.hasExpired(250)) {
+            k += 10;
+            if (k>90) k=0;
+            tmr.restart();
+        }
+        QApplication::processEvents(QEventLoop::AllEvents, 100);
+    }
+
+    if (io_ret_!=0) return false;
 
     template_ = false;
 
     setModified(false);
+
+    return true;
 }
 
 void McDriverObj::start(bool b)
@@ -263,6 +372,23 @@ void McDriverObj::start_()
     setStatus(mcIdle);
 }
 
+void McDriverObj::onLoadH5_(const QString &path)
+{
+    test_driver_ = new mcdriver;
+    std::stringstream os;
+    io_ret_ = test_driver_->load(path.toStdString(), &os);
+    if (io_ret_ != 0) io_err_ = os.str();
+    io_op_active_ = false;
+}
+
+void McDriverObj::onSaveH5_(const QString &path)
+{
+    std::stringstream os;
+    io_ret_ = driver_->save(path.toStdString(), &os);
+    if (io_ret_ != 0) io_err_ = os.str();
+    io_op_active_ = false;
+}
+
 void McDriverObj::setStatus(DriverStatus s)
 {
     if (s != status()) {
@@ -282,10 +408,10 @@ void McDriverObj::init_run_data()
     elapsed_ = 0.;
     eta_ = std::numeric_limits<double>::infinity();
     ips_ = 0.;
-    totals_ = driver_->getSim()->getTallyTable(0);
-    if (totals_[0]>0.)
-        for(int i=1; i<totals_.size(); ++i) totals_[i] /= totals_[0];
+
+    update_tally_totals_();
 }
+
 void McDriverObj::update_run_data()
 {
     time_point t = my_clock_t::now();

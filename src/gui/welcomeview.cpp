@@ -31,7 +31,22 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     int h = rect.height()*2;
     int w = rect.width();
     btNew =     createButton("New Simulation",w,h,0);
-    btOpen =    createButton("Open Simulation",w,h,0);
+
+    btOpen = new QToolButton;
+    btOpen->setText("Open");
+    btOpen->setPopupMode(QToolButton::InstantPopup);
+    btOpen->setMinimumSize(QSize(w,h));
+    {
+        QMenu* toolMenu = new QMenu;
+        QAction* action;
+        action = toolMenu->addAction("Open JSON config");
+        connect(action, &QAction::triggered,
+                this, &WelcomeView::onOpenJson);
+        action = toolMenu->addAction("Open HDF5 file");
+        connect(action, &QAction::triggered,
+                this, &WelcomeView::onOpenH5);
+        btOpen->setMenu(toolMenu);
+    }
 
     btSave = new QToolButton;
     btSave->setText("Save");
@@ -39,7 +54,6 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     btSave->setMinimumSize(QSize(w,h));
     {
         QMenu* toolMenu = new QMenu;
-        QAction* action;
         actSaveJson = toolMenu->addAction("Save Config to JSON");
         actSaveJson->setEnabled(false);
         connect(actSaveJson, &QAction::triggered,
@@ -57,7 +71,6 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     btSaveAs->setMinimumSize(QSize(w,h));
     {
         QMenu* toolMenu = new QMenu;
-        QAction* action;
         actSaveJsonAs = toolMenu->addAction("Save Config to JSON As ...");
         connect(actSaveJsonAs, &QAction::triggered,
                 this, &WelcomeView::onSaveJsonAs);
@@ -159,8 +172,7 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     connect(exampleList, &QListWidget::itemDoubleClicked,
             this, &WelcomeView::onOpenExample);
 
-    connect(btOpen, &QPushButton::clicked,
-            this, &WelcomeView::onOpenJson);
+
     connect(btNew, &QPushButton::clicked,
             this, &WelcomeView::onNew);
 
@@ -250,6 +262,35 @@ void WelcomeView::onOpenJson()
 
 }
 
+void WelcomeView::onOpenH5()
+{
+    if (!userDiscardCurrentSim("Open HDF5")) return;
+
+    QString fileName = QFileDialog::getOpenFileName(this,
+                                                    tr("Open HDF5 file"), QString(),
+                                                    tr("HDF5 Files [*.h5](*.h5);;All Files [*.*](*.*)"));
+
+    if (fileName.isNull()) return; // cancelled by user
+
+    // Let driver load the file
+    McDriverObj* D = ionsui->driverObj();
+    if (!D->loadH5File(fileName)) {
+        QMessageBox::warning(this, "Open HDF5",
+                             QString("Error opening file:\n%1\n%2")
+                                 .arg(fileName)
+                                 .arg(D->ioErrorMsg()),
+                             QMessageBox::Ok);
+        return;
+    }
+
+    ionsui->setCurrentPage(IonsUI::idConfigPage);
+
+    // set path to loaded file
+    QFileInfo finfo(fileName);
+    QString dirPath = finfo.dir().absolutePath();
+    QDir::setCurrent(dirPath);
+}
+
 void WelcomeView::onSaveJson()
 {
     if (ionsui->driverObj()->isTemplate()) {
@@ -285,10 +326,19 @@ void WelcomeView::onSaveH5()
         onSaveH5As();
         return;
     }
-    QString fname = ionsui->driverObj()->fileName();
 
+    // Let driver save the file
+    McDriverObj* D = ionsui->driverObj();
+    QString fname = D->fileName();
     fname += ".h5";
-    ionsui->driverObj()->saveH5(fname);
+    if (!D->saveH5(fname)) {
+        QMessageBox::warning(this, "Save to HDF5",
+                             QString("Error creating file:\n%1\n%2")
+                                 .arg(fname)
+                                 .arg(D->ioErrorMsg()),
+                             QMessageBox::Ok);
+        return;
+    }
 }
 
 void WelcomeView::onSaveH5As()
@@ -304,9 +354,18 @@ void WelcomeView::onSaveH5As()
     if (finfo2.suffix().toLower() != "h5") selectedFileName += ".h5";
 
     QString dirPath = finfo2.dir().absolutePath();
-    bool ret = QDir::setCurrent(dirPath);
+    QDir::setCurrent(dirPath);
 
-    ionsui->driverObj()->saveH5(selectedFileName);
+    // Let driver save the file
+    McDriverObj* D = ionsui->driverObj();
+    if (!D->saveH5(selectedFileName)) {
+        QMessageBox::warning(this, "Save to HDF5",
+                             QString("Error creating file:\n%1\n%2")
+                                 .arg(selectedFileName)
+                                 .arg(D->ioErrorMsg()),
+                             QMessageBox::Ok);
+        return;
+    }
 }
 
 void WelcomeView::onNew()

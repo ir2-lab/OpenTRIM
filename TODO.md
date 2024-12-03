@@ -8,9 +8,8 @@
 
 ## Enhancements
 
-- Load a saved simulation from the h5 output file. 
-  - Stream files should append new events
-
+- Provide progress info for HDF5 i/o operations
+  
 - Improve Ion Beam source definition
   - Ion
     - Symbol/Z, 

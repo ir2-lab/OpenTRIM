@@ -109,6 +109,9 @@ SimControlWidget::SimControlWidget(McDriverObj *d, QWidget *parent)
 
     connect(simTimer, &QTimer::timeout, this, &SimControlWidget::onSimTimer);
 
+    connect(driver_, &McDriverObj::simulationCreated,
+            this, &SimControlWidget::onSimulationCreated);
+
     bool ret = connect(driver_, &McDriverObj::statusChanged,
                        this, &SimControlWidget::onDriverStatusChanged, Qt::QueuedConnection);
     assert(ret);
@@ -219,4 +222,12 @@ void SimControlWidget::onSimulationStarted(bool b)
         simTimer->stop();
         onSimTimer();
     }
+}
+
+void SimControlWidget::onSimulationCreated()
+{
+    const McDriverObj* D = driver_;
+
+    progressBar->setValue(D->progress());
+    simIndicators[0]->setText(QString::number(D->nions()));
 }

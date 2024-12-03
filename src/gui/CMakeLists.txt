@@ -28,6 +28,7 @@ set(PROJECT_SOURCES
         mcdriverobj.h mcdriverobj.cpp
         resultsview.h resultsview.cpp
         simcontrolwidget.h simcontrolwidget.cpp
+        error_fmt.h
         qmatplotwidget/src/QMatPlotWidget.h qmatplotwidget/src/QMatPlotWidget.cpp
         jsedit/jsedit.h jsedit/jsedit.cpp
 )
@@ -40,7 +41,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 else()
     add_executable(ions-gui
         ${PROJECT_SOURCES}
-
     )
 endif()
 

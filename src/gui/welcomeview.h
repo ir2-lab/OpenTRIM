@@ -27,6 +27,7 @@ private slots:
     void changeCenterWidget(int id);
     void onNew();
     void onOpenJson();
+    void onOpenH5();
     void onSaveJson();
     void onSaveH5();
     void onSaveJsonAs();
@@ -45,7 +46,7 @@ private:
     QListWidget * exampleList;
     JSEdit* jsonView;
     QButtonGroup* buttonGrp;
-    QPushButton* btOpen;
+    QToolButton* btOpen;
     QPushButton* btNew;
     QToolButton* btSave;
     QToolButton* btSaveAs;

@@ -5,6 +5,8 @@
 
 #include "tally.h"
 
+#include "error_fmt.h"
+
 #include <QFile>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -144,6 +146,9 @@ RunView::RunView(IonsUI *iui, QWidget *parent)
     connect(ionsui->driverObj(), &McDriverObj::tallyUpdate,
             this, &RunView::onTallyUpdate, Qt::QueuedConnection);
 
+//    connect(ionsui->driverObj(), &McDriverObj::simulationCreated,
+//            this, &RunView::onTallyUpdate);
+
     connect(ionsui->driverObj(), &McDriverObj::configChanged,
             this, &RunView::revert);
 
@@ -186,9 +191,12 @@ void RunView::onSimulationCreated()
 void RunView::onTallyUpdate()
 {
     auto T = ionsui->driverObj()->totals();
+    auto dT = ionsui->driverObj()->dtotals();
     if (!T.isNull()) {
         for(int i=1; i<T.size(); ++i)
-            simTotals[i-1]->setText(QString::number(T[i]));
+            simTotals[i-1]->setText(
+                QString::fromStdString(print_with_err(T[i],dT[i],'g',1))
+                );
     }
 }
 
