@@ -55,6 +55,24 @@ T round_with_err (const T& f, const T& df, int d=2)
     return std::round(f*sc)/sc;
 }
 
+std::string superscript(int i)
+{
+    const char* ss[] = {"\u2070", "\u00b9", "\u00b2", "\u00b3",
+                        "\u2074", "\u2075", "\u2076", "\u2077",
+                        "\u2078", "\u2079", "\u207a", "\u207b"};
+    char buff[32];
+    std::snprintf(buff,32,"%d",std::abs(i));
+    char* p = buff;
+    std::string s;
+    if (i < 0) s = ss[11];
+    while(*p) {
+        int k = *p - 48;
+        s.append(std::string(ss[k]));
+        p++;
+    }
+    return s;
+}
+
 /**
  * @brief Print real value with error
  *
@@ -149,14 +167,26 @@ std::string print_with_err(const T& f, const T& df, char fmt = 'g', int d = 2, b
             if (decimals) {
                 if (d<=decimals) {
                     dx *= std::pow(T(10),d);
-                    snprintf(buff, 1024, "%.*f(%.0f)*1e%d", decimals, x, dx, n-1);
+                    snprintf(buff, 1024, "%.*f(%.0f)", decimals, x, dx);
+                    std::string s(buff);
+                    s.append("×10");
+                    s.append(superscript(n-1));
+                    return s;
                 } else {
                     dx *= std::pow(T(10),d-decimals);
-                    snprintf(buff, 1024, "%.*f(%.*f)*1e%d", decimals, x, decimals, dx, n-1);
+                    snprintf(buff, 1024, "%.*f(%.*f)", decimals, x, decimals, dx);
+                    std::string s(buff);
+                    s.append("×10");
+                    s.append(superscript(n-1));
+                    return s;
                 }
             } else {
                 dx *= std::pow(T(10),dn+1-n);
-                snprintf(buff, 1024, "%.0f(%.0f)*1e%d", x, dx, n-1);
+                snprintf(buff, 1024, "%.0f(%.0f)", x, dx);
+                std::string s(buff);
+                s.append("×10");
+                s.append(superscript(n-1));
+                return s;
             }
 
             return std::string(buff);
@@ -187,13 +217,19 @@ std::string print_with_err(const T& f, const T& df, char fmt = 'g', int d = 2, b
             int decimals = std::max(precision-1,0);
 
             if (decimals) {
-                snprintf(buff, 1024, "(%.*f±%.*f)*1e%d",
-                         decimals, x, decimals, dx, n-1);
+                snprintf(buff, 1024, "(%.*f±%.*f)",
+                         decimals, x, decimals, dx);
+                std::string s(buff);
+                s.append("×10");
+                s.append(superscript(n-1));
+                return s;
             } else {
-                snprintf(buff, 1024, "(%.0f±%.0f)*1e%d",x,dx,n-1);
+                snprintf(buff, 1024, "(%.0f±%.0f)",x,dx);
+                std::string s(buff);
+                s.append("×10");
+                s.append(superscript(n-1));
+                return s;
             }
-
-            return std::string(buff);
         }
     }
 
