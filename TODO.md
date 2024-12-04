@@ -2,11 +2,17 @@
 
 ## Functionality that needs to be completed
 
-- GUI / Recent files
-- GUI / Getting Started
-- GUI / About
+GUI:
+- Getting Started
+- About
+- Update the isotope symbol in the Ion Beam config after loading a simulation
+
+CLI:
+- load HDF5 (impl -i option ???), continue simulation, store result (-o option ???)
 
 ## Enhancements
+
+- Database of known atomic data (displacement energy, FP energy, density of elements)
 
 - Provide progress info for HDF5 i/o operations
   
@@ -23,7 +29,7 @@
     - Distribution: Delta, Uniform, Hat, Gaussian
     - mean (3d vector) 
     - fwhm
-  - Direction -> Direction distribution
+  - Direction -> Angular distribution
     - Monodirectional, Uniform, Hat, Gaussian
     - mean (3d vector, un-normalized)
     - fwhm (rad or srad)
