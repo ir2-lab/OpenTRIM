@@ -27,6 +27,7 @@ public:
     QMatPlotWidget* plotWidget;
     QToolButton* axButton[3];
     QButtonGroup* axisButtonGrp;
+    QToolButton* btExport;
     QComboBox* axPts[2];
     QLabel* axPtsLbls[2];
     QListWidget* plotSelect;
@@ -48,6 +49,8 @@ private slots:
     void updatePlotSeries();
     void updateAxisSelection();
     void onPlotSelectChanged(QListWidgetItem* i);
+    void onExportCSV();
+    void onExportPlot();
 
 private:
 

@@ -13,6 +13,13 @@
 #include <QButtonGroup>
 #include <QPixmap>
 #include <QBitmap>
+#include <QMenu>
+#include <QFileDialog>
+#include <QMessageBox>
+
+#include <qwt_plot_renderer.h>
+
+#include <fstream>
 
 #include "qmatplotwidget/src/QMatPlotWidget.h"
 
@@ -80,6 +87,23 @@ ResultsView::ResultsView(IonsUI *iui, QWidget *parent)
     plotSelect->addItem("B");
     plotSelect->addItem("C");
 
+    btExport = new QToolButton;
+    btExport->setIcon(QIcon(":/icons/assets/ionicons/download-outline.svg"));
+    btExport->setText("Export");
+    btExport->setPopupMode(QToolButton::InstantPopup);
+    btExport->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    {
+        QMenu* toolMenu = new QMenu;
+        QAction* action;
+        action = toolMenu->addAction("Export plot data to CSV ...");
+        connect(action, &QAction::triggered,
+                this, &ResultsView::onExportCSV);
+        action = toolMenu->addAction("Export plot to file ...");
+        connect(action, &QAction::triggered,
+                this, &ResultsView::onExportPlot);
+        btExport->setMenu(toolMenu);
+    }
+
     /* Layout Widgets */
     QWidget* rightWidget = new QWidget;
 
@@ -108,6 +132,13 @@ ResultsView::ResultsView(IonsUI *iui, QWidget *parent)
     }
     hbox->addSpacing(10);
     hbox->addWidget(plotSelect);
+    hbox->addSpacing(10);
+    { // add Export Button
+        QVBoxLayout* vbox2 = new QVBoxLayout;
+        vbox2->addWidget(btExport);
+        vbox2->addStretch();
+        hbox->addLayout(vbox2);
+    }
     hbox->addStretch();
 
 
@@ -135,7 +166,6 @@ ResultsView::ResultsView(IonsUI *iui, QWidget *parent)
             this, & ResultsView::onItemChanged);
     connect(plotSelect, &QListWidget::itemChanged,
             this, &ResultsView::onPlotSelectChanged);
-
 
     /* set the current item to "Vacancies" */
     tallyTree->setCurrentItem(curr);
@@ -272,6 +302,51 @@ void ResultsView::onPlotSelectChanged(QListWidgetItem *i)
     updatePlot();
 }
 
+void ResultsView::onExportCSV()
+{
+    if (Data.empty()) return;
+
+    QString fname = QFileDialog::getSaveFileName(this, tr("Export data to CSV ..."),
+                                                            "ions_export.csv",
+                                                            tr("CSV files [*.csv](*.csv);; All files (*.*)"));
+    if (fname.isNull()) return;
+
+    // get plot data
+    int axId = axisButtonGrp->checkedId();
+    ArrayNDd x = X[axId];
+    size_t n = Nx[axId];
+    QVector<ArrayNDd> y;
+    for(int i=0; i<Data.size(); i++)
+       if (plotFlag[i]) y.push_back(Data[i]);
+
+    // csv export
+    std::ofstream of(fname.toStdString());
+
+    if (!of.is_open()) {
+        QMessageBox::critical(ionsui,
+                              "Export data to CSV ...",
+                              QString("Error opening file:\n%1").arg(fname));
+        return;
+    }
+
+    size_t k=0;
+    for(size_t i=0; i<n; ++i) {
+        of << x[k];
+        for(size_t j=0; j<y.size(); ++j) {
+            of << ", " << y[j][k];
+        }
+        of << std::endl;
+        k += 2;
+    }
+
+}
+
+void ResultsView::onExportPlot()
+{
+    // Export the plot to 160x120mm page
+    plotWidget->exportToFile("ions_export.pdf", QSize(160,120));
+}
+
 
 void ResultsView::updateDataSelection()
 {
@@ -316,7 +391,12 @@ void ResultsView::updatePlot()
 
     plotWidget->setXlabel(xAxisLabel[axId]);
     plotWidget->setYlabel(yAxisLabel[currentTable_]);
-    plotWidget->setTitle(tally::arrayDescription(currentTable_));
+    QString("%1 - %2");
+    plotWidget->setTitle(
+            QString("%1 - %2")
+            .arg(ionsui->driverObj()->title())
+            .arg(tally::arrayDescription(currentTable_))
+            );
 
 }
 
