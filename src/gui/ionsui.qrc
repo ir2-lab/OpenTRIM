@@ -25,5 +25,6 @@
         <file>assets/ionicons/play-circle-outline.png</file>
         <file>assets/ionicons/refresh-circle-outline.png</file>
         <file>assets/ionicons/pause-circle-outline.png</file>
+        <file>assets/ionicons/download-outline.svg</file>
     </qresource>
 </RCC>
