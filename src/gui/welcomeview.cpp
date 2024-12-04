@@ -11,6 +11,8 @@
 #include <QFontMetrics>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
 #include <QStackedWidget>
 #include <QLabel>
 #include <QDir>
@@ -20,6 +22,11 @@
 #include <QMessageBox>
 #include <QJsonDocument>
 #include <QMenu>
+#include <QSettings>
+#include <QStyle>
+#include <QMimeDatabase>
+#include <QMimeType>
+#include <QFileIconProvider>
 
 #include "jsedit/jsedit.h"
 
@@ -112,7 +119,34 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     stackedWidget = new QStackedWidget;
     viewLayout->addWidget(stackedWidget,2);
 
-    pushCenterWidget("Recent simulations", new QWidget);
+    /* create recent files tree */
+    QWidget* recentFilesPage = new QWidget;
+    {
+        recentFilesTree = new QTreeWidget;
+        recentFilesTree->setColumnCount(3);
+        QTreeWidgetItem* hdr = recentFilesTree->headerItem();
+        hdr->setText(0,"File");
+        hdr->setText(1,"Title");
+        hdr->setText(2,"Location");
+
+        updateRecentFiles();
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(Qt::Horizontal);
+        btOpenRecent = new QPushButton(QIcon(":/icons/assets/ionicons/checkmark-done-outline.svg"),
+                                        "Open recent simulation");
+        buttonBox->addButton(btOpenRecent, QDialogButtonBox::AcceptRole);
+        connect(btOpenRecent, &QPushButton::clicked,
+                this, &WelcomeView::onOpenRecent);
+        btOpenRecent->setEnabled(false);
+
+        QVBoxLayout* vbox = new QVBoxLayout;
+        vbox->addWidget(recentFilesTree);
+        vbox->addSpacing(20);
+        vbox->addWidget(buttonBox);
+        vbox->setContentsMargins(0,0,0,0);
+        recentFilesPage->setLayout(vbox);
+    }
+    pushCenterWidget("Recent simulations", recentFilesPage);
 
     /* create example view */
     QWidget* examplePage = new QWidget;
@@ -161,9 +195,6 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
         pushCenterWidget("About", about);
     }
 
-
-
-
     /* signal/slot connections */
     connect(buttonGrp, &QButtonGroup::idClicked,
             this, &WelcomeView::changeCenterWidget);
@@ -171,6 +202,10 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
             this, &WelcomeView::exampleSelected);
     connect(exampleList, &QListWidget::itemDoubleClicked,
             this, &WelcomeView::onOpenExample);
+    connect(recentFilesTree, &QTreeWidget::currentItemChanged,
+            this, &WelcomeView::onRecentFileSelected);
+    connect(recentFilesTree, &QTreeWidget::itemDoubleClicked,
+            this, &WelcomeView::onOpenRecent);
 
 
     connect(btNew, &QPushButton::clicked,
@@ -182,6 +217,8 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
             this,&WelcomeView::onDriverStatusChanged);
     connect(ionsui->driverObj(),&McDriverObj::statusChanged,
             this,&WelcomeView::onDriverStatusChanged);
+    connect(ionsui->driverObj(), &McDriverObj::fileNameChanged,
+            this, &WelcomeView::onFileNameChanged);
 
     btAbout->setChecked(true);
     changeCenterWidget(3);
@@ -228,38 +265,7 @@ void WelcomeView::onOpenJson()
 
     if (fileName.isNull()) return; // cancelled by user
 
-    // Check the selected file
-    QFile f(fileName);
-    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, "Open JSON",
-                             QString("Could not open file:\n%1").arg(fileName),
-                             QMessageBox::Ok);
-        return;
-    }
-
-    QByteArray json = f.readAll();
-
-    // Is it a valid json config ??
-    mcdriver::options opt;
-    std::istringstream is(json.constData());
-    std::ostringstream os;
-    if (opt.parseJSON(is,false,&os)!=0) {
-        QMessageBox::warning(this, "Open JSON",
-                             QString("Error parsing JSON file:\n%1\n%2")
-                                 .arg(fileName)
-                                 .arg(os.str().c_str()),
-                             QMessageBox::Ok);
-        return;
-    }
-
-    ionsui->driverObj()->loadJsonFile(fileName);
-    ionsui->setCurrentPage(IonsUI::idConfigPage);
-
-    // set path to loaded file
-    QFileInfo finfo(fileName);
-    QString dirPath = finfo.dir().absolutePath();
-    QDir::setCurrent(dirPath);
-
+    openJson(fileName);
 }
 
 void WelcomeView::onOpenH5()
@@ -272,23 +278,39 @@ void WelcomeView::onOpenH5()
 
     if (fileName.isNull()) return; // cancelled by user
 
-    // Let driver load the file
-    McDriverObj* D = ionsui->driverObj();
-    if (!D->loadH5File(fileName)) {
-        QMessageBox::warning(this, "Open HDF5",
-                             QString("Error opening file:\n%1\n%2")
-                                 .arg(fileName)
-                                 .arg(D->ioErrorMsg()),
-                             QMessageBox::Ok);
+    openH5(fileName);
+}
+
+void WelcomeView::onOpenRecent()
+{
+    QTreeWidgetItem* i = recentFilesTree->currentItem();
+    QString fname = i->data(0,Qt::DisplayRole).toString();
+    QString loc = i->data(2,Qt::DisplayRole).toString();
+    QFileInfo info(QDir(loc),fname);
+    if (!info.exists()) {
+        QMessageBox::critical(ionsui,
+                              "Open recent file ...",
+                              QString("The file does not exist:\n%1")
+                                  .arg(fname)
+                              );
         return;
     }
 
-    ionsui->setCurrentPage(IonsUI::idConfigPage);
+    if (!userDiscardCurrentSim("Open recent file ...")) return;
 
-    // set path to loaded file
-    QFileInfo finfo(fileName);
-    QString dirPath = finfo.dir().absolutePath();
-    QDir::setCurrent(dirPath);
+    QMimeDatabase db;
+    QMimeType mime = db.mimeTypeForFile(info);
+    if (mime.inherits("text/plain")) {
+        // The file is plain text, try to load as json
+        openJson(info.absoluteFilePath());
+
+    } else openH5(info.absoluteFilePath());
+
+}
+
+void WelcomeView::onRecentFileSelected()
+{
+    btOpenRecent->setEnabled(true);
 }
 
 void WelcomeView::onSaveJson()
@@ -410,6 +432,74 @@ void WelcomeView::exampleSelected()
     btOpenExample->setEnabled(true);
 }
 
+void WelcomeView::onFileNameChanged()
+{
+    QString filePath = ionsui->driverObj()->filePath();
+    if (filePath.isEmpty()) return;
+
+    QFileInfo info(filePath);
+    QString name = info.fileName();
+    QString location = info.absolutePath();
+    QString title = ionsui->driverObj()->title();
+
+    QSettings settings("ir2-lab", "ions-gui");
+    QStringList fileNames = settings.value("recentFiles/names").toStringList();
+    QStringList fileTitles = settings.value("recentFiles/titles").toStringList();
+    QStringList fileLocations = settings.value("recentFiles/locations").toStringList();
+
+    // check for duplicates
+    for(int i=0; i<fileNames.size(); i++) {
+        if (name == fileNames.at(i) &&
+            location == fileLocations.at(i) &&
+            title == fileTitles.at(i))
+        {
+            fileNames.removeAt(i);
+            fileLocations.removeAt(i);
+            fileTitles.removeAt(i);
+        }
+    }
+
+    while (fileNames.size() >= MAX_RECENT_FILES)
+    {
+        fileNames.removeLast();
+        fileTitles.removeLast();
+        fileLocations.removeLast();
+    }
+
+    fileNames.prepend(name);
+    fileTitles.prepend(title);
+    fileLocations.prepend(location);
+
+    settings.setValue("recentFiles/names", fileNames);
+    settings.setValue("recentFiles/titles", fileTitles);
+    settings.setValue("recentFiles/locations", fileLocations);
+
+    updateRecentFiles();
+
+}
+
+void WelcomeView::updateRecentFiles()
+{
+    QSettings settings("ir2-lab", "ions-gui");
+    QStringList fileNames = settings.value("recentFiles/names").toStringList();
+    QStringList fileTitles = settings.value("recentFiles/titles").toStringList();
+    QStringList fileLocations = settings.value("recentFiles/locations").toStringList();
+
+    recentFilesTree->clear();
+    QFileIconProvider fip;
+    for(int i=0; i<fileNames.size(); i++) {
+        QTreeWidgetItem* item = new QTreeWidgetItem(
+            recentFilesTree,
+            QStringList({fileNames.at(i),
+                         fileTitles.at(i),
+                         fileLocations.at(i)})
+            );
+        QFileInfo info(fileLocations.at(i),fileNames.at(i));
+        item->setIcon(0,fip.icon(info));
+    }
+
+}
+
 bool WelcomeView::userDiscardCurrentSim(const QString& title)
 {
     McDriverObj::DriverStatus st = ionsui->driverObj()->status();
@@ -421,4 +511,60 @@ bool WelcomeView::userDiscardCurrentSim(const QString& title)
                                  QMessageBox::Ok | QMessageBox::Cancel)
            == QMessageBox::Ok;
 
+}
+
+void WelcomeView::openJson(const QString &path)
+{
+    // Check the selected file
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "Open JSON",
+                             QString("Could not open file:\n%1").arg(path),
+                             QMessageBox::Ok);
+        return;
+    }
+
+    QByteArray json = f.readAll();
+
+    // Is it a valid json config ??
+    mcdriver::options opt;
+    std::istringstream is(json.constData());
+    std::ostringstream os;
+    if (opt.parseJSON(is,false,&os)!=0) {
+        QMessageBox::warning(this, "Open JSON",
+                             QString("Error parsing JSON file:\n%1\n%2")
+                                 .arg(path)
+                                 .arg(os.str().c_str()),
+                             QMessageBox::Ok);
+        return;
+    }
+
+    // set path to loaded file
+    QFileInfo finfo(path);
+    QString dirPath = finfo.dir().absolutePath();
+    QDir::setCurrent(dirPath);
+
+    ionsui->driverObj()->loadJsonFile(path);
+    ionsui->setCurrentPage(IonsUI::idConfigPage);
+}
+
+void WelcomeView::openH5(const QString &path)
+{
+    // Let driver load the file
+    McDriverObj* D = ionsui->driverObj();
+    if (!D->loadH5File(path)) {
+        QMessageBox::warning(this, "Open HDF5",
+                             QString("Error opening file:\n%1\n%2")
+                                 .arg(path)
+                                 .arg(D->ioErrorMsg()),
+                             QMessageBox::Ok);
+        return;
+    }
+
+    ionsui->setCurrentPage(IonsUI::idConfigPage);
+
+    // set path to loaded file
+    QFileInfo finfo(path);
+    QString dirPath = finfo.dir().absolutePath();
+    QDir::setCurrent(dirPath);
 }

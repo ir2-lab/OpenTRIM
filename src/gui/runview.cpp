@@ -21,8 +21,6 @@
 #include <QButtonGroup>
 #include <QMessageBox>
 
-#include <QDebug>
-
 RunView::RunView(IonsUI *iui, QWidget *parent)
     : QWidget{parent}, ionsui(iui)
 {
@@ -166,21 +164,11 @@ void RunView::revert()
 {
     mapper->revert();
 
-    OptionsModel* model = ionsui->optionsModel;
-    QModelIndex driverOptionsIdx = model->index("Driver");
-    QModelIndex idx = model->index("max_no_ions",0,driverOptionsIdx);
-    OptionsItem* item = model->getItem(idx);
-    sbIons->setValue(item->value().toUInt());
-    idx = model->index("threads",0,driverOptionsIdx);
-    item = model->getItem(idx);
-    sbNThreads->setValue(item->value().toInt());
-    idx = model->index("seed",0,driverOptionsIdx);
-    item = model->getItem(idx);
-    sbSeed->setValue(item->value().toUInt());
-    QModelIndex outputOptionsIdx = model->index("Output");
-    idx = model->index("storage_interval",0,outputOptionsIdx);
-    item = model->getItem(idx);
-    sbUpdInterval->setValue(item->value().toUInt());
+    McDriverObj* D = ionsui->driverObj();
+    sbIons->setValue(D->maxIons());
+    sbNThreads->setValue(D->nThreads());
+    sbSeed->setValue(D->seed());
+    sbUpdInterval->setValue(D->updInterval());
 }
 
 void RunView::onSimulationCreated()

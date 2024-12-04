@@ -6,14 +6,9 @@
 
 #include <chrono>
 
-#include "arrays.h"
-#include "mccore.h"
+#include "mcdriver.h"
 
 #include <QTimer>
-
-class mcdriver;
-class mccore;
-class tally;
 
 class McDriverObj : public QObject
 {
@@ -24,15 +19,21 @@ public:
     explicit McDriverObj();
     virtual ~McDriverObj() override;
 
-    const QJsonDocument& jsonOptions() const { return jsonOptions_; }
+    const QJsonDocument& jsonOptions() const;
     void setJsonOptions(const QJsonDocument& jdoc);
+    std::string json() const;
 
     bool isModified() const { return modified_; }
     void setModified(bool b);
     bool isTemplate() const { return template_; }
+    void setTemplate(bool b);
 
-    QString fileName() const;
-    void setFileName(const QString& s);
+    QString fileName() const { return fileName_; }
+    QString filePath() const { return filePath_; }
+    void setFileName(const QString& path);
+    void setTemplateName(const QString& name);
+
+    QString title() const;
 
     bool validateOptions(QString* msg = nullptr) const;
 
@@ -71,6 +72,11 @@ public:
     const tally& getTally() const;
     const mccore* getSim() const;
 
+    size_t maxIons() const { return max_ions_; }
+    int nThreads() const { return nThreads_; }
+    int seed() const { return seed_; }
+    int updInterval() const { return updInterval_; }
+
 public slots:
     void setMaxIons(int n) { max_ions_ = n; };
     void setNThreads(int n) { nThreads_ = n; };
@@ -80,7 +86,7 @@ public slots:
 private slots:
     void start_();
     void onLoadH5_(const QString& path);
-    void onSaveH5_(const QString& path);
+    void onSaveH5_();
 
 signals:
     void modificationChanged(bool b);
@@ -92,7 +98,7 @@ signals:
     void startSignal();
     void simulationStarted(bool b);
     void loadH5_(const QString& path);
-    void saveH5_(const QString& path);
+    void saveH5_();
 
     // these are sent from within the worker/simulation thread
     // must be connected with Qt::QueuedConn.
@@ -105,6 +111,8 @@ private:
     QJsonDocument jsonOptions_;
     bool modified_;
     bool template_;
+    QString fileName_;
+    QString filePath_;
     std::atomic_bool is_running_;
     std::atomic_int status_;
     std::atomic_bool io_op_active_;
@@ -132,6 +140,7 @@ private:
     ArrayNDd totals_, dtotals_;
 
     void setStatus(DriverStatus s);
+    void setOptions(const mcdriver::options& opt);
 
     static void mc_callback_(const mcdriver& d, void* p);
 

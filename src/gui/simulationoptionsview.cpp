@@ -236,7 +236,9 @@ void SimulationOptionsView::submit()
 {
     const QJsonDocument& newJsonOptions = mapper->model()->jsonOptions();
     ionsui->driverObj()->setJsonOptions(newJsonOptions);
-    jsonView->setPlainText(newJsonOptions.toJson(QJsonDocument::Indented));
+    jsonView->setPlainText(
+        QString::fromStdString(ionsui->driverObj()->json())
+        );
     setModified(false);
     //emit optionsChanged();
 }
@@ -256,7 +258,9 @@ void SimulationOptionsView::revert()
     materialsView->setWidgetData();
     //treeView->setWidgetData();
     regionsView->revert();
-    jsonView->setPlainText(jsonOptions.toJson(QJsonDocument::Indented));
+    jsonView->setPlainText(
+        QString::fromStdString(ionsui->driverObj()->json())
+        );
 
     applyRules();
     setModified(false);

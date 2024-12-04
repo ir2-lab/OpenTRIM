@@ -19,7 +19,11 @@ McDriverObj::McDriverObj()
     driver_(new mcdriver),
     modified_(false),
     is_running_(false),
-    status_(0)
+    status_(0),
+    max_ions_(100),
+    nThreads_(1),
+    seed_(123456789),
+    updInterval_(1000)
 {
     // internal start signal connection
     connect(this, &McDriverObj::startSignal,
@@ -37,11 +41,37 @@ McDriverObj::~McDriverObj()
     delete driver_;
 }
 
+const QJsonDocument& McDriverObj::jsonOptions() const
+{
+    return jsonOptions_;
+}
+
 void McDriverObj::setJsonOptions(const QJsonDocument &jdoc)
 {
     jsonOptions_ = jdoc;
+    QJsonPath::set(jsonOptions_,"Driver/max_no_ions",QJsonValue(1.0*max_ions_));
+    QJsonPath::set(jsonOptions_,"Driver/threads",nThreads_);
+    QJsonPath::set(jsonOptions_,"Driver/seed",seed_);
+    QJsonPath::set(jsonOptions_,"Output/storage_interval",updInterval_);
     emit configChanged();
     setModified(true);
+}
+
+std::string McDriverObj::json() const
+{
+    mcdriver::options opt;
+    std::string s(jsonOptions_.toJson().constData());
+    if (!s.empty()) {
+        std::istringstream is(s);
+        opt.parseJSON(is,false);
+    }
+    opt.Driver.max_no_ions = max_ions_;
+    opt.Driver.seed = seed_;
+    opt.Driver.threads = nThreads_;
+    opt.Output.storage_interval = updInterval_;
+    std::ostringstream os;
+    opt.printJSON(os);
+    return os.str();
 }
 
 void McDriverObj::setModified(bool b)
@@ -52,20 +82,42 @@ void McDriverObj::setModified(bool b)
     }
 }
 
-QString McDriverObj::fileName() const
+void McDriverObj::setTemplate(bool b)
 {
-    return QJsonPath::get(jsonOptions_, "Output/OutputFileBaseName").toString();
+    if (template_ != b) {
+        template_ = b;
+        emit modificationChanged(b);
+    }
 }
 
-void McDriverObj::setFileName(const QString &s)
+void McDriverObj::setFileName(const QString &path)
 {
-    if (s != fileName()) {
-        mcdriver::output_options opts = driver_->outputOptions();
-        opts.OutputFileBaseName = s.toLatin1().toStdString();
-        driver_->setOutputOptions(opts);
-        QJsonPath::set(jsonOptions_, "Output/OutputFileBaseName", s);
+    QFileInfo finfo(path);
+    QString baseName = finfo.baseName();
+    bool updateName = filePath_.isEmpty();
+    if (!updateName)
+        updateName = finfo.absoluteFilePath()!=filePath_;
+    if (!updateName)
+        updateName = baseName != fileName();
+
+    if (updateName)
+    {
+        fileName_ = baseName;
+        filePath_ = finfo.absoluteFilePath();
         emit fileNameChanged();
     }
+}
+
+void McDriverObj::setTemplateName(const QString &name)
+{
+    fileName_ = name;
+    filePath_ = "";
+    emit fileNameChanged();
+}
+
+QString McDriverObj::title() const
+{
+    return QJsonPath::get(jsonOptions_,"Output/title",QString()).toString();
 }
 
 void McDriverObj::mc_callback_(const mcdriver& d, void* p)
@@ -108,6 +160,11 @@ bool McDriverObj::validateOptions(QString* msg) const
         return false;
     }
 
+    opt.Driver.max_no_ions = max_ions_;
+    opt.Driver.seed = seed_;
+    opt.Driver.threads = nThreads_;
+    opt.Output.storage_interval = updInterval_;
+
     bool isValid = true;
 
     try {
@@ -119,6 +176,18 @@ bool McDriverObj::validateOptions(QString* msg) const
 
     return isValid;
 }
+
+void McDriverObj::setOptions(const mcdriver::options &opt)
+{
+    std::stringstream os;
+    opt.printJSON(os);
+    max_ions_ = opt.Driver.max_no_ions;
+    nThreads_ = opt.Driver.threads;
+    seed_ = opt.Driver.seed;
+    updInterval_ = opt.Output.storage_interval;
+    jsonOptions_ = QJsonDocument::fromJson(os.str().c_str());
+}
+
 
 void McDriverObj::loadJsonTemplate(const QString &path)
 {
@@ -135,20 +204,15 @@ void McDriverObj::loadJsonTemplate(const QString &path)
         bool validate = false;
         opt.parseJSON(is,validate);
     }
+    setOptions(opt);
 
     // In any case, this is called Untitled
-    opt.Output.OutputFileBaseName = "Untitled";
-    template_ = true;
-
-    std::stringstream os;
-    opt.printJSON(os);
-    jsonOptions_ = QJsonDocument::fromJson(os.str().c_str());
-
+    setTemplateName("Untitled");
+    setTemplate(true);
     setModified(false);
 
     emit configChanged();
     emit contentsChanged();
-    emit fileNameChanged();
     emit modificationChanged(false);
 }
 
@@ -166,19 +230,14 @@ void McDriverObj::loadJsonFile(const QString &path)
     bool validate = false;
     opt.parseJSON(is,validate);
 
-    QFileInfo finfo(path);
-    opt.Output.OutputFileBaseName = finfo.baseName().toStdString();
-    template_ = false;
+    setOptions(opt);
 
-    std::stringstream os;
-    opt.printJSON(os);
-    jsonOptions_ = QJsonDocument::fromJson(os.str().c_str());
-
+    setFileName(path);
+    setTemplate(false);
     setModified(false);
 
     emit configChanged();
     emit contentsChanged();
-    emit fileNameChanged();
 
     setStatus(mcReset);
 }
@@ -218,15 +277,10 @@ bool McDriverObj::loadH5File(const QString &path)
 
     mcdriver::options opt;
     driver_->getOptions(opt);
+    setOptions(opt);
 
-    QFileInfo finfo(path);
-    opt.Output.OutputFileBaseName = finfo.baseName().toStdString();
-    template_ = false;
-
-    std::stringstream os;
-    opt.printJSON(os);
-    jsonOptions_ = QJsonDocument::fromJson(os.str().c_str());
-
+    setFileName(path);
+    setTemplate(false);
     setModified(false);
 
     init_run_data();
@@ -234,7 +288,6 @@ bool McDriverObj::loadH5File(const QString &path)
     emit configChanged();
     emit simulationCreated();
     emit contentsChanged();
-    emit fileNameChanged();
 
     setStatus(mcIdle);
 
@@ -248,8 +301,7 @@ QString McDriverObj::ioErrorMsg() const
 
 void McDriverObj::saveJson(const QString &fname)
 {
-    QFileInfo finfo(fname);
-    setFileName(finfo.baseName());
+    setFileName(fname);
 
     mcdriver::options opt;
     if (driver_->getSim())
@@ -257,21 +309,26 @@ void McDriverObj::saveJson(const QString &fname)
     else { // get from our local json
         std::istringstream is(jsonOptions_.toJson().constData());
         opt.parseJSON(is,false);
+        opt.Driver.max_no_ions = max_ions_;
+        opt.Driver.seed = seed_;
+        opt.Driver.threads = nThreads_;
+        opt.Output.storage_interval = updInterval_;
     }
-    std::ofstream os(fname.toLatin1().constData());
+
+    opt.Output.OutputFileBaseName = fileName().toStdString();
+
+    std::ofstream os(fname.toLatin1().constData());   
     opt.printJSON(os);
 
-    template_ = false;
-
-    if (!driver_->getSim()) setModified(false);
+    setTemplate(false);
+    setModified(false);
 }
 
 bool McDriverObj::saveH5(const QString &fname)
 {
     if (!driver_->getSim()) return false;
 
-    QFileInfo finfo(fname);
-    setFileName(finfo.baseName());
+    setFileName(fname);
 
     // Try to save the file
     QProgressDialog dlg("Saving HDF5. Please wait ...",QString(),0,110);
@@ -279,7 +336,7 @@ bool McDriverObj::saveH5(const QString &fname)
     dlg.setMinimumDuration( 0 );
 
     io_op_active_ = true;
-    emit saveH5_(fname);
+    emit saveH5_();
 
     // TODO
     // Get file save progress indication from mcdriver
@@ -298,8 +355,7 @@ bool McDriverObj::saveH5(const QString &fname)
 
     if (io_ret_!=0) return false;
 
-    template_ = false;
-
+    setTemplate(false);
     setModified(false);
 
     return true;
@@ -381,10 +437,14 @@ void McDriverObj::onLoadH5_(const QString &path)
     io_op_active_ = false;
 }
 
-void McDriverObj::onSaveH5_(const QString &path)
-{
+void McDriverObj::onSaveH5_()
+{    
+    mcdriver::output_options opts = driver_->outputOptions();
+    opts.OutputFileBaseName = fileName_.toStdString();
+    driver_->setOutputOptions(opts);
+
     std::stringstream os;
-    io_ret_ = driver_->save(path.toStdString(), &os);
+    io_ret_ = driver_->save(filePath_.toStdString(), &os);
     if (io_ret_ != 0) io_err_ = os.str();
     io_op_active_ = false;
 }

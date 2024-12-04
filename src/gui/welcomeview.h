@@ -7,6 +7,7 @@ class QPushButton;
 class QToolButton;
 class QStackedWidget;
 class QListWidget;
+class QTreeWidget;
 class JSEdit;
 class QButtonGroup;
 class QAction;
@@ -28,22 +29,32 @@ private slots:
     void onNew();
     void onOpenJson();
     void onOpenH5();
+    void onOpenRecent();
+    void onRecentFileSelected();
     void onSaveJson();
     void onSaveH5();
     void onSaveJsonAs();
     void onSaveH5As();
     void onOpenExample();
     void onDriverStatusChanged();
+    void exampleSelected();
+    void onFileNameChanged();
 
 private:
     QPushButton* createButton(const QString& txt, int w, int h, int ch = 0);
     void pushCenterWidget(const QString& title, QWidget * page);
-    void exampleSelected();
+
     bool userDiscardCurrentSim(const QString &title);
+
+    void updateRecentFiles();
+
+    void openJson(const QString& path);
+    void openH5(const QString& path);
 
     IonsUI* ionsui;
     QStackedWidget * stackedWidget;
     QListWidget * exampleList;
+    QTreeWidget * recentFilesTree;
     JSEdit* jsonView;
     QButtonGroup* buttonGrp;
     QToolButton* btOpen;
@@ -51,6 +62,7 @@ private:
     QToolButton* btSave;
     QToolButton* btSaveAs;
     QPushButton* btRecent;
+    QPushButton* btOpenRecent;
     QPushButton* btExamples;
     QPushButton* btOpenExample;
     QPushButton* btGettingStarted;
@@ -60,6 +72,8 @@ private:
     QAction* actSaveJsonAs;
     QAction* actSaveH5;
     QAction* actSaveH5As;
+
+    const int MAX_RECENT_FILES = 50;
 
 };
 
