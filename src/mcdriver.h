@@ -162,6 +162,7 @@ protected:
 
     // timing
     double ips_; // ions/s
+    double cpu_time_; // s
     std::time_t start_time_, end_time_;
     struct timespec t_start, t_end;
 
@@ -209,6 +210,8 @@ public:
 
     /// total ions/s
     double ips() const { return ips_; }
+    /// cpu time
+    double cpu_time() const { return cpu_time_; }
     /// number of threads
     int nThreads() const { return par_.threads; }
 

@@ -95,6 +95,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // TIMING
     start_time_ = std::time(nullptr);
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t_start);
+    size_t n0 = s_->ion_count();
 
     // If ion_count == 0, i.e. simulation starts, seed the rng
     if (s_->ion_count() == 0) s_->seed(par_.seed);
@@ -179,9 +180,9 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
     // CALC TIME/ion CLOCK_PROCESS_CPUTIME_ID
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t_end); // POSIX
-    double t_secs = 1. * (t_end.tv_sec - t_start.tv_sec) / nthreads;
-    t_secs += 1.e-9 * (t_end.tv_nsec - t_start.tv_nsec) / nthreads;
-    ips_ = s_->ion_count()/t_secs;
+    cpu_time_ = 1. * (t_end.tv_sec - t_start.tv_sec);
+    cpu_time_ += 1.e-9 * (t_end.tv_nsec - t_start.tv_nsec);
+    ips_ = (s_->ion_count() - n0)/cpu_time_*nthreads;
     end_time_ = std::time(nullptr);
 
     // copy back rng state from 1st clone

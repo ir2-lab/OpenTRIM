@@ -34,14 +34,15 @@ int main(int argc, char* argv[])
         ("n","Number of histories to run (overrides config input)", cxxopts::value<int>())
         ("j","Number of threads (overrides config input)", cxxopts::value<int>())
         ("s,seed","random generator seed (overrides config input)",cxxopts::value<int>())
-        ("o,output","output file base name (overrides config input)",cxxopts::value<std::string>())
+        ("i,input","input HDF5 file name",cxxopts::value<std::string>())
         ("f","JSON config file",cxxopts::value<std::string>())
+        ("o,output","output HDF5 file name (overrides config input)",cxxopts::value<std::string>())
         ("t,template","pring a template JSON config to stdout")
         ("v,version","Display version information")
         ("h,help","Display short help message");
 
     int n(-1), j(-1), s(-1);
-    std::string input_file, output_file;
+    std::string input_config_file, input_file, output_file;
 
     try {
         auto result = cli_options.parse(argc,argv);
@@ -64,39 +65,68 @@ int main(int argc, char* argv[])
         if (result.count("n")) n = result["n"].as<int>();
         if (result.count("j")) j = result["j"].as<int>();
         if (result.count("s")) s = result["s"].as<int>();
-        if (result.count("f")) input_file = result["f"].as<std::string>();
+        if (result.count("f")) input_config_file = result["f"].as<std::string>();
+        if (result.count("i")) input_file = result["i"].as<std::string>();
         if (result.count("o")) output_file = result["o"].as<std::string>();
     }
     catch(const cxxopts::exceptions::exception& e)
     {
-        cout << "error parsing options: " << e.what() << endl;
+        cerr << "Error parsing command line: " << e.what() << endl;
         return -1;
     }
 
-    // Parse JSON config
-    mcdriver::options opt;
-    if (input_file.empty()) {
-        cout << "Input JSON config:" << endl;
-        if (opt.parseJSON(cin)!=0) return -1;
-    } else {
-        cout << "Parsing JSON config from " << input_file << endl;
-        std::ifstream is(input_file);
-        if (opt.parseJSON(is)!=0) return -1;
+    if (input_config_file.empty() && input_file.empty()) {
+        cerr << "Error: No input file." << endl;
+        return -1;
     }
 
-    // cli overrides
-    if (n>0) opt.Driver.max_no_ions = n;
-    if (j>0) opt.Driver.threads = j;
-    if (s>0) opt.Driver.seed = s;
-    if (!output_file.empty()) opt.Output.OutputFileBaseName = output_file;
-    /// @todo Fix the seed cli option for iradina++
-    /// if (s>0) opt.Driver.seeds = s;
+    if (!input_config_file.empty() && !input_file.empty()) {
+        cerr << "Warning: JSON config ignored (HDF5 input will be used)." << endl;
+        input_config_file.clear();
+    }
 
-    cout << "Starting simulation '" << opt.Output.title << "'..." << endl << endl;
-    bar.set_niter(opt.Driver.max_no_ions);
-    bar.update(0);
     mcdriver D;
-    D.setOptions(opt);
+
+    if (!input_config_file.empty()) {
+
+        cout << "Parsing JSON config from " << input_config_file << endl;
+
+        std::ifstream is(input_config_file);
+        mcdriver::options opt;
+        if (opt.parseJSON(is,true,&cerr)!=0) return -1;
+
+        // cli overrides
+        if (n>0) opt.Driver.max_no_ions = n;
+        if (j>0) opt.Driver.threads = j;
+        if (s>0) opt.Driver.seed = s;
+        if (!output_file.empty()) opt.Output.OutputFileBaseName = output_file;
+
+        D.setOptions(opt);
+
+    } else {
+
+        cout << "Loading simulation from " << input_file << endl;
+
+        if (D.load(input_file, &cerr)!=0) return -1;
+
+        // cli overrides
+        mcdriver::parameters par = D.driverOptions();
+        if (n>0) par.max_no_ions = n;
+        if (j>0) par.threads = j;
+        D.setDriverOptions(par);
+
+        mcdriver::output_options opts = D.outputOptions();
+        if (!output_file.empty()) {
+            opts.OutputFileBaseName = output_file;
+            D.setOutputOptions(opts);
+        }
+    }
+
+    cout << "Starting simulation '" << D.outputOptions().title << "'..." << endl << endl;
+
+    bar.set_niter(D.driverOptions().max_no_ions);
+    bar.update(D.getSim()->ion_count());
+
     D.exec(progress_callback,500);
     
     tally t = D.getSim()->getTally();

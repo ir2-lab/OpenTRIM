@@ -6,9 +6,6 @@ GUI:
 - Getting Started
 - About
 
-CLI:
-- load HDF5 (impl -i option ???), continue simulation, store result (-o option ???)
-
 ## Enhancements
 
 - Database of known atomic data (displacement energy, FP energy, density of elements)

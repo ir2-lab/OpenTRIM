@@ -343,7 +343,7 @@ try {
     const tally& dt = s_->getTallyVar();
     dump(h5f, "/run_stat/Nh", getSim()->ion_count(), var_list, "# of histories");
     dump(h5f, "/run_stat/ips", ips_, var_list, "ion histories per second");
-    dump(h5f, "/run_stat/process_cpu_time", getSim()->ion_count()/ips_*opt.Driver.threads, var_list, "total cpu time [s]");
+    dump(h5f, "/run_stat/process_cpu_time", cpu_time_, var_list, "total cpu time [s]");
     {
         std::stringstream ss;
         ss << std::put_time(std::localtime(&start_time_), "%c %Z");
