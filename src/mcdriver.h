@@ -158,13 +158,22 @@ public:
 
     };
 
+    struct run_data {
+        std::string start_time;
+        std::string end_time;
+        double ips;
+        double cpu_time;
+        int nthreads;
+        size_t ion_count;
+    };
+
 protected:
 
     // timing
-    double ips_; // ions/s
-    double cpu_time_; // s
     std::time_t start_time_, end_time_;
     struct timespec t_start, t_end;
+
+    std::vector<run_data> run_history_;
 
     // driver parameters
     parameters par_;
@@ -208,12 +217,9 @@ public:
     /// Reset the simulation object
     void reset();
 
-    /// total ions/s
-    double ips() const { return ips_; }
-    /// cpu time
-    double cpu_time() const { return cpu_time_; }
-    /// number of threads
-    int nThreads() const { return par_.threads; }
+    /// Run history
+    const std::vector<run_data>& run_history() const
+    { return run_history_; }
 
     /**
      * @brief Saves all data and results in a HDF5 file

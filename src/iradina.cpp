@@ -129,11 +129,11 @@ int main(int argc, char* argv[])
 
     D.exec(progress_callback,500);
     
-    tally t = D.getSim()->getTally();
+    const mcdriver::run_data& rd = D.run_history().back();
     cout << endl << endl
-         << "Completed " << D.getSim()->ion_count() << " ion histories." << endl;
-    cout << "ion/s = " << D.ips() << " (total), ";
-    cout << D.ips()/D.nThreads() << " (per thread)" << endl;
+         << "Completed " << rd.ion_count << " ion histories." << endl;
+    cout << "ion/s = " << rd.ips << " (total), ";
+    cout << rd.ips/rd.nthreads << " (per thread)" << endl;
 
     cout << "Storing results in " << D.outFileName() << " ...";
     cout.flush();

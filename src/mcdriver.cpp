@@ -2,6 +2,7 @@
 #include "elements.h"
 
 #include <chrono>
+#include <iomanip>
 #include <stdexcept>
 #include <sstream>
 #include <algorithm>
@@ -24,7 +25,7 @@ std::any_of(V.begin(),V.end(),[](float c){ return c<=0.f; })
 
 
 mcdriver::mcdriver() :
-    s_(nullptr), ips_(0.)
+    s_(nullptr)
 {
 
 }
@@ -178,12 +179,29 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
         cb(*this,callback_user_data);
     }
 
-    // CALC TIME/ion CLOCK_PROCESS_CPUTIME_ID
+    // mark cpu time and world clock time
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t_end); // POSIX
-    cpu_time_ = 1. * (t_end.tv_sec - t_start.tv_sec);
-    cpu_time_ += 1.e-9 * (t_end.tv_nsec - t_start.tv_nsec);
-    ips_ = (s_->ion_count() - n0)/cpu_time_*nthreads;
     end_time_ = std::time(nullptr);
+
+    // save run info
+    run_data rd;
+    rd.cpu_time = 1. * (t_end.tv_sec - t_start.tv_sec);
+    rd.cpu_time += 1.e-9 * (t_end.tv_nsec - t_start.tv_nsec);
+    rd.ips = (s_->ion_count() - n0)/rd.cpu_time*nthreads;
+    rd.ion_count = s_->ion_count();
+    rd.nthreads = nthreads;
+    {
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&start_time_), "%c %Z");
+        rd.start_time = ss.str();
+    }
+    {
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&end_time_), "%c %Z");
+        rd.end_time = ss.str();
+    }
+    run_history_.push_back(rd);
+
 
     // copy back rng state from 1st clone
     s_->setRngState(sim_clones_[0]->rngState());
