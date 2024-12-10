@@ -1,14 +1,12 @@
 #ifndef MCDRIVEROBJ_H
 #define MCDRIVEROBJ_H
 
-#include <QObject>
-#include <QJsonDocument>
-
 #include <chrono>
 
-#include "mcdriver.h"
-
+#include <QObject>
 #include <QTimer>
+
+#include "mcdriver.h"
 
 class McDriverObj : public QObject
 {
@@ -19,8 +17,8 @@ public:
     explicit McDriverObj();
     virtual ~McDriverObj() override;
 
-    const QJsonDocument& jsonOptions() const;
-    void setJsonOptions(const QJsonDocument& jdoc);
+    const mcdriver::options& options() const;
+    void setOptions(const mcdriver::options& opt);
     std::string json() const;
 
     bool isModified() const { return modified_; }
@@ -108,7 +106,7 @@ signals:
 private:
     mcdriver* driver_;
     mcdriver* test_driver_;
-    QJsonDocument jsonOptions_;
+    mcdriver::options options_;
     bool modified_;
     bool template_;
     QString fileName_;
@@ -140,7 +138,6 @@ private:
     ArrayNDd totals_, dtotals_;
 
     void setStatus(DriverStatus s);
-    void setOptions(const mcdriver::options& opt);
 
     static void mc_callback_(const mcdriver& d, void* p);
 

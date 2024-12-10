@@ -3,7 +3,6 @@
 
 #include <QWidget>
 
-
 class QPushButton;
 class QLabel;
 class JSEdit;
@@ -12,7 +11,6 @@ class QLineEdit;
 
 class MyDataWidgetMapper;
 class MaterialsDefView;
-//class TargetGeometryView;
 class RegionsView;
 class OptionsModel;
 class IonsUI;
@@ -37,8 +35,6 @@ public:
     RegionsView* regionsView;
 
     SimulationOptionsView(IonsUI *iui, QWidget *parent = nullptr);
-
-    void setOptions(const QJsonDocument& json);
 
     bool modified() const { return modified_; }
 

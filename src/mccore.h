@@ -59,10 +59,8 @@ public:
      */
     enum simulation_type_t {
         FullCascade = 0,    /**< Full Damage Cascade, follow recoils */
-        Invalid1 = 1,       // Compatibility. Iradina does not have simulation_type=1 & 2
-        Invalid2 = 2,
-        IonsOnly = 3,       /**< Ions only. Recoils are not followed. Damage estimate by NRT */
-        Cascades = 4,       /**< Cascades generated and followed */
+        IonsOnly = 1,       /**< Ions only. Recoils are not followed. Damage estimate by NRT */
+        CascadesOnly = 2,       /**< Cascades generated and followed */
         InvalidSimulationType = -1
     };
 
@@ -86,6 +84,15 @@ public:
     };
 
     /**
+     * @brief Detail of NRT implementation in multielement materials
+     */
+    enum nrt_calculation_t {
+        NRT_element = 0, /**< NRT calculated using Ed of struck atom (similar to SRIM) */
+        NRT_average = 1,  /**< NRT calculated with average Ed (J.-P. Crocombette 2019) */
+        NRT_InvalidOption = -1
+    };
+
+    /**
      * @brief Flight path selection algorithm
      *
      * Determines the algorithm to select the
@@ -97,15 +104,6 @@ public:
         MendenhallWeller = 2, /**< Algorithm from Mendenhall-Weller NIMB2005*/
         IPP = 3,            /**< IPP algorithm */
         InvalidPath = -1
-    };
-
-    /**
-     * @brief Detail of NRT implementation in multielement materials
-     */
-    enum nrt_calculation_t {
-        NRT_element = 0, /**< NRT calculated using Ed of struck atom (similar to SRIM) */
-        NRT_average = 1,  /**< NRT calculated with average Ed (J.-P. Crocombette 2019) */
-        NRT_InvalidOption = -1
     };
 
     /**

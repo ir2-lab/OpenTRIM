@@ -10,7 +10,7 @@ FloatValidator::FloatValidator(QObject * parent)
     : FloatValidator(-1.e30, 1.e30, 1000, parent)
 {
 }
-FloatValidator::FloatValidator(double bottom, double top, int decimals,
+FloatValidator::FloatValidator(float bottom, float top, int decimals,
                                  QObject * parent)
     : QValidator(parent)
 {
@@ -44,8 +44,8 @@ QValidator::State FloatValidator::validate(QString & input, int &) const
         return QValidator::Invalid;
 
     bool ok = false;
-    double i = input.toDouble(&ok); // returns 0.0 if !ok
-    if (i == std::numeric_limits<double>::quiet_NaN())
+    float i = input.toFloat(&ok); // returns 0.0 if !ok
+    if (i == std::numeric_limits<float>::quiet_NaN())
         return QValidator::Invalid;
     if (!ok)
         return QValidator::Intermediate;
@@ -54,7 +54,7 @@ QValidator::State FloatValidator::validate(QString & input, int &) const
 
     return QValidator::Intermediate;
 }
-void FloatValidator::setRange(double minimum, double maximum, int decimals)
+void FloatValidator::setRange(float minimum, float maximum, int decimals)
 {
     bool rangeChanged = false;
     if (b != minimum) {
@@ -75,11 +75,11 @@ void FloatValidator::setRange(double minimum, double maximum, int decimals)
     if (rangeChanged)
         emit changed();
 }
-void FloatValidator::setBottom(double bottom)
+void FloatValidator::setBottom(float bottom)
 {
     setRange(bottom, top(), decimals());
 }
-void FloatValidator::setTop(double top)
+void FloatValidator::setTop(float top)
 {
     setRange(bottom(), top, decimals());
 }
@@ -162,7 +162,7 @@ Vector3dValidator::Vector3dValidator(QObject * parent)
     : Vector3dValidator(-1.e30, 1.e30, parent)
 {
 }
-Vector3dValidator::Vector3dValidator(double bottom, double top,
+Vector3dValidator::Vector3dValidator(float bottom, float top,
                                      QObject * parent)
     : QValidator(parent)
 {
@@ -185,7 +185,7 @@ QValidator::State Vector3dValidator::validate(QString & input, int &) const
     if (s.back()!=']') return QValidator::Intermediate;
 
     bool ok = false;
-    Vector3D v = Vector3D::fromString(input, &ok); // returns 0.0 if !ok
+    vector3 v = qstring_serialize<vector3>::fromString(input, &ok); // returns 0.0 if !ok
 
     if (!ok)
         return QValidator::Intermediate;
@@ -199,7 +199,7 @@ QValidator::State Vector3dValidator::validate(QString & input, int &) const
 
     return QValidator::Acceptable;
 }
-void Vector3dValidator::setRange(double minimum, double maximum, int decimals)
+void Vector3dValidator::setRange(float minimum, float maximum, int decimals)
 {
     bool rangeChanged = false;
     if (b != minimum) {
@@ -215,11 +215,11 @@ void Vector3dValidator::setRange(double minimum, double maximum, int decimals)
     if (rangeChanged)
         emit changed();
 }
-void Vector3dValidator::setBottom(double bottom)
+void Vector3dValidator::setBottom(float bottom)
 {
     setRange(bottom, top());
 }
-void Vector3dValidator::setTop(double top)
+void Vector3dValidator::setTop(float top)
 {
     setRange(bottom(), top);
 }
@@ -253,7 +253,7 @@ QValidator::State IntVector3dValidator::validate(QString & input, int &) const
     if (s.back()!=']') return QValidator::Intermediate;
 
     bool ok = false;
-    IntVector3D v = IntVector3D::fromString(input, &ok); // returns 0.0 if !ok
+    ivector3 v = qstring_serialize<ivector3>::fromString(input, &ok); // returns 0.0 if !ok
 
     if (!ok)
         return QValidator::Intermediate;
@@ -303,7 +303,7 @@ FloatLineEdit::FloatLineEdit(QWidget* parent) :
             this, &FloatLineEdit::checkInput);
 }
 
-FloatLineEdit::FloatLineEdit(double fmin, double fmax, int decimals, QWidget* parent) :
+FloatLineEdit::FloatLineEdit(float fmin, float fmax, int decimals, QWidget* parent) :
     QLineEdit(parent)
 {
     setValidator(new FloatValidator(fmin,fmax,decimals));
@@ -312,13 +312,13 @@ FloatLineEdit::FloatLineEdit(double fmin, double fmax, int decimals, QWidget* pa
             this, &FloatLineEdit::checkInput);
 }
 
-void FloatLineEdit::setValue(double v)
+void FloatLineEdit::setValue(float v)
 {
     const FloatValidator* vld = dynamic_cast<const FloatValidator*>(validator());
     setText(QString::number(1.0*v,'g',vld->decimals()));
 }
 
-double FloatLineEdit::value() const
+float FloatLineEdit::value() const
 {
     return text().toDouble();
 }
@@ -343,7 +343,7 @@ Vector3dLineEdit::Vector3dLineEdit(QWidget* parent) :
             this, &Vector3dLineEdit::checkInput);
 }
 
-Vector3dLineEdit::Vector3dLineEdit(double fmin, double fmax, int decimals, QWidget* parent) :
+Vector3dLineEdit::Vector3dLineEdit(float fmin, float fmax, int decimals, QWidget* parent) :
     QLineEdit(parent)
 {
     setValidator(new Vector3dValidator(fmin,fmax));
@@ -352,14 +352,14 @@ Vector3dLineEdit::Vector3dLineEdit(double fmin, double fmax, int decimals, QWidg
             this, &Vector3dLineEdit::checkInput);
 }
 
-void Vector3dLineEdit::setValue(const Vector3D& v)
+void Vector3dLineEdit::setValue(const vector3 &v)
 {
-    setText(v.toString());
+    setText(qstring_serialize<vector3>::toString(v));
 }
 
-Vector3D Vector3dLineEdit::value() const
+vector3 Vector3dLineEdit::value() const
 {
-    return Vector3D::fromString(text());
+    return qstring_serialize<vector3>::fromString(text());
 }
 
 void Vector3dLineEdit::checkInput()
@@ -391,14 +391,14 @@ IntVector3dLineEdit::IntVector3dLineEdit(int imin, int imax, QWidget* parent) :
             this, &IntVector3dLineEdit::checkInput);
 }
 
-void IntVector3dLineEdit::setValue(const IntVector3D& v)
+void IntVector3dLineEdit::setValue(const ivector3& v)
 {
-    setText(v.toString());
+    setText(qstring_serialize<ivector3>::toString(v));
 }
 
-IntVector3D IntVector3dLineEdit::value() const
+ivector3 IntVector3dLineEdit::value() const
 {
-    return IntVector3D::fromString(text());
+    return qstring_serialize<ivector3>::fromString(text());
 }
 
 void IntVector3dLineEdit::checkInput()

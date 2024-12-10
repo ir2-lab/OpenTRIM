@@ -1,22 +1,18 @@
 #include "optionsmodel.h"
 
-#include "qjsonpath/qjsonpath.h"
-
 #include <QComboBox>
 #include <QLineEdit>
 #include <QComboBox>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QCheckBox>
-//#include <QDoubleValidator>
 
 #include "floatlineedit.h"
 
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonValue>
-#include <QJsonArray>
 #include <QFile>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 
 #include <QDebug>
 
@@ -24,26 +20,23 @@
 OptionsItem::OptionsItem(OptionsItem *parent)
     : m_parentItem(parent)
 {
-    if (parent) P_ = parent->P_;
-    else P_ = std::make_shared<Private>();
+    if (parent) options_ = parent->options_;
+    else options_ = std::make_shared<mcdriver::options>();
 }
 OptionsItem::OptionsItem(const QString& key,
                          OptionsItem *parent)
-    : m_parentItem(parent), key_(key), name_(key), P_(parent->P_)
-{
-    jpath_ = m_parentItem->isRoot() ? key :
-                 QString("%1/%2")
-                     .arg(m_parentItem->jpath_)
-                     .arg(key);
-}
+    : OptionsItem(key, key, parent)
+{}
 OptionsItem::OptionsItem(const QString& key,
                          const QString& name,
                          OptionsItem *parent)
-    : m_parentItem(parent), key_(key), name_(name), P_(parent->P_)
+    : m_parentItem(parent), key_(key), name_(name),
+    options_(parent->options_)
 {
-    jpath_ = QString("%1/%2")
-                 .arg(m_parentItem->jpath_)
-                 .arg(key);
+    if (!m_parentItem->isRoot())
+        jpath_ = m_parentItem->jpath_;
+    jpath_ += std::string("/");
+    jpath_ += key.toStdString();
 }
 OptionsItem::~OptionsItem()
 {
@@ -75,19 +68,20 @@ int OptionsItem::row() const
 }
 QVariant OptionsItem::value() const
 {
-    if (P_) {
-        return QJsonPath::get(P_->jdoc, jpath_).toVariant();
-    } else return QVariant();
+//    QString s;
+//    if (get_(s)) {
+//        return s;
+//    } else
+    return QVariant();
 }
 bool OptionsItem::setValue(const QVariant& v)
 {
-    if (!P_) return false;
-    if (value() != v) {
-        QJsonValue j = v.toJsonValue();
-        QJsonPath::set(P_->jdoc, jpath_, j);
-        return true;
-    }
-    return false;
+//    if (value() != v) {
+//        set_(v.toString());
+//        return true;
+//    }
+//    return false;
+    return true;
 }
 void OptionsItem::appendChild(OptionsItem *item)
 {
@@ -110,6 +104,24 @@ OptionsItem::type_t OptionsItem::toType(const QString &typeName)
     else if (typeName == "ivector3d") return tIntVector3D;
     else return tInvalid;
 }
+bool OptionsItem::get_(QString& qs) const
+{
+    std::string s;
+    std::ostringstream os;
+    if (!options_->get(jpath_,s,&os)) return false;
+    qs = QString::fromStdString(s);
+    return true;
+}
+bool OptionsItem::set_(const QString& qs)
+{
+    std::string s = qs.toStdString();
+    std::ostringstream os;
+    bool ret = options_->set(jpath_,s,&os);
+    if (!ret) {
+        qDebug() << QString::fromStdString(os.str());
+    }
+    return ret;
+}
 EnumOptionsItem::EnumOptionsItem(const QStringList& values,
                 const QStringList& labels,
                 const QString& key,
@@ -121,18 +133,21 @@ EnumOptionsItem::EnumOptionsItem(const QStringList& values,
 {}
 QVariant EnumOptionsItem::value() const
 {
-    if (P_) {
-        QString s = QJsonPath::get(P_->jdoc, jpath_).toString();
-        int i = enumValues_.indexOf(s);
-        return i;
-    } else return QVariant();
+    QString s;
+    if (get_(s)) {
+        if (s.size()>2) { // This has double ", e.g. ""Off""
+            s.chop(1);
+            s.remove(0,1);
+        } else return QVariant();
+        return enumValues_.indexOf(s); // i=-1 means not found = invalid
+    }
+    return QVariant();
 }
 bool EnumOptionsItem::setValue(const QVariant& v)
 {   
-    if (!P_) return false;
     if (value() != v) {
-        QJsonValue j = enumValues_.at(v.toInt());
-        QJsonPath::set(P_->jdoc, jpath_, j);
+        QString s = QString("\"%1\"").arg(enumValues_.at(v.toInt()));
+        set_(s);
         return true;
     }
     return false;
@@ -162,21 +177,22 @@ FloatOptionsItem::FloatOptionsItem(double fmin, double fmax, int digits,
 {}
 QVariant FloatOptionsItem::value() const
 {
-    if (P_) {
-        return QJsonPath::get(P_->jdoc, jpath_).toDouble();
+    QString s;
+    if (get_(s)) {
+        return s.toFloat();
     } else return QVariant();
 }
 QVariant FloatOptionsItem::displayValue() const
 {
-    return QString::number(value().toDouble(),'g',digits_);
+    return QString::number(value().toFloat(),'g',digits_);
 }
 bool FloatOptionsItem::setValue(const QVariant& v)
 {
-    if (!P_) return false;
-    double d = v.toDouble();
-    double d0 = value().toDouble();
+    float d = v.toFloat();
+    float d0 = value().toFloat();
     if (d0 != d) {
-        QJsonPath::set(P_->jdoc, jpath_, d);
+        QString s = QString::number(d);
+        set_(s);
         return true;
     }
     return false;
@@ -204,16 +220,17 @@ IntOptionsItem::IntOptionsItem(int imin, int imax,
 {}
 QVariant IntOptionsItem::value() const
 {
-    if (P_) {
-        return QJsonPath::get(P_->jdoc, jpath_).toInt();
+    QString s;
+    if (get_(s)) {
+        return s.toInt();
     } else return QVariant();
 }
 bool IntOptionsItem::setValue(const QVariant& v)
 {
-    if (!P_) return false;
-    int d = v.toDouble();
+    int d = v.toInt();
     if (value().toInt() != d) {
-        QJsonPath::set(P_->jdoc, jpath_, d);
+        QString s = QString::number(d);
+        set_(s);
         return true;
     }
     return false;
@@ -241,34 +258,44 @@ BoolOptionsItem::BoolOptionsItem(const QString& key,
 {}
 QVariant BoolOptionsItem::value() const
 {
-    if (P_) {
-        bool ret = false;
-        QJsonValue v = QJsonPath::get(P_->jdoc, jpath_);
-        if (v.isBool()) ret = v.toBool();
-        else if (v.isDouble()) ret = v.toInt();
-        return ret;
+    QString s;
+    if (get_(s)) {
+        if (s == "true") return true;
+        if (s == "false") return false;
+        bool ok = false;
+        int i = s.toInt(&ok);
+        if (ok) {
+            bool ret = i;
+            return ret;
+        }
+        return QVariant();
     } else return QVariant();
 }
 bool BoolOptionsItem::setValue(const QVariant& v)
 {
-    if (!P_) return false;
 
-    bool b = v.toBool();
-
-    QJsonValue v0 = QJsonPath::get(P_->jdoc, jpath_);
-    if (v0.isBool()) {
-        if (b != v0.toBool()) {
-            QJsonPath::set(P_->jdoc, jpath_, b);
+    QString s0;
+    if (get_(s0)) {
+        bool b = v.toBool();
+        if (s0=="true") {
+            bool b0 = true;
+            if (b!=b0) set_(b ? "true" : "false");
             return true;
         }
-    } else if (v0.isDouble()) {
-        bool b0 = v0.toInt();
-        if (b != b0) {
-            QJsonPath::set(P_->jdoc, jpath_, int(b));
+        if (s0=="false") {
+            bool b0 = false;
+            if (b!=b0) set_(b ? "true" : "false");
             return true;
         }
+        bool ok = false;
+        int i = s0.toInt(&ok);
+        if (ok) {
+            bool b0 = i;
+            if (b!=b0) set_(QString::number(i));
+            return true;
+        }
+        return false;
     }
-
     return false;
 }
 QWidget* BoolOptionsItem::createEditor(QWidget* parent) const
@@ -294,17 +321,21 @@ StringOptionsItem::StringOptionsItem(const QString& key,
 {}
 QVariant StringOptionsItem::value() const
 {
-    if (P_) {
-        return QJsonPath::get(P_->jdoc, jpath_).toString();
+    QString s;
+    if (get_(s)) {
+        if (s.size()>2) {
+            s.chop(1);
+            s.remove(0,1);
+            return s;
+        }
+        return QString("");
     } else return QVariant();
 }
 bool StringOptionsItem::setValue(const QVariant& v)
 {
-    if (!P_) return false;
     QString s = v.toString();
     if (s != value().toString()) {
-        QJsonPath::set(P_->jdoc, jpath_, v.toString());
-        return true;
+        return set_(QString("\"%1\"").arg(s));
     }
     return false;
 }
@@ -330,23 +361,20 @@ Vector3dOptionsItem::Vector3dOptionsItem(double fmin, double fmax, int digits,
 {}
 QVariant Vector3dOptionsItem::value() const
 {
-    if (P_) {
-        QJsonValue jv = QJsonPath::get(P_->jdoc, jpath_);
-        return QVariant::fromValue(Vector3D::fromJsonValue(jv));
+    QString s;
+    if (get_(s)) {
+        return QVariant::fromValue(qstring_serialize<vector3>::fromString(s));
     } else return QVariant();
 }
 QVariant Vector3dOptionsItem::displayValue() const
 {
-    return value().value<Vector3D>().toString();
+    return qstring_serialize<vector3>::toString(value().value<vector3>());
 }
 bool Vector3dOptionsItem::setValue(const QVariant& v)
 {
-    if (!P_) return false;
-    Vector3D v3d = v.value<Vector3D>();
-    if (v3d != value().value<Vector3D>()) {
-        QJsonPath::set(P_->jdoc, jpath_,
-                       v3d.toJsonValue());
-        return true;
+    vector3 v3d = v.value<vector3>();
+    if (v3d != value().value<vector3>()) {
+        return set_(qstring_serialize<vector3>::toString(v3d));
     }
     return false;
 }
@@ -358,7 +386,7 @@ QWidget* Vector3dOptionsItem::createEditor(QWidget* parent) const
 }
 void Vector3dOptionsItem::setEditorData(QWidget *editor, const QVariant &v) const
 {
-    ((Vector3dLineEdit*)editor)->setValue(v.value<Vector3D>());
+    ((Vector3dLineEdit*)editor)->setValue(v.value<vector3>());
 }
 QVariant Vector3dOptionsItem::getEditorData(QWidget *editor)
 {
@@ -372,23 +400,20 @@ IVector3dOptionsItem::IVector3dOptionsItem(int fmin, int fmax,
 {}
 QVariant IVector3dOptionsItem::value() const
 {
-    if (P_) {
-        QJsonValue jv = QJsonPath::get(P_->jdoc, jpath_);
-        return QVariant::fromValue(IntVector3D::fromJsonValue(jv));
+    QString s;
+    if (get_(s)) {
+        return QVariant::fromValue(qstring_serialize<ivector3>::fromString(s));
     } else return QVariant();
 }
 QVariant IVector3dOptionsItem::displayValue() const
 {
-    return value().value<IntVector3D>().toString();
+    return qstring_serialize<ivector3>::toString(value().value<ivector3>());
 }
 bool IVector3dOptionsItem::setValue(const QVariant& v)
 {
-    if (!P_) return false;
-    IntVector3D i3d = v.value<IntVector3D>();
-    if (i3d != value().value<IntVector3D>()) {
-        QJsonPath::set(P_->jdoc, jpath_,
-                       i3d.toJsonValue());
-        return true;
+    ivector3 i3d = v.value<ivector3>();
+    if (i3d != value().value<ivector3>()) {
+        return set_(qstring_serialize<ivector3>::toString(i3d));
     }
     return false;
 }
@@ -400,7 +425,7 @@ QWidget* IVector3dOptionsItem::createEditor(QWidget* parent) const
 }
 void IVector3dOptionsItem::setEditorData(QWidget *editor, const QVariant &v) const
 {
-    ((IntVector3dLineEdit*)editor)->setValue(v.value<IntVector3D>());
+    ((IntVector3dLineEdit*)editor)->setValue(v.value<ivector3>());
 }
 QVariant IVector3dOptionsItem::getEditorData(QWidget *editor)
 {
@@ -566,15 +591,20 @@ OptionsModel::~OptionsModel()
     delete rootItem;
 }
 
-void OptionsModel::setJsonOptions(const QJsonDocument& jdoc)
+void OptionsModel::setOptions(const mcdriver::options& opt)
 {
     //beginResetModel();
-    rootItem->P_->jdoc = jdoc;
+    *(rootItem->options_) = opt;
     //endResetModel();
 }
-const QJsonDocument& OptionsModel::jsonOptions() const
+const mcdriver::options* OptionsModel::options() const
 {
-    return rootItem->P_->jdoc;
+    return rootItem->options_.get();
+}
+
+mcdriver::options *OptionsModel::options()
+{
+    return rootItem->options_.get();
 }
 
 QVariant OptionsModel::data(const QModelIndex &index, int role) const {

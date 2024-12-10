@@ -5,6 +5,8 @@
 #include <QComboBox>
 #include <QStyledItemDelegate>
 
+#include "target.h"
+
 class MyComboBox;
 class QTableWidget;
 class QDoubleSpinBox;
@@ -26,17 +28,10 @@ class MaterialsDefView : public QWidget
     MaterialCompositionView* materialsView;
     OptionsModel* model_;
 
-    QPersistentModelIndex targetIndex_;
-
-    //json_ref value_ref_;
+    QPersistentModelIndex materialsIndex_;
 
 public:
     MaterialsDefView(OptionsModel* m, QWidget *parent = nullptr);
-
-    //void setValueRef(json_ref& vref);
-    //const json_ref& valueRef() const { return value_ref_; }
-
-signals:
 
 public slots:
     void addMaterial();
@@ -78,7 +73,8 @@ public:
     void setMaterialIdx(int i = -1);
     int materialIdx() const { return materialIdx_; }
 
-    QJsonObject getMaterial() const;
+    const material::material_desc_t* getMaterial() const;
+    material::material_desc_t* getMaterial();
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -97,7 +93,7 @@ public:
 
 private:
 
-    void setMaterial(const QJsonObject& mat);
+    void setMaterial(const material::material_desc_t& mat);
     int materialIdx_;
     OptionsModel* model_;
     QPersistentModelIndex materialsIndex_;

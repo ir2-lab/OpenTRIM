@@ -1,7 +1,6 @@
 #include "mcdriverobj.h"
 
 #include "mcdriver.h"
-#include "qjsonpath/qjsonpath.h"
 
 #include <fstream>
 
@@ -41,37 +40,30 @@ McDriverObj::~McDriverObj()
     delete driver_;
 }
 
-const QJsonDocument& McDriverObj::jsonOptions() const
+const mcdriver::options& McDriverObj::options() const
 {
-    return jsonOptions_;
+    return options_;
 }
 
-void McDriverObj::setJsonOptions(const QJsonDocument &jdoc)
+void McDriverObj::setOptions(const mcdriver::options &opt)
 {
-    jsonOptions_ = jdoc;
-    QJsonPath::set(jsonOptions_,"Driver/max_no_ions",QJsonValue(1.0*max_ions_));
-    QJsonPath::set(jsonOptions_,"Driver/threads",nThreads_);
-    QJsonPath::set(jsonOptions_,"Driver/seed",seed_);
-    QJsonPath::set(jsonOptions_,"Output/storage_interval",updInterval_);
+    options_ = opt;
+    max_ions_ = opt.Driver.max_no_ions;
+    nThreads_ = opt.Driver.threads;
+    seed_ = opt.Driver.seed;
+    updInterval_ = opt.Output.storage_interval;
     emit configChanged();
     setModified(true);
 }
 
 std::string McDriverObj::json() const
 {
-    mcdriver::options opt;
-    std::string s(jsonOptions_.toJson().constData());
-    if (!s.empty()) {
-        std::istringstream is(s);
-        opt.parseJSON(is,false);
-    }
+    mcdriver::options opt(options_);
     opt.Driver.max_no_ions = max_ions_;
     opt.Driver.seed = seed_;
     opt.Driver.threads = nThreads_;
     opt.Output.storage_interval = updInterval_;
-    std::ostringstream os;
-    opt.printJSON(os);
-    return os.str();
+    return opt.toJSON();
 }
 
 void McDriverObj::setModified(bool b)
@@ -117,7 +109,7 @@ void McDriverObj::setTemplateName(const QString &name)
 
 QString McDriverObj::title() const
 {
-    return QJsonPath::get(jsonOptions_,"Output/title",QString()).toString();
+    return QString::fromStdString(options_.Output.title);
 }
 
 void McDriverObj::mc_callback_(const mcdriver& d, void* p)
@@ -148,17 +140,7 @@ void McDriverObj::update_tally_totals_()
 
 bool McDriverObj::validateOptions(QString* msg) const
 {
-    mcdriver::options opt;
-
-    std::string s(jsonOptions_.toJson().constData());
-    std::stringstream ss(s, std::ios_base::in);
-
-    int ret = opt.parseJSON(ss,false);
-
-    if (ret) {
-        if (msg) *msg = "Internal error in JSON opts !!";
-        return false;
-    }
+    mcdriver::options opt(options_);
 
     opt.Driver.max_no_ions = max_ions_;
     opt.Driver.seed = seed_;
@@ -176,18 +158,6 @@ bool McDriverObj::validateOptions(QString* msg) const
 
     return isValid;
 }
-
-void McDriverObj::setOptions(const mcdriver::options &opt)
-{
-    std::stringstream os;
-    opt.printJSON(os);
-    max_ions_ = opt.Driver.max_no_ions;
-    nThreads_ = opt.Driver.threads;
-    seed_ = opt.Driver.seed;
-    updInterval_ = opt.Output.storage_interval;
-    jsonOptions_ = QJsonDocument::fromJson(os.str().c_str());
-}
-
 
 void McDriverObj::loadJsonTemplate(const QString &path)
 {
@@ -303,12 +273,10 @@ void McDriverObj::saveJson(const QString &fname)
 {
     setFileName(fname);
 
-    mcdriver::options opt;
+    mcdriver::options opt(options_);
     if (driver_->getSim())
         driver_->getOptions(opt); // get options from mccore object
     else { // get from our local json
-        std::istringstream is(jsonOptions_.toJson().constData());
-        opt.parseJSON(is,false);
         opt.Driver.max_no_ions = max_ions_;
         opt.Driver.seed = seed_;
         opt.Driver.threads = nThreads_;
@@ -368,10 +336,7 @@ void McDriverObj::start(bool b)
     } else if (b) {
 
         if (driver_->getSim() == nullptr) {
-            mcdriver::options opt;
-            std::string s(jsonOptions_.toJson().constData());
-            std::stringstream ss(s, std::ios_base::in);
-            opt.parseJSON(ss,false);
+            mcdriver::options opt(options_);
             opt.Driver.max_no_ions = max_ions_;
             opt.Driver.seed = seed_;
             opt.Driver.threads = nThreads_;

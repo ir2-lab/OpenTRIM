@@ -4,8 +4,8 @@
             "name" : "simulation_type",
             "label" : "Simulation Type",
             "type" : "enum",
-            "values" : ["FullCascade","Invalid1","Invalid2","IonsOnly","Cascades"],
-            "valueLabels" : ["Full Cascade","Invalid1","Invalid2","Ions Only","Cascades Only"],
+            "values" : ["FullCascade","IonsOnly","CascadesOnly"],
+            "valueLabels" : ["Full Cascade (Ions & Cascades)","Ions Only","Cascades Only"],
             "toolTip" : "Define the type of simulation.",
             "whatsThis" : ["- Full Cascade: Simulate full damage cascades, follow recoils",
                            "- Ions Only: Simulate only ions, do not follow recoils",
@@ -42,7 +42,7 @@
             "valueLabels" : ["Off", "Loss only", "Loss & Stragling"],
             "toolTip" : "Setting for electronic energy loss calculation.",
             "whatsThis" : ["Off: No energy loss calculation",
-                           "Loss: Only energy loss is taken into account",
+                           "Loss Only: Only energy loss is taken into account",
                            "Loss & Stragling: Both energy loss and straggling are calculated"]
         },
         {

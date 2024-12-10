@@ -3,7 +3,6 @@
 
 #include <QWidget>
 
-
 class QLineEdit;
 class QLabel;
 class QSpinBox;

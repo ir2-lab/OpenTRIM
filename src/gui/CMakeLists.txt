@@ -15,7 +15,6 @@ set(PROJECT_SOURCES
         ionsui.h
         ionsui.qrc
         simulationoptionsview.h simulationoptionsview.cpp
-        qjsonpath/qjsonpath.h qjsonpath/qjsonpath.cpp
         periodictablewidget.h periodictablewidget.cpp
         materialsdefview.h materialsdefview.cpp
         periodictable.h periodictable.cpp

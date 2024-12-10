@@ -4,14 +4,10 @@
 #include <memory>
 #include <QAbstractItemModel>
 #include <QStyledItemDelegate>
-#include <QJsonDocument>
+#include "mcdriver.h"
 
 class OptionsItem
 {
-    struct Private {
-        QJsonDocument jdoc;
-    };
-
     enum type_t {
         tEnum,
         tFloat,
@@ -61,9 +57,14 @@ protected:
     void prepareWidget(QWidget* w) const;
     std::vector<OptionsItem*> m_childItems;
     OptionsItem *m_parentItem;
-    QString key_, name_, jpath_;
+    QString key_, name_;
+    std::string jpath_;
     QString toolTip_, whatsThis_;
-    std::shared_ptr<Private> P_;
+
+    bool get_(QString& qs) const;
+    bool set_(const QString& qs);
+
+    std::shared_ptr<mcdriver::options> options_;
 };
 
 class EnumOptionsItem : public OptionsItem
@@ -220,8 +221,9 @@ public:
     explicit OptionsModel(QObject *parent = nullptr);
     ~OptionsModel();
 
-    void setJsonOptions(const QJsonDocument& jdoc);
-    const QJsonDocument& jsonOptions() const;
+    void setOptions(const mcdriver::options& opt);
+    const mcdriver::options* options() const;
+    mcdriver::options* options();
 
     QVariant data(const QModelIndex &index, int role) const override;
     QVariant headerData(int section, Qt::Orientation orientation,

@@ -7,6 +7,7 @@
 #include "mydatawidgetmapper.h"
 #include "ionsui.h"
 #include "runview.h"
+#include "mcdriverobj.h"
 
 #include "mccore.h"
 
@@ -234,8 +235,8 @@ SimulationOptionsView::SimulationOptionsView(IonsUI *iui, QWidget *parent)
 
 void SimulationOptionsView::submit()
 {
-    const QJsonDocument& newJsonOptions = mapper->model()->jsonOptions();
-    ionsui->driverObj()->setJsonOptions(newJsonOptions);
+    const mcdriver::options* opt = mapper->model()->options();
+    ionsui->driverObj()->setOptions(*opt);
     jsonView->setPlainText(
         QString::fromStdString(ionsui->driverObj()->json())
         );
@@ -251,8 +252,8 @@ void SimulationOptionsView::help()
 
 void SimulationOptionsView::revert()
 {
-    const QJsonDocument& jsonOptions = ionsui->driverObj()->jsonOptions();
-    mapper->model()->setJsonOptions(jsonOptions);
+    const mcdriver::options& opt = ionsui->driverObj()->options();
+    mapper->model()->setOptions(opt);
     mapper->revert();
     ionsui->runView->revert();
     materialsView->setWidgetData();

@@ -4,6 +4,7 @@
 #include "periodictablewidget.h"
 #include "floatlineedit.h"
 #include "optionsmodel.h"
+#include "qjsonarray.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -19,16 +20,13 @@
 #include <QFontMetrics>
 #include <QItemSelectionModel>
 
-#include <QJsonArray>
-#include <QJsonObject>
-
 MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent)
     : QWidget{parent}, model_(m)
 {
     QModelIndex i;
     i = model_->index("Target");
     i = model_->index("materials",1,i);
-    targetIndex_ = i;
+    materialsIndex_ = i;
 
     QVBoxLayout* vbox = new QVBoxLayout;
 
@@ -93,17 +91,18 @@ void MaterialsDefView::addMaterial()
                                          QString("Material #%1").arg(cbMaterialID->count()+1),
                                          &ok);
     if (ok && !id.isEmpty()) {
-        QJsonArray materials = model_->data(targetIndex_, Qt::EditRole).toJsonArray();
-        QJsonObject newMaterial;
-        newMaterial["id"] = id;
-        newMaterial["density"] = 1.0;
+        auto& materials = model_->options()->Target.materials;
+        material::material_desc_t newMaterial;
+        newMaterial.id = id.toStdString();
+        newMaterial.density = 1.0f;
         QStringList keys;
         keys << "Z" << "M" << "X" << "Ed" << "El" << "Es" << "Er";
-        for(auto key : keys) newMaterial[key] = QJsonArray();
         materials.push_back(newMaterial);
-        model_->setData(targetIndex_, materials);
         setWidgetData(); // widgets updated
         cbMaterialID->setCurrentText(id);
+        // fake setData just to let model_ know that
+        // underlying data changed
+        model_->setData(materialsIndex_,QVariant());
     }
 }
 
@@ -120,11 +119,11 @@ void MaterialsDefView::editMaterialName()
                                          &ok);
     if (ok && !id.isEmpty()) {
         cbMaterialID->setItemText(i,id);
-        QJsonArray materials = model_->data(targetIndex_, Qt::EditRole).toJsonArray();
-        QJsonObject m = materials.at(i).toObject();
-        m["id"] = id;
-        materials.replace(i,m);
-        model_->setData(targetIndex_, materials);
+        material::material_desc_t& m = model_->options()->Target.materials[i];
+        m.id = id.toStdString();
+        // fake setData just to let model_ know that
+        // underlying data changed
+        model_->setData(materialsIndex_,QVariant());
     }
     setValueData(); // update material name
 }
@@ -138,16 +137,18 @@ void MaterialsDefView::removeMaterial()
                          QString("%1 is being removed.\nClick OK to proceed.").arg(id),
                          QMessageBox::Ok | QMessageBox::Cancel);
     if (ret == QMessageBox::Ok) {
-        QJsonArray materials = model_->data(targetIndex_, Qt::EditRole).toJsonArray();
-        materials.removeAt(i);
-        model_->setData(targetIndex_, materials);
+        auto& materials = model_->options()->Target.materials;
+        materials.erase(materials.begin()+i);
         setWidgetData(); // widgets updated
+        // fake setData just to let model_ know that
+        // underlying data changed
+        model_->setData(materialsIndex_,QVariant());
     }
 }
 // from options to widgets
 void MaterialsDefView::setWidgetData()
 {
-    QJsonArray materials = model_->data(targetIndex_, Qt::EditRole).toJsonArray();
+    auto& materials = model_->options()->Target.materials;
 
     int i = cbMaterialID->currentIndex();
     cbMaterialID->blockSignals(true);
@@ -156,16 +157,15 @@ void MaterialsDefView::setWidgetData()
     sbDensity->clear();
     materialsView->setMaterialIdx();
 
-    if (materials.isEmpty()) {
+    if (materials.empty()) {
         cbMaterialID->blockSignals(false);
         return;
     }
 
     // copy materials to combo box
-    int n = materials.count();
+    int n = materials.size();
     for(int k=0; k<n; ++k) {
-        QJsonObject m = materials.at(k).toObject();
-        cbMaterialID->addItem(m["id"].toString());
+        cbMaterialID->addItem(QString::fromStdString(materials[k].id));
     }
 
     // update selection if out of bounds
@@ -174,9 +174,8 @@ void MaterialsDefView::setWidgetData()
 
     // set data to selected material
     cbMaterialID->setCurrentIndex(i);
-    QJsonObject m = materials.at(i).toObject();
     sbDensity->blockSignals(true);
-    sbDensity->setValue(m["density"].toDouble());
+    sbDensity->setValue(materials[i].density);
     sbDensity->blockSignals(false);
     materialsView->setMaterialIdx(i);
 
@@ -194,10 +193,9 @@ void MaterialsDefView::updateSelectedMaterial()
         sbDensity->clear();
         materialsView->setMaterialIdx();
     } else {
-        QJsonArray materials = model_->data(targetIndex_, Qt::EditRole).toJsonArray();
-        QJsonObject mat = materials[i].toObject();
+        const material::material_desc_t& mat = model_->options()->Target.materials[i];
         sbDensity->blockSignals(true);
-        sbDensity->setValue(mat["density"].toDouble());
+        sbDensity->setValue(mat.density);
         sbDensity->blockSignals(false);
         materialsView->setMaterialIdx(i);
     }
@@ -206,16 +204,19 @@ void MaterialsDefView::updateSelectedMaterial()
 }
 void MaterialsDefView::setDensity(double v)
 {
-    QJsonArray materials = model_->data(targetIndex_, Qt::EditRole).toJsonArray();
-    if (materials.isEmpty()) return;
+    auto& materials = model_->options()->Target.materials;
+
+    if (materials.empty()) return;
+
     int i = cbMaterialID->currentIndex();
     if (i<0) return;
 
     QString matid = cbMaterialID->currentText();
-    QJsonObject mat = materials[i].toObject();
-    mat["density"] = v;
-    materials[i] = mat;
-    model_->setData(targetIndex_, materials);
+    material::material_desc_t& mat = materials[i];
+    mat.density = v;
+    // fake setData just to let model_ know that
+    // underlying data changed
+    model_->setData(materialsIndex_,QVariant());
 }
 /*****************************************************/
 MaterialCompositionModel::MaterialCompositionModel(OptionsModel *m, QObject *parent)
@@ -232,26 +233,34 @@ void MaterialCompositionModel::setMaterialIdx(int i)
     materialIdx_ = i;
     endResetModel();
 }
-QJsonObject MaterialCompositionModel::getMaterial() const
+const material::material_desc_t *MaterialCompositionModel::getMaterial() const
 {
-    QJsonArray materials = model_->data(materialsIndex_, Qt::EditRole).toJsonArray();
-    if (materials.isEmpty() || materialIdx_<0 || materialIdx_>=materials.count())
-        return QJsonObject();
-    return materials[materialIdx_].toObject();
+    auto& materials = model_->options()->Target.materials;
+    if (materials.empty() || materialIdx_<0 || materialIdx_>=materials.size())
+        return nullptr;
+    return &materials[materialIdx_];
 }
-void MaterialCompositionModel::setMaterial(const QJsonObject& mat)
+
+material::material_desc_t *MaterialCompositionModel::getMaterial()
 {
-    QJsonArray materials = model_->data(materialsIndex_, Qt::EditRole).toJsonArray();
-    if (materials.isEmpty() || materialIdx_<0 || materialIdx_>=materials.count())
+    auto& materials = model_->options()->Target.materials;
+    if (materials.empty() || materialIdx_<0 || materialIdx_>=materials.size())
+        return nullptr;
+    return &materials[materialIdx_];
+
+}
+void MaterialCompositionModel::setMaterial(const material::material_desc_t &mat)
+{
+    auto& materials = model_->options()->Target.materials;
+    if (materials.empty() || materialIdx_<0 || materialIdx_>=materials.size())
         return;
     materials[materialIdx_] = mat;
-    model_->setData(materialsIndex_,materials);
 }
 int MaterialCompositionModel::rowCount(const QModelIndex & /* parent */) const
 {
-    QJsonObject mat = getMaterial();
-    if (mat.isEmpty()) return 0;
-    return mat["Z"].toArray().size();
+    auto mat = getMaterial();
+    if (mat==nullptr) return 0;
+    return mat->Z.size();
 }
 int MaterialCompositionModel::columnCount(const QModelIndex & /* parent */) const
 {
@@ -265,15 +274,21 @@ QVariant MaterialCompositionModel::data(const QModelIndex &index, int role) cons
     int i = index.row(), j = index.column();
     if (j<0 || j>=columnCount()) return QVariant();
 
-    QJsonObject mat = getMaterial();
-    if (mat.isEmpty()) return QVariant();
-    QJsonArray arr = mat[col_names_.at(j)].toArray();
+    auto mat = getMaterial();
+    if (mat==nullptr) return QVariant();
 
-    if (i<0 || i>= arr.size()) return QVariant();
-    if (j) return arr.at(i).toVariant();
-    // j==0, return symbol
-    int Z = arr.at(i).toInt();
-    return PeriodicTable::at(Z).symbol();
+    if (i<0 || i>=mat->Z.size()) return QVariant();
+
+    switch (j) {
+    case 0: return PeriodicTable::at(mat->Z[i]).symbol();
+    case 1: return mat->M[i];
+    case 2: return mat->X[i];
+    case 3: return mat->Ed[i];
+    case 4: return mat->El[i];
+    case 5: return mat->Es[i];
+    case 6: return mat->Er[i];
+    default: return QVariant();
+    }
 }
 QVariant MaterialCompositionModel::headerData(int c,
                                 Qt::Orientation o,
@@ -300,21 +315,30 @@ bool MaterialCompositionModel::setData(const QModelIndex &index, const QVariant 
     if (!index.isValid() || role != Qt::EditRole)
         return false;
 
-    QJsonObject mat = getMaterial();
-    if (mat.isEmpty()) return false;
-
     int i = index.row(), j = index.column();
-    QString key = col_names_.at(j);
-    QJsonArray arr = mat[key].toArray();
-    if (i>=0 && i<arr.size()) {
-        arr[i] = j ? value.toDouble() : value.toInt();
-        mat[key] = arr;
-        setMaterial(mat);
-        emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-        return true;
+    if (j<0 || j>=columnCount()) return false;
+
+    auto mat = getMaterial();
+    if (mat==nullptr) return false;
+
+    if (i<0 || i>=mat->Z.size()) return false;
+
+    switch (j) {
+    case 0: mat->Z[i] = value.toInt(); break;
+    case 1: mat->M[i] = value.toFloat(); break;
+    case 2: mat->X[i] = value.toFloat(); break;
+    case 3: mat->Ed[i] = value.toFloat(); break;
+    case 4: mat->El[i] = value.toFloat(); break;
+    case 5: mat->Es[i] = value.toFloat(); break;
+    case 6: mat->Er[i] = value.toFloat(); break;
+    default: ;
     }
 
-    return false;
+    // fake setData just to let model_ know that
+    // underlying data changed
+    model_->setData(materialsIndex_,QVariant());
+
+    return true;
 }
 
 
@@ -323,38 +347,48 @@ bool MaterialCompositionModel::insertRows(int position, int rows, const QModelIn
     assert(rows == 1);
     assert(position == rowCount());
 
-    QJsonObject mat = getMaterial();
-    if (mat.isEmpty()) return false;
+    auto mat = getMaterial();
+    if (mat==nullptr) return false;
 
     beginInsertRows(parent, position, position);
-    for(auto key : col_names_) {
-        QJsonArray arr = mat[key].toArray();
-        arr.push_back(key=="Z" ? 0 : 0.0);
-        mat[key] = arr;
-    }
-    setMaterial(mat);
+    mat->Z.push_back(0);
+    mat->M.push_back(0.f);
+    mat->X.push_back(0.f);
+    mat->Ed.push_back(0.f);
+    mat->Es.push_back(0.f);
+    mat->El.push_back(0.f);
+    mat->Er.push_back(0.f);
     endInsertRows();
+
+    // fake setData just to let model_ know that
+    // underlying data changed
+    model_->setData(materialsIndex_,QVariant());
 
     return true;
 }
-
-
 
 bool MaterialCompositionModel::removeRows(int position, int rows, const QModelIndex &parent)
 {
     assert(rows == 1);
 
-    QJsonObject mat = getMaterial();
-    if (mat.isEmpty()) return false;
+    auto mat = getMaterial();
+    if (mat==nullptr) return false;
+
+    if (position>=mat->Z.size()) return false;
 
     beginRemoveRows(parent, position, position);
-    for(auto key : col_names_) {
-        QJsonArray arr = mat[key].toArray();
-        arr.removeAt(position);
-        mat[key] = arr;
-    }
-    setMaterial(mat);
+    mat->Z.erase(mat->Z.begin()+position);
+    mat->M.erase(mat->M.begin()+position);
+    mat->X.erase(mat->X.begin()+position);
+    mat->Ed.erase(mat->Ed.begin()+position);
+    mat->El.erase(mat->El.begin()+position);
+    mat->Es.erase(mat->Es.begin()+position);
+    mat->Er.erase(mat->Er.begin()+position);
     endRemoveRows();
+
+    // fake setData just to let model_ know that
+    // underlying data changed
+    model_->setData(materialsIndex_,QVariant());
 
     return true;
 }
@@ -471,7 +505,7 @@ void MaterialCompositionView::removeElement()
 void MaterialCompositionView::setMaterialIdx(int i)
 {
     model_->setMaterialIdx(i);
-    bool empty = model_->getMaterial().isEmpty();
+    bool empty = model_->getMaterial() == nullptr;
     btAdd->setEnabled(!empty);
 }
 

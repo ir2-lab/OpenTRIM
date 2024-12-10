@@ -1,7 +1,9 @@
 #include "runview.h"
+#include "simulationoptionsview.h"
 #include "ionsui.h"
 #include "mydatawidgetmapper.h"
 #include "optionsmodel.h"
+#include "mcdriverobj.h"
 
 #include "tally.h"
 

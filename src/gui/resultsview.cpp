@@ -1,5 +1,7 @@
 #include "resultsview.h"
 
+#include "mcdriverobj.h"
+
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QComboBox>

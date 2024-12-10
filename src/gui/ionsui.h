@@ -4,22 +4,19 @@
 #include <QWidget>
 #include <QThread>
 
-#include "mcdriverobj.h"
-#include "welcomeview.h"
-#include "simulationoptionsview.h"
-#include "runview.h"
-#include "resultsview.h"
-
 class QStackedWidget;
 class QTextBrowser;
 class QToolButton;
-class QStatusBar;
-class QProgressBar;
 class QLabel;
 class QButtonGroup;
 
 class OptionsModel;
 class SimControlWidget;
+class McDriverObj;
+class WelcomeView;
+class SimulationOptionsView;
+class RunView;
+class ResultsView;
 
 class IonsUI : public QWidget
 {
@@ -29,15 +26,8 @@ public:
 
     OptionsModel* optionsModel;
 
-    WelcomeView* welcomeView;
     SimulationOptionsView* optionsView;
     RunView* runView;
-    ResultsView* resultsView;
-
-    // status bar
-    QProgressBar* progressBar;
-    QLabel* statusLabel;
-
 
     explicit IonsUI(QWidget *parent = nullptr);
     ~IonsUI();
@@ -70,9 +60,11 @@ protected:
 
 private:
     QToolButton * createSidebarButton(const QString& iconPath, const QString& title);
+
     McDriverObj* driverObj_;
+    WelcomeView* welcomeView;
+    ResultsView* resultsView;
     QStackedWidget * _stackedWidget;
-    QStatusBar * statusBar;
     QThread runnerThread;
     QButtonGroup* pageButtonGrp;
     SimControlWidget* ctrlWidget;

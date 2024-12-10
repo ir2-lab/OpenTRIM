@@ -41,9 +41,6 @@ public:
 
     void resetModel();
 
-//    bool moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
-//                  const QModelIndex &destinationParent, int destinationChild) override;
-
 private:
     OptionsModel* model_;
     QPersistentModelIndex regionsIndex_;
@@ -74,7 +71,6 @@ class RegionsView : public QWidget
 {
     Q_OBJECT
 
-    RegionDelegate* delegate_;
     QToolButton* btAdd;
     QToolButton* btRemove;
     QToolButton* btUp;
@@ -82,10 +78,10 @@ class RegionsView : public QWidget
     QItemSelectionModel* selectionModel;
     QTableView* tableView;
 
-public:
-
+    RegionDelegate* delegate_;
     RegionsModel* model_;
 
+public:
     RegionsView(OptionsModel* m, QObject *parent = nullptr);
 
 public slots:

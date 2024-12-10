@@ -3,6 +3,8 @@
 #include "ionsui.h"
 #include "mcdriver.h"
 
+#include "mcdriverobj.h"
+
 #include <QPushButton>
 #include <QToolButton>
 #include <QVBoxLayout>

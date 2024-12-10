@@ -126,6 +126,9 @@ public:
         /// Return options as a JSON string
         std::string toJSON() const;
 
+        bool set(const std::string& path, const std::string& json_str, std::ostream *os = nullptr);
+        bool get(const std::string& path, std::string& json_str, std::ostream *os = nullptr) const;
+
         /**
          * @brief Validate the simulation options
          *
@@ -138,15 +141,20 @@ public:
          * On error, a std::invalid_argument exception is thrown.
          * exception::what() returns a relevant error message.
          *
+         * @param AcceptIncomplete if true, empty values are accepted
          * @return
          */
-        int validate();
+        int validate(bool AcceptIncomplete = false);
 
         /**
          * @brief Create a simulation object from the given options
          * @return a pointer to a mccore object
          */
         mccore* createSimulation() const;
+
+    private:
+        void set_impl_(const std::string& path, const std::string& json_str);
+        void get_impl_(const std::string& path, std::string& json_str) const;
 
     };
 

@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <cctype>
 
+#define CHECK_INVALID_ENUM(OptName,EnumName) \
+if (int(OptName.EnumName)<0) throw std::invalid_argument("Invalid enum value in "#OptName"."#EnumName);
+
 #define CHECK_EMPTY_VEC(MatDesc,V,MatName) \
 if (MatDesc.V.size()==0) throw std::invalid_argument("Empty "#V" in " + MatName);
 
@@ -196,7 +199,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     return 0;
 }
 
-int mcdriver::options::validate()
+int mcdriver::options::validate(bool AcceptIncomplete)
 {
     // Driver
     if (Driver.max_no_ions <= 0)
@@ -206,35 +209,32 @@ int mcdriver::options::validate()
         throw std::invalid_argument("Simulation.threads must be 1 or larger.");
 
     // Simulation & Transport
-    if (Simulation.scattering_calculation==mccore::InvalidScatteringOption)
-        throw std::invalid_argument("Invalid Simulation.scattering_calculation");
+    CHECK_INVALID_ENUM(Simulation,simulation_type)
+    CHECK_INVALID_ENUM(Simulation,screening_type)
+    CHECK_INVALID_ENUM(Simulation,scattering_calculation)
+    CHECK_INVALID_ENUM(Simulation,eloss_calculation)
+    CHECK_INVALID_ENUM(Simulation,straggling_model)
+    CHECK_INVALID_ENUM(Simulation,nrt_calculation)
 
-    if (Transport.flight_path_type==mccore::InvalidPath)
-        throw std::invalid_argument("Invalid Transport.flight_path_type");
+    CHECK_INVALID_ENUM(Transport,flight_path_type)
+
+    //if (Transport.flight_path_type==mccore::InvalidPath)
+    //    throw std::invalid_argument("Invalid Transport.flight_path_type");
     if (Transport.flight_path_type==mccore::Constant &&
         Transport.flight_path_const<=0.f)
         throw std::invalid_argument("Transport.flight_path_type is \"Constant\" but Transport.flight_path_const is negative.");
-
-    if (Simulation.nrt_calculation==mccore::NRT_InvalidOption)
-        throw std::invalid_argument("Invalid Simulation.nrt_calculation");
-
-    if (Simulation.screening_type==Screening::None)
-        throw std::invalid_argument("Invalid Simulation.screening_type");
-
-    if (Simulation.straggling_model==StragglingModel::Invalid)
-        throw std::invalid_argument("Invalid Simulation.straggling_model");
 
     // Ion source
     if (IonBeam.ion_distribution==ion_beam::InvalidIonDistribution)
         throw std::invalid_argument("Invalid IonBeam.ion_distribution");
 
-
     // Output
     const std::string& fname = Output.OutputFileBaseName;
-    if (fname.empty())
+    if (fname.empty() && !AcceptIncomplete)
         throw std::invalid_argument("Output.OutputFileBaseName is empty.");
 
-    if (std::any_of(fname.begin(),
+    if (!fname.empty() &&
+        std::any_of(fname.begin(),
                     fname.end(),
                     [](unsigned char c){ return !(std::isalnum(c) || c=='_'); }))
     {
@@ -244,123 +244,133 @@ int mcdriver::options::validate()
         throw std::invalid_argument(msg);
     }
 
-    // Target
-    if (Target.materials.empty())
-        throw std::invalid_argument("Target.materials is empty.");
-    if (Target.regions.empty())
-        throw std::invalid_argument("Target.regions is empty.");
-    const ivector3& cell_count = Target.cell_count;
-    if (std::any_of(cell_count.begin(),
-                    cell_count.end(),
-                    [](int c){ return c<=0; }))
-    {
-        std::stringstream msg;
-        msg << "Target.cell_count=[";
-        msg << cell_count;
-        msg << "] contains zero or negative values.";
-        throw std::invalid_argument(msg.str());
-    }
-    const vector3& cell_size = Target.cell_size;
-    if (std::any_of(cell_size.begin(),
-                    cell_size.end(),
-                    [](float c){ return c<=0.f; }))
-    {
-        std::stringstream msg;
-        msg << "Target.cell_size=[";
-        msg << cell_size;
-        msg << "] contains zero or negative values.";
-        throw std::invalid_argument(msg.str());
-    }
-
-    // Check Material descriptors
     std::unordered_map<std::string, int> mmap; // map material_id->index
-    for(int i=0; i<Target.materials.size(); ++i) {
 
-        auto md = Target.materials[i];
-        if (mmap.count(md.id)) {
-            std::stringstream msg;
-            msg << "Duplicate material id found: ";
-            msg << md.id;
-            throw std::invalid_argument(msg.str());
+    // Target
+    if (Target.materials.empty()) {
+        if (!AcceptIncomplete) throw std::invalid_argument("Target.materials is empty.");
+    }
+    else {
+        // Check Material descriptors
+        for(int i=0; i<Target.materials.size(); ++i) {
+
+            auto md = Target.materials[i];
+            if (mmap.count(md.id)) {
+                std::stringstream msg;
+                msg << "Duplicate material id found: ";
+                msg << md.id;
+                throw std::invalid_argument(msg.str());
+            }
+            mmap[md.id] = i;
+
+            if (md.density <= 0.f) {
+                std::stringstream msg;
+                msg << "Zero or negative density in material";
+                msg << md.id;
+                throw std::invalid_argument(msg.str());
+            }
+            CHECK_EMPTY_VEC(md,Z,md.id)
+            CHECK_EMPTY_VEC(md,M,md.id)
+            CHECK_EMPTY_VEC(md,X,md.id)
+            CHECK_EMPTY_VEC(md,Ed,md.id)
+            CHECK_EMPTY_VEC(md,El,md.id)
+            CHECK_EMPTY_VEC(md,Es,md.id)
+            CHECK_EMPTY_VEC(md,Er,md.id)
+
+            int natoms = md.Z.size();
+            if (std::any_of(md.Z.begin(),
+                            md.Z.end(),
+                            [](int z){ return (z < 1) || (z > elements::max_atomic_num);}))
+            {
+                throw std::invalid_argument("Invalid Z number in material" + md.id);
+            }
+
+            CHECK_VEC_SIZE(md,M,natoms,md.id)
+            CHECK_VEC_SIZE(md,X,natoms,md.id)
+            CHECK_VEC_SIZE(md,Ed,natoms,md.id)
+            CHECK_VEC_SIZE(md,El,natoms,md.id)
+            CHECK_VEC_SIZE(md,Es,natoms,md.id)
+            CHECK_VEC_SIZE(md,Er,natoms,md.id)
+            CHECK_VEC_ZEROorNEG(md,M,md.id)
+            CHECK_VEC_ZEROorNEG(md,X,md.id)
+            CHECK_VEC_ZEROorNEG(md,Ed,md.id)
+            CHECK_VEC_ZEROorNEG(md,El,md.id)
+            CHECK_VEC_ZEROorNEG(md,Es,md.id)
+            CHECK_VEC_ZEROorNEG(md,Er,md.id)
         }
-        mmap[md.id] = i;
-
-        if (md.density <= 0.f) {
-            std::stringstream msg;
-            msg << "Zero or negative density in material";
-            msg << md.id;
-            throw std::invalid_argument(msg.str());
-        }
-        CHECK_EMPTY_VEC(md,Z,md.id)
-        CHECK_EMPTY_VEC(md,M,md.id)
-        CHECK_EMPTY_VEC(md,X,md.id)
-        CHECK_EMPTY_VEC(md,Ed,md.id)
-        CHECK_EMPTY_VEC(md,El,md.id)
-        CHECK_EMPTY_VEC(md,Es,md.id)
-        CHECK_EMPTY_VEC(md,Er,md.id)
-
-        int natoms = md.Z.size();
-        if (std::any_of(md.Z.begin(),
-                        md.Z.end(),
-                        [](int z){ return (z < 1) || (z > elements::max_atomic_num);}))
-        {
-            throw std::invalid_argument("Invalid Z number in material" + md.id);
-        }
-
-        CHECK_VEC_SIZE(md,M,natoms,md.id)
-        CHECK_VEC_SIZE(md,X,natoms,md.id)
-        CHECK_VEC_SIZE(md,Ed,natoms,md.id)
-        CHECK_VEC_SIZE(md,El,natoms,md.id)
-        CHECK_VEC_SIZE(md,Es,natoms,md.id)
-        CHECK_VEC_SIZE(md,Er,natoms,md.id)
-        CHECK_VEC_ZEROorNEG(md,M,md.id)
-        CHECK_VEC_ZEROorNEG(md,X,md.id)
-        CHECK_VEC_ZEROorNEG(md,Ed,md.id)
-        CHECK_VEC_ZEROorNEG(md,El,md.id)
-        CHECK_VEC_ZEROorNEG(md,Es,md.id)
-        CHECK_VEC_ZEROorNEG(md,Er,md.id)
     }
 
-    // Check Region descriptors
-    for(auto rd : Target.regions) {
-        auto rname = rd.id;
-
-        // check valid material
-        if (!mmap.count(rd.material_id)) {
+    if (Target.regions.empty()) {
+        if (!AcceptIncomplete)  throw std::invalid_argument("Target.regions is empty.");
+    } else {
+        const ivector3& cell_count = Target.cell_count;
+        if (std::any_of(cell_count.begin(),
+                        cell_count.end(),
+                        [](int c){ return c<=0; }))
+        {
             std::stringstream msg;
-            msg << "Region " << rname << " has invalid material_id: ";
-            msg << rd.material_id;
+            msg << "Target.cell_count=[";
+            msg << cell_count;
+            msg << "] contains zero or negative values.";
             throw std::invalid_argument(msg.str());
         }
 
-        // check max > min
-        for (int i=0; i<3; i++) {
-            if (rd.min[i] >= rd.max[i]) {
-                static char axis[] = { 'x', 'y', 'z' };
+        const vector3& cell_size = Target.cell_size;
+        if (std::any_of(cell_size.begin(),
+                        cell_size.end(),
+                        [](float c){ return c<=0.f; }))
+        {
+            std::stringstream msg;
+            msg << "Target.cell_size=[";
+            msg << cell_size;
+            msg << "] contains zero or negative values.";
+            throw std::invalid_argument(msg.str());
+        }
+
+
+
+        // Check Region descriptors
+        for(auto rd : Target.regions) {
+            auto rname = rd.id;
+
+            // check valid material
+            if (!mmap.count(rd.material_id)) {
                 std::stringstream msg;
-                msg << "Region " << rname << " has invalid axis limits: ";
-                msg << axis[i] << "_min(" << rd.min[i] << ") >= ";
-                msg << axis[i] << "_max(" << rd.max[i] << ")";
+                msg << "Region " << rname << " has invalid material_id: ";
+                msg << rd.material_id;
+                throw std::invalid_argument(msg.str());
+            }
+
+            // check max > min
+            for (int i=0; i<3; i++) {
+                if (rd.min[i] >= rd.max[i]) {
+                    static char axis[] = { 'x', 'y', 'z' };
+                    std::stringstream msg;
+                    msg << "Region " << rname << " has invalid axis limits: ";
+                    msg << axis[i] << "_min(" << rd.min[i] << ") >= ";
+                    msg << axis[i] << "_max(" << rd.max[i] << ")";
+                    throw std::invalid_argument(msg.str());
+                }
+            }
+
+            // check that the region is within the simulation volume
+            box3D rbox, // region box
+                sbox; // simulation box
+            rbox.min() = rd.min;
+            rbox.max() = rd.max;
+            sbox.min() = vector3(0,0,0);
+            sbox.max() = vector3(Target.cell_count(0)*Target.cell_size(0),
+                                 Target.cell_count(1)*Target.cell_size(1),
+                                 Target.cell_count(2)*Target.cell_size(2));
+            rbox = sbox.intersection(rbox);
+            if (rbox.isEmpty()) {
+                std::stringstream msg;
+                msg << "Region " << rname << " does not intersect ";
+                msg << "the simulation volume.";
                 throw std::invalid_argument(msg.str());
             }
         }
 
-        // check that the region is within the simulation volume
-        box3D rbox, // region box
-            sbox; // simulation box
-        rbox.min() = rd.min;
-        rbox.max() = rd.max;
-        sbox.min() = vector3(0,0,0);
-        sbox.max() = vector3(Target.cell_count(0)*Target.cell_size(0),
-                             Target.cell_count(1)*Target.cell_size(1),
-                             Target.cell_count(2)*Target.cell_size(2));
-        rbox = sbox.intersection(rbox);
-        if (rbox.isEmpty()) {
-            std::stringstream msg;
-            msg << "Region " << rname << " does not intersect ";
-            msg << "the simulation volume.";
-            throw std::invalid_argument(msg.str());
-        }
     }
 
     return 0;

@@ -1,8 +1,6 @@
 #include "regionsview.h"
 #include "floatlineedit.h"
 #include "optionsmodel.h"
-#include "mydatawidgetmapper.h"
-#include "ionsui.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -20,10 +18,6 @@
 #include <QFontMetrics>
 #include <QItemSelectionModel>
 
-#include <QJsonArray>
-#include <QJsonObject>
-
-
 RegionsModel::RegionsModel(OptionsModel *m, QObject *parent)
     : QAbstractTableModel(parent), model_(m)
 {
@@ -33,9 +27,8 @@ RegionsModel::RegionsModel(OptionsModel *m, QObject *parent)
 }
 int RegionsModel::rowCount(const QModelIndex & /* parent */) const
 {
-    QJsonArray regions = model_->data(regionsIndex_, Qt::EditRole).toJsonArray();
-    if (regions.isEmpty()) return 0;
-    return regions.count();
+    auto& regions = model_->options()->Target.regions;
+    return regions.size();
 }
 int RegionsModel::columnCount(const QModelIndex & /* parent */) const
 {
@@ -50,26 +43,27 @@ QVariant RegionsModel::data(const QModelIndex &index, int role) const
     if (j<0 || j>=columnCount()) return QVariant();
     if (i<0 || i>=rowCount()) return QVariant();
 
-    QJsonArray regions = model_->data(regionsIndex_, Qt::EditRole).toJsonArray();
-    QJsonObject reg = regions[i].toObject();
+    const mcdriver::options* opt = model_->options();
+    const target::region& reg = opt->Target.regions[i];
 
     QVariant V;
-    Vector3D vec;
 
     switch (j) {
     case 0:
-        V = reg["id"].toString();
+        V = QString::fromStdString(reg.id);
         break;
     case 1:
-        V = reg["material_id"].toString();
+        V = QString::fromStdString(reg.material_id);
         break;
     case 2:
-        vec = Vector3D::fromJsonValue(reg["min"]);
-        V = (role == Qt::DisplayRole) ?  vec.toString() : QVariant::fromValue(vec);
+        V = (role == Qt::DisplayRole) ?
+                qstring_serialize<vector3>::toString(reg.min) :
+                QVariant::fromValue(reg.min);
         break;
     case 3:
-        vec = Vector3D::fromJsonValue(reg["max"]);
-        V = (role == Qt::DisplayRole) ?  vec.toString() : QVariant::fromValue(vec);
+        V = (role == Qt::DisplayRole) ?
+                qstring_serialize<vector3>::toString(reg.max) :
+                QVariant::fromValue(reg.max);
         break;
     default:
         assert(0);
@@ -105,26 +99,27 @@ bool RegionsModel::setData(const QModelIndex &index, const QVariant &value, int 
     if (j<0 || j>=columnCount()) return false;
     if (i<0 || i>=rowCount()) return false;
 
-    QJsonArray regions = model_->data(regionsIndex_, Qt::EditRole).toJsonArray();
-    QJsonObject reg = regions[i].toObject();
+    mcdriver::options* opt = model_->options();
+    target::region& reg = opt->Target.regions[i];
 
     switch (j) {
     case 0:
-        reg["id"] = value.toString();
+        reg.id = value.toString().toStdString();
         break;
     case 1:
-        reg["material_id"] = value.toString();
+        reg.material_id = value.toString().toStdString();
         break;
     case 2:
-        reg["min"] = value.value<Vector3D>().toJsonValue();
+        reg.min = value.value<vector3>();
         break;
     case 3:
-        reg["max"] = value.value<Vector3D>().toJsonValue();
+        reg.max = value.value<vector3>();
         break;
     }
 
-    regions[i] = reg;
-    model_->setData(regionsIndex_, regions, Qt::EditRole);
+    // fake setData just to let model_ know that
+    // underlying data changed
+    model_->setData(regionsIndex_,QVariant());
 
     return true;
 }
@@ -133,61 +128,69 @@ bool RegionsModel::insertRows(int position, int rows, const QModelIndex &parent)
     assert(rows == 1);
     assert(position == rowCount());
 
-    QJsonArray regions = model_->data(regionsIndex_, Qt::EditRole).toJsonArray();
-    QJsonObject target = model_->data(model_->index("Target",1), Qt::EditRole).toJsonObject();
-    QJsonArray materials = target["materials"].toArray();
-    QJsonObject reg;
-    reg["id"] = "Region XXX";
-    reg["material_id"] = materials.count() ? materials[0].toObject()["id"].toString() : "";
-    reg["min"] = Vector3D().toJsonValue();
-    reg["max"] = Vector3D(100,100,100).toJsonValue();
-    regions.push_back(reg);
-
     beginInsertRows(parent, position, position);
-    bool ret = model_->setData(regionsIndex_,regions);
+    mcdriver::options* opt = model_->options();
+    auto& materials = opt->Target.materials;
+    target::region reg;
+    reg.id = "Region XX";
+    reg.material_id = materials.size()>0 ? materials[0].id : "";
+    reg.min = {0.f,0.f,0.f};
+    reg.max = {100.f,100.f,100.f};
+    opt->Target.regions.push_back(reg);
     endInsertRows();
 
-    return ret;
+    // fake setData just to let model_ know that
+    // underlying data changed
+    model_->setData(regionsIndex_,QVariant());
+
+    return true;
 }
 bool RegionsModel::removeRows(int position, int rows, const QModelIndex &parent)
 {
     assert(rows == 1);
 
-    QJsonArray regions = model_->data(regionsIndex_, Qt::EditRole).toJsonArray();
-    if (regions.isEmpty() || position>=regions.count()) return false;
-
-    regions.removeAt(position);
+    mcdriver::options* opt = model_->options();
+    auto& regions = opt->Target.regions;
+    if (regions.empty() || position>=regions.size()) return false;
 
     beginRemoveRows(parent, position, position);
-    model_->setData(regionsIndex_,regions);
+    auto it = regions.begin() + position;
+    regions.erase(it);
     endRemoveRows();
+
+    // fake setData just to let model_ know that
+    // underlying data changed
+    model_->setData(regionsIndex_,QVariant());
 
     return true;
 }
 bool RegionsModel::moveRow(int from, int to)
 {
-    QJsonArray regions = model_->data(regionsIndex_, Qt::EditRole).toJsonArray();
-    if (regions.isEmpty()) return 0;
+    mcdriver::options* opt = model_->options();
+    auto& regions = opt->Target.regions;
 
-    int n = regions.count();
+    if (regions.empty()) return false;
+
+    int n = regions.size();
     if (from < 0 || from >= n) return false;
     if (to < 0 || to >= n) return false;
     if (to == from) return false;
 
-    QJsonValue reg = regions[from];
-
+    target::region reg = regions[from];
 
     QModelIndex parent = regionsIndex_.parent();
     beginRemoveRows(parent, from, from);
-    regions.removeAt(from);
-    model_->setData(regionsIndex_, regions);
+    regions.erase(regions.begin()+from);
     endRemoveRows();
 
     // if (to > from) to = to-1;
     beginInsertRows(parent, to, to);
-    regions.insert(to,reg);
-    model_->setData(regionsIndex_,regions);
+    regions.insert(regions.begin()+to,reg);
     endInsertRows();
+
+    // fake setData just to let model_ know that
+    // underlying data changed
+    model_->setData(regionsIndex_,QVariant());
 
     return true;
 }
@@ -215,7 +218,7 @@ QWidget *RegionDelegate::createEditor(QWidget *parent,
     const RegionsModel* rmodel = qobject_cast<const RegionsModel*>(index.model());
     if (!rmodel) return nullptr;
 
-    QWidget* w;
+    QWidget* w = nullptr;
     switch (col)
     {
     case 0:
@@ -224,12 +227,10 @@ QWidget *RegionDelegate::createEditor(QWidget *parent,
     case 1:
         {
             QComboBox* cb = new QComboBox(parent);
-            OptionsModel* omodel = rmodel->model_;
-            QModelIndex targetIdx = omodel->index("Target",1);
-            QJsonObject target = omodel->data(targetIdx, Qt::EditRole).toJsonObject();
-            QJsonArray materials = target["materials"].toArray();
-            for(int i=0; i<materials.count(); ++i) {
-                cb->addItem(materials[i].toObject()["id"].toString());
+            const mcdriver::options* opt = rmodel->model_->options();
+            auto& materials = opt->Target.materials;
+            for(int i=0; i<materials.size(); ++i) {
+                cb->addItem(QString::fromStdString(materials[i].id));
             }
             w = cb;
         }
@@ -273,7 +274,7 @@ void RegionDelegate::setEditorData(QWidget *editor,
     case 3:
         {
             Vector3dLineEdit* edt = (Vector3dLineEdit*)(editor);
-            edt->setValue(v.value<Vector3D>());
+            edt->setValue(v.value<vector3>());
         }
         break;
     }
@@ -306,7 +307,7 @@ void RegionDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
     case 3:
     {
         Vector3dLineEdit* edt = (Vector3dLineEdit*)(editor);
-        v = QVariant::fromValue<Vector3D>(edt->value());
+        v = QVariant::fromValue(edt->value());
     }
     break;
     }

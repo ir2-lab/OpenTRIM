@@ -6,6 +6,7 @@
 #include "runview.h"
 #include "mcdriverobj.h"
 #include "simcontrolwidget.h"
+#include "resultsview.h"
 
 #include <QVBoxLayout>
 
@@ -79,17 +80,17 @@ IonsUI::IonsUI(QWidget *parent)
     /* Create the stacked widget + statusbar*/
     _stackedWidget = new QStackedWidget;
 
-    statusBar = new QStatusBar;
-    statusLabel = new QLabel;
-    QRect rect = fontMetrics().boundingRect("RunningOOO");
-    statusLabel->setMinimumWidth(rect.width());
-    statusLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    progressBar = new QProgressBar;
-    progressBar->setFormat("%p%");
-    progressBar->setMinimum(0);
-    progressBar->setMaximum(1000);
-    statusBar->addWidget(statusLabel,1);
-    statusBar->addWidget(progressBar,10);
+//    statusBar = new QStatusBar;
+//    statusLabel = new QLabel;
+//    QRect rect = fontMetrics().boundingRect("RunningOOO");
+//    statusLabel->setMinimumWidth(rect.width());
+//    statusLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+//    progressBar = new QProgressBar;
+//    progressBar->setFormat("%p%");
+//    progressBar->setMinimum(0);
+//    progressBar->setMaximum(1000);
+//    statusBar->addWidget(statusLabel,1);
+//    statusBar->addWidget(progressBar,10);
 
     ctrlWidget = new SimControlWidget(driverObj_);
 

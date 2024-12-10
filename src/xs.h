@@ -83,11 +83,12 @@
  * @brief Screening function type enumeration
  */
 enum class Screening {
-    None,          /**< Unscreened Coulomb potential */
-    LenzJensen,    /**< Lenz-Jensen */
-    KrC,           /**< Kr-C */
-    Moliere,       /**< Moliere */
-    ZBL            /**< Ziegler-Biersack-Littmark (ZBL) Universal */
+    None = 0,       /**< Unscreened Coulomb potential */
+    LenzJensen = 1, /**< Lenz-Jensen */
+    KrC = 2,        /**< Kr-C */
+    Moliere = 3,    /**< Moliere */
+    ZBL = 4,        /**< Ziegler-Biersack-Littmark (ZBL) Universal */
+    Invalid = -1
 };
 
 /**
