@@ -25,7 +25,23 @@ double computeAverageMass(const QVector<Element::Isotope>& isotopes)
 
 QVector<Element> PeriodicTable::elements_;
 QMap<QString, int> PeriodicTable::symbol2z_;
-Element PeriodicTable::dummy_;
+Element PeriodicTable::dummyElement_;
+
+const Element::Isotope &PeriodicTable::closestIsotope(int Z, double M)
+{
+    const Element& elmnt = PeriodicTable::at(Z);
+
+    int i = 0;
+    double diff = std::abs(elmnt.isotopes()[i].mass - M);
+    for(int j=1; j<elmnt.isotopes().size(); ++j) {
+        double d = std::abs(elmnt.isotopes()[j].mass - M);
+        if (d<diff) {
+            i = j;
+            diff = d;
+        }
+    }
+    return elmnt.isotopes()[i];
+}
 
 int PeriodicTable::loadTable_()
 {
@@ -63,6 +79,9 @@ int PeriodicTable::loadTable_()
     for(int i=0; i<elements_.size(); ++i) {
         symbol2z_[elements_[i].symbol()] = i;
     }
+
+    Element::Isotope i__;
+    dummyElement_.isotopes_.push_back(i__);
 
     return elements_.size();
 }

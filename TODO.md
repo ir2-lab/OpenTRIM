@@ -5,7 +5,6 @@
 GUI:
 - Getting Started
 - About
-- Update the isotope symbol in the Ion Beam config after loading a simulation
 
 CLI:
 - load HDF5 (impl -i option ???), continue simulation, store result (-o option ???)

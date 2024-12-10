@@ -39,19 +39,22 @@ struct PeriodicTable
     static const QVector<Element>& elements() { loadTable_(); return elements_; }
 
     static const Element& at(int i) {
-        if (loadTable_()) return elements_[i];
-        else return dummy_;
+        if (i>=0 && i<loadTable_()) return elements_[i];
+        else return dummyElement_;
     }
 
     static const Element& at(const QString& symbol) {
-        if (loadTable_()) return elements_[symbol2z_[symbol]];
-        else return dummy_;
+        if (loadTable_() && symbol2z_.contains(symbol))
+            return elements_[symbol2z_[symbol]];
+        else return dummyElement_;
     }
+
+    static const Element::Isotope& closestIsotope(int Z, double M);
 
 private:
     static QMap<QString, int> symbol2z_;
     static QVector<Element> elements_;
-    static Element dummy_;
+    static Element dummyElement_;
     static int loadTable_();
 };
 

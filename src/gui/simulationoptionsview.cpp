@@ -263,6 +263,11 @@ void SimulationOptionsView::revert()
         QString::fromStdString(ionsui->driverObj()->json())
         );
 
+    // fix the isotope label
+    ionLabel->setText(
+        PeriodicTable::closestIsotope(opt.IonBeam.ionZ,opt.IonBeam.ionM).symbol
+        );
+
     applyRules();
     setModified(false);
 }
