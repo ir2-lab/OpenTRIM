@@ -57,7 +57,7 @@ int event_stream::open(const event& ev)
     event_proto_ = event(ev);
 
     auto tmpdir = fs::temp_directory_path();
-    std::string fname(tmpdir);
+    std::string fname(tmpdir.u8string());
     fname += "/event_stream_XXXXXX";
 
     int fd = mkstemp(fname.data());

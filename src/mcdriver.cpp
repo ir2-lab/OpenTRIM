@@ -141,7 +141,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
     // report progress if callback function is given
     if (cb) {
-        size_t iTick, nTick = std::max(msInterval / msTick, 1UL);
+        size_t iTick, nTick = std::max(msInterval / msTick, size_t(1));
 
         // waiting loop
         do  {
