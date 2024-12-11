@@ -25,8 +25,8 @@ using std::endl;
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     mcdriver::run_data,
     start_time, end_time,
-    ips,cpu_time,
-    nthreads, ion_count
+    ips, cpu_time, nthreads,
+    run_ion_count, total_ion_count
     )
 
 struct dataset_description {
@@ -363,6 +363,8 @@ try {
     // title
     dump(h5f, page + "title", opt.Output.title, var_list, "User supplied simulation title");
 
+    dump(h5f, page + "total_ion_count", getSim()->ion_count(), var_list, "Total number of simulated ions");
+
     // save options
     {
         std::stringstream ss;
@@ -578,7 +580,7 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
         }
 
         // set options in driver. simulation object is created
-        setOptions(opt);
+        init(opt);
 
         // load run history
         {
@@ -602,7 +604,7 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
 
         // load the tally data
         {
-            size_t Nh = run_history_.back().ion_count;
+            size_t Nh = h5e::load<size_t>(h5f,"/run_info/total_ion_count");
 
             bool ret = true;
             int k = 1;

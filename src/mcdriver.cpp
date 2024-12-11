@@ -32,7 +32,7 @@ mcdriver::mcdriver() :
 
 mcdriver::~mcdriver()
 {
-    if (s_) delete s_;
+    reset();
 }
 
 std::string mcdriver::outFileName() const
@@ -60,6 +60,7 @@ void mcdriver::reset()
         wait();
         delete s_;
         s_ = nullptr;
+        run_history_.clear();
     }
 }
 
@@ -73,12 +74,9 @@ void mcdriver::getOptions(options& opt) const
     opt.Target = s_->getTarget().getDescription();
 }
 
-void mcdriver::setOptions(const options& o)
+void mcdriver::init(const options& o)
 {
-    if (s_) {
-        delete s_;
-        s_ = nullptr;
-    }
+    reset();
     s_ = o.createSimulation();
     par_ = o.Driver;
     out_opts_ = o.Output;
@@ -96,7 +94,10 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // TIMING
     start_time_ = std::time(nullptr);
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t_start);
-    size_t n0 = s_->ion_count();
+
+    // ion counts
+    size_t n_start = s_->ion_count();
+    size_t n_end = n_start + par_.max_no_ions;
 
     // If ion_count == 0, i.e. simulation starts, seed the rng
     if (s_->ion_count() == 0) s_->seed(par_.seed);
@@ -127,7 +128,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
     // set max ions in each thread
     for(int i=0; i<nthreads; i++) {
-        sim_clones_[i]->setMaxIons(par_.max_no_ions);
+        sim_clones_[i]->setMaxIons(n_end);
     }
 
     // clear the abort flag
@@ -154,15 +155,15 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
             // wait time in msTick intervals
             // always checking if simulation is finished or aborted
             iTick = 0;
-            while (iTick < nTick &&
-                   s_->ion_count() < par_.max_no_ions &&
+            while ((iTick < nTick) &&
+                   (s_->ion_count() < n_end) &&
                    !(s_->abort_flag()))
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(msTick));
                 iTick++;
             }
 
-        } while(s_->ion_count() < par_.max_no_ions && !(s_->abort_flag()));
+        } while((s_->ion_count() < n_end) && !(s_->abort_flag()));
     }
 
     // wait for threads to finish...
@@ -187,8 +188,9 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     run_data rd;
     rd.cpu_time = 1. * (t_end.tv_sec - t_start.tv_sec);
     rd.cpu_time += 1.e-9 * (t_end.tv_nsec - t_start.tv_nsec);
-    rd.ips = (s_->ion_count() - n0)/rd.cpu_time*nthreads;
-    rd.ion_count = s_->ion_count();
+    rd.run_ion_count = s_->ion_count()-n_start;
+    rd.total_ion_count = s_->ion_count();
+    rd.ips = rd.run_ion_count/rd.cpu_time*nthreads;
     rd.nthreads = nthreads;
     {
         std::stringstream ss;

@@ -54,7 +54,7 @@ public:
     /// mcdriver parameters for running the simulation
     struct parameters {
         /// Ions to run
-        unsigned int max_no_ions{100};
+        size_t max_no_ions{100};
         /// Number of threads to use
         int threads{1};
         /// Seed for the random number generator
@@ -164,7 +164,8 @@ public:
         double ips;
         double cpu_time;
         int nthreads;
-        size_t ion_count;
+        size_t run_ion_count;
+        size_t total_ion_count;
     };
 
 protected:
@@ -194,30 +195,51 @@ public:
     mcdriver();
     ~mcdriver();
 
-
+    /**
+     * @brief Get the currently active driver/simulation options
+     * @param opt A mcdriver::options struct to receive the data
+     */
     void getOptions(options& opt) const;
-    void setOptions(const options& o);
+
+    /**
+     * @brief Initialize the driver with the given options
+     *
+     * This functions first calls mcdriver::reset() to
+     * kill and delete the current simulation, if it exists.
+     *
+     * Then it creates a new simulation according to the
+     * options in @a opt.
+     *
+     * @param opt A mcdriver::options struct with the required specs
+     */
+    void init(const options& opt);
+
     std::string outFileName() const;
 
+    /// Returns the output options
     const output_options& outputOptions() const
     { return out_opts_; }
+    /// Set the output options.
     void setOutputOptions(const output_options& opts)
     { out_opts_ = opts; }
+    /// Returns the driver options
     const parameters& driverOptions() const
     { return par_; }
+    /// Set the driver options.
     void setDriverOptions(const parameters& opts)
     { par_ = opts; }
-
+    /// Returns a const pointer to the mccore simulation object
     const mccore* getSim() const { return s_; }
-
+    /// Returns true if the simulation is running
+    bool is_running() const
+    { return thread_pool_.size()>0; }
     /// Signal a running simulation to abort
     void abort();
     /// Wait for a running simulation to finish
     void wait();
-    /// Reset the simulation object
+    /// Abort and delete the current simulation.
     void reset();
-
-    /// Run history
+    /// Returns a reference to the run history
     const std::vector<run_data>& run_history() const
     { return run_history_; }
 
@@ -240,6 +262,23 @@ public:
      */
     int load(const std::string& h5filename, std::ostream* os = nullptr);
 
+    /**
+     * @brief Execute the simulation
+     *
+     * Runs the simulation for a max # of ion histories specified in
+     * mcdriver::parameters.max_ion_count.
+     *
+     * The function spawns the specified number of execution threads
+     * that run in parallel.
+     *
+     * Each thread runs a clone of the simulation. When all threads finish
+     * the results are merged to the parent simulation object.
+     *
+     * @param cb Pointer to user-supplied callback function (optional)
+     * @param msInterval Period in ms between calls to callback
+     * @param callback_user_data Pointer to user data to pass to the callback function (optional)
+     * @return 0 on success, non-zero otherwise
+     */
     int exec(progress_callback cb = nullptr, size_t msInterval = 1000, void* callback_user_data = 0);
 };
 

@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
         if (s>0) opt.Driver.seed = s;
         if (!output_file.empty()) opt.Output.OutputFileBaseName = output_file;
 
-        D.setOptions(opt);
+        D.init(opt);
 
     } else {
 
@@ -124,14 +124,14 @@ int main(int argc, char* argv[])
 
     cout << "Starting simulation '" << D.outputOptions().title << "'..." << endl << endl;
 
-    bar.set_niter(D.driverOptions().max_no_ions);
+    bar.set_niter(D.getSim()->ion_count() + D.driverOptions().max_no_ions, D.getSim()->ion_count());
     bar.update(D.getSim()->ion_count());
 
     D.exec(progress_callback,500);
     
     const mcdriver::run_data& rd = D.run_history().back();
     cout << endl << endl
-         << "Completed " << rd.ion_count << " ion histories." << endl;
+         << "Completed " << rd.total_ion_count << " ion histories." << endl;
     cout << "ion/s = " << rd.ips << " (total), ";
     cout << rd.ips/rd.nthreads << " (per thread)" << endl;
 

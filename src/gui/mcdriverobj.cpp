@@ -342,7 +342,7 @@ void McDriverObj::start(bool b)
             opt.Driver.threads = nThreads_;
             opt.Output.storage_interval = updInterval_;
 
-            driver_->setOptions(opt);
+            driver_->init(opt);
 
             total_elapsed_ = 0;
 
@@ -428,8 +428,8 @@ void McDriverObj::init_run_data()
     tstart_ = my_clock_t::now();
     nstart_ = driver_->getSim()->ion_count();
     ncurr_ = nstart_;
-    ntarget_ = driver_->driverOptions().max_no_ions;
-    progress_ = int(1000.0*ncurr_/ntarget_);
+    ntarget_ = nstart_ + driver_->driverOptions().max_no_ions;
+    progress_ = 0;
     elapsed_ = 0.;
     eta_ = std::numeric_limits<double>::infinity();
     ips_ = 0.;
@@ -446,7 +446,7 @@ void McDriverObj::update_run_data()
     elapsed_ = fp_sec.count();
     ips_ = (ncurr_ - nstart_)/elapsed_;
     eta_ = (ntarget_ - ncurr_)/ips_;
-    progress_ = int(1000.0*ncurr_/ntarget_);
+    progress_ = int(1000.0*(ncurr_ - nstart_)/(ntarget_-nstart_));
 }
 
 const tally &McDriverObj::getTally() const

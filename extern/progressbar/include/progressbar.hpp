@@ -61,7 +61,7 @@ class progressbar {
       // reset bar to use it again
       inline void reset();
      // set number of loop iterations
-      inline void set_niter(int iter);
+      inline void set_niter(size_t iter, size_t n0 = 0);
       // chose your style
       inline void set_done_char(const std::string& sym) {done_char = sym;}
       inline void set_todo_char(const std::string& sym) {todo_char = sym;}
@@ -72,12 +72,13 @@ class progressbar {
       // set the output stream
       inline void set_output_stream(const std::ostream& stream) {output.rdbuf(stream.rdbuf());}
       // main function
-      inline void update(int iter);
+      inline void update(size_t iter);
 
 
     private:
       int progress;
-      int n_cycles;
+      size_t n_end;
+      size_t n_start;
       int last_perc;
       bool do_show_bar;
       bool update_is_called;
@@ -99,7 +100,7 @@ class progressbar {
 
 inline progressbar::progressbar() :
     progress(0),
-    n_cycles(0),
+    n_end(0), n_start(0),
     last_perc(0),
     do_show_bar(true),
     update_is_called(false),
@@ -111,7 +112,7 @@ inline progressbar::progressbar() :
 
 inline progressbar::progressbar(int n, bool showbar, std::ostream& out) :
     progress(0),
-    n_cycles(n),
+    n_end(n), n_start(0),
     last_perc(0),
     do_show_bar(showbar),
     update_is_called(false),
@@ -128,19 +129,18 @@ inline void progressbar::reset() {
     return;
 }
 
-inline void progressbar::set_niter(int niter) {
-    if (niter <= 0) throw std::invalid_argument(
-        "progressbar::set_niter: number of iterations null or negative");
-    n_cycles = niter;
+inline void progressbar::set_niter(size_t niter, size_t n0) {
+    n_end = niter;
+    n_start = n0;
     return;
 }
 
+inline void progressbar::update(size_t iter) {
 
-
-inline void progressbar::update(int iter) {
-
-    if (n_cycles == 0) throw std::runtime_error(
+    if (n_end == 0) throw std::runtime_error(
             "progressbar::update: number of cycles not set");
+
+    if (n_start > 0 && iter < n_start) iter = n_start; // 0 is lowest progress
 
     if (!update_is_called) {
         if (do_show_bar == true) {
@@ -154,23 +154,27 @@ inline void progressbar::update(int iter) {
     }
 
     // compute percentage, if did not change, do nothing and return
-    int perc = iter*100./n_cycles;
+    int perc = (iter-n_start)*100./(n_end-n_start);
     if (perc == last_perc) return;
 
     if (do_show_bar) {
+
         output << '\r';
         output << opening_bracket_char;
-        int n = iter*50.f/n_cycles;
-            // add 'done_char'
-            for (int j = 0; j < n; ++j) output << done_char;
 
+        int n = perc >> 1; // bar steps at 2%/step
 
-            // add 'todo_char'
-            for (int j = 0; j < 50-n; ++j) output << todo_char;
+        // add 'done_char'
+        for (int j = 0; j < n; ++j) output << done_char;
 
-            // add closing bracket & trailing percentage characters
-            output << closing_bracket_char;
-            print_percentage(perc);
+        // add 'todo_char'
+        for (int j = 0; j < 50-n; ++j) output << todo_char;
+
+        // add closing bracket & trailing percentage characters
+        output << closing_bracket_char;
+
+        print_percentage(perc);
+
     } else {
         // erase & rewrite percentage
         output << "\b\b\b\b";
