@@ -7,9 +7,7 @@
 #include <highfive/H5Easy.hpp>
 #include <highfive/highfive.hpp>
 
-#include <nlohmann/json.hpp>
-
-using nlohmann::json;
+#include "json_defs_p.h"
 
 namespace h5e = H5Easy;
 namespace h5= HighFive;
@@ -24,23 +22,57 @@ namespace h5= HighFive;
 using std::cerr;
 using std::endl;
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     mcdriver::run_data,
     start_time, end_time,
     ips,cpu_time,
     nthreads, ion_count
     )
 
-struct variable_description {
-    std::string shape;
+struct dataset_description {
+    std::string path;
     std::string datatype;
+    std::vector<size_t> shape;
     std::string description;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
-    variable_description,
-    shape, datatype, description
+MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+    dataset_description,
+    path, datatype, shape, description
     )
+
+typedef std::vector<dataset_description> dset_list_t;
+
+void add_desciption(dset_list_t& list,
+                    const std::string& path,
+                    const h5::DataSet& dset,
+                    const std::string& description)
+{
+    list.push_back(
+        {
+            path,
+            dset.getDataType().string(),
+            dset.getSpace().getDimensions(),
+            description
+        });
+}
+
+void add_desciption(ojson& list,
+                    const std::string& path,
+                    const h5::DataSet& dset,
+                    const std::string& description)
+{
+    ojson::json_pointer ptr(path);
+    dataset_description d = {
+        path,
+        dset.getDataType().string(),
+        dset.getSpace().getDimensions(),
+        description
+    };
+    list[ptr] = d;
+}
+
+
 
 int writeFileHeader(h5::File& file, std::ostream* os)
 {
@@ -106,49 +138,33 @@ std::string shapeStr(const h5::DataSpace& dspace) {
 // dump data using H5Easy, create attribute with the description and write description to var_list
 template <class T>
 int dump(h5::File& file, const std::string& path, const T& data, 
-         json& var_list, const std::string& desc) {
+         dset_list_t& var_list, const std::string& desc) {
     h5::DataSet dset = h5e::dump(file,path,data);
     dset.createAttribute("description",desc);
-    json::json_pointer ptr(path);
-    variable_description vd =
-        {
-            shapeStr(dset.getSpace()),
-            dset.getDataType().string(),
-            desc
-        };
-    var_list[ptr] = vd;
+    add_desciption(var_list,path,dset,desc);
     return 0;
 }
 
 // dump data using H5Easy, create attribute with the description and write description to var_list
 template <class T>
 int dump(h5::File& file, const std::string& path, const T& data, const T& sem,
-        json& var_list, const std::string& desc) {
+        dset_list_t& var_list, const std::string& desc) {
     h5::DataSet dset = h5e::dump(file,path,data);
     dset.createAttribute("description",desc);
-
-    json::json_pointer ptr(path);
-    variable_description vd =
-        {
-            shapeStr(dset.getSpace()),
-            dset.getDataType().string(),
-            desc
-        };
-    var_list[ptr] = vd;
+    add_desciption(var_list,path,dset,desc);
 
     dset = h5e::dump(file,path + "_sem", sem);
-    dset.createAttribute("description",std::string("(SEM) ")+desc);
-
-    json::json_pointer ptr2(path + "_sem");
-    vd.description = std::string("(SEM) ")+desc;
-    var_list[ptr2] = vd;
+    std::string desc_sem("(SEM) ");
+    desc_sem += desc;
+    dset.createAttribute("description",desc_sem);
+    add_desciption(var_list,path + "_sem",dset,desc_sem);
 
     return 0;
 }
 
 template<typename T>
 int dump_array(h5::File& file, const std::string& path,
-               const ArrayND<T>& A, json& var_list,
+               const ArrayND<T>& A, dset_list_t& var_list,
                const std::string& desc,
                const size_t& N = 1)
 {
@@ -162,23 +178,14 @@ int dump_array(h5::File& file, const std::string& path,
         p = a.data();
     }
     dset.write_raw(p);
-
-    json::json_pointer ptr(path);
-    variable_description vd =
-        {
-            shapeStr(dset.getSpace()),
-            dset.getDataType().string(),
-            desc
-        };
-    var_list[ptr] = vd;
-
+    add_desciption(var_list,path,dset,desc);
     return 0;
 }
 
 template<typename T>
 int dump_array(h5::File& file, const std::string& path, 
             const ArrayND<T>& A, const ArrayND<T>& dA, 
-            json& var_list, const std::string& desc,
+            dset_list_t& var_list, const std::string& desc,
             const size_t& N)
 {
     assert(A.size()==dA.size());
@@ -235,7 +242,7 @@ int load_array(h5::File& file, const std::string& path,
 }
 
 int dump_event_stream(h5::File &h5f, const std::string &grp_name, event_stream &es,
-                      json &var_list)
+                      dset_list_t& var_list)
 {
     // get row, column numbers
     size_t nrows(es.rows()), ncols(es.cols());
@@ -251,16 +258,7 @@ int dump_event_stream(h5::File &h5f, const std::string &grp_name, event_stream &
     if (nrows==0) {
         // No data. Create empty dataset and leave
         h5::DataSet dataset = h5f.createDataSet<float>(path, h5::DataSpace(nrows,ncols));
-
-        json::json_pointer ptr(path);
-        variable_description vd =
-            {
-                shapeStr(dataset.getSpace()),
-                dataset.getDataType().string(),
-                "event data"
-            };
-        var_list[ptr] = vd;
-
+        add_desciption(var_list,path,dataset,"event data");
         return 0;
     }
 
@@ -297,14 +295,7 @@ int dump_event_stream(h5::File &h5f, const std::string &grp_name, event_stream &
         offset[0] += count[0];
     }
 
-    json::json_pointer ptr(path);
-    variable_description vd =
-        {
-            shapeStr(dataset.getSpace()),
-            dataset.getDataType().string(),
-            "event data"
-        };
-    var_list[ptr] = vd;
+    add_desciption(var_list,path,dataset,"event data");
 
     return 0;
 }
@@ -364,38 +355,56 @@ try {
     getOptions(opt);
 
     // variable list
-    json var_list;
+    dset_list_t var_list;
+
+    // 1. run_info
+    std::string page = "/run_info/";
 
     // title
-    dump(h5f, "/title", opt.Output.title, var_list, "user supplied simulation title");
+    dump(h5f, page + "title", opt.Output.title, var_list, "User supplied simulation title");
 
     // save options
     {
         std::stringstream ss;
         opt.printJSON(ss);
-        dump(h5f, "/config_json", ss.str(), var_list, "JSON formatted simulation options");
+        dump(h5f, page + "config_json", ss.str(), var_list, "JSON formatted simulation options");
     }
 
     // save iradina++ version info
-    dump(h5f, "/version_info/version", std::string(IRADINAPP_VERSION),var_list,"iradina++ version");
-    dump(h5f, "/version_info/compiler", std::string(COMPILER_ID),var_list,"compiler id");
-    dump(h5f, "/version_info/compiler_version", std::string(COMPILER_VERSION),var_list,"compiler version");
-    dump(h5f, "/version_info/build_system", std::string(SYSTEM_ID),var_list,"build system");
-    dump(h5f, "/version_info/build_time", std::string(BUILD_TIME),var_list,"build timestamp");
+    page = "/run_info/version_info/";
+    dump(h5f, page + "version", std::string(IRADINAPP_VERSION),var_list,"iradina++ version");
+    dump(h5f, page + "compiler", std::string(COMPILER_ID),var_list,"compiler id");
+    dump(h5f, page + "compiler_version", std::string(COMPILER_VERSION),var_list,"compiler version");
+    dump(h5f, page + "build_system", std::string(SYSTEM_ID),var_list,"build system");
+    dump(h5f, page + "build_time", std::string(BUILD_TIME),var_list,"build timestamp");
 
     // save run history
+    page = "/run_info/run_history/";
     {
-        json j = run_history_;
+        ojson j = run_history_;
         std::ostringstream os;
         os << j.dump(4) << endl;
-        dump(h5f, "/run_history", os.str(), var_list, "run history");
+        dump(h5f, page, os.str(), var_list, "run history");
     }
 
+    // Save the rng state
+    page = "/run_info/rng_state";
+    auto rngstate = s_->rngState();
+    // make a copy, because std::array is not supported
+    std::vector<random_vars::result_type> state_cpy(rngstate.size());
+    for(int i=0; i<rngstate.size(); ++i) state_cpy[i] = rngstate[i];
+    dump(h5f,page,state_cpy,var_list,"random generator state");
+
+    // 2. target
+
+    page = "/target";
+
     // save grid
+    page = "/target/grid/";
     auto grid = s_->getTarget().grid();
-    dump(h5f, "/grid/X", dynamic_cast<const std::vector<float>&>(grid.x()),var_list,"x-axis grid");
-    dump(h5f, "/grid/Y", dynamic_cast<const std::vector<float>&>(grid.y()),var_list,"y-axis grid");
-    dump(h5f, "/grid/Z", dynamic_cast<const std::vector<float>&>(grid.z()),var_list,"z-axis grid");
+    dump(h5f, page + "X", dynamic_cast<const std::vector<float>&>(grid.x()),var_list,"x-axis grid");
+    dump(h5f, page + "Y", dynamic_cast<const std::vector<float>&>(grid.y()),var_list,"y-axis grid");
+    dump(h5f, page + "Z", dynamic_cast<const std::vector<float>&>(grid.z()),var_list,"z-axis grid");
     { // save xyz of each cell center
         int rows = grid.x().size()-1;
         int cols = grid.y().size()-1;
@@ -412,31 +421,33 @@ try {
                     buff(2,l) = 0.5f*(grid.z()[k] + grid.z()[k+1]);
                 }
 
-        dump_array(h5f, "/grid/cell_xyz", buff, var_list, "cell center coordinates");
+        dump_array(h5f, page + "cell_xyz", buff, var_list, "Cell center coordinates");
     }
 
     // save atoms & materials
+    page = "/target/atoms/";
     auto atoms = s_->getTarget().atoms();
     std::vector<std::string> atom_labels = s_->getTarget().atom_labels();
-    dump(h5f, "/atoms/label", atom_labels, var_list, "labels = [Atom (Chemical symbol)] in [Material]");
+    dump(h5f, page + "label", atom_labels, var_list, "labels = [Atom (Chemical symbol)] in [Material]");
     for(int i=0; i<atoms.size(); i++) atom_labels[i] = atoms[i]->name();
-    dump(h5f, "/atoms/symbol", atom_labels, var_list, "Chemical symbol");
+    dump(h5f, page + "symbol", atom_labels, var_list, "Chemical symbol");
     {
         std::vector<float> A(atoms.size());
         for(int i=0; i<atoms.size(); i++) A[i] = atoms[i]->Z();
-        dump(h5f, "/atoms/Z", A, var_list, "atomic number");
+        dump(h5f, page + "Z", A, var_list, "Atomic number");
         for(int i=0; i<atoms.size(); i++) A[i] = atoms[i]->M();
-        dump(h5f, "/atoms/M", A, var_list, "atomic mass");
+        dump(h5f, page + "M", A, var_list, "Atomic mass");
         for(int i=0; i<atoms.size(); i++) A[i] = atoms[i]->Ed();
-        dump(h5f, "/atoms/Ed", A, var_list, "displacement energy [eV]");
+        dump(h5f, page + "Ed", A, var_list, "Displacement energy [eV]");
         for(int i=0; i<atoms.size(); i++) A[i] = atoms[i]->El();
-        dump(h5f, "/atoms/El", A, var_list, "lattice binding energy [eV]");
+        dump(h5f, page + "El", A, var_list, "Lattice binding energy [eV]");
         for(int i=0; i<atoms.size(); i++) A[i] = atoms[i]->Es();
-        dump(h5f, "/atoms/Es", A, var_list, "surface binding energy [eV]");
+        dump(h5f, page + "Es", A, var_list, "Surface binding energy [eV]");
         for(int i=0; i<atoms.size(); i++) A[i] = atoms[i]->Er();
-        dump(h5f, "/atoms/Er", A, var_list, "replacement energy [eV]");
+        dump(h5f, page + "Er", A, var_list, "Replacement energy [eV]");
     }
 
+    page = "/target/materials/";
     auto mat = s_->getTarget().materials();
     {
         std::vector<std::string> name;
@@ -447,29 +458,62 @@ try {
             nm.push_back(m->massDensity());
             rat.push_back(m->atomicRadius());
         }
-        dump(h5f, "/materials/name", name, var_list, "name of material");
-        dump(h5f, "/materials/atomic_density", nat, var_list, "atomic density [at/nm^3]");
-        dump(h5f, "/materials/mass_density", nm, var_list, "mass density [g/cm^3]");
-        dump(h5f, "/materials/atomic_radius", rat, var_list, "atomic radius [nm]");
+        dump(h5f, page + "name", name, var_list, "name of material");
+        dump(h5f, page + "atomic_density", nat, var_list, "atomic density [at/nm^3]");
+        dump(h5f, page + "mass_density", nm, var_list, "mass density [g/cm^3]");
+        dump(h5f, page + "atomic_radius", rat, var_list, "atomic radius [nm]");
     }
 
-    // ion beam data
+    if (opt.Output.store_dedx) {
+
+        page = "/target/dedx/";
+
+        ArrayNDf dEdx(dedx_index::size);
+        for(dedx_index i; i<i.end(); i++) dEdx(i) = *i;
+        dump_array(h5f, page + "erg", dEdx, var_list,"dEdx table energy grid [eV]");
+
+        ArrayND< dedx_interp* > D = s_->dedx();
+        ArrayNDf A(D.dim()[0],D.dim()[1],dedx_index::size);
+        for(int i=0; i<A.dim()[0]; i++)
+            for(int j=0; j<A.dim()[1]; j++)
+                memcpy(&A(i,j,0),D(i,j)->data(),dedx_index::size*sizeof(float));
+        dump_array(h5f,page + "eloss",A,var_list,"dEdx values [eV/nm], array [atoms x materials x energy]");
+
+        ArrayND< straggling_interp* > Ds = s_->de_strag();
+        for(int i=0; i<A.dim()[0]; i++)
+            for(int j=0; j<A.dim()[1]; j++)
+                memcpy(&A(i,j,0),Ds(i,j)->data(),dedx_index::size*sizeof(float));
+        dump_array(h5f,page + "strag",A,var_list,"straggling values [eV], array [atoms x materials x energy]");
+
+        page = "/target/flight_path/";
+        dump_array(h5f, page + "erg", dEdx, var_list,"flight path table energy grid [eV]");
+        dump_array(h5f,page + "mfp",s_->mfp(),var_list,"mean free path [nm], array [atoms x materials x energy]");
+        dump_array(h5f,page + "ipmax",s_->ipmax(),var_list,"max impact parameter [nm], array [atoms x materials x energy]");
+        dump_array(h5f,page + "fpmax",s_->fpmax(),var_list,"max flight path [nm], array [atoms x materials x energy]");
+        dump_array(h5f,page + "Tcutoff",s_->Tcutoff(),var_list,"recoil energy cut0ff [eV], array [atoms x materials x energy]");
+    }
+
+    // 3. ion beam
+
+    page = "/ion_beam/";
     {
         auto p = s_->getSource().getParameters();
-        dump(h5f, "/ion_beam/E0", p.ionE0, var_list, "ion energy [eV]");
-        dump(h5f, "/ion_beam/Z", p.ionZ, var_list, "ion atomic number");
-        dump(h5f, "/ion_beam/M", p.ionM, var_list, "ion mass [amu]");
+        dump(h5f, page + "E0", p.ionE0, var_list, "ion energy [eV]");
+        dump(h5f, page + "Z", p.ionZ, var_list, "ion atomic number");
+        dump(h5f, page + "M", p.ionM, var_list, "ion mass [amu]");
     }
 
-    // save tallys
+    // 4. tally
+
     const tally& t = s_->getTally();
     const tally& dt = s_->getTallyVar();
+    page = "/tally/";
     {
         bool ret = true;
         int k = 1;
 
         while(ret && k<tally::std_tallies) {
-            std::string name("/tally/");           
+            std::string name(page);
             name += tally::arrayGroup(k);
             name += "/";
             name += tally::arrayName(k);
@@ -484,47 +528,21 @@ try {
 
     }
 
-    if (opt.Output.store_dedx) {
+    // 5. events
+    page = "/events/";
+    if (opt.Output.store_pka) dump_event_stream(h5f,page + "pka",s_->pka_stream(),var_list);
+    if (opt.Output.store_transmitted_ions) dump_event_stream(h5f,page + "exit",s_->exit_stream(),var_list);
 
-        ArrayNDf A(dedx_index::size);
-        for(dedx_index i; i<i.end(); i++) A(i) = *i;
-        dump_array(h5f,"/eels/dEdx_erg",A,var_list,"dEdx table energy values [eV]");
 
-        ArrayND< dedx_interp* > D = s_->dedx();
-        A = ArrayNDf(D.dim()[0],D.dim()[1],dedx_index::size);
-        for(int i=0; i<A.dim()[0]; i++)
-            for(int j=0; j<A.dim()[1]; j++)
-                memcpy(&A(i,j,0),D(i,j)->data(),dedx_index::size*sizeof(float));
-        dump_array(h5f,"/eels/dEdx",A,var_list,"dEdx values [eV/nm]");
-
-        ArrayND< straggling_interp* > Ds = s_->de_strag();
-        for(int i=0; i<A.dim()[0]; i++)
-            for(int j=0; j<A.dim()[1]; j++)
-                memcpy(&A(i,j,0),Ds(i,j)->data(),dedx_index::size*sizeof(float));
-        dump_array(h5f,"/eels/dEstrag",A,var_list,"straggling values [eV]");
-
-        dump_array(h5f,"/eels/mfp",s_->mfp(),var_list,"ion mean free [nm]");
-        dump_array(h5f,"/eels/ipmax",s_->ipmax(),var_list,"max impact parameter [nm]");
-        dump_array(h5f,"/eels/fpmax",s_->fpmax(),var_list,"max free path [nm]");
-        dump_array(h5f,"/eels/Tcutoff",s_->Tcutoff(),var_list,"recoil energy cut0ff [eV]");
-    }
-
-    if (opt.Output.store_pka) dump_event_stream(h5f,"/events/pka",s_->pka_stream(),var_list);
-    if (opt.Output.store_transmitted_ions) dump_event_stream(h5f,"/events/exit",s_->exit_stream(),var_list);
-
-    // Save the rng state
-    auto rngstate = s_->rngState();
-    // make a copy, because std::array is not supported
-    std::vector<random_vars::result_type> state_cpy(rngstate.size());
-    for(int i=0; i<rngstate.size(); ++i) state_cpy[i] = rngstate[i];
-    dump(h5f,"/rng_state",state_cpy,var_list,"random generator state");
 
     // dump the variable list
+    page = "/run_info/variable_list";
     {
         std::ostringstream os;
-        os << var_list.dump(4) << endl;
+        ojson j = var_list;
+        os << j.dump(4) << endl;
         std::string s = os.str();
-        h5e::dump(h5f, "/variable_list", s);
+        h5e::dump(h5f, page, s);
     }
 
 }
@@ -554,7 +572,7 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
         // load and check simulation options
         options opt;
         {
-            std::string json = h5e::load<std::string>(h5f,"config_json");
+            std::string json = h5e::load<std::string>(h5f,"/run_info/config_json");
             std::stringstream is(json);
             if (opt.parseJSON(is,true,os)!=0) return -1;
         }
@@ -564,8 +582,8 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
 
         // load run history
         {
-            std::string json_str = h5e::load<std::string>(h5f,"run_history");
-            json j = json::parse(json_str);
+            std::string json_str = h5e::load<std::string>(h5f,"/run_info/run_history");
+            ojson j = ojson::parse(json_str);
             run_history_ = j.template get< std::vector<mcdriver::run_data> >();
         }
 
@@ -575,7 +593,7 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
             auto rngstate = s_->rngState();
             // load a vector, because std::array is not supported
             std::vector<random_vars::result_type> state_cpy =
-                h5e::load< std::vector<random_vars::result_type> >(h5f, "/rng_state");
+                h5e::load< std::vector<random_vars::result_type> >(h5f, "/run_info/rng_state");
             // copy into std::array
             for(int i=0; i<state_cpy.size(); ++i) rngstate[i] = state_cpy[i];
             // set it in simulation object

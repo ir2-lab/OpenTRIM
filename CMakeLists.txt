@@ -104,8 +104,13 @@ set (IRADINAPP_HEADERS
     src/mcdriver.h 
   )
 
+set (IRADINAPP_HEADERS_PRIVATE
+    src/json_defs_p.h
+  )
+
 add_library(iradinapp SHARED
     ${IRADINAPP_HEADERS}
+    ${IRADINAPP_HEADERS_PRIVATE}
     src/elements.cpp
     src/ion.cpp   
     src/target.cpp
