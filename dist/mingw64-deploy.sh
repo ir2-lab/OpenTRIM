@@ -1,10 +1,11 @@
 #! /usr/bin/env sh
 
 # Usage
-#   mingw64-deploy.sh install_folder distname
+#   mingw64-deploy.sh program_name install_folder distname
 #
 # input:
-#   install_folder : the folder with the iradina++ install files.
+#   program_name  : the exe program name, e.g., ions
+#   install_folder : the folder with the project install files.
 #                    This is typically [build_folder]/iradinapp
 #   distname : e.g., iradinapp-0.1.6
 
@@ -14,9 +15,14 @@
 #   2. copy these to distname folder
 #   3. create a zip archive named distname 
 
-INSTALLPATH=$1
-DISTNAME=$2
+PROGRAM_NAME=$1
+INSTALLPATH=$2
+DISTNAME=$3
 CURFLDR=$PWD
+
+EXE_NAME=$PROGRAM_NAME".exe"
+LIB_NAME="lib"$PROGRAM_NAME".dll"
+GUI_NAME=$PROGRAM_NAME"-gui.exe"
 
 mkdir $DISTNAME
 cp $INSTALLPATH/bin/*.* $DISTNAME
@@ -24,22 +30,29 @@ cp $INSTALLPATH/lib/*.dll $DISTNAME
 
 cd $DISTNAME 
 
-printf "ldd iradina++.exe\n"
-list=$(ldd ./iradina++.exe | sed 's/[^\/]*\(\/[^ ]*\)/\1\n/' | grep ucrt64)
+printf "ldd "$EXE_NAME"\n"
+list=$(ldd "./"$EXE_NAME | sed 's/[^\/]*\(\/[^ ]*\)/\1\n/' | grep ucrt64)
 for dll in $list;
 do
   dll_lst="$dll_lst $dll"
 done
 
-printf "ldd ./libiradinapp.dll\n"
-list=$(ldd ./libiradinapp.dll | sed 's/[^\/]*\(\/[^ ]*\)/\1\n/' | grep ucrt64)
+printf "ldd "$GUI_NAME"\n"
+list=$(ldd "./"$GUI_NAME | sed 's/[^\/]*\(\/[^ ]*\)/\1\n/' | grep ucrt64)
 for dll in $list;
 do
   dll_lst="$dll_lst $dll"
 done
 
-printf "ldd ./libiondedx.dll\n"
-list=$(ldd ./libiondedx.dll | sed 's/[^\/]*\(\/[^ ]*\)/\1\n/' | grep ucrt64)
+printf "ldd ./"$LIB_NAME"\n"
+list=$(ldd "./"$LIB_NAME | sed 's/[^\/]*\(\/[^ ]*\)/\1\n/' | grep ucrt64)
+for dll in $list;
+do
+  dll_lst="$dll_lst $dll"
+done
+
+printf "ldd ./libdedx.dll\n"
+list=$(ldd ./libdedx.dll | sed 's/[^\/]*\(\/[^ ]*\)/\1\n/' | grep ucrt64)
 for dll in $list;
 do
   dll_lst="$dll_lst $dll"
@@ -80,6 +93,8 @@ for dll in $dll_lst;
 do
   cp $dll .
 done
+
+windeployqt .
 
 cd $CURFLDR
 

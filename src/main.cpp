@@ -27,8 +27,8 @@ void progress_callback(const mcdriver& d, void* )
 }
 
 int main(int argc, char* argv[])
-{   
-    cxxopts::Options cli_options("iradina++", "Monte-Carlo ion trasport simulation");
+{
+    cxxopts::Options cli_options(PROJECT_NAME, PROJECT_DESCRIPTION);
 
     cli_options.add_options()
         ("n","Number of histories to run (overrides config input)", cxxopts::value<int>())
@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
         ("i,input","input HDF5 file name",cxxopts::value<std::string>())
         ("f","JSON config file",cxxopts::value<std::string>())
         ("o,output","output HDF5 file name (overrides config input)",cxxopts::value<std::string>())
-        ("t,template","pring a template JSON config to stdout")
+        ("t,template","print a template JSON config to stdout")
         ("v,version","Display version information")
         ("h,help","Display short help message");
 
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
             return 0;
         }
         if (result.count("version")) {
-            cout << "iradina++ version " << IRADINAPP_VERSION << endl;
+            cout << PROJECT_NAME << " version " << PROJECT_VERSION << endl;
             cout << "Build time: " << BUILD_TIME << endl;
             cout << "Compiler: " << COMPILER_ID << " v" << COMPILER_VERSION << " on " SYSTEM_ID << endl;
             return 0;

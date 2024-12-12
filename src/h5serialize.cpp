@@ -372,9 +372,10 @@ try {
         dump(h5f, page + "config_json", ss.str(), var_list, "JSON formatted simulation options");
     }
 
-    // save iradina++ version info
+    // save version info
     page = "/run_info/version_info/";
-    dump(h5f, page + "version", std::string(IRADINAPP_VERSION),var_list,"iradina++ version");
+    dump(h5f, page + "name", std::string(PROJECT_NAME),var_list,"program name");
+    dump(h5f, page + "version", std::string(PROJECT_VERSION),var_list,"program version");
     dump(h5f, page + "compiler", std::string(COMPILER_ID),var_list,"compiler id");
     dump(h5f, page + "compiler_version", std::string(COMPILER_VERSION),var_list,"compiler version");
     dump(h5f, page + "build_system", std::string(SYSTEM_ID),var_list,"build system");

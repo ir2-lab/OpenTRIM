@@ -174,7 +174,7 @@ void IonsUI::closeEvent(QCloseEvent *event)
         "Stop the running simulation, discard data & quit program?" :
                       "Discard simulation data & quit program?";
     int ret = QMessageBox::warning(this,
-                                   "Close IONS",msg,
+                                   QString("Close %1").arg(PROJECT_NAME),msg,
                                    QMessageBox::Ok | QMessageBox::Cancel);
     if (ret == QMessageBox::Ok) {
         event->accept();

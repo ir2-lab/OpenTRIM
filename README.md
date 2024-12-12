@@ -1,17 +1,17 @@
-# Iradina++
+# ions
 
 A C++ Monte-Carlo code for simulating ion
 transport in materials.
 
 The emphasis is on calculation of target damage.
 
-Iradina++ offers the following components:
+`ions` offers the following components:
 
-- A GUI tool to configure, run and evaluate simulations 
-- A command line program for batch operations 
-- A C++ library with all the ion transport code, which can be linked to by external applications
-- A C++ library for screened Coulomb scattering calculations 
-- A C++ library for electronic stopping calculations 
+- `ions-gui`: A GUI tool to configure, run and evaluate simulations 
+- `ions`: A command line program for batch mode 
+- `libions`: A C++ library with all the ion transport code, which can be linked to external applications
+- `libxs_*`: A set of C++ libraries for screened Coulomb scattering calculations with various potentials, `* = ZBL, Moliere, ...` 
+- `libdedx`: A C++ library for electronic stopping & straggling calculations 
 
 Documentation can be found here: https://ir2-lab.gitlab.io/iradinapp
 
@@ -77,23 +77,24 @@ or by double-clicking the executable. Some simulation examples are included in t
 The command line program can be invoked by 
 
 ```
-> iradina++ [options] [-f config.json]
+> ions [options] [-f config.json]
 ```
 The program accepts a JSON-formatted configuration input either
 directly from a file (with the `-f` option) or from stdin.
 
-To see all available options run `iradina++ -h`, which prints
+To see all available options run `ions -h`, which prints
 ```
-Monte-Carlo ion trasport simulation
+Monte-Carlo ion transport simulation
 Usage:
-  iradina++ [OPTION...]
+  ions [OPTION...]
 
   -n arg            Number of histories to run (overrides config input)
   -j arg            Number of threads (overrides config input)
   -s, --seed arg    random generator seed (overrides config input)
-  -o, --output arg  output file base name (overrides config input)
+  -i, --input arg   input HDF5 file name
   -f arg            JSON config file
-  -t, --template    pring a template JSON config file to stdout
+  -o, --output arg  output HDF5 file name (overrides config input)
+  -t, --template    print a template JSON config to stdout
   -v, --version     Display version information
   -h, --help        Display short help message
 ```
@@ -116,7 +117,7 @@ The file [`test/octave/plot_benchmark.m`](test/octave/plot_benchmark.m) is an OC
 
 ## Credits
 
-Iradina++ draws heavily on the following similar open-source projects:
+`ions` draws heavily on the following similar open-source projects:
 
 - The program [iradina](https://sourceforge.net/projects/iradina/) written by Ch. Borschel & C. Ronning and extended by J.P. Crocombette & Ch. Van Wambeke.
 - The program [Corteo](http://www.lps.umontreal.ca/%7Eschiette/index.php?n=Recherche.Corteo) by F. Schiettekatte.

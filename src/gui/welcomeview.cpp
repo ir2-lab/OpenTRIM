@@ -188,10 +188,13 @@ WelcomeView::WelcomeView(IonsUI* iui, QWidget *parent)
     {
         QPlainTextEdit* about = new QPlainTextEdit;
         about->setPlainText(
-            QString("IONS simulation\nVersion: %1\nBuild time: %2\nCompiler: %3 v%4\nSystem: %5")
-                .arg(IRADINAPP_VERSION)
+            QString("%1 - %2\n\nVersion: %3\nBuild time: %4\nCompiler: %5 v%6\nSystem: %7")
+                .arg(PROJECT_NAME)
+                .arg(PROJECT_DESCRIPTION)
+                .arg(PROJECT_VERSION)
                 .arg(BUILD_TIME)
-                .arg(COMPILER_ID).arg(COMPILER_VERSION)
+                .arg(COMPILER_ID)
+                .arg(COMPILER_VERSION)
                 .arg(SYSTEM_ID)
             );
         pushCenterWidget("About", about);
