@@ -1,19 +1,19 @@
 pushd b1
-iradina++ -f config.json
+ions -f config.json
 popd
 
 pushd b2
-iradina++ -f config.json
+ions -f config.json
 popd
 
 pushd b3
-iradina++ -f config.json
+ions -f config.json
 popd
 
 pushd b4
-iradina++ -f config.json
+ions -f config.json
 popd
 
 pushd b5
-iradina++ -f config.json
+ions -f config.json
 popd

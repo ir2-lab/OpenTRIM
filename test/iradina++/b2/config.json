@@ -1,8 +1,7 @@
 {
     "Driver" : {        
         "max_no_ions" : 20000,
-        "threads" : 8,
-        "seeds" : []
+        "threads" : 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",

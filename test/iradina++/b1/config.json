@@ -1,8 +1,7 @@
 {
     "Driver" : {        
         "max_no_ions" : 20000,
-        "threads" : 8,
-        "seeds" : []
+        "threads" : 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",
@@ -49,7 +48,7 @@
     },
     "Output" : {
         "title" : "2MeV Fe on Fe example",
-        "OutputFileBaseName" : "out",
+        "OutputFileBaseName" : "b1",
         "store_pka" : 1,
         "store_dedx" : 1,
         "store_transmitted_ions" : 1
