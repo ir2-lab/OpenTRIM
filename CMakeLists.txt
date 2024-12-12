@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12.0)
     
 project(ions 
-        VERSION 0.3.2
+        VERSION 0.3.3
         DESCRIPTION "Monte-Carlo ion transport simulation"
         HOMEPAGE_URL https://gitlab.com/ir2-lab/
         LANGUAGES C CXX)
