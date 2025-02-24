@@ -41,11 +41,11 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
             &MaterialsDefView::updateSelectedMaterial);
 
     btAddMaterial = new QToolButton;
-    btAddMaterial->setIcon(QIcon(":/icons/assets/ionicons/add-outline.svg"));
+    btAddMaterial->setIcon(QIcon(":/assets/ionicons/add-outline.svg"));
     btAddMaterial->setToolTip("Add Material");
 
     btDelMaterial = new QToolButton;
-    btDelMaterial->setIcon(QIcon(":/icons/assets/ionicons/remove-outline.svg"));
+    btDelMaterial->setIcon(QIcon(":/assets/ionicons/remove-outline.svg"));
     btDelMaterial->setToolTip("Remove Material");
     btDelMaterial->setEnabled(false);
     connect(btAddMaterial, &QToolButton::clicked, this, &MaterialsDefView::addMaterial);
@@ -460,10 +460,10 @@ MaterialCompositionView::MaterialCompositionView(OptionsModel *m, QObject *paren
       delegate_(new MaterialCompositionDelegate(this))
 {
     btAdd = new QToolButton;
-    btAdd->setIcon(QIcon(":/icons/assets/ionicons/add-outline.svg"));
+    btAdd->setIcon(QIcon(":/assets/ionicons/add-outline.svg"));
     btAdd->setToolTip("Add Element");
     btRemove = new QToolButton;
-    btRemove->setIcon(QIcon(":/icons/assets/ionicons/remove-outline.svg"));
+    btRemove->setIcon(QIcon(":/assets/ionicons/remove-outline.svg"));
     btRemove->setToolTip("Remove Element");
     connect(btAdd, &QToolButton::clicked, this, &MaterialCompositionView::addElement);
     connect(btRemove, &QToolButton::clicked, this, &MaterialCompositionView::removeElement);

@@ -91,7 +91,7 @@ ResultsView::ResultsView(MainUI *iui, QWidget *parent) : QSplitter{ parent }, io
     plotSelect->addItem("C");
 
     btExport = new QToolButton;
-    btExport->setIcon(QIcon(":/icons/assets/ionicons/download-outline.svg"));
+    btExport->setIcon(QIcon(":/assets/ionicons/download-outline.svg"));
     btExport->setText("Export");
     btExport->setPopupMode(QToolButton::InstantPopup);
     btExport->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -263,7 +263,7 @@ void ResultsView::updatePlotSeries()
     plotSelect->clear();
     plotFlag.clear();
 
-    QIcon icon(":/icons/assets/lucide/chart-line.svg");
+    QIcon icon(":/assets/lucide/chart-line.svg");
 
     for (int i = 0; i < atomLabels.count(); ++i) {
 

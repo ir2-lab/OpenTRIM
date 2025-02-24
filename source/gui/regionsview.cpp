@@ -312,16 +312,16 @@ RegionsView::RegionsView(OptionsModel *m, QObject *parent)
     : model_(new RegionsModel(m, this)), delegate_(new RegionDelegate(this))
 {
     btAdd = new QToolButton;
-    btAdd->setIcon(QIcon(":/icons/assets/ionicons/add-outline.svg"));
+    btAdd->setIcon(QIcon(":/assets/ionicons/add-outline.svg"));
     btAdd->setToolTip("Add region");
     btRemove = new QToolButton;
-    btRemove->setIcon(QIcon(":/icons/assets/ionicons/remove-outline.svg"));
+    btRemove->setIcon(QIcon(":/assets/ionicons/remove-outline.svg"));
     btRemove->setToolTip("Remove region");
     btUp = new QToolButton;
-    btUp->setIcon(QIcon(":/icons/assets/ionicons/arrow-up-outline.svg"));
+    btUp->setIcon(QIcon(":/assets/ionicons/arrow-up-outline.svg"));
     btUp->setToolTip("Move region up");
     btDown = new QToolButton;
-    btDown->setIcon(QIcon(":/icons/assets/ionicons/arrow-down-outline.svg"));
+    btDown->setIcon(QIcon(":/assets/ionicons/arrow-down-outline.svg"));
     btDown->setToolTip("Move region down");
 
     connect(btAdd, &QToolButton::clicked, this, &RegionsView::addRegion);

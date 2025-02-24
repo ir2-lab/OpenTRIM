@@ -102,7 +102,7 @@ SimulationOptionsView::SimulationOptionsView(MainUI *iui, QWidget *parent)
             Qt::Horizontal);
 
     QPushButton *btValidate = new QPushButton(
-            QIcon(":/icons/assets/ionicons/checkmark-done-outline.svg"), "Validate");
+            QIcon(":/assets/ionicons/checkmark-done-outline.svg"), "Validate");
     buttonBox->addButton(btValidate, QDialogButtonBox::ActionRole);
     connect(btValidate, &QPushButton::clicked, this, &SimulationOptionsView::validateOptions);
 

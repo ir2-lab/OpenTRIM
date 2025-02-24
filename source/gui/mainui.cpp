@@ -28,12 +28,10 @@
 
 MainUI::MainUI(QWidget *parent) : QWidget(parent)
 {
-    /* runner thread */
+    /* create runner thread */
     driverObj_ = new McDriverObj;
     driverObj_->moveToThread(&runnerThread);
     connect(&runnerThread, &QThread::finished, driverObj_, &QObject::deleteLater);
-    /* ToDo : connect slots for start, stop etc */
-
     runnerThread.start();
 
     optionsModel = new OptionsModel(this);
@@ -48,10 +46,12 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent)
     QVBoxLayout *sidebarLayout = new QVBoxLayout();
 
     pageButtonGrp = new QButtonGroup(this);
-    QString iconFolder = ":/icons/assets/unknown/";
-    QStringList icons{ "small-circles-forming-a-circle.svg", "settings.svg", "play.svg",
-                       "presentation.svg" };
-    QStringList titles{ "Welcome", "Config", "Run", "Results" };
+
+    QString iconFolder = ":/assets/ionicons/";
+    QStringList icons{ "grid-outline.png", "settings-outline.png", "list-outline.png",
+                       "bar-chart-outline.png" };
+
+    QStringList titles{ "Welcome", "Config", "Results", "Graphs" };
     for (int i = 0; i < titles.count(); ++i) {
         pageButtonGrp->addButton(createSidebarButton(iconFolder + icons.at(i), titles.at(i)), i);
         sidebarLayout->addWidget(pageButtonGrp->button(i));
@@ -68,18 +68,6 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent)
 
     /* Create the stacked widget + statusbar*/
     _stackedWidget = new QStackedWidget;
-
-    //    statusBar = new QStatusBar;
-    //    statusLabel = new QLabel;
-    //    QRect rect = fontMetrics().boundingRect("RunningOOO");
-    //    statusLabel->setMinimumWidth(rect.width());
-    //    statusLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    //    progressBar = new QProgressBar;
-    //    progressBar->setFormat("%p%");
-    //    progressBar->setMinimum(0);
-    //    progressBar->setMaximum(1000);
-    //    statusBar->addWidget(statusLabel,1);
-    //    statusBar->addWidget(progressBar,10);
 
     ctrlWidget = new SimControlWidget(this);
 

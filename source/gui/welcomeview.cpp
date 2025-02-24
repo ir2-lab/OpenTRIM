@@ -127,7 +127,7 @@ WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ions
         updateRecentFiles();
 
         QDialogButtonBox *buttonBox = new QDialogButtonBox(Qt::Horizontal);
-        btOpenRecent = new QPushButton(QIcon(":/icons/assets/ionicons/checkmark-done-outline.svg"),
+        btOpenRecent = new QPushButton(QIcon(":/assets/ionicons/checkmark-done-outline.svg"),
                                        "Open recent simulation");
         buttonBox->addButton(btOpenRecent, QDialogButtonBox::AcceptRole);
         connect(btOpenRecent, &QPushButton::clicked, this, &WelcomeView::onOpenRecent);
@@ -147,14 +147,14 @@ WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ions
     {
         exampleList = new QListWidget;
         foreach (const QString &ex, QDir(":/examples").entryList()) {
-            new QListWidgetItem(QIcon(":/icons/assets/ionicons/document-text-outline.svg"), ex,
+            new QListWidgetItem(QIcon(":/assets/ionicons/document-text-outline.svg"), ex,
                                 exampleList);
         }
         jsonView = new JSEdit;
         jsonView->setReadOnly(true);
 
         QDialogButtonBox *buttonBox = new QDialogButtonBox(Qt::Horizontal);
-        btOpenExample = new QPushButton(QIcon(":/icons/assets/ionicons/checkmark-done-outline.svg"),
+        btOpenExample = new QPushButton(QIcon(":/assets/ionicons/checkmark-done-outline.svg"),
                                         "Open example");
         buttonBox->addButton(btOpenExample, QDialogButtonBox::AcceptRole);
         connect(btOpenExample, &QPushButton::clicked, this, &WelcomeView::onOpenExample);
