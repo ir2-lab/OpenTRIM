@@ -1,3 +1,5 @@
+%define debug_package %{nil}
+
 Name:          opentrim
 Version:	      0
 Release:	      0
@@ -16,7 +18,7 @@ Source15:      ext5.tar.gz
 Source16:      ext6.tar.gz
 
 BuildRequires:	cmake >= 3.12
-BuildRequires:	( gcc-c++ >= 8.0 or gcc8-c++ )
+BuildRequires:	( gcc-c++ >= 9.0 or gcc9-c++ )
 
 Requires:      %{name}-libs
 
@@ -76,8 +78,8 @@ tar -zxf %{SOURCE16} -C external
 
 %build
 %cmake \
-%if %(g++ -dumpversion) < 8
-   -DCMAKE_C_COMPILER=gcc-8 -DCMAKE_CXX_COMPILER=g++-8 \
+%if %(g++ -dumpversion) < 9
+   -DCMAKE_C_COMPILER=gcc-9 -DCMAKE_CXX_COMPILER=g++-9 \
 %endif
    -DPACKAGE_BUILD=ON \
    -DCMAKE_BUILD_TYPE=Release \

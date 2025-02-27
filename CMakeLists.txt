@@ -44,7 +44,12 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 message (STATUS "Install prefix =  ${CMAKE_INSTALL_PREFIX}")
 
-if((CMAKE_SYSTEM_NAME STREQUAL "Linux") AND (NOT CMAKE_CROSSCOMPILING))
+include(Externals)
+include(HelperFunctions)
+
+if(PACKAGE_BUILD)
+   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+elseif((CMAKE_SYSTEM_NAME STREQUAL "Linux") AND (NOT CMAKE_CROSSCOMPILING))
     # use install rpath, no need to use LD_LIBRARY_PATH 
     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH OFF)
@@ -63,9 +68,6 @@ message(STATUS "HDF5 include: ${HDF5_INCLUDE_DIRS}")
 message(STATUS "HDF5 libs: ${HDF5_LIBRARIES}")
 
 include_directories(source/include)
-
-include(Externals)
-include(HelperFunctions)
 
 file(GLOB gendedx_files CONFIGURE_DEPENDS
     ${PROJECT_SOURCE_DIR}/source/dedx/*.cpp)
