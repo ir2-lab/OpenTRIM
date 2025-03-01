@@ -116,13 +116,16 @@ public:
         P_ = other.P_;
         return *this;
     }
-    /// Creates a copy of the array in memory and returns the new array
-    ArrayND copy() const { return P_.get() ? ArrayND(*P_) : ArrayND(); }
-    /// Creates a copy of the array in memory and returns the new array
-    void copyTo(ArrayND &other) const
+    /// Creates a copy of the array and returns it
+    ArrayND copy() const { return P_ ? ArrayND A(*P_) : ArrayND(); }
+    /// Copies the array into \a other. If \a other does not have
+    /// the neccesary size, the function does nothing & returns false.
+    bool copyTo(ArrayND &other) const
     {
-        if (P_ && other.P_ && size() == other.size())
+        bool ret = P_ && other.P_ && size() == other.size();
+        if (ret)
             P_->copyTo(*(other.P_));
+        return ret;
     }
     /// Returns true is the array is empty
     bool isNull() const { return P_ == nullptr; }
@@ -168,8 +171,10 @@ public:
             Scalar *p = data();
             Scalar *pend = p + size();
             const Scalar *q = a.data();
-            while (p < pend)
-                *p++ += (*q) * (*q++);
+            while (p < pend) {
+                *p++ += (*q) * (*q);
+                q++;
+            }
         }
     }
     /// Zero out the array
