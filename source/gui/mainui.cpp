@@ -3,10 +3,10 @@
 #include "optionsmodel.h"
 #include "simulationoptionsview.h"
 #include "welcomeview.h"
-#include "runview.h"
 #include "mcdriverobj.h"
 #include "simcontrolwidget.h"
 #include "resultsview.h"
+#include "tabularview.h"
 
 #include <QVBoxLayout>
 
@@ -97,11 +97,13 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent)
     optionsView = new SimulationOptionsView(this);
     push(tr("Configuration"), optionsView);
 
-    runView = new RunView(this);
-    push(tr("Run"), runView);
+    // runView = new RunView(this);
+    // push(tr("Run"), runView);
+    tblView = new TabularView(this);
+    push(tr("Result Tables"), tblView);
 
     resultsView = new ResultsView(this);
-    push(tr("Results"), resultsView);
+    push(tr("Result Plots"), resultsView);
 
     optionsView->revert();
 

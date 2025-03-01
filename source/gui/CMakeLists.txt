@@ -19,10 +19,10 @@ set(GUI_HEADERS
     mydatawidgetmapper.h 
     regionsview.h 
     welcomeview.h 
-    runview.h 
     mcdriverobj.h 
     resultsview.h 
     simcontrolwidget.h 
+    tabularview.h
     error_fmt.h
     jsedit/jsedit.h 
     ${external_qmatplotwidget_SOURCE_DIR}/src/QMatPlotWidget.h
@@ -40,10 +40,10 @@ set(GUI_SOURCES
     mydatawidgetmapper.cpp
     regionsview.cpp
     welcomeview.cpp
-    runview.cpp
     mcdriverobj.cpp
     resultsview.cpp
     simcontrolwidget.cpp
+    tabularview.cpp
     jsedit/jsedit.cpp
     ${external_qmatplotwidget_SOURCE_DIR}/src/QMatPlotWidget.cpp
 )

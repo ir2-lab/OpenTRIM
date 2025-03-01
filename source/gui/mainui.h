@@ -17,6 +17,7 @@ class WelcomeView;
 class SimulationOptionsView;
 class RunView;
 class ResultsView;
+class TabularView;
 
 class MainUI : public QWidget
 {
@@ -54,12 +55,15 @@ private:
     QToolButton *createSidebarButton(const QString &iconPath, const QString &title);
 
     McDriverObj *driverObj_;
+
     WelcomeView *welcomeView;
+    // RunView *runView;
+    TabularView *tblView;
     ResultsView *resultsView;
     QStackedWidget *_stackedWidget;
     QThread runnerThread;
     QButtonGroup *pageButtonGrp;
-    RunView *runView;
+
     SimControlWidget *ctrlWidget;
 };
 

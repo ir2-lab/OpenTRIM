@@ -120,16 +120,17 @@ void McDriverObj::update_tally_totals_()
 {
     totals_ = driver_->getSim()->getTallyTable(0);
     dtotals_ = driver_->getSim()->getTallyTableVar(0);
-    if (totals_[0] > 1.) {
-        double f = 1. / totals_[0];
-        double f1 = 1. / (totals_[0] - 1.);
-        for (int i = 1; i < totals_.size(); ++i) {
-            totals_[i] *= f;
-            // error in the mean
-            // S[i] = std::sqrt((dA[i]/N-M[i]*M[i])/(N-1));
-            dtotals_[i] = std::sqrt((dtotals_[i] * f - totals_[i] * totals_[i]) * f1);
-        }
-    }
+
+    //    if (totals_[0] > 1.) {
+    //        double f = 1. / totals_[0];
+    //        double f1 = 1. / (totals_[0] - 1.);
+    //        for (int i = 1; i < totals_.size(); ++i) {
+    //            totals_[i] *= f;
+    //            // error in the mean
+    //            // S[i] = std::sqrt((dA[i]/N-M[i]*M[i])/(N-1));
+    //            dtotals_[i] = std::sqrt((dtotals_[i] * f - totals_[i] * totals_[i]) * f1);
+    //        }
+    //    }
 
     emit tallyUpdate();
 }
