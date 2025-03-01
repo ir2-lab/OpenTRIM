@@ -117,7 +117,7 @@ public:
         return *this;
     }
     /// Creates a copy of the array and returns it
-    ArrayND copy() const { return P_ ? ArrayND A(*P_) : ArrayND(); }
+    ArrayND copy() const { return P_ ? ArrayND(*P_) : ArrayND(); }
     /// Copies the array into \a other. If \a other does not have
     /// the neccesary size, the function does nothing & returns false.
     bool copyTo(ArrayND &other) const
