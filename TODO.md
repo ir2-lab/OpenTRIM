@@ -10,7 +10,17 @@ GUI:
   E.g., the "Ions to run" label can become a ToolButton, allowing the user
   to set the limit either on the # of ions or in time
 
+Tally:
+- Remove counting of recoil energy (tally::eRecoil). It is not a well-defined sum
+- Add a counter of Displacements (tally::cD)
+  Every recoil should add +1 to this, regardless of fate (implantation = I, exit = L, replacement = R)
+  V = D - R
+  I = D - R - L
+
 ## Enhancements
+
+- cli:
+  Block Ctrl-C signal so that data is saved before the program is aborted 
 
 - Tally data:
   Instead of keeping the total sum for a tally bin, better keep the
