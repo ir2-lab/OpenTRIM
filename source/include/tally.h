@@ -159,7 +159,7 @@ public:
     /// @brief Initialize tally buffers for given # of atoms and cells
     void init(int natoms, int ncells)
     {
-        A[0] = ArrayNDd(std_tallies); // the "total sums" for all tallies
+        A[0] = ArrayNDd(std_tallies, natoms); // the "total sums" for all tallies
         for (int i = 1; i < std_tallies; i++)
             A[i] = ArrayNDd(natoms, ncells);
     }
@@ -175,9 +175,16 @@ public:
     void computeSums()
     {
         A[0][0] = 1; // 1 history
-        for (size_t i = 1; i < std_tallies; i++)
-            for (size_t j = 0; j < A[i].size(); j++)
-                A[0][i] += A[i][j];
+        size_t natom = A[1].dim()[0];
+        size_t ncell = A[1].dim()[1];
+        for (size_t tid = 1; tid < std_tallies; ++tid)
+            for (size_t iid = 0; iid < natom; ++iid) {
+                double *q = &(A[0](tid, iid));
+                const double *p = &(A[tid](iid, 0));
+                const double *pend = p + ncell;
+                while (p < pend)
+                    *q += *p++;
+            }
     }
 
     /// @brief Add the scores from another tally
