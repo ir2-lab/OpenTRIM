@@ -56,10 +56,10 @@ T round_with_err(const T &f, const T &df, int d = 2)
     return std::round(f * sc) / sc;
 }
 
-std::string superscript(int i)
+inline std::string superscript(int i)
 {
-    const char *ss[] = { "\u2070", "\u00b9", "\u00b2", "\u00b3", "\u2074", "\u2075",
-                         "\u2076", "\u2077", "\u2078", "\u2079", "\u207a", "\u207b" };
+    static const char *ss[] = { "\u2070", "\u00b9", "\u00b2", "\u00b3", "\u2074", "\u2075",
+                                "\u2076", "\u2077", "\u2078", "\u2079", "\u207a", "\u207b" };
     char buff[32];
     std::snprintf(buff, 32, "%d", std::abs(i));
     char *p = buff;
