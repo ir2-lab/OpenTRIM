@@ -13,32 +13,47 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QButtonGroup>
 #include <QLineEdit>
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 
-struct erg_dep_hlpr
+class data_table
 {
-    constexpr static int rows{ 5 };
-    constexpr static std::array<int, 4> idx{ tally::eIoniz, tally::eLattice, tally::eStored,
-                                             tally::eLost };
-    constexpr static const char *rowLabels[]{ "Ionization", "Lattice", "Stored", "Lost", "Total" };
-    static QTableWidget *create()
+protected:
+    int rows_;
+    QTableWidget *widget_;
+    QButtonGroup *unitSelector_;
+    QString title_;
+    ArrayNDd buff;
+
+public:
+    explicit data_table(const char *t, int r)
+        : rows_(r), widget_(nullptr), unitSelector_(nullptr), title_(t)
     {
-        QTableWidget *tw = new QTableWidget(rows, 1);
-        tw->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        QStringList lbls;
-        for (int i = 0; i < rows; ++i)
-            lbls << rowLabels[i];
-        tw->setVerticalHeaderLabels(lbls);
-        return tw;
     }
-    static void init(QTableWidget *tw, const target &t, ArrayNDd &buff)
+    QTableWidget *widget() const { return widget_; }
+    QButtonGroup *unitSelector() const { return unitSelector_; }
+    const QString &title() const { return title_; }
+    int rows() const { return rows_; }
+    virtual const char *rowLabel(int i) const = 0;
+    virtual void create()
     {
+        widget_ = new QTableWidget(rows_, 1);
+        widget_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        QStringList lbls;
+        for (int i = 0; i < rows_; ++i)
+            lbls << rowLabel(i);
+        widget_->setVerticalHeaderLabels(lbls);
+    }
+    virtual void init(const target &t)
+    {
+        if (!widget_)
+            return;
         auto &atoms = t.atoms();
 
-        tw->setColumnCount(atoms.size() + 1);
+        widget_->setColumnCount(atoms.size() + 1);
         QStringList lbls;
         for (const atom *at : atoms) {
             if (at->id())
@@ -49,18 +64,53 @@ struct erg_dep_hlpr
                 lbls << QString("%1 ion").arg(at->symbol().c_str());
         }
         lbls << "Total";
-        tw->setHorizontalHeaderLabels(lbls);
+        widget_->setHorizontalHeaderLabels(lbls);
 
-        for (int i = 0; i < rows; ++i) {
+        for (int i = 0; i < rows_; ++i) {
             for (int j = 0; j < atoms.size() + 1; ++j) {
-                tw->setItem(i, j, new QTableWidgetItem());
+                widget_->setItem(i, j, new QTableWidgetItem());
             }
         }
 
-        buff = ArrayNDd(2, rows, atoms.size() + 1);
+        buff = ArrayNDd(2, rows_, atoms.size() + 1);
     }
-    static void update(QTableWidget *tw, const ArrayNDd &t, const ArrayNDd &dt, ArrayNDd &buff,
-                       bool eV)
+    virtual void clear()
+    {
+        if (!widget_)
+            return;
+        widget_->clearContents();
+        widget_->setColumnCount(1);
+    }
+    virtual void update(const ArrayNDd &t, const ArrayNDd &dt) = 0;
+};
+
+class erg_table : public data_table
+{
+    constexpr static std::array<int, 4> idx{ tally::eIoniz, tally::eLattice, tally::eStored,
+                                             tally::eLost };
+
+public:
+    enum { tblErg, tblPercent };
+    erg_table() : data_table("Energy Deposition", 5) { }
+
+    virtual const char *rowLabel(int i) const override
+    {
+        return i < 4 ? tally::arrayName(idx[i]) : "Total";
+    }
+    virtual void create() override
+    {
+        data_table::create();
+        unitSelector_ = new QButtonGroup(widget_);
+        QPushButton *bt = new QPushButton("eV/ion");
+        bt->setCheckable(true);
+        bt->setChecked(true);
+        unitSelector_->addButton(bt, tblErg);
+        bt = new QPushButton("Percent (%)");
+        bt->setCheckable(true);
+        bt->setChecked(false);
+        unitSelector_->addButton(bt, tblPercent);
+    }
+    virtual void update(const ArrayNDd &t, const ArrayNDd &dt) override
     {
         double f = t[0]; // N histories
         if (f <= 1.0)
@@ -71,7 +121,7 @@ struct erg_dep_hlpr
 
         int cols = buff.dim()[2];
 
-        for (int i = 0; i < rows - 1; ++i) {
+        for (int i = 0; i < rows_ - 1; ++i) {
             buff(0, i, cols - 1) = 0;
             buff(1, i, cols - 1) = 0;
             for (int j = 0; j < cols - 1; ++j) {
@@ -84,75 +134,63 @@ struct erg_dep_hlpr
             }
         }
         for (int j = 0; j < cols; ++j) {
-            buff(0, rows - 1, j) = 0;
-            buff(1, rows - 1, j) = 0;
-            for (int i = 0; i < rows - 1; ++i) {
-                buff(0, rows - 1, j) += buff(0, i, j);
-                buff(1, rows - 1, j) += buff(1, i, j);
+            buff(0, rows_ - 1, j) = 0;
+            buff(1, rows_ - 1, j) = 0;
+            for (int i = 0; i < rows_ - 1; ++i) {
+                buff(0, rows_ - 1, j) += buff(0, i, j);
+                buff(1, rows_ - 1, j) += buff(1, i, j);
             }
         }
 
-        double f2 = eV ? 1.0 : 100.0 / buff(0, rows - 1, cols - 1);
+        double f2 =
+                (unitSelector_->checkedId() == tblErg) ? 1.0 : 100.0 / buff(0, rows_ - 1, cols - 1);
 
-        for (int i = 0; i < rows; ++i) {
+        for (int i = 0; i < rows_; ++i) {
             for (int j = 0; j < cols; ++j) {
                 double x = buff(0, i, j) * f2;
                 double dx = buff(1, i, j) * f1;
                 if (dx > 0.) {
                     dx = std::sqrt(dx) * f2;
-                    tw->item(i, j)->setText(QString::fromStdString(print_with_err(x, dx, 'g', 1)));
+                    widget_->item(i, j)->setText(
+                            QString::fromStdString(print_with_err(x, dx, 'g', 1)));
                 } else {
-                    tw->item(i, j)->setText(QString::number(x, 'g'));
+                    widget_->item(i, j)->setText(QString::number(x, 'g'));
                 }
             }
         }
     }
 };
 
-struct defect_hlpr
+class dmg_events_table : public data_table
 {
-    constexpr static int rows{ 4 };
-    constexpr static std::array<int, 4> idx{ tally::cV, tally::cI, tally::cR,
-                                             tally::cRecombinations };
-    constexpr static const char *rowLabels[]{ "Vacancies", "Implantations", "Replacements",
-                                              "Recombinations" };
-    static QTableWidget *create()
+    constexpr static int drows{ 6 };
+    constexpr static std::array<int, drows> idx{ tally::cP, tally::cD, tally::cV,
+                                                 tally::cI, tally::cR, tally::cRecombinations };
+
+public:
+    enum { tblCntsPerIon, tblCntsPerPka, tblPercent };
+    dmg_events_table() : data_table("Damage Events", drows) { }
+
+    virtual const char *rowLabel(int i) const override { return tally::arrayName(idx[i]); }
+    virtual void create() override
     {
-        QTableWidget *tw = new QTableWidget(rows, 1);
-        tw->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        QStringList lbls;
-        for (int i = 0; i < rows; ++i)
-            lbls << rowLabels[i];
-        tw->setVerticalHeaderLabels(lbls);
-        return tw;
+        data_table::create();
+        unitSelector_ = new QButtonGroup(widget_);
+        QPushButton *bt;
+        bt = new QPushButton("cnts/ion");
+        bt->setCheckable(true);
+        bt->setChecked(true);
+        unitSelector_->addButton(bt, tblCntsPerIon);
+        bt = new QPushButton("cnts/pka");
+        bt->setCheckable(true);
+        bt->setChecked(false);
+        unitSelector_->addButton(bt, tblCntsPerPka);
+        bt = new QPushButton("Percent (%)");
+        bt->setCheckable(true);
+        bt->setChecked(false);
+        unitSelector_->addButton(bt, tblPercent);
     }
-    static void init(QTableWidget *tw, const target &t, ArrayNDd &buff)
-    {
-        auto &atoms = t.atoms();
-
-        tw->setColumnCount(atoms.size() + 1);
-        QStringList lbls;
-        for (const atom *at : atoms) {
-            if (at->id())
-                lbls << QString("%1 in %2")
-                                .arg(at->symbol().c_str())
-                                .arg(at->mat()->name().c_str());
-            else
-                lbls << QString("%1 ion").arg(at->symbol().c_str());
-        }
-        lbls << "Total";
-        tw->setHorizontalHeaderLabels(lbls);
-
-        for (int i = 0; i < rows; ++i) {
-            for (int j = 0; j < atoms.size() + 1; ++j) {
-                tw->setItem(i, j, new QTableWidgetItem());
-            }
-        }
-
-        buff = ArrayNDd(2, rows, atoms.size() + 1);
-    }
-    static void update(QTableWidget *tw, const ArrayNDd &t, const ArrayNDd &dt, ArrayNDd &buff,
-                       bool cnts)
+    virtual void update(const ArrayNDd &t, const ArrayNDd &dt) override
     {
         double f = t[0]; // N histories
         if (f <= 1.0)
@@ -163,7 +201,9 @@ struct defect_hlpr
 
         int cols = buff.dim()[2];
 
-        for (int i = 0; i < rows; ++i) {
+        // 1st pass
+        // compute row data. The last column is the sum
+        for (int i = 0; i < rows_; ++i) {
             buff(0, i, cols - 1) = 0;
             buff(1, i, cols - 1) = 0;
             for (int j = 0; j < cols - 1; ++j) {
@@ -176,18 +216,33 @@ struct defect_hlpr
             }
         }
 
-        for (int i = 0; i < rows; ++i) {
+        // 2nd pass
+        // format and print data with error
+        // if unit=cnts, data is in counts/ion
+        // otherwise is percentage of total = last column
+        for (int i = 0; i < rows_; ++i) {
             double f2{ 1.0 };
-            if (!cnts && buff(0, i, cols - 1) > 0.0)
-                f2 = 100.0 / buff(0, i, cols - 1);
+            switch (unitSelector_->checkedId()) {
+            case tblPercent:
+                if (buff(0, i, cols - 1) > 0.0)
+                    f2 = 100.0 / buff(0, i, cols - 1);
+                break;
+            case tblCntsPerPka:
+                if (buff(0, 0, cols - 1) > 0.0)
+                    f2 = 1.0 / buff(0, 0, cols - 1);
+                break;
+            default:
+                break;
+            }
             for (int j = 0; j < cols; ++j) {
                 double x = buff(0, i, j) * f2;
                 double dx = buff(1, i, j) * f1;
                 if (dx > 0.) {
                     dx = std::sqrt(dx) * f2;
-                    tw->item(i, j)->setText(QString::fromStdString(print_with_err(x, dx, 'g', 1)));
+                    widget_->item(i, j)->setText(
+                            QString::fromStdString(print_with_err(x, dx, 'g', 1)));
                 } else {
-                    tw->item(i, j)->setText(QString::number(x, 'g'));
+                    widget_->item(i, j)->setText(QString::number(x, 'g'));
                 }
             }
         }
@@ -218,62 +273,30 @@ TabularView::TabularView(MainUI *ui, QWidget *parent) : QWidget{ parent }, mainu
 
     // tabs with different tables
     tabWidget_ = new QTabWidget;
-
-    // energy table
-    tblErgDep_ = erg_dep_hlpr::create();
-    QWidget *child = new QWidget;
-    {
-        QVBoxLayout *vbox = new QVBoxLayout;
-        child->setLayout(vbox);
-
+    tables_[idxErgTbl] = new erg_table;
+    tables_[idxDmgEvntsTbl] = new dmg_events_table;
+    for (int itbl = 0; itbl < idxNTbls; ++itbl) {
+        data_table *tbl = tables_[itbl];
+        tbl->create();
+        QWidget *child = new QWidget;
         {
-            btErgUnits = new QPushButton("eV/ion");
-            QPushButton *btPercent = new QPushButton("Percent (%)");
-            btErgUnits->setCheckable(true);
-            btErgUnits->setChecked(true);
-            btErgUnits->setAutoExclusive(true);
-            btPercent->setCheckable(true);
-            btPercent->setChecked(false);
-            btPercent->setAutoExclusive(true);
-            QHBoxLayout *hbox = new QHBoxLayout;
-            hbox->addWidget(new QLabel("Units: "));
-            hbox->addWidget(btErgUnits);
-            hbox->addWidget(btPercent);
-            hbox->addStretch();
-            hbox->setSpacing(0);
-            vbox->addLayout(hbox);
-        }
-        vbox->addWidget(tblErgDep_);
-    }
-    tabWidget_->addTab(child, "Energy Deposition");
+            QVBoxLayout *vbox = new QVBoxLayout;
+            child->setLayout(vbox);
 
-    // defect table
-    tblDef_ = defect_hlpr::create();
-    child = new QWidget;
-    {
-        QVBoxLayout *vbox = new QVBoxLayout;
-        child->setLayout(vbox);
-
-        {
-            btDefUnits = new QPushButton("cnts/ion");
-            QPushButton *btPercent = new QPushButton("Percent (%)");
-            btDefUnits->setCheckable(true);
-            btDefUnits->setChecked(true);
-            btDefUnits->setAutoExclusive(true);
-            btPercent->setCheckable(true);
-            btPercent->setChecked(false);
-            btPercent->setAutoExclusive(true);
-            QHBoxLayout *hbox = new QHBoxLayout;
-            hbox->addWidget(new QLabel("Units: "));
-            hbox->addWidget(btDefUnits);
-            hbox->addWidget(btPercent);
-            hbox->addStretch();
-            hbox->setSpacing(0);
-            vbox->addLayout(hbox);
+            if (tbl->unitSelector()) {
+                QHBoxLayout *hbox = new QHBoxLayout;
+                hbox->addWidget(new QLabel("Units: "));
+                auto btns = tbl->unitSelector()->buttons();
+                for (QAbstractButton *bt : btns)
+                    hbox->addWidget(bt);
+                hbox->addStretch();
+                hbox->setSpacing(0);
+                vbox->addLayout(hbox);
+            }
+            vbox->addWidget(tbl->widget());
         }
-        vbox->addWidget(tblDef_);
+        tabWidget_->addTab(child, tbl->title());
     }
-    tabWidget_->addTab(child, "Defect Generation");
 
     QVBoxLayout *vbox = new QVBoxLayout;
     {
@@ -290,10 +313,6 @@ TabularView::TabularView(MainUI *ui, QWidget *parent) : QWidget{ parent }, mainu
 
     /* Connect Signals */
 
-    bool ret = connect(mainui_->driverObj(), &McDriverObj::statusChanged, this,
-                       &TabularView::onDriverStatusChanged, Qt::QueuedConnection);
-    assert(ret);
-
     connect(mainui_->driverObj(), &McDriverObj::tallyUpdate, this, &TabularView::onTallyUpdate,
             Qt::QueuedConnection);
 
@@ -305,9 +324,13 @@ TabularView::TabularView(MainUI *ui, QWidget *parent) : QWidget{ parent }, mainu
     connect(mainui_->driverObj(), &McDriverObj::simulationDestroyed, this,
             &TabularView::onSimulationDestroyed);
 
-    connect(btErgUnits, &QPushButton::toggled, this, &TabularView::onErgUnits_eV);
-
-    connect(btDefUnits, &QPushButton::toggled, this, &TabularView::onDefUnits_cnts);
+    for (int i = 0; i < idxNTbls; ++i) {
+        if (tables_[i]->unitSelector())
+            connect(tables_[i]->unitSelector(), &QButtonGroup::idToggled, this,
+                    &TabularView::onTallyUpdate);
+        // connect(tables_[i]->unitSelector()->buttons().first(), &QPushButton::toggled, this,
+        //         &TabularView::onTallyUpdate);
+    }
 }
 
 void TabularView::revert()
@@ -323,45 +346,19 @@ void TabularView::onTallyUpdate()
     if (T.isNull())
         return;
 
-    erg_dep_hlpr::update(tblErgDep_, T, dT, ergBuff_, btErgUnits->isChecked());
-    defect_hlpr::update(tblDef_, T, dT, defBuff_, btDefUnits->isChecked());
-}
-
-void TabularView::onDriverStatusChanged()
-{
-    const McDriverObj *D = mainui_->driverObj();
-    McDriverObj::DriverStatus st = D->status();
+    for (int i = 0; i < idxNTbls; ++i)
+        tables_[i]->update(T, dT);
 }
 
 void TabularView::onSimulationCreated()
 {
     McDriverObj *D = mainui_->driverObj();
-
-    erg_dep_hlpr::init(tblErgDep_, D->getSim()->getTarget(), ergBuff_);
-    erg_dep_hlpr::init(tblDef_, D->getSim()->getTarget(), defBuff_);
+    for (int i = 0; i < idxNTbls; ++i)
+        tables_[i]->init(D->getSim()->getTarget());
 }
 
 void TabularView::onSimulationDestroyed()
 {
-    tblErgDep_->clearContents();
-    tblErgDep_->setColumnCount(1);
-    QStringList lbls;
-    lbls << "Ion";
-    tblErgDep_->setHorizontalHeaderLabels(lbls);
-
-    tblDef_->clearContents();
-    tblDef_->setColumnCount(1);
-    lbls.clear();
-    lbls << "Ion";
-    tblDef_->setHorizontalHeaderLabels(lbls);
-}
-
-void TabularView::onErgUnits_eV(bool b)
-{
-    onTallyUpdate();
-}
-
-void TabularView::onDefUnits_cnts(bool b)
-{
-    onTallyUpdate();
+    for (int i = 0; i < idxNTbls; ++i)
+        tables_[i]->clear();
 }
