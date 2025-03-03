@@ -4,8 +4,8 @@
 const char *tally::arrayName(int i)
 {
     static const char *names[] = { "Totals",         "Vacancies",   "Implantations", "Replacements",
-                                   "Recombinations", "PKAs",        "Lost",          "Ionization",
-                                   "Lattice",        "Stored",      "Recoils",       "PKA",
+                                   "Recombinations", "PKAs",        "Displacements", "Lost",
+                                   "Ionization",     "Lattice",     "Stored",        "PKA",
                                    "Lost",           "Tdam",        "Tdam_LSS",      "Vnrt",
                                    "Vnrt_LSS",       "flight_path", "collisions",    "X" };
 
@@ -28,12 +28,12 @@ const char *tally::arrayDescription(int i)
                                   "Implantations & Interstitials",
                                   "Replacements",
                                   "Intra-cascade recombinations",
-                                  "PKAs",
+                                  "Primary knock-on atoms",
+                                  "Displacements",
                                   "Ions that exit the simulation volume",
                                   "Energy deposited to ionization [eV]",
                                   "Energy deposited to the lattice as thermal energy [eV]",
                                   "Energy stored in lattice defects [eV]",
-                                  "Recoil energy [eV]",
                                   "PKA recoil energy [eV]",
                                   "Energy lost due to ions exiting the simulation [eV]",
                                   "Damage energy [eV]",
@@ -56,7 +56,7 @@ const char *tally::arrayGroup(int i)
                                   "defects",
                                   "defects",
                                   "defects",
-                                  "energy_deposition",
+                                  "defects",
                                   "energy_deposition",
                                   "energy_deposition",
                                   "energy_deposition",
@@ -87,7 +87,6 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         A[isFlightPath](iid, pid) += i.path();
         A[eLattice](iid, pid) += i.phonon();
         A[eIoniz](iid, pid) += i.ioniz();
-        A[eRecoil](iid, pid) += i.recoil();
         break;
     case Event::Replacement:
         // add a replacement
@@ -100,11 +99,12 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         A[cV](a->id(), cid)--;
         A[eStored](a->id(), cid) -= i.myAtom()->El() / 2;
         A[eLattice](a->id(), cid) += i.myAtom()->El() / 2;
-        // if this was a recoil, add a V & stored energy
+        // if this was a recoil, add a V, a D, & stored energy
         // Efp/2 at the starting & ending cell
         if (i.recoil_id()) {
             assert(iid);
             assert(i.cellid0() >= 0);
+            A[cD](iid, i.cellid0())++;
             A[cV](iid, i.cellid0())++;
             A[eStored](iid, i.cellid0()) += i.myAtom()->El() / 2;
             A[eLattice](iid, cid) += i.myAtom()->El() / 2;
@@ -113,13 +113,13 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         A[isFlightPath](iid, cid) += i.path();
         A[eIoniz](iid, cid) += i.ioniz();
         A[eLattice](iid, cid) += i.erg() + i.phonon();
-        A[eRecoil](iid, cid) += i.recoil();
         break;
     case Event::IonStop:
-        A[cI](iid, cid)++; // add implantation at current (end) pos
+        A[cI](iid, cid)++; // add implantation at current (end) posvacancy
         if (i.recoil_id()) { // this is a recoil
             assert(iid);
             assert(i.cellid0() >= 0);
+            A[cD](iid, i.cellid0())++; // add displacement at start pos
             A[cV](iid, i.cellid0())++; // add vacancy at start pos
             A[eStored](iid, i.cellid0()) += i.myAtom()->El() / 2; // Add half FP energy there
             A[eStored](iid, cid) += i.myAtom()->El() / 2; // Add half FP energy here
@@ -128,13 +128,13 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         A[isFlightPath](iid, cid) += i.path();
         A[eIoniz](iid, cid) += i.ioniz();
         A[eLattice](iid, cid) += i.erg() + i.phonon();
-        A[eRecoil](iid, cid) += i.recoil();
         break;
     case Event::IonExit:
         A[cL](iid, pid)++;
         if (i.recoil_id()) { // this is a recoil
             assert(iid);
             assert(i.cellid0() >= 0);
+            A[cD](iid, i.cellid0())++; // add displacement at start pos
             A[cV](iid, i.cellid0())++; // add vacancy at start pos
             A[eStored](iid, i.cellid0()) += i.myAtom()->El() / 2; // Add half FP energy there
             A[eLattice](iid, cid) +=
@@ -144,7 +144,6 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         A[isFlightPath](iid, pid) += i.path();
         A[eIoniz](iid, pid) += i.ioniz();
         A[eLattice](iid, pid) += i.phonon();
-        A[eRecoil](iid, pid) += i.recoil();
         A[eLost](iid, pid) += i.erg();
         break;
     case Event::CascadeComplete:
@@ -165,7 +164,7 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
 
 bool tally::debugCheck(int id, double E0)
 {
-    double s(0), sI(0), sPh(0), sR(0), sL(0);
+    double s(0), sI(0), sPh(0), sL(0);
     size_t ncell = A[1].dim()[1];
     double *p;
 
@@ -178,14 +177,11 @@ bool tally::debugCheck(int id, double E0)
     p = &A[eStored](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sPh += *p++;
-    p = &A[eRecoil](id, 0);
-    for (size_t i = 0; i < ncell; i++)
-        sR += *p++;
     p = &A[eLost](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sL += *p++;
 
-    s = sI + sPh + sR + sL;
+    s = sI + sPh + sL;
 
     assert(std::abs(s - E0) < 1e-3);
     return std::abs(s - E0) < 1e-3;
@@ -193,7 +189,7 @@ bool tally::debugCheck(int id, double E0)
 
 bool tally::debugCheck(double E0)
 {
-    double s0(0), sI0(0), sPh0(0), sR0(0), sL0(0);
+    double s0(0), sI0(0), sPh0(0), sL0(0);
     size_t ncell = A[1].dim()[1];
     double *p;
     int id = 0;
@@ -208,15 +204,11 @@ bool tally::debugCheck(double E0)
     p = &A[eStored](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sPh0 += *p++;
-
-    p = &A[eRecoil](id, 0);
-    for (size_t i = 0; i < ncell; i++)
-        sR0 += *p++;
     p = &A[eLost](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sL0 += *p++;
 
-    s0 = sI0 + sPh0 + sR0 + sL0;
+    s0 = sI0 + sPh0 + sL0;
 
     double s(0), sI(0), sPh(0), sL(0);
     size_t n = A[1].size();
@@ -245,7 +237,7 @@ bool tally::debugCheck(double E0)
 
 double tally::totalErg(int id)
 {
-    double s(0), sI(0), sPh(0), sR(0), sL(0);
+    double s(0), sI(0), sPh(0), sL(0);
     size_t ncell = A[1].dim()[1];
     double *p;
 
@@ -258,14 +250,11 @@ double tally::totalErg(int id)
     p = &A[eStored](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sPh += *p++;
-    p = &A[eRecoil](id, 0);
-    for (size_t i = 0; i < ncell; i++)
-        sR += *p++;
     p = &A[eLost](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sL += *p++;
 
-    return sI + sPh + sR + sL;
+    return sI + sPh + sL;
 }
 
 double tally::totalErg()

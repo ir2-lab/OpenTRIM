@@ -87,11 +87,11 @@ public:
         cR, /**< Replacements  */
         cRecombinations, /**< Recombinations */
         cP, /**< PKAs  */
+        cD, /**< Displacements */
         cL, /**< Lost ions (they exit the simulation)  */
         eIoniz, /**< Ionization energy  */
         eLattice, /**< Lattice energy = thermal energy deposited to the lattice */
         eStored, /**< Energy stored in lattice defects (Frenkel Pairs) */
-        eRecoil, /**< Energy transfered to recoil atoms */
         ePKA, /**< PKA recoil energy  */
         eLost, /**< Energy of lost ions  */
         dpTdam, /**< Damage energy  */
