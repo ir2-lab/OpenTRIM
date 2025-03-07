@@ -20,11 +20,11 @@ void pka_event::mark(const tally &t)
     float *bi = mark_buff_.data() + 2 * natoms_;
     for (int i = 0; i < natoms_; i++) {
         *bv = *br = *bi = 0.0f;
-        const double *ps = &t.stored()(i + 1, 0);
-        const double *pl = &t.lattice()(i + 1, 0);
-        const double *pv = &t.vacancies()(i + 1, 0);
-        const double *pr = &t.replacements()(i + 1, 0);
-        const double *pi = &t.implantations()(i + 1, 0);
+        const double *ps = &t.at(tally::eStored)(i + 1, 0);
+        const double *pl = &t.at(tally::eLattice)(i + 1, 0);
+        const double *pv = &t.at(tally::cV)(i + 1, 0);
+        const double *pr = &t.at(tally::cR)(i + 1, 0);
+        const double *pi = &t.at(tally::cI)(i + 1, 0);
 
         for (int j = 0; j < ncells; j++) {
             mark_T_ += *ps++ + *pl++;

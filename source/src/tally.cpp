@@ -3,11 +3,12 @@
 
 const char *tally::arrayName(int i)
 {
-    static const char *names[] = { "Totals",         "Vacancies",   "Implantations", "Replacements",
-                                   "Recombinations", "PKAs",        "Displacements", "Lost",
-                                   "Ionization",     "Lattice",     "Stored",        "PKA",
-                                   "Lost",           "Tdam",        "Tdam_LSS",      "Vnrt",
-                                   "Vnrt_LSS",       "flight_path", "collisions",    "X" };
+    static const char *names[] = {
+        "Totals",        "Vacancies",   "Implantations", "Replacements", "Recombinations",
+        "Displacements", "Ionization",  "Lattice",       "Stored",       "Lost",
+        "Pka",           "Pka_energy",  "Tdam",          "Tdam_LSS",     "Vnrt",
+        "Vnrt_LSS",      "Flight_path", "Collisions",    "Lost",         "X"
+    };
 
     return (i < std_tallies && i >= 0) ? names[i] : names[std_tallies];
 }
@@ -28,20 +29,20 @@ const char *tally::arrayDescription(int i)
                                   "Implantations & Interstitials",
                                   "Replacements",
                                   "Intra-cascade recombinations",
-                                  "Primary knock-on atoms",
                                   "Displacements",
-                                  "Ions that exit the simulation volume",
                                   "Energy deposited to ionization [eV]",
                                   "Energy deposited to the lattice as thermal energy [eV]",
                                   "Energy stored in lattice defects [eV]",
-                                  "PKA recoil energy [eV]",
                                   "Energy lost due to ions exiting the simulation [eV]",
+                                  "Primary knock-on atoms (PKAs)",
+                                  "PKA recoil energy [eV]",
                                   "Damage energy [eV]",
                                   "Damage energy estimated by the LSS approximation [eV]",
                                   "Vacancies per the NRT model using Tdam",
                                   "Vacancies per the NRT model using Tdam_LSS",
                                   "Flight path [nm]",
-                                  "Collisions",
+                                  "Ion collisions",
+                                  "Ions that exit the simulation volume",
                                   "X" };
 
     return (i < std_tallies && i >= 0) ? desc[i] : desc[std_tallies];
@@ -50,22 +51,22 @@ const char *tally::arrayDescription(int i)
 const char *tally::arrayGroup(int i)
 {
     static const char *desc[] = { "totals",
-                                  "defects",
-                                  "defects",
-                                  "defects",
-                                  "defects",
-                                  "defects",
-                                  "defects",
-                                  "defects",
+                                  "damage_events",
+                                  "damage_events",
+                                  "damage_events",
+                                  "damage_events",
+                                  "damage_events",
                                   "energy_deposition",
                                   "energy_deposition",
                                   "energy_deposition",
                                   "energy_deposition",
-                                  "energy_deposition",
-                                  "damage",
-                                  "damage",
-                                  "damage",
-                                  "damage",
+                                  "pka_damage",
+                                  "pka_damage",
+                                  "pka_damage",
+                                  "pka_damage",
+                                  "pka_damage",
+                                  "pka_damage",
+                                  "ion_stat",
                                   "ion_stat",
                                   "ion_stat",
                                   "X" };
@@ -147,7 +148,7 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         A[eLost](iid, pid) += i.erg();
         break;
     case Event::CascadeComplete:
-        A[cP](iid, cid)++;
+        A[cPKA](iid, cid)++;
         p = reinterpret_cast<const float *>(pv);
         A[ePKA](iid, cid) += p[0];
         A[dpTdam_LSS](iid, cid) += p[1];

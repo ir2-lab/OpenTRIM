@@ -86,20 +86,20 @@ public:
         cI, /**< Interstitials or Implanted ions  */
         cR, /**< Replacements  */
         cRecombinations, /**< Recombinations */
-        cP, /**< PKAs  */
         cD, /**< Displacements */
-        cL, /**< Lost ions (they exit the simulation)  */
         eIoniz, /**< Ionization energy  */
         eLattice, /**< Lattice energy = thermal energy deposited to the lattice */
         eStored, /**< Energy stored in lattice defects (Frenkel Pairs) */
-        ePKA, /**< PKA recoil energy  */
         eLost, /**< Energy of lost ions  */
+        cPKA, /**< PKAs  */
+        ePKA, /**< PKA recoil energy  */
         dpTdam, /**< Damage energy  */
         dpTdam_LSS, /**< Damage energy predicted by LSS theory */
         dpVnrt, /**< NRT Vacancies based on Tdam */
         dpVnrt_LSS, /**< NRT Vacancies based on Tdam_LSS */
         isFlightPath, /**< Ion flight path */
         isCollision, /**< Ion collisions */
+        cL, /**< Lost ions (they exit the simulation)  */
         tEnd
     };
 
@@ -132,24 +132,6 @@ protected:
 
 public:
     std::vector<std::string> arrayNames() const;
-
-    const ArrayNDd &vacancies() const { return A[cV]; }
-    const ArrayNDd &implantations() const { return A[cI]; }
-    const ArrayNDd &replacements() const { return A[cR]; }
-    const ArrayNDd &recombinations() const { return A[cRecombinations]; }
-    const ArrayNDd &pkas() const { return A[cP]; }
-    const ArrayNDd &lost() const { return A[cL]; }
-
-    const ArrayNDd &ionization() const { return A[eIoniz]; }
-    const ArrayNDd &stored() const { return A[eStored]; }
-    const ArrayNDd &lattice() const { return A[eLattice]; }
-    const ArrayNDd &lostE() const { return A[eLost]; }
-    const ArrayNDd &pkaE() const { return A[ePKA]; }
-
-    const ArrayNDd &Tdam() const { return A[dpTdam]; }
-    const ArrayNDd &Tdam_LSS() const { return A[dpTdam_LSS]; }
-    const ArrayNDd &Vnrt() const { return A[dpVnrt]; }
-    const ArrayNDd &Vnrt_LSS() const { return A[dpVnrt_LSS]; }
 
     /// Return a const reference to the i-th tally score table
     const ArrayNDd &at(int i) const { return A[i]; }
