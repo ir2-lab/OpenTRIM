@@ -95,30 +95,21 @@ class ion
 
     friend class ion_queue;
 
+    void sub_erg(double de, double *s)
+    {
+        // This is needed because de may be calculated in single precision
+        // and it can happen that de > erg by a small amount, e.g. 1e-6
+        // This can happen, e.g., for recoil energy T in head-on collisions
+        if (de > erg_)
+            de = erg_;
+        erg_ -= de;
+        *s += de;
+        assert(finite(erg_));
+    }
+
 public:
     /// Default constructor
-    ion()
-        : pos_(0.f, 0.f, 0.f),
-          pos0_(0.f, 0.f, 0.f),
-          dir_(0.f, 0.f, 1.f),
-          erg_(1.0),
-          erg0_(1.0),
-          t_(0.0),
-          t0_(0.0),
-          icell_(),
-          cellid_(-1),
-          prev_cellid_(-1),
-          ion_id_(0),
-          recoil_id_(0),
-          atom_(nullptr),
-          grid_(nullptr),
-          ncoll_(0),
-          path_(0),
-          ioniz_(0),
-          phonon_(0),
-          recoil_(0)
-    {
-    }
+    ion();
 
     /// Returns the ion's position vector [nm]
     const vector3 &pos() const { return pos_; }
@@ -156,6 +147,9 @@ public:
     /// Returns the history id that the current ion belongs to
     int ion_id() const { return ion_id_; }
 
+    /// set history id
+    void setId(size_t id) { ion_id_ = id; }
+
     /**
      * @brief Returns the recoil generation id of the current ion
      *
@@ -165,50 +159,46 @@ public:
      */
     int recoil_id() const { return recoil_id_; }
 
+    /// increase recoil id
+    void incRecoilId() { recoil_id_++; }
+
+    /// reset recoil id to 0
+    void setRecoilId(int id) { recoil_id_ = id; }
+
+    /// Returns a universal id for this ion
     size_t uid() const { return uid_; }
+
+    /// Set this ion's universal id
     void setUid(size_t id) { uid_ = id; }
 
     /// Returns a pointer to the \ref atom class describing the atomic species of the current ion
     const atom *myAtom() const { return atom_; }
 
-#define E_MIN -1.0e-6
+    /// Subtract energy \a de due to phonon excitation
+    void de_phonon(double de) { sub_erg(de, &phonon_); }
 
-    void de_phonon(double de)
-    {
-        erg_ -= de;
-        phonon_ += de;
-        assert(erg_ >= E_MIN);
-        assert(finite(erg_));
-    }
-    void de_ioniz(double de)
-    {
-        erg_ -= de;
-        ioniz_ += de;
-        assert(erg_ > E_MIN);
-        assert(finite(erg_));
-    }
-    void de_recoil(double T)
-    {
-        erg_ -= T;
-        recoil_ += T;
-        // This is needed because recoil T is calculated in single precision
-        // and it can happen that T > erg by a small amount, e.g. 1e-6
-        //        if (T >= erg_) {
-        //            recoil_ += erg_;
-        //            erg_ = 0;
-        //        } else {
-        //            erg_ -= T;
-        //            recoil_ += T;
-        //        }
-        assert(erg_ >= E_MIN);
-        assert(finite(erg_));
-    }
+    /// Subtract energy \a de due to phonon ionization
+    void de_ioniz(double de) { sub_erg(de, &ioniz_); }
+
+    /// Subtract energy \a de due to recoil generation
+    void de_recoil(double de) { sub_erg(de, &recoil_); }
+
+    /// Returns the amount of ion energy lost to phonons
     const double &phonon() const { return phonon_; }
+
+    /// Returns the amount of ion energy lost to ionization
     const double &ioniz() const { return ioniz_; }
+
+    /// Returns the amount of ion energy lost to recoils
     const double &recoil() const { return recoil_; }
+
+    /// Returns the total path (nm) traveled by the ion
     const double &path() const { return path_; }
+
+    /// Returns the total number of ion collisions
     size_t ncoll() const { return ncoll_; }
 
+    /// Increase the collisions counter
     void add_coll() { ncoll_++; }
 
     // #pragma GCC push_options
@@ -265,15 +255,14 @@ public:
         assert(t_ >= 0.0);
     }
 
-    /// increase recoil id
-    void incRecoilId() { recoil_id_++; }
-    /// set history id
-    void setId(size_t id) { ion_id_ = id; }
-    /// reset recoil id to 0
-    void setRecoilId(int id) { recoil_id_ = id; }
     /// set a grid3D for the ion
     void setGrid(const grid3D *g) { grid_ = g; }
 
+    /**
+     * @brief Initialize this object as a recoil
+     * @param a pointer to the recoil atom type
+     * @param T the recoil energy
+     */
     void init_recoil(const atom *a, double T);
 
     /// reset all accumulators (path, energy etc)

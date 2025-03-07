@@ -1,6 +1,29 @@
 #include "ion.h"
 #include "target.h"
 
+ion::ion()
+    : pos_(0.f, 0.f, 0.f),
+      pos0_(0.f, 0.f, 0.f),
+      dir_(0.f, 0.f, 1.f),
+      erg_(1.0),
+      erg0_(1.0),
+      t_(0.0),
+      t0_(0.0),
+      icell_(),
+      cellid_(-1),
+      prev_cellid_(-1),
+      ion_id_(0),
+      recoil_id_(0),
+      atom_(nullptr),
+      grid_(nullptr),
+      ncoll_(0),
+      path_(0),
+      ioniz_(0),
+      phonon_(0),
+      recoil_(0)
+{
+}
+
 int ion::setPos(const vector3 &x)
 {
     pos_ = pos0_ = x;
