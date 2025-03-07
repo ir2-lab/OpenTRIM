@@ -32,7 +32,7 @@ private:
     QLineEdit *simTitle_;
     QTabWidget *tabWidget_;
 
-    enum { idxErgTbl = 0, idxDmgEvntsTbl, idxNTbls };
+    enum { idxDmgEvntsTbl = 0, idxErgTbl, idxDmgParTbl, idxIonStatTbl, idxNTbls };
     std::array<data_table *, idxNTbls> tables_;
 };
 

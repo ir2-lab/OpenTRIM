@@ -254,6 +254,7 @@ bool McDriverObj::loadH5File(const QString &path)
     setModified(false);
 
     info_.init(*this);
+    update_tally_totals_();
 
     emit configChanged();
     emit simulationCreated();

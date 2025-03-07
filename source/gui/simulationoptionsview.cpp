@@ -124,6 +124,7 @@ SimulationOptionsView::SimulationOptionsView(MainUI *iui, QWidget *parent)
         hbox->addStretch();
         vbox->addLayout(hbox);
     }
+    vbox->addSpacing(V_SPACING);
     vbox->addWidget(tabWidget);
     vbox->addWidget(buttonBox);
     setLayout(vbox);

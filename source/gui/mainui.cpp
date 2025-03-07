@@ -26,6 +26,9 @@
 
 #include <sstream>
 
+#define SIDEBAR_W 70
+#define SIDEBAR_H 70
+
 MainUI::MainUI(QWidget *parent) : QWidget(parent)
 {
     /* create runner thread */
@@ -51,7 +54,7 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent)
     QStringList icons{ "grid-outline.png", "settings-outline.png", "list-outline.png",
                        "bar-chart-outline.png" };
 
-    QStringList titles{ "Welcome", "Config", "Results", "Graphs" };
+    QStringList titles{ "Welcome", "Config", "Summary", "Plots" };
     for (int i = 0; i < titles.count(); ++i) {
         pageButtonGrp->addButton(createSidebarButton(iconFolder + icons.at(i), titles.at(i)), i);
         sidebarLayout->addWidget(pageButtonGrp->button(i));
@@ -63,7 +66,7 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent)
     /* Add the sidebar layout to the sidebar widget container */
     sidebar->setLayout(sidebarLayout);
     sidebar->setObjectName("sidebar");
-    sidebar->setMinimumHeight(sidebarLayout->count() * 76);
+    sidebar->setMinimumHeight(sidebarLayout->count() * SIDEBAR_H);
     sidebar->setStyleSheet(style);
 
     /* Create the stacked widget + statusbar*/
@@ -100,7 +103,7 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent)
     // runView = new RunView(this);
     // push(tr("Run"), runView);
     tblView = new TabularView(this);
-    push(tr("Result Tables"), tblView);
+    push(tr("Summary Tables"), tblView);
 
     resultsView = new ResultsView(this);
     push(tr("Result Plots"), resultsView);
@@ -166,7 +169,8 @@ void MainUI::push(const QString &title, QWidget *page)
     QLabel *lbl = new QLabel(title);
     lbl->setStyleSheet("font-size : 20pt; font-weight : bold;");
     vbox->addWidget(lbl);
-    vbox->addWidget(page);
+    vbox->addSpacing(V_SPACING);
+    vbox->addWidget(page);    
     w->setLayout(vbox);
     _stackedWidget->addWidget(w);
 }
@@ -184,10 +188,10 @@ QToolButton *MainUI::createSidebarButton(const QString &iconPath, const QString 
     QIcon icon(iconPath);
     QToolButton *btn = new QToolButton;
     btn->setIcon(icon);
-    btn->setIconSize(QSize(42, 42));
+    btn->setIconSize(QSize(32, 32));
     btn->setText(title);
     btn->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-    btn->setFixedSize(76, 76);
+    btn->setFixedSize(SIDEBAR_W, SIDEBAR_H);
     btn->setObjectName(title);
     btn->setCheckable(true);
     return btn;

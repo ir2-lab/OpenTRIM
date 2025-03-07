@@ -19,6 +19,8 @@ class RunView;
 class ResultsView;
 class TabularView;
 
+#define V_SPACING 15
+
 class MainUI : public QWidget
 {
     Q_OBJECT

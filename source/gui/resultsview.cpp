@@ -256,9 +256,11 @@ void ResultsView::updatePlotSeries()
 {
 
     // use 1st column if projectile ions contribute
-    static const int useFirstCol[] = { 0, 0, 1, 1, 0, 0, 1, // defects
-                                       1, 1, 0, 1, 0, 1, // energy
-                                       0, 0, 0, 0, 1, 1 };
+    static const int useFirstCol[] = { 0, // totals
+                                       0, 1, 1, 0, 0, // damage_events
+                                       1, 1, 0, 1, // energy_deposition
+                                       0, 0, 0, 0, 0, 0, // pka_damage
+                                       1, 1, 1 }; // ion_stat
 
     plotSelect->clear();
     plotFlag.clear();
@@ -360,25 +362,12 @@ void ResultsView::updateDataSelection() { }
 void ResultsView::updatePlot()
 {
     static const char *xAxisLabel[] = { "x (nm)", "y (nm)", "z (nm)" };
-    static const char *yAxisLabel[] = { "",
-                                        "count / ion",
-                                        "count / ion",
-                                        "count / ion",
-                                        "count / ion",
-                                        "count / ion",
-                                        "count / ion",
-                                        "eV / ion",
-                                        "eV / ion",
-                                        "eV / ion",
-                                        "eV / ion",
-                                        "eV / ion",
-                                        "eV / ion",
-                                        "eV / ion",
-                                        "eV / ion",
-                                        "count / ion",
-                                        "count / ion",
-                                        "nm",
-                                        "count / ion" };
+    static const char *yAxisLabel[] = {
+        "",           "count / ion", "count / ion", "count / ion", "count / ion", "count / ion",
+        "eV / ion",   "eV / ion",    "eV / ion",    "eV / ion",    "count / ion", "eV / ion",
+        "eV / ion",   "eV / ion",    "count / ion", "count / ion", "nm",          "count / ion",
+        "count / ion"
+    };
 
     plotWidget->clear();
 
