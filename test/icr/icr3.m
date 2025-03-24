@@ -2,36 +2,10 @@ clear
 
 # Effect of correlated recombination
 
-run_opentrim = 0;
-
 # Load HDF5 Results
 pkg load hdf5oct
 
-cfg = jsondecode(fileread('../opentrim/b1/config.json'));
-
 Nh = 1000;
-
-cfg.Driver.max_no_ions = Nh;
-cfg.Driver.threads = 8;
-cfg.Simulation.eloss_calculation = "EnergyLossOff";
-cfg.Simulation.intra_cascade_recombination = true;
-cfg.Target.materials.composition.El = 0.001;
-
-cfg.Simulation.correlated_recombination = true;
-cfg.Simulation.move_recoil = true;
-
-Ed = 40;
-cfg.Target.materials.composition.Ed = Ed;
-cfg.Target.materials.composition.Er = Ed;
-cfg.Output.OutputFileBaseName = 'outEd40eVMvR';
-
-fid = fopen ("cfg.json", "w");
-fputs (fid, jsonencode(cfg));
-fclose (fid);
-
-if run_opentrim,
-  system('opentrim -f cfg.json');
-end
 
 function [nv,nr]=makehist(Ed,bins,D)
   Td = D(5,:)';
@@ -68,6 +42,8 @@ D = h5load('outEd40eV.h5','/events/pka/event_data');
 [V40,R40]=makehist(40,E,D);
 D = h5load('outEd40eVMvR.h5','/events/pka/event_data');
 [V40mv,R40mv]=makehist(40,E,D);
+D = h5load('outEd40eVMvRsubEd.h5','/events/pka/event_data');
+[V40mvs,R40mvs]=makehist(40,E,D);
 
 nrt = E/100;
 j=find(E<100);
@@ -87,6 +63,7 @@ clf
 loglog(E,V40+R40,'.-', ...
   E,V40,'.-',...
   E,V40mv,'.-',...
+  E,V40mvs,'.-',...
   E,nrt,E,nrt.*xi)
 ylim([0.1 1e4])
 set(gca,'ticklabelinterpreter','latex')
@@ -96,14 +73,14 @@ ylabel('$N_d$','interpreter','latex')
 h = legend('OpenTRIM - no ICR, $E_d=40$ eV', ...
   'OpenTRIM - ICR, $E_d=40$ eV', ...
   'OpenTRIM - ICR, Initial I-V distance = $R_c$', ...
+  'OpenTRIM - ICR, + subtract Ed', ...
   'NRT, $E_d=40$ eV', 'arc-dpa', ...
   'location','northwest');
 set(h,'interpreter','latex')
 
 title('2MeV Fe in Fe','interpreter','latex')
 
-R_c = cfg.Target.materials.composition.Rc;
-text(1e3,1,['$R_c$(nm) = ' num2str(R_c) ' '],'interpreter','latex')
+text(1e3,1,['$R_c = 0.8$ nm'],'interpreter','latex')
 
 sz = [4 3]*4;
 set(1,'PaperUnits','centimeters')
