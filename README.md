@@ -14,31 +14,33 @@ Documentation can be found here: https://ir2-lab.gitlab.io/opentrim
 
 ![OpenTRIM screenshot](./dist/screenshot.png)
 
-## Getting started
+## Installation
 
-### Downloading the source code
+### Binary packages
 
-To clone the project use
-```
-> git clone --recurse-submodules git@gitlab.com:ir2-lab/opentrim.git
-```
-The `recurse-submodules` option ensures that the submodule [QMatPlotWidget](https://gitlab.com/qdaq/qmatplotwidget) is also cloned in the process.
+Binary packages and repositories for a number of **Linux** distributions (Ubuntu, RHEL, OpenSUSE, etc.) are built on the [openSUSE Build Service](https://software.opensuse.org//download.html?project=home%3Amaxiotis%3Agapost&package=opentrim). Please follow the instructions found there to install OpenTRIM on your system.
 
-Alternatively, you can use the following command to update the submodule anytime:
-```
-git submodule update --init
-``` 
+On **Windows**, please download the latest binary distribution release provided as a zip file and extract to some location. To be able to run the program from the windows command line, add the program folder to the user or system path.
 
-If you download a tarball of the project the submodule is **not** included. You will have to download it separately from https://gitlab.com/qdaq/qmatplotwidget and untar into `src/gui/qmatplotwidget`.
-
-### Installation
+### Building from source
 
 On **Linux** the project can be built and installed with `cmake`.
 
-The `Eigen` and `HDF5` libraries are needed for building. For the GUI
-component the `Qt5` libraries and the `Qwt6` plotting library are also needed.
+Tested compilers: GCC 8 and above, Clang 14. 
 
-Install them with
+Clone the project using
+```
+> git clone git@gitlab.com:ir2-lab/opentrim.git
+```
+or download a tarball of the last version.
+
+To build OpenTRIM you will need the following libraries:
+- [Eigen v3.4.0](https://eigen.tuxfamily.org) for vector operations
+- [HDF5 v1.10.7](https://www.hdfgroup.org/solutions/hdf5/) for file storage
+- [Qt5 or Qt6](https://www.qt.io/) for the GUI program
+- [Qwt v6.x](https://qwt.sourceforge.io/) for plotting
+
+They can be installed with
 ```bash
 # Ubuntu 22.04 / DEB
 sudo apt install libeigen3-dev libhdf5-dev libhdf5-103-1 
@@ -49,23 +51,21 @@ sudo apt install qtbase5-dev libqt5svg5 libqwt-qt5-dev libqwt-qt5-6
 sudo dnf install eigen3-devel.noarch hdf5.x86_64 hdf5-devel.x86_64
 ```  
 
-The HDF5 runtime libraries are needed for running the program.
-
-Basic build recipe is (run from project directory)
+Basic build recipe (run from project directory):
 
 ```
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-make
-make install
+ninja
+ninja install
 ```
 The default install location is `$HOME/.local`, thus `sudo` is not required.
 Override this by setting the option `-DCMAKE_INSTALL_PREFIX="/your/install/location"` when calling `cmake`. 
 
-On **Windows** please download the latest binary distribution release provided as a zip file and extract to some location. To be able to run the program from the windows command line, add the program folder to the user or system path.
+On **Windows** the project can be built with [MSYS2](https://www.msys2.org/). Detailed instructions will be given in the future.
 
-### Usage
+## Usage
 
 The GUI application can be invoked from the command line 
 ```
@@ -98,21 +98,19 @@ Usage:
   -h, --help        Display short help message
 ```
 
-The program first checks and validates the configuration input. 
-
+The cli program first checks and validates the configuration input. 
 It then runs the simulation and saves the results into a HDF5 archive.
 
 ## Testing
 
-The GUI app contains some examples that can be used for testing.
+The examples contained in the GUI app can be used for testing.
 
-Some benchmark tests for comparison to other codes are given in folder `test/`.
+Some benchmarks for comparison to other codes are given in folder `test/`.
+The file [`test/README.md`](test/README.md) gives a short description of each benchmark.
 
-The file [`test/README.md`](test/README.md) gives a short description of the benchmarks.
+The folders [`test/opentrim/b1`](test/opentrim/b1) to [`b7`](test/opentrim/b7) have config files for running the benchmarks with `opentrim -f config.json`.
 
-Folders [`test/opentrim/b1`](test/opentrim/b1) to `b7` have config files for running the benchmarks with `opentrim`.
-
-The file [`test/octave/plot_benchmark.m`](test/octave/plot_benchmark.m) is an OCTAVE script which can be used for plotting results from benchmarks.
+The file [`test/octave/plot_benchmark.m`](test/octave/plot_benchmark.m) is a MATLAB/OCTAVE script which can be used for plotting benchmark results.
 
 ## Credits
 
