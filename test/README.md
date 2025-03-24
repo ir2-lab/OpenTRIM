@@ -3,7 +3,8 @@
 ## Damage profiles
 
 Compare to Crocombette2019, Lin2023 (Fe → Fe, Xe → UO2) \
-H → Fe is for checking behaviour with light ions 
+H → Fe is for checking behaviour with light ions \
+Fe cascades in Fe to compare to Nordlund2015
 
 1. 2 MeV Fe in Fe target, t = 1200 nm
 2. 500 keV Fe in Fe target, t = 600 nm
@@ -12,6 +13,7 @@ H → Fe is for checking behaviour with light ions
 5. 300 keV Xe in UO2 target, t = 300 nm
 6. 3 MeV H in Fe target, t = 50 μm
 7. 1 MeV H in Fe target, t = 10 μm
+8. 50 keV Fe cascade in Fe
 
 The above should be run for comparison in 
 - SRIM QC & FC mode.

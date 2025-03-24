@@ -1,7 +1,7 @@
 {
-    "Driver" : {        
-        "max_no_ions" : 20000,
-        "threads" : 4
+    "Driver": {
+        "max_no_ions": 20000,
+        "threads": 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",
@@ -13,63 +13,83 @@
         "min_energy": 1.0,
         "min_recoil_energy": 1.0
     },
-    "IonBeam" : {
-        "ion" : {
-            "symbol" : "Xe",
-            "atomic_mass" : 131.904
+    "IonBeam": {
+        "ion": {
+            "symbol": "Xe",
+            "atomic_mass": 131.904
         },
-        "energy_distribution" : {
-            "center" : 1e6
+        "energy_distribution": {
+            "center": 1e6
         },
-        "spatial_distribution" : {
-            "center" : [0, 600, 600]
+        "spatial_distribution": {
+            "center": [
+                0,
+                600,
+                600
+            ]
         }
     },
-    "Target" : {
-        "size" : [600, 1200, 1200],
-        "cell_count" : [100, 1, 1],
-        "periodic_bc" : [0, 1, 1],
-        "materials" : [
+    "Target": {
+        "size": [
+            600,
+            1200,
+            1200
+        ],
+        "cell_count": [
+            100,
+            1,
+            1
+        ],
+        "periodic_bc": [
+            0,
+            1,
+            1
+        ],
+        "materials": [
             {
-                "id" : "UO2",
-                "density" : 10.97, 
-                "composition" : [
+                "id": "UO2",
+                "density": 10.97,
+                "composition": [
                     {
-                        "element" : {
-                            "symbol" : "U"
+                        "element": {
+                            "symbol": "U"
                         },
-                        "X" : 1,
-                        "Ed" : 40,
-                        "El" : 4,
-                        "Es" : 4,
-                        "Er" : 40
+                        "X": 1,
+                        "Ed": 40,
+                        "El": 4,
+                        "Es": 4,
+                        "Er": 40
                     },
                     {
-                        "element" : {
-                            "symbol" : "O"
+                        "element": {
+                            "symbol": "O"
                         },
-                        "X" : 2,
-                        "Ed" : 20,
-                        "El" : 2,
-                        "Es" : 2,
-                        "Er" : 20
+                        "X": 2,
+                        "Ed": 20,
+                        "El": 2,
+                        "Es": 2,
+                        "Er": 20
                     }
                 ]
             }
         ],
-        "regions" : [
-            {   
-                "id" : "R1",
-                "material_id" : "UO2",
-                "size" : [1200, 1200, 1200]
+        "regions": [
+            {
+                "id": "R1",
+                "material_id": "UO2",
+                "size": [
+                    1200,
+                    1200,
+                    1200
+                ]
             }
         ]
     },
-    "Output" : {
-        "title" : "1MeV Xe on UO2 benchmark",
-        "OutputFileBaseName" : "b4",
-        "store_pka_events" : 1,
-        "store_dedx" : 1,
-        "store_exit_events" : 1
+    "Output": {
+        "title": "1MeV Xe on UO2 benchmark",
+        "outfilename": "b4",
+        "store_pka_events": 1,
+        "store_dedx": 1,
+        "store_exit_events": 1
     }
 }

@@ -1,7 +1,7 @@
 {
-    "Driver" : {        
-        "max_no_ions" : 20000,
-        "threads" : 4
+    "Driver": {
+        "max_no_ions": 20000,
+        "threads": 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",
@@ -13,52 +13,72 @@
         "min_energy": 1.0,
         "min_recoil_energy": 1.0
     },
-    "IonBeam" : {
-        "ion" : {
-            "symbol" : "Fe",
-            "atomic_mass" : 55.935
+    "IonBeam": {
+        "ion": {
+            "symbol": "Fe",
+            "atomic_mass": 55.935
         },
-        "energy_distribution" : {
-            "center" : 5e5
+        "energy_distribution": {
+            "center": 5e5
         },
-        "spatial_distribution" : {
-            "center" : [0, 600, 600]
+        "spatial_distribution": {
+            "center": [
+                0,
+                600,
+                600
+            ]
         }
     },
-    "Target" : {
-        "size" : [600, 1200, 1200],
-        "cell_count" : [100, 1, 1],        
-        "periodic_bc" : [0, 1, 1],
-        "materials" : [
+    "Target": {
+        "size": [
+            600,
+            1200,
+            1200
+        ],
+        "cell_count": [
+            100,
+            1,
+            1
+        ],
+        "periodic_bc": [
+            0,
+            1,
+            1
+        ],
+        "materials": [
             {
-                "id" : "Fe",
-                "density" : 7.8658, // g/cm^3
-                "composition" : [
+                "id": "Fe",
+                "density": 7.8658, // g/cm^3
+                "composition": [
                     {
-                        "element" : {
-                            "symbol" : "Fe"
+                        "element": {
+                            "symbol": "Fe"
                         },
-                        "X" : 1,
-                        "Ed" : 40,
-                        "El" : 3,
-                        "Es" : 3,
-                        "Er" : 40
+                        "X": 1,
+                        "Ed": 40,
+                        "El": 3,
+                        "Es": 3,
+                        "Er": 40
                     }
                 ]
             }
         ],
-        "regions" : [
+        "regions": [
             {
-                "id" : "R1",
-                "material_id" : "Fe",
-                "size" : [1200, 1200, 1200]
+                "id": "R1",
+                "material_id": "Fe",
+                "size": [
+                    1200,
+                    1200,
+                    1200
+                ]
             }
         ]
     },
-    "Output" : {
-        "title" : "2MeV Fe on Fe benchmark",
-        "OutputFileBaseName" : "b2",
-        "store_pka_events" : 1,
-        "store_exit_events" : 1
+    "Output": {
+        "title": "2MeV Fe on Fe benchmark",
+        "outfilename": "b2",
+        "store_pka_events": 1,
+        "store_exit_events": 1
     }
 }
