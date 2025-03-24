@@ -145,6 +145,8 @@ class pka_event : public event
     // buffers for calculating pka quantities
     float mark_T_; // Tdam
     std::vector<float> mark_buff_; // Vac, Interstitials, Replacements
+    // # of memory locations needed per atom
+    constexpr static int mark_buff_cols_ = 3;
 
     // buffer offset of various quantities
     enum offset_t {
@@ -157,10 +159,11 @@ class pka_event : public event
         ofVac = 5 // vacancies of 1st atom id
     };
     /*
-     * After ofVac we have 4*natoms_ memory locations for:
-     * Vacancies, Intersitials, Replacements, Recombinations
+     * After ofVac we have 5*natoms_ memory locations for:
+     * Vacancies, Intersitials, Replacements, Recombinations, Correlated Recomb.
      * for each atom id
      */
+    constexpr static int atom_cols_ = 5;
 
 public:
     pka_event() : event(), natoms_(0) { }
@@ -203,6 +206,8 @@ public:
     const float &Impl(int atom_id) const { return buff_[ofVac + 2 * natoms_ + atom_id]; }
     float &Icr(int atom_id) { return buff_[ofVac + 3 * natoms_ + atom_id]; }
     const float &Icr(int atom_id) const { return buff_[ofVac + 3 * natoms_ + atom_id]; }
+    float &Icr_corr(int atom_id) { return buff_[ofVac + 4 * natoms_ + atom_id]; }
+    const float &Icr_corr(int atom_id) const { return buff_[ofVac + 4 * natoms_ + atom_id]; }
 };
 
 /**

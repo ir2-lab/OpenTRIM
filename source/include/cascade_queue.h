@@ -27,6 +27,7 @@ class cascade_queue
         size_t pair_id;
     };
 
+    // these are defined only to differentiate the 2 defect types
     struct interstitial : public defect
     {
     };
@@ -34,26 +35,47 @@ class cascade_queue
     {
     };
 
-    // defect comparison operator
-    // returns true of the time of lhs is greater than rhs
+    // defect time comparison operator
+    // returns true if the time of lhs is greater than rhs
     struct defect_time_cmp
     {
         bool operator()(const defect *lhs, const defect *rhs) { return lhs->t > rhs->t; }
     };
 
-    // type of a defect containers
-    // std::list is used for optimized removal of items (regardless of position)
-    typedef std::list<const interstitial *> interstitial_list_t;
-    typedef std::list<const vacancy *> vacancy_list_t;
-    // type for a container of recombination pairs
-    typedef std::vector<std::pair<const interstitial *, const vacancy *>> pair_buff_t;
+    // time ordered defect queue
+    typedef std::priority_queue<defect *, std::vector<defect *>, defect_time_cmp> defect_queue_t;
+
     // type for defect object buffers
     // std::vector selected for optimized allocation & pop_back/push_back at the back
     typedef std::vector<defect *> defect_buff_t;
     defect_buff_t all_buff_, free_buff_;
 
-    // time ordered defect queue
-    typedef std::priority_queue<defect *, std::vector<defect *>, defect_time_cmp> defect_queue_t;
+    // types of defect lists
+    // std::list is used for optimized removal of items regardless of their position
+    // within the container
+    typedef std::list<const interstitial *> interstitial_list_t;
+    typedef std::list<const vacancy *> vacancy_list_t;
+
+    // type for the  pair
+    // typedef std::pair<const interstitial *, const vacancy *> frenkel_pair_t;
+    template <typename iter_t>
+    struct anti_defect_t
+    {
+        iter_t it;
+        float distance;
+        anti_defect_t(const iter_t &i, float d) : it(i), distance(d) { }
+    };
+
+    // Frenkel pair comparison operator
+    // returns true if distance of lhs is greater than rhs
+    template <typename _T>
+    struct anti_defect_distance_cmp
+    {
+        bool operator()(const _T &lhs, _T &rhs) { return lhs.distance > rhs.distance; }
+    };
+
+    // type for a container of recombined frenkel pairs
+    typedef std::vector<std::pair<const interstitial *, const vacancy *>> pair_buff_t;
 
     defect *new_defect(defect_type_t atype, const double &at, const vector3 &p, const vector3 &n,
                        int ic, const atom *a, size_t pid)
@@ -84,7 +106,6 @@ class cascade_queue
     ion pka;
 
     bool allow_correlated_recombination_;
-    float i_rc_boost_;
 
     bool can_recombine(const defect *d1, const defect *d2)
     {
@@ -96,37 +117,71 @@ class cascade_queue
     bool recombine(const vacancy *d1, const grid3D &g)
     {
         float rc = d1->a->Rc(); // recombination radius
-        auto i = i_.begin();
-        for (; i != i_.end(); ++i) {
+
+        // distance ordered vacancy queue
+        typedef anti_defect_t<interstitial_list_t::const_iterator> _T;
+        std::priority_queue<_T, std::vector<_T>, anti_defect_distance_cmp<_T>> fpq;
+
+        // ref to anti-defects buffer
+        auto &anti_defects = i_;
+
+        // go through all vacancies
+        auto i = anti_defects.begin();
+        for (; i != anti_defects.end(); ++i) {
             auto d2 = *i;
-            if (can_recombine(d1, d2) && g.distance(d1->pos, d2->pos) < rc) {
-                riv_.emplace_back(d2, d1);
-                i_.erase(i);
-                return true;
+            if (can_recombine(d1, d2)) {
+                float d = g.distance(d1->pos, d2->pos);
+                if (d < rc)
+                    fpq.push(_T(i, d));
             }
         }
-        v_.push_back(d1);
-        return false;
+
+        if (fpq.empty()) {
+            // defect does not recombine, put it on the list
+            v_.push_back(d1);
+            return false;
+        } else {
+            // defect recombines with the closest anti-defect
+            auto &fp = fpq.top();
+            riv_.emplace_back(*(fp.it), d1);
+            anti_defects.erase(fp.it);
+            return true;
+        }
     }
+
     bool recombine(const interstitial *d1, const grid3D &g)
     {
         float rc = d1->a->Rc(); // recombination radius
-        vector3 x = d1->pos;
-        // special I recombination
-        // x -= d1->dir*rc/2;
-        rc *= i_rc_boost_;
 
-        auto i = v_.begin();
-        for (; i != v_.end(); ++i) {
+        // distance ordered vacancy queue
+        typedef anti_defect_t<vacancy_list_t::const_iterator> _T;
+        std::priority_queue<_T, std::vector<_T>, anti_defect_distance_cmp<_T>> fpq;
+
+        // ref to anti-defects buffer
+        auto &anti_defects = v_;
+
+        // go through all vacancies
+        auto i = anti_defects.begin();
+        for (; i != anti_defects.end(); ++i) {
             auto d2 = *i;
-            if (can_recombine(d1, d2) && g.distance(x, d2->pos) < rc) {
-                riv_.emplace_back(d1, d2);
-                v_.erase(i);
-                return true;
+            if (can_recombine(d1, d2)) {
+                float d = g.distance(d1->pos, d2->pos);
+                if (d < rc)
+                    fpq.push(_T(i, d));
             }
         }
-        i_.push_back(d1);
-        return false;
+
+        if (fpq.empty()) {
+            // defect does not recombine, put it on the list
+            i_.push_back(d1);
+            return false;
+        } else {
+            // defect recombines with the closest anti-defect
+            auto &fp = fpq.top();
+            riv_.emplace_back(d1, *(fp.it));
+            anti_defects.erase(fp.it);
+            return true;
+        }
     }
 
     static void print(std::ostream &os, const defect &d)
@@ -137,8 +192,8 @@ class cascade_queue
     }
 
 public:
-    cascade_queue(bool allow_correlated_recombination, float i_rc_boost)
-        : allow_correlated_recombination_(allow_correlated_recombination), i_rc_boost_(i_rc_boost)
+    explicit cascade_queue(bool allow_correlated_recombination)
+        : allow_correlated_recombination_(allow_correlated_recombination)
     {
     }
     ~cascade_queue()
@@ -164,7 +219,7 @@ public:
 
     // #define CASCADE_DEBUG_PRINT
 
-    void intra_cascade_recombination(const grid3D &g, tally &t)
+    void intra_cascade_recombination(const grid3D &g)
     {
         // if (defect_queue.size()<=2) return;
 
@@ -203,8 +258,11 @@ public:
             }
         }
 #endif
+    }
 
-        // update tally due to I-V recombinations
+    // update tally scores due to I-V recombinations
+    void tally_update(tally &t)
+    {
         // get relevant tally arrays
         auto &AI = t.at(tally::cI);
         auto &AV = t.at(tally::cV);
@@ -212,28 +270,27 @@ public:
         auto &Al = t.at(tally::eLattice);
         auto &Ariv = t.at(tally::cRecombinations);
         // update tally
-        for (auto &p : riv_) {
+        for (auto &fp : riv_) {
             // interstitial
-            auto &i = p.first;
+            auto &i = fp.first;
             int iid = i->a->id();
-            float El = i->a->El();
+            float halfEl = i->a->El() / 2;
             int cid = i->icell;
             AI(iid, cid)--;
-            As(iid, cid) -= El / 2;
-            Al(iid, cid) += El / 2;
+            As(iid, cid) -= halfEl;
+            Al(iid, cid) += halfEl;
             Ariv(iid, cid)++;
             // vacancy
-            auto &v = p.second;
+            auto &v = fp.second;
             cid = v->icell;
             AV(iid, cid)--;
-            As(iid, cid) -= El / 2;
-            Al(iid, cid) += El / 2;
+            As(iid, cid) -= halfEl;
+            Al(iid, cid) += halfEl;
         }
     }
 
     void clear()
     {
-
         // clear all buffers
         if (!defect_queue.empty()) {
             defect_queue_t empty;
@@ -261,12 +318,17 @@ public:
         nv++;
     }
 
-    void count_riv(float *s) const
+    // count I-V recombinations & correlated recombinations
+    // s, sc are corresponding buffers to hold counts per atomic id
+    void count_riv(float *s, float *sc) const
     {
         for (auto &p : riv_) {
-            auto &d = p.first; // interstitial
-            int i = d->a->id() - 1;
+            auto &d1 = p.first; // interstitial
+            auto &d2 = p.second; // vacancy
+            int i = d1->a->id() - 1; // atom id
             s[i]++;
+            if (d1->pair_id == d2->pair_id)
+                sc[i]++;
         }
     }
 };

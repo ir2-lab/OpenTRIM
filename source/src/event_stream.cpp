@@ -66,12 +66,10 @@ void pka_event::cascade_end(const ion &i, const cascade_queue *cq)
     }
     // get the recombinations
     if (cq) {
-        float *p = buff_.data() + ofVac + 3 * natoms_;
-        cq->count_riv(p); // cq returns the count of recombined FPs
+        float *s = buff_.data() + ofVac + 3 * natoms_;
+        // cq returns the count of recombined FPs and correlated recombinations
+        cq->count_riv(s, s + natoms_);
     }
-    // store the Rp
-    // vector3 r = i.pos() - i.pos0();
-    // buff_[ofRp] = r.norm();
 }
 
 void pka_event::cascade_complete(const ion &i, tally &t, const material *m)
@@ -105,8 +103,8 @@ void pka_event::cascade_complete(const ion &i, tally &t, const material *m)
 void pka_event::setNatoms(int n, const std::vector<std::string> &labels)
 {
     natoms_ = n;
-    buff_.resize(ofVac + 4 * n);
-    mark_buff_.resize(3 * n);
+    buff_.resize(ofVac + atom_cols_ * n);
+    mark_buff_.resize(mark_buff_cols_ * n);
     columnNames_.resize(buff_.size());
     columnDescriptions_.resize(buff_.size());
     int k = ofIonId;
@@ -146,6 +144,11 @@ void pka_event::setNatoms(int n, const std::vector<std::string> &labels)
         columnNames_[k] = "ICR";
         columnNames_[k] += std::to_string(i + 1);
         columnDescriptions_[k] = "Intra-cascade recombinations of ";
+        columnDescriptions_[k] += labels[i];
+        k += n;
+        columnNames_[k] = "Corr. ICR";
+        columnNames_[k] += std::to_string(i + 1);
+        columnDescriptions_[k] = "Corr. Intra-cascade recombinations of ";
         columnDescriptions_[k] += labels[i];
     }
 }
