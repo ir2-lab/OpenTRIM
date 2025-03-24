@@ -222,7 +222,7 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::parameters, simulation_type, s
                                           scattering_calculation, eloss_calculation,
                                           straggling_model, nrt_calculation,
                                           intra_cascade_recombination, correlated_recombination,
-                                          i_rc_boost, move_recoil)
+                                          move_recoil, recoil_sub_ed)
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::transport_options, flight_path_type,
                                           flight_path_const, min_energy, min_recoil_energy,

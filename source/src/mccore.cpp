@@ -153,7 +153,7 @@ int mccore::reset()
 int mccore::run()
 {
     cascade_queue *cq = par_.intra_cascade_recombination
-            ? new cascade_queue(par_.correlated_recombination, par_.i_rc_boost)
+            ? new cascade_queue(par_.correlated_recombination)
             : nullptr;
 
     bool cascadesOnly = par_.simulation_type == CascadesOnly;
@@ -219,8 +219,10 @@ int mccore::run()
                     q_.free_ion(k);
                 }
 
-                if (cq)
-                    cq->intra_cascade_recombination(target_->grid(), tion_);
+                if (cq) {
+                    cq->intra_cascade_recombination(target_->grid());
+                    cq->tally_update(tion_);
+                }
 
                 pka.mark(tion_);
                 pka.cascade_end(*j, cq);
@@ -427,6 +429,10 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
             if (par_.move_recoil) {
                 j->move(z2->Rc());
                 dedx_calc_(j, z2->Rc());
+                if (par_.recoil_sub_ed) {
+                    double de = j->erg() + z2->Ed() - T;
+                    j->de_phonon(de);
+                }
             }
 
             /*
