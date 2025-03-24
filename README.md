@@ -12,6 +12,8 @@ A C++ Monte-Carlo code for simulating ion transport in materials with an emphasi
 
 Documentation can be found here: https://ir2-lab.gitlab.io/opentrim
 
+![OpenTRIM screenshot](./dist/screenshot.png)
+
 ## Getting started
 
 ### Downloading the source code
