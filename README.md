@@ -129,4 +129,8 @@ The [Xoshiro256+](https://prng.di.unimi.it/) algorithm by D. Blackman and S. Vig
 
 [cxxopts](https://github.com/jarro2783/cxxopts) by [jarro2783](https://github.com/jarro2783) is used for handling cli options.
 
+## License
+
+`OpenTRIM` is distributed under the [MIT license](./LICENSE).
+
 The [HDF5 library](https://github.com/HDFGroup/hdf5) with the [HighFive C++ interface](https://github.com/BlueBrain/HighFive) are used for saving results to the HDF5 archive.
