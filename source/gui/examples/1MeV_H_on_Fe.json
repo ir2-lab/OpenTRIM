@@ -1,8 +1,7 @@
 {
     "Driver": {
         "max_no_ions": 2000,
-        "threads": 8,
-        "seeds": []
+        "threads": 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",
@@ -10,7 +9,7 @@
         "scattering_calculation": "Corteo4bitTable"
     },
     "Transport": {
-        "flight_path_type": "AtomicSpacing", // "AtomicSpacing", "MendenhallWeller", MyFFP
+        "flight_path_type": "AtomicSpacing",
         "min_energy": 1.0
     },
     "IonBeam": {
@@ -48,7 +47,7 @@
         "materials": [
             {
                 "id": "Fe",
-                "density": 7.8658, // g/cm^3
+                "density": 7.8658,
                 "composition": [
                     {
                         "element": {
@@ -77,7 +76,6 @@
     },
     "Output": {
         "title": "1 MeV H on Fe example",
-        "OutputFileBaseName": "out",
         "store_pka_events": 1,
         "store_dedx": 1,
         "store_exit_events": 1

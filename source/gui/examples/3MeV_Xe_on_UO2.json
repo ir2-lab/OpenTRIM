@@ -1,16 +1,18 @@
 {
     "Driver": {
         "max_no_ions": 8000,
-        "threads": 8,
-        "seeds": []
+        "threads": 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",
         "screening_type": "ZBL",
         "scattering_calculation": "Corteo4bitTable",
+        "nrt_calculation": "NRT_average"
+    },
+    "Transport": {
         "flight_path_type": "AtomicSpacing",
-        "nrt_calculation": "NRT_average",
-        "min_energy": 1.0
+        "min_energy": 1.0,
+        "min_recoil_energy": 1.0
     },
     "IonBeam": {
         "ion": {
@@ -86,7 +88,6 @@
     },
     "Output": {
         "title": "3MeV Xe on UO2 example",
-        "OutputFileBaseName": "b3",
         "store_pka_events": 1,
         "store_dedx": 1,
         "store_exit_events": 1
