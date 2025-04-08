@@ -348,7 +348,7 @@ void running_sim_info::print()
     cout << sep;
 
     // print progress percentage
-    char buff[8];
+    char buff[16];
     sprintf(buff, "%3d%%", progress_ * 100 / max_progress_);
     cout << buff;
 
