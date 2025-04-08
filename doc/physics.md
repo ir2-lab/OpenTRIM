@@ -1,40 +1,37 @@
-# Physics {#physics}
+\page physics Short Physics Introduction
 
-## Basic modelling assumptions
+- \subpage basic-model-assump "Basic modelling assumptions"
+- \subpage screened-coulomb "Screened Coulomb scattering"
+- \subpage kmc-algorithm "Kinetic Monte-Carlo algorithm"
+- \subpage flightpath "Flight Path Selection"
+- \subpage energy-partition "Energy partition"
+- \subpage damage-events "Damage Events"
+
+\page basic-model-assump Basic modelling assumptions
 
 The simulation is based on the following models and approximations:
 
-### Binary Collision Approximation (BCA)
+- **Binary Collision Approximation (BCA)** 
 
-This means that the projectile traveling through the target collides with only one target atom at a time.
+  This means that the projectile traveling through the target collides with only one target atom at a time.
+  Find more information in this [Wikipedia article](https://en.wikipedia.org/wiki/Binary_collision_approximation).
 
-Find more information in this [Wikipedia article](https://en.wikipedia.org/wiki/Binary_collision_approximation).
+- **Random positions of target atoms**
+  
+  The crystalline structure of the target is neglected and the positions of target atoms are considered random.
 
-### Random positions of target atoms
+- **Continuous slowing down approximation**
+  
+  Between nuclear collisions, the projectile looses energy continuously along its path due to its interaction with the target electrons. This is expressed by the electronic stopping power \f$dE/dx\f$.
 
-The crystalline structure of the target is neglected and the positions of target atoms are considered random.
+- **Screened Coulomb interactions**
 
-### Continuous slowing down approximation
+  The interaction between projectile and target atoms is described by a screened Coulomb potential. 
+  The scattering is considered elastic and it is approximated by classical kinematics. For more information on scattering calculations see the \ref screened-coulomb.
 
-Between nuclear collisions, the projectile looses energy continuously along its path due to its interaction with the target electrons. This is expressed by the electronic stopping power \f$dE/dx\f$.
+\page kmc-algorithm Kinetic Monte-Carlo algorithm
 
-### Screened Coulomb interactions
-
-The interaction between projectile and target atoms is described by a screened Coulomb potential. The general form of such a potential is
-
-$$
-V(r) = \frac{Z_1 Z_2 e^2}{r} \Phi(r/a)
-$$
-
-where \f$\Phi\f$ is the screening function and \f$a\f$ the screening length. The function \f$\Phi(x)\f$ satisfies
-
-$$
-\Phi(0) = 1, \quad \Phi(\infty)\to 0
-$$
-
-The scattering is considered elastic and it is approximated by classical kinematics. For more information on scattering calculations see the \ref XS section in the programming manual.
-
-## Kinetic Monte-Carlo algorithm
+### Particle transport algorithm
 
 The Monte-Carlo simulation of particle transport typically proceeds in the following manner:
 
@@ -50,15 +47,19 @@ The Monte-Carlo simulation of particle transport typically proceeds in the follo
 
 The above algorithm is encapsulated in the function mccore::transport().
 
+### Complete simulation algorithm
+
 To run a complete ion history, the following steps are taken:
 
-1. Generate a projectile ion and in the simulation volume, with energy, position, etc as specified by the configuration options
+1. Generate a projectile ion in the simulation volume, with energy, position and direction as specified by the OpenTRIM \ref json_config configuration options
 2. Transport the ion through the simulation volume until it stops or until it exits
 3. Take from the primary knock-on atom (PKA) queue one ion and transport it
 4. Transport all secondary and higher order recoils until the recoil queue is empty
 5. Repeat steps 3-4 until no more PKAs are available 
 
-## Flight Path Selection {#flightpath}
+The above is implemented in the function mccore::run().
+
+\page flightpath Flight Path Selection
 
 In MC particle transport simulations, the distance to the next collision is typically sampled from the Poisson distribution, \f$p(x) = e^{-N\sigma_0 x}=e^{-x/\ell}\f$, where \f$N\f$ is the atomic density of scattering centers, \f$\sigma_0\f$ the total cross-section and \f$\ell = (N\sigma_0)^{-1}\f$ denotes the mean free path (mfp).
 
@@ -143,8 +144,7 @@ A number of different criteria can be used in parallel for setting \f$p_{max}\f$
 
 A table of these values as a function of incident energy is calculated before starting the main simulation.
 
-
-## Energy partition {#energy_part}
+\page energy-partition Energy partition
 
 The energy of the projectile ion and subsequent recoils is deposited to the target as:
 
@@ -210,7 +210,7 @@ When the ion exits the simulation volume
 - \f$E_l/2\f$ is deposited as stored energy at the starting position of the ion track (corresponding to the vacancy formation energy)
 - \f$E_l/2\f$ is added to the lattice vibrational energy, as it corresponds to the interstitial that is finally not created
 
-## Damage events {#damage}
+\page damage-events Damage Events
 
 @todo write documentation on damage event handling
 

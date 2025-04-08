@@ -1,46 +1,62 @@
-# User Documentation {#userdoc}
+\page userdoc User Documentation
 
-- @ref install
-- @ref cliapp
-- @ref json_config
-- @ref out_file
+- \subpage install "Installation"
+- \subpage cliapp "Using the command line application"
+- \subpage json_config "The JSON configuration file"
+- \subpage out_file "The HDF5 output archive"
 
-## Installation  {#install}
+\page install Installation
 
-### Linux
+### Binary packages
 
-The project can be built and installed with `cmake`.
+Binary packages and repositories for a number of **Linux** distributions (Ubuntu, RHEL, OpenSUSE, etc.) are built on the [openSUSE Build Service](https://software.opensuse.org//download.html?project=home%3Amaxiotis%3Agapost&package=opentrim). Please follow the instructions found there to install OpenTRIM on your system.
 
-The `Eigen` and `HDF5` libraries are needed for building. Install them with
+On **Windows**, please download the latest [binary distribution release](https://github.com/ir2-lab/OpenTRIM/releases) provided as a zip file and extract to some location. To be able to run the program from the windows command line, add the program folder to the user or system path.
+
+### Building from source
+
+On **Linux** the project can be built and installed with `cmake`.
+
+Tested compilers: GCC 8 and above, Clang 14. 
+
+Clone the project using
+```
+> git clone git@gitlab.com:ir2-lab/opentrim.git
+```
+or download a tarball of the last version.
+
+To build OpenTRIM you will need the following libraries:
+- [Eigen v3.4.0](https://eigen.tuxfamily.org) for vector operations
+- [HDF5 v1.10.7](https://www.hdfgroup.org/solutions/hdf5/) for file storage
+- [Qt5 or Qt6](https://www.qt.io/) for the GUI program
+- [Qwt v6.x](https://qwt.sourceforge.io/) for plotting
+
+They can be installed with
 ```bash
 # Ubuntu 22.04 / DEB
-sudo apt install libeigen3-dev libhdf5-dev libhdf5-103-1
+sudo apt install libeigen3-dev libhdf5-dev libhdf5-103-1 
+# for the GUI component add the following
+sudo apt install qtbase5-dev libqt5svg5 libqwt-qt5-dev libqwt-qt5-6
 
 # RHEL 9 / RPM
 sudo dnf install eigen3-devel.noarch hdf5.x86_64 hdf5-devel.x86_64
 ```  
 
-The HDF5 runtime libraries are needed for running the program.
-
-Basic build recipe (run from project directory)
+Basic build recipe (run from project directory):
 
 ```
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-make
-make install
+ninja
+ninja install
 ```
 The default install location is `$HOME/.local`, thus `sudo` is not required.
 Override this by setting the option `-DCMAKE_INSTALL_PREFIX="/your/install/location"` when calling `cmake`. 
 
-### Windows
+On **Windows** the project can be built with [MSYS2](https://www.msys2.org/). Detailed instructions will be given in the future.
 
-Download the latest binary distribution release as a zip file and extract to some location.
-
-To run the program from the windows command line, add the program folder to the system or user path.
-
-## Using the command line application {#cliapp}
+\page cliapp Using the command line application 
 
 OpenTRIM provides a command line program which can be invoked by 
 
@@ -70,98 +86,7 @@ The program first checks and validates the configuration input.
 
 It then runs the simulation and saves the results into a HDF5 archive.
 
-## The JSON configuration file {#json_config}
-
-All configuration parameters for a simulation can be coded in a JSON formatted string. 
-
-This can be loaded directly from a file to the \ref cliapp "opentrim cli program" with the following command:
-
-    opentrim -f config.json
-
-where `config.json` is a file containing the JSON configuration.
-
-In a C++ program one can use the \ref mcdriver::options class which offers
-a parseJSON() function to parse and validate the options.
-
-The JSON-formatted options string has the following self-explanatory structure shown bellow.
-This example has all default options and an example target definition.
-
-```javascript
-{
-    "Simulation": {
-        "simulation_type": "FullCascade",       // FullCascade|IonsOnly|CascadesOnly
-        "screening_type": "ZBL",       // None|LenzJensen|KrC|Moliere|ZBL
-        "scattering_calculation": "Corteo4bitTable", // Corteo4bitTable|ZBL_MAGICK
-        "flight_path_type": "AtomicSpacing",    // AtomicSpacing|Constant|MendenhallWeller|IPP
-        "straggling_model": "YangStraggling",   // NoStraggling|BohrStraggling|ChuStraggling|YangStraggling
-        "nrt_calculation": "NRT_element",       // NRT_element|NRT_average
-        "flight_path_const": 0.1,   // [nm], used if "flight_path_type"=Constant        
-        "min_energy": 1.0,           // [eV], transport cutoff energy.
-        "min_recoil_energy" : 1.0,    // [eV], recoil energy cutoff, flight_path_type = MendenhallWeller or IPP 
-        "allow_sub_ml_scattering": false, // allow flight path smaller than 1ML, flight_path_type = IPP
-        "max_mfp": 3.4028235e+38, // upper bound for ion mfp, flight_path_type = IPP
-        "max_rel_eloss": 0.05 // upper bound of relative electronic energy loss, flight_path_type = MendenhallWeller or IPP   
-    },
-    "IonBeam": {
-        "ion_distribution": "SurfaceCentered", // SurfaceRandom|SurfaceCentered|FixedPos|VolumeCentered|VolumeRandom
-        "ionZ": 1,          // ion atomic number
-        "ionM": 1.00784,    // ion mass
-        "ionE0": 1e+06,     // ion energy [eV] 
-        "dir": [1.0,0.0,0.0], // direction vector
-        "pos": [0.0,0.0,0.0]  // [nm], used if "ion_distribution"=FixedPos
-    },
-    "Target": {
-        "materials": { 
-            "Bulk Iron": { // example material definition
-                "density": 7.8658, // [g/cm^3]
-                "Z": [26],      // atomic numbers
-                "M": [55.845],  // atomic masses
-                "X": [1.0],     // atomic fractions 
-                "Ed": [40.0],   // displacement thresholds [eV]
-                "El": [3.0],    // Lattice binding energies [eV] 
-                "Es": [3.0],    // Surface binding energies [eV]
-                "Er": [40.0]    // Replacement threshold energies [eV]
-            } // more materials can be added here
-        },
-        "regions": { // rectangular regions filled with a material
-            "R1": { // example region definition
-                "material_id": "Bulk Iron", // material must be defined above
-                "min": [0.0,0.0,0.0],      // [nm] lower left corner 
-                "max": [10000.0,10000.0,10000.0] // [nm] upper right corner
-            }
-        },
-        "cell_count": [100,1,1], // # of cells in x,y,z-axis  
-        "cell_size": [100.0,10000.0,10000.0], // cell width [nm] in x,y,z
-        "periodic_bc": [0,1,1] // periodic boundary conditions in x,y,z
-    },
-    "Output": {
-        "title": "Ion Simulation", // short title for the simulation 
-        "OutputFileBaseName": "out", // base name of output file (extension .h5)
-        "store_exit_events": 1, // store all ions that exit the simulation
-        "store_pka_events": 1, // store all PKA events
-        "store_dedx": 1 // store the electronic energy loss tables
-    },
-    "Driver": {
-        "max_no_ions": 20000, // ion histories to run
-        "threads": 8, // threads to use
-        "seeds": [] // seed to use for random number generation. If empty, a random seed is generated
-    }
-}
-```
-
-@note `opentrim` accepts comments in the JSON config string
-
-The easiest way to get started is to get a template with all default options by running
-
-    opentrim -t > template.json
-
-and make changes to the new template file.
-
-Most of the options shown above are default values and can be omitted.
-
-Only the `target/materials` and `target/regions` must always be given.
-
-## The HDF5 output archive {#out_file}
+\page out_file The HDF5 output archive
 
 The simulation produces a single HDF5 output file which contains all results from tallies and events along with the input conditions, run timing and other information. 
  

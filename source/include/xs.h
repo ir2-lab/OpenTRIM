@@ -519,7 +519,12 @@ struct xs_quad : public xs_base<ScreeningType>
     /**
      * @brief Scattering angle in center-of-mass (CM) system
      *
-     * Calculated using Gauss-Chebyshev quadrature.
+     * Calculated using Gauss-Chebyshev quadrature
+     *
+     * \f[
+     *   \theta = \pi - \frac{2\,s}{x_0} \frac{\pi}{N}
+     *   \sum_{j=0}^{N/2-1}{H\left[ \cos\left( \frac{\pi}{N}\,j + \frac{\pi}{2N} \right) \right]}
+     * \f]
      *
      * For \f$ s\cdot \epsilon^{1/6} > 100 \f$ where the scattering angle is very small
      * (\f$ \theta < 10^{-8} \f$) this function

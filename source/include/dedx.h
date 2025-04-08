@@ -6,7 +6,7 @@
 #include <vector>
 
 /**
- * \defgroup dedx libiondedx shared library
+ * \defgroup dedx libdedx shared library
  *
  * @brief Classes for calculating ion electronic stopping and straggling
  *

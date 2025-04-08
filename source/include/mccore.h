@@ -19,7 +19,7 @@
 class cascade_queue;
 
 /**
- * \defgroup MC libiradinapp shared library
+ * \defgroup MC libopentrim shared library
  *
  * \brief A library containing the main ion transport simulation code.
  *
