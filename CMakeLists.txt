@@ -190,6 +190,26 @@ target_link_libraries(${EXE_TARGET}
     ${LIB_TARGET}
 )
 
+add_executable(genoptionsdoc
+    source/src/genoptionsdoc.cpp
+)
+
+target_include_directories(genoptionsdoc PRIVATE
+    ${external_json_SOURCE_DIR}/single_include/)
+
+target_link_libraries(genoptionsdoc
+    ${LIB_TARGET}
+)
+
+add_custom_target(options_doc ALL
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/options.md"
+)
+
+add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/options.md"
+        COMMAND genoptionsdoc "${CMAKE_SOURCE_DIR}/source/gui/option_def/options.json"
+        DEPENDS genoptionsdoc
+    )
+
 # add_subdirectory(doc)
 
 set(installable_libs
