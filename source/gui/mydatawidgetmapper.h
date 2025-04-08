@@ -24,6 +24,8 @@ public:
 
     QWidget *findWidget(const QString &key) const;
 
+    void setToolTip(const QString &txt = QString());
+
 public slots:
     void revert();
     bool submit();

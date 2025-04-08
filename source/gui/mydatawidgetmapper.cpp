@@ -72,6 +72,20 @@ QWidget *MyDataWidgetMapper::findWidget(const QString &key) const
     return nullptr;
 }
 
+void MyDataWidgetMapper::setToolTip(const QString &txt)
+{
+    bool set_global_tooltip = !txt.isEmpty();
+    for (const mapItem &m : widgetMap) {
+        assert(!m.widget.isNull()); // widget must be there
+        if (set_global_tooltip)
+            m.widget->setToolTip(txt);
+        else {
+            OptionsItem *item = static_cast<OptionsItem *>(m.idx.internalPointer());
+            m.widget->setToolTip(item->toolTip());
+        }
+    }
+}
+
 void MyDataWidgetMapper::revert()
 {
     for (mapItem &e : widgetMap)

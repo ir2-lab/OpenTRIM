@@ -582,10 +582,10 @@ OptionsModel::OptionsModel(QObject *parent)
         assert(0);
     }
 
-    QModelIndex i = index("Target");
-    OptionsItem *target = static_cast<OptionsItem *>(i.internalPointer());
-    target->appendChild(new OptionsItem("materials", target));
-    target->appendChild(new OptionsItem("regions", target));
+    // QModelIndex i = index("Target");
+    // OptionsItem *target = static_cast<OptionsItem *>(i.internalPointer());
+    // target->appendChild(new OptionsItem("materials", target));
+    // target->appendChild(new OptionsItem("regions", target));
 }
 OptionsModel::~OptionsModel()
 {

@@ -97,12 +97,11 @@ SimulationOptionsView::SimulationOptionsView(MainUI *iui, QWidget *parent)
     jsonView->setWhatsThis(QString("%1\n\n%2").arg(hlpmsg_json[0]).arg(hlpmsg_json[1]));
     tabWidget->addTab(jsonView, "JSON");
 
-    QDialogButtonBox *buttonBox = new QDialogButtonBox(
-            QDialogButtonBox::Apply | QDialogButtonBox::Cancel | QDialogButtonBox::Help,
-            Qt::Horizontal);
+    buttonBox = new QDialogButtonBox(QDialogButtonBox::Apply | QDialogButtonBox::Cancel
+                                             | QDialogButtonBox::Help,
+                                     Qt::Horizontal);
 
-    QPushButton *btValidate = new QPushButton(
-            QIcon(":/assets/ionicons/checkmark-done-outline.svg"), "Validate");
+    btValidate = new QPushButton(QIcon(":/assets/ionicons/checkmark-done-outline.svg"), "Validate");
     buttonBox->addButton(btValidate, QDialogButtonBox::ActionRole);
     connect(btValidate, &QPushButton::clicked, this, &SimulationOptionsView::validateOptions);
 
@@ -268,7 +267,10 @@ QWidget *SimulationOptionsView::createIonBeamTab(const QModelIndex &parent)
         QModelIndex idx = model->index(i, 0, parent); // model->index("ion");
         OptionsItem *item = model->getItem(idx);
         QGroupBox *box = new QGroupBox(item->name());
-        QFormLayout *flayout = createForm(idx, box);
+        QStringList excludeKeys;
+        if (item->key() == "ion")
+            excludeKeys << "symbol";
+        QFormLayout *flayout = createForm(idx, box, excludeKeys);
         box->setLayout(flayout);
         grid->addWidget(box, i >> 1, i % 2);
 
@@ -293,11 +295,6 @@ QWidget *SimulationOptionsView::createIonBeamTab(const QModelIndex &parent)
     vbox->addLayout(grid);
     vbox->addStretch();
 
-    //    QScrollArea* scrollArea = new QScrollArea;
-    //    scrollArea->setWidget(widget);
-
-    //    return scrollArea;
-    //    widget->setLayout(grid);
     return widget;
 }
 
@@ -334,18 +331,20 @@ QWidget *SimulationOptionsView::createTab(const QModelIndex &idx)
     return widget;
 }
 
-QFormLayout *SimulationOptionsView::createForm(const QModelIndex &parent, QWidget *widgetParent)
+QFormLayout *SimulationOptionsView::createForm(const QModelIndex &parent, QWidget *widgetParent,
+                                               const QStringList &excludeKeys)
 {
     QFormLayout *flayout = new QFormLayout;
     OptionsModel *model = ionsui->optionsModel;
     for (int row = 0; row < model->rowCount(parent); ++row) {
         QModelIndex i = model->index(row, 0, parent);
         OptionsItem *item = model->getItem(i);
+
+        if (excludeKeys.contains(item->key()))
+            continue;
+
         QWidget *w = item->createEditor(widgetParent);
         if (w) {
-            // QLabel* lbl = new QLabel(item->name());
-            // lbl->setToolTip(w->toolTip());
-            // lbl->setWhatsThis(w->whatsThis());
             mapper->addMapping(w, i, item->editorSignal());
             flayout->addRow(item->name(), w);
         }
@@ -402,4 +401,16 @@ void SimulationOptionsView::onDriverStatusChanged()
     regionsView->setEnabled(isreset);
     if (isreset)
         applyRules();
+    btValidate->setEnabled(isreset);
+    buttonBox->setEnabled(isreset);
+
+    if (isreset) {
+        setToolTip("");
+        mapper->setToolTip();
+    } else {
+        QString msg("Config cannot be changed while the simulation is active.\n"
+                    "Reset the simulation to change the configuration.");
+        setToolTip(msg);
+        mapper->setToolTip(msg);
+    }
 }
