@@ -774,10 +774,10 @@ inline double xs_cms<Screening::Moliere>::theta_impulse_approx(double e, double 
 }
 
 /**
- * @brief Screened potential cross-section by the MAGIC formula
+ * @brief ZBL potential scattering angle by the MAGIC formula
  *
- * Calculate the scattering integral for the scattering angle in
- * center-of-mass system and the cross-section for the
+ * Calculate the scattering angle in the
+ * center-of-mass system for the
  * Ziegler-Biersack-Littmark (ZBL) Universal screening function
  * using the MAGIC interpolation formula of Biersack & Haggmark.
  *

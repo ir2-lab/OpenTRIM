@@ -113,15 +113,16 @@ void indent(std::ostream &os, int n)
         os << "&emsp;";
 }
 
-void linkCode(std::ostream &os)
+void linkCode(std::ostream &os, const string &path, bool ref)
 {
-    os << "\\ref _L" << linkID << "_ ";
-    linkID++;
-}
-void anchorCode(std::ostream &os)
-{
-    os << "\\anchor _L" << linkID << "_ ";
-    linkID++;
+    os << (ref ? "\\ref " : "\\anchor ");
+    for (int i = 0; i < path.size(); i++) {
+        char c = path[i];
+        if (c == '/')
+            c = '_';
+        os << c;
+    }
+    os << " ";
 }
 
 void jsonPrint(std::ostream &os, const ojson &j, type_t type, int level, string path)
@@ -139,7 +140,7 @@ void jsonPrint(std::ostream &os, const ojson &j, type_t type, int level, string 
     case tStruct:
         if (level) {
             indent(os, level);
-            linkCode(os);
+            linkCode(os, path, true);
             os << R"("\")" << j["name"].template get<string>() << R"(\"")" << ": ";
         }
         os << '{' << "<br>" << endl;
@@ -167,7 +168,7 @@ void jsonPrint(std::ostream &os, const ojson &j, type_t type, int level, string 
     case tBool:
     case tString:
         indent(os, level);
-        linkCode(os);
+        linkCode(os, path, true);
         os << R"("\")" << j["name"].template get<string>() << R"(\"")" << ": ";
         os << val;
         break;
@@ -211,6 +212,16 @@ std::ostream &operator<<(std::ostream &os, type_t type)
     return os;
 }
 
+void printPath(std::ostream &os, const string &path)
+{
+    for (int i = 1; i < path.size(); i++) {
+        char c = path[i];
+        if (c == '/')
+            c = '.';
+        os << c;
+    }
+}
+
 void jsonPrintTable(std::ostream &os, const ojson &j, type_t type, string path)
 {
     bool is_root = path.empty();
@@ -218,13 +229,13 @@ void jsonPrintTable(std::ostream &os, const ojson &j, type_t type, string path)
     mcdriver::options opt;
 
     if (!is_root) {
-        os << "<tr><th colspan=\"2\">";
-        anchorCode(os);
         name = j["name"].template get<std::string>();
-        os << path << name << endl;
-        os << "<tr><td>" << "Type ";
-        os << "<td>" << toType(j["type"]) << endl;
         path += name;
+        os << "<tr><th colspan=\"2\">";
+        linkCode(os, path, false);
+        printPath(os, path); // os << path << endl;
+        os << "<tr><td>" << "Type ";
+        os << "<td>" << toType(j["type"]) << endl;        
         opt.get(path, val);
         path += '/';
     } else

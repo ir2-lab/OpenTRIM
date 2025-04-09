@@ -31,31 +31,29 @@ The simulation is based on the following models and approximations:
 
 \page kmc-algorithm Kinetic Monte-Carlo algorithm
 
-### Particle transport algorithm
+### Ion transport algorithm
 
-The Monte-Carlo simulation of particle transport typically proceeds in the following manner:
+The simulation of ion transport typically proceeds in the following manner:
 
-1. Sample the particle's distance to the next collision and the impact parameter of that collision. This is a very important part of the whole algorithm and is discussed in more detail in \ref flightpath.
-2. Propagate the particle to the collision site using the \ref ion::propagate() function. If a cell boundary is reached before collision then the particle is transferred to the new cell and the algorithm is restarted. If the boundary is an external boundary of the simulation volume, the ion exits and the current history ends.
+1. Sample the distance to the next collision and the impact parameter of that collision. This is a very important part of the whole algorithm and is discussed in more detail in \ref flightpath.
+2. Propagate the particle to the collision site. If a cell boundary is reached before collision then the particle is transferred to the new cell and the algorithm is restarted. If the boundary is an external boundary of the simulation volume, the ion exits and the current history ends. This step is implemented in the \ref ion::propagate() function.
 3. Calculate the electronic stopping and straggling for the flight path and subtract from the ion energy. For details see \ref dedx.
 4. Select collision partner. An atom is selected randomly, taking into account the target composition.
-5. Calculate scattering angle and recoil energy using the function \ref xs_lab::scatter().
-6. If the energy of the recoiling target atom is above the displacement threshold, then a recoil ion is produced and stored in the \ref ion_queue "queue" to be processed later.
-7. The sequence is repeated from step 2 until either
-  - the particle exits the simulation volume, or,
-  - the particle energy goes below the cutoff (\ref mccore::parameters::min_energy \f$\sim 1\f$ eV), whereupon the particle stops and remains implanted in the target
+5. Calculate scattering angle and recoil energy. This is implemented in \ref xs_lab::scatter().
+6. If the energy of the recoiling target atom is above the displacement threshold, then a recoil ion is produced and stored in the \ref ion_queue "ion queue" to be processed later.
+7. Repeat the sequence from step 2 until either
+  - the ion exits the simulation volume, or,
+  - the ion energy goes below the cutoff (\ref mccore::parameters::min_energy \f$\sim 1\f$ eV), whereupon it stops and remains implanted in the target
 
 The above algorithm is encapsulated in the function mccore::transport().
 
 ### Complete simulation algorithm
 
-To run a complete ion history, the following steps are taken:
+To run a complete Monte-Carlo history, the following steps are taken:
 
-1. Generate a projectile ion in the simulation volume, with energy, position and direction as specified by the OpenTRIM \ref json_config configuration options
+1. Generate a projectile ion in the simulation volume, with energy, position and direction as specified by OpenTRIM's \ref json_config configuration options
 2. Transport the ion through the simulation volume until it stops or until it exits
-3. Take from the primary knock-on atom (PKA) queue one ion and transport it
-4. Transport all secondary and higher order recoils until the recoil queue is empty
-5. Repeat steps 3-4 until no more PKAs are available 
+3. Transport all secondary and higher order recoils until the \ref ion_queue "ion queue" is empty 
 
 The above is implemented in the function mccore::run().
 
@@ -106,43 +104,50 @@ while Biersack1980 and the SRIM manual (Ch.7) write:
 
 We believe that these propositions are not justified and one can assume a flight path smaller than the interatomic distance without any problems.
 
-We propose to employ a more "standard" procedure for path selection similar to what is done for neutron or photon transport simulations:
+We propose to employ a more "standard" procedure for path selection similar to what is done for neutron or photon transport simulations. It is specified as "FullMC" path selection:
 
-> **IPP "standard" algorithm**
+> **FullMC path selection algorithm**
 > - For a given particle energy \f$E\f$ we have pre-computed \f$p_{max}\f$, \f$\sigma_0=\pi p_{max}^2\f$ and \f$\ell = (N\sigma_0)^{-1}\f$
+> - Additionally, we have pre-computed values of maximum path-length \f$\Delta x_{max}\f$, 
+> such that the relative electronic energy loss \f$\Delta E/E = (1/E)\int_0^{\Delta x_{max}} {(dE/dx)dx} \leq \delta \sim 0.01-0.05\f$. The value  
+> \f$u_c = e^{-\Delta x_{max}/\ell}\f$, which corresponds to the probability that \f$\Delta x > \Delta x_{max}\f$, is also precomputed.
 > - Take a random sample \f$u_{1} \in (0,1)\f$
-> - The path to the next collision is \f$x = -\ell\,\log u_1\f$ [sampled from the Poisson distr.]
-> - Compute the electronic energy loss along the path \f$x\f$: \f$\Delta E = \int_0^x {(dE/dx)dx}\f$. If the fractional energy change is smaller than a small number, e.g.,
-> \f$\Delta E / E < \delta\f$,
-> where \f$\delta\sim 0.05\f$, reject the scattering event
-> - Otherwise, take a 2nd random sample \f$u_{2} \in (0,1)\f$ and compute the impact parameter as
+> - If \f$u_1 < u_c\f$, reject the scattering event and propagate the particle by \f$\Delta x_{max}\f$
+> - Otherwise, compute the Poisson distributed path to the next collision \f$\Delta x = -\ell\,\log u_1\f$ 
+> - Take a 2nd random sample \f$u_{2} \in (0,1)\f$ and compute the impact parameter as
 > \f$p = p_{max}\sqrt{u_2}\f$
-> - Propagate particle by \f$x\f$
+> - Propagate the particle by \f$\Delta x\f$
 
-Although here we need 2 random numbers instead of 1 in the MHW/SRIM algorithm, the penalty is not so high since all outcomes are valid (in M&W algorithm some events are discarted). 
+Although FullMC needs 2 random numbers instead of 1 in the MHW/SRIM algorithm, the penalty is not so high since all outcomes are valid (in M&W algorithm some events are discarted). 
 
 An advantage of this method is that the average mfp of the simulated ions is exactly \f$\ell\f$, which in the MW algorithm is not true. This permits us to preset a value for the mfp. This can be useful, e.g., when simulating thin targets (setting \f$\ell \ll d\f$ ensures scattering in the target)
 
 ### Parameters for adjusting flight path selection
 
-A number of different criteria can be used in parallel for setting \f$p_{max}\f$, \f$\sigma_0\f$ and \f$\ell\f$:
+A number of different criteria can be used in parallel for setting \f$p_{max}\f$, \f$\sigma_0\f$ and \f$\ell\f$.
+
+The corresponding options are in the **Transport** section of the \ref json_config "JSON configuration options".
 
 - **Recoil energy lower cutoff** \n 
   As explained above, a lower cutoff \f$T_c\f$ in the recoil energy results in a maximum impact parameter \f$p_{max} = p(E,T_c)\f$ and \f$\ell = 1/\sqrt{\pi N p_{max}^2}\f$.
 
-  This can be set by changing the value of \ref mccore::parameters::min_recoil_energy (in eV). The default is 1eV, equal to \ref mccore::parameters::min_energy.
+  This can be set by changing the value of **Transport.min_recoil_energy** (in eV). The default is 1eV, equal to **Transport.min_energy**.
 
   This parameter is used in both MHW and IPP flight path selection schemes.
 
-- **Upper bound for electronic stopping** \n 
-  \f$\Delta E / E = (dE/dx)\,\ell/E< \delta\f$ or \f$\ell < \ell_{max} = \delta \cdot E/(dE/dx)\f$. Typically a \f$\delta\f$ value of 0.01 - 0.05 is employed.
+- **Upper bound due to electronic stopping** \n 
+  \f$\Delta E / E = (1/E)\int_0^{\Delta x}{(dE/dx)dx} < \delta\f$ or \f$\Delta x < \Delta x_{max}(E)\f$. Typically, a \f$\delta\f$ of 0.01 - 0.05 is employed.
 
-  This is set by \ref mccore::parameters::max_rel_eloss. The default is 0.05.
+  This is set by **Transport.max_rel_eloss**. The default is 0.05.
 
 - **Upper bound for the mfp** \n 
   \f$\ell < \ell_{max}\f$, where \f$\ell_{max}\f$ is set for geometric reasons
 
-A table of these values as a function of incident energy is calculated before starting the main simulation.
+  This is set by **Transport.max_mfp**. The default is a huge value (option de-activated).
+
+Tables of \f$p_{max}\f$, \f$\sigma_0\f$, \f$\ell\f$ and \f$\Delta x_{max}\f$ as a function of incident energy are calculated before starting the main simulation.
+
+The relevant algorithms are implemented in the class \ref flight_path_calc.
 
 \page energy-partition Energy partition
 
