@@ -65,7 +65,7 @@ public:
         AtomicSpacing = 0, /**< Constant, equal to interatomic distance */
         Constant = 1, /**< Constant, equal to user supplied value */
         MendenhallWeller = 2, /**< Algorithm from Mendenhall-Weller NIMB2005*/
-        IPP = 3, /**< IPP algorithm */
+        FullMC = 3, /**< Full Monte-Carlo flight path algorithm */
         InvalidPath = -1
     };
 
@@ -161,7 +161,7 @@ public:
                 ip = ip_ * std::sqrt(rng.u01d_lopen());
             }
             break;
-        case IPP:
+        case FullMC:
             ie = dedx_index(E);
             fp = mfp_tbl[ie] * (-std::log(rng.u01s_open()));
             doCollision = fp <= fpmax_tbl[ie];

@@ -159,11 +159,6 @@ NLOHMANN_JSON_SERIALIZE_ENUM(mccore::simulation_type_t,
                                { mccore::IonsOnly, "IonsOnly" },
                                { mccore::CascadesOnly, "CascadesOnly" } })
 
-NLOHMANN_JSON_SERIALIZE_ENUM(mccore::scattering_calculation_t,
-                             { { mccore::InvalidScatteringOption, nullptr },
-                               { mccore::Corteo4bitTable, "Corteo4bitTable" },
-                               { mccore::ZBL_MAGICK, "ZBL_MAGICK" } })
-
 NLOHMANN_JSON_SERIALIZE_ENUM(dedx_calc::eloss_calculation_t,
                              { { dedx_calc::InvalidEnergyLoss, nullptr },
                                { dedx_calc::EnergyLossOff, "EnergyLossOff" },
@@ -180,7 +175,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(flight_path_calc::flight_path_type_t,
                                { flight_path_calc::AtomicSpacing, "AtomicSpacing" },
                                { flight_path_calc::Constant, "Constant" },
                                { flight_path_calc::MendenhallWeller, "MendenhallWeller" },
-                               { flight_path_calc::IPP, "IPP" } })
+                               { flight_path_calc::FullMC, "FullMC" } })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(Screening,
                              { { Screening::Invalid, nullptr },
@@ -188,7 +183,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Screening,
                                { Screening::LenzJensen, "LenzJensen" },
                                { Screening::KrC, "KrC" },
                                { Screening::Moliere, "Moliere" },
-                               { Screening::ZBL, "ZBL" } })
+                               { Screening::ZBL, "ZBL" },
+                               { Screening::ZBL_MAGIC, "ZBL_MAGIC" } })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(StragglingModel,
                              { { StragglingModel::Invalid, nullptr },
@@ -219,8 +215,7 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ion_beam::parameters, ion, energy_dist
                                           spatial_distribution, angular_distribution)
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::parameters, simulation_type, screening_type,
-                                          scattering_calculation, eloss_calculation,
-                                          straggling_model, nrt_calculation,
+                                          eloss_calculation, straggling_model, nrt_calculation,
                                           intra_cascade_recombination, correlated_recombination,
                                           move_recoil, recoil_sub_ed)
 

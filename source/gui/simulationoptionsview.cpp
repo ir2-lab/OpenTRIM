@@ -234,7 +234,7 @@ void SimulationOptionsView::applyRules()
         enable_if("/Transport/max_rel_eloss", true);
         enable_if("/Transport/min_recoil_energy", true);
         break;
-    case flight_path_calc::IPP:
+    case flight_path_calc::FullMC:
         enable_if("/Transport/max_rel_eloss", true);
         enable_if("/Transport/min_recoil_energy", true);
         enable_if("/Transport/max_mfp", true);

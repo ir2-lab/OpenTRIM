@@ -84,7 +84,7 @@ int flight_path_calc::init(const mccore &s)
             const material *m = materials[im];
             const float &N = m->atomicDensity();
             const float &Rat = m->atomicRadius();
-            float mfp_lb = type_ == IPP && tr_opt_.allow_sub_ml_scattering ? 0.f : Rat;
+            float mfp_lb = type_ == FullMC && tr_opt_.allow_sub_ml_scattering ? 0.f : Rat;
             for (dedx_index ie; ie != ie.end(); ie++) {
                 float &mfp = mfp_(z1, im, ie);
                 float &ipmax = ipmax_(z1, im, ie);
@@ -169,7 +169,7 @@ int flight_path_calc::init(const ion *i, const material *m)
         ip_ = ip0[mid];
         break;
     case MendenhallWeller:
-    case IPP:
+    case FullMC:
         ipmax_tbl = &(ipmax_(iid, mid, 0));
         mfp_tbl = &(mfp_(iid, mid, 0));
         fpmax_tbl = &(fp_max_(iid, mid, 0));
