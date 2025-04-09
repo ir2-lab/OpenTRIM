@@ -244,9 +244,9 @@ private:
  * @ingroup xs_corteo
  */
 template <Screening ScreeningType>
-class corteo_xs_lab : public xs_lab<xs_quad<ScreeningType>>
+class corteo_xs_lab : public xs_lab<xs_cms<ScreeningType>>
 {
-    typedef xs_quad<ScreeningType> _XSQ;
+    typedef xs_cms<ScreeningType> _XSQ;
     typedef xs_lab<_XSQ> _XSL;
     typedef xs_corteo4bit<ScreeningType> _XS;
     typedef typename _XS::corteo_idx_t corteo_idx_t;

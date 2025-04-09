@@ -2,8 +2,6 @@
 #define _XS_H_
 
 #include <cmath>
-#include <vector>
-#include <array>
 #include <cassert>
 
 #define BOHR_RADIUS 0.05291772108 /* Bohr radius [nm] */
@@ -11,7 +9,7 @@
 #define E2C2 1.43996445 /* e^2 / 4 pi eps0 = e^2 c^2 in [eV][nm] */
 
 /**
- * \defgroup XS Screened Coulomb scattering calculations
+ * \defgroup XS Library for screened Coulomb scattering calculations
  * @{
  *
  * A set of C++ objects for classical scattering calculations of screened
@@ -47,34 +45,36 @@
  * reduced center-of-mass energy and impact parameter.
  *
  * The integral is evaluated by quadrature in the
- * \ref xs_quad template class, where the
+ * \ref xs_cms template class, where the
  * Screening enum is again the template parameter.
  *
- * For comparison, the so-called MAGIC approximation of Biersack-Haggmark
- * for the scattering integrals of
- * the ZBL potential is also implemented
- * in the class \ref xs_zbl_magic.
+ * In the case of ZBL, the so-called MAGIC approximation of Biersack-Haggmark
+ * for the scattering integral is also implemented (with Screening::ZBL_MAGIC template parameter).
+ *
+ * The scattering from the unscreened Coulomb potential is computed by the
+ * analytical formulae.
  *
  * As quadrature is a costly operation, the scattering integrals are typically tabulated
  * for use in Monte-Carlo codes.
  * Here we adapt the tabulation method of the program Corteo, see \ref CorteoIdx.
  *
- * The two classes \ref xs_zbl_corteo4bit and \ref xs_zbl_corteo6bit provide access to
- * pre-calculated tables of \f$ \sin^2 \theta/2 \f$ for the ZBL potential
+ * The class template \ref xs_corteo4bit provides access to
+ * pre-calculated tables of \f$ \sin^2 \theta/2 \f$
  * as a function of
- * \f$  \epsilon \f$ and \f$ s \f$. The tables are compiled into dynamic libraries
- * and can be linked for use in a simulation program.
+ * \f$  \epsilon \f$ and \f$ s \f$ for all \ref Screening types (except Screening::None and
+ * Screening::ZBL_MAGIC). The tables are compiled into dynamic libraries and can be linked for use
+ * in external programs.
  *
- * For scattering calculations in the lab system, the \ref abstract_xs_lab class defines
- * the interface for all cross-section classes.
+ * For scattering calculations in the lab system, \ref abstract_xs_lab defines
+ * the interface.
  *
  * The \ref xs_lab class template provides an implementation of a lab system cross-section
- * object.
+ * object, taking a \ref xs_cms class as a template parameter and using its functions
+ * to make the calculations.
  *
- * \ref xs_lab_zbl_corteo4bit and  \ref xs_lab_zbl_corteo6bit use the pre-computed tables for the
+ * The \ref corteo_xs_lab class template uses the pre-computed tables for the
  * center-of-mass scattering angle to simulate scattering in the lab system.
  *
- * Ref.: Yuan et al. NIMB1993
  */
 
 /**
@@ -86,6 +86,7 @@ enum class Screening {
     KrC = 2, /**< Kr-C */
     Moliere = 3, /**< Moliere */
     ZBL = 4, /**< Ziegler-Biersack-Littmark (ZBL) Universal */
+    ZBL_MAGIC = 5, /**< ZBL utilizing their MAGIC interpolation formula */
     Invalid = -1
 };
 
@@ -131,7 +132,7 @@ struct screening_function
 template <>
 struct screening_function<Screening::None>
 {
-    static double screeningLength(int Z1, int Z2) { return BOHR_RADIUS; } // Bohr radius in nm
+    static double screeningLength(int Z1, int Z2) { return 1.; } // fake
     double operator()(const double &x) const { return 1.; }
     static const char *screeningName() { return "Unscreened Coulomb"; }
     static Screening screeningType() { return Screening::None; }
@@ -213,17 +214,124 @@ struct screening_function<Screening::ZBL>
                 + C[3] * exp(-A[3] * x);
     }
 };
+// Explicit specialization for the Ziegler-Biersack-Littmark (ZBL) potential
+template <>
+struct screening_function<Screening::ZBL_MAGIC>
+{
+    static Screening screeningType() { return Screening::ZBL_MAGIC; }
+    static const char *screeningName() { return "Ziegler-Biersack-Littmark (ZBL) MAGICK interp"; }
+    static double screeningLength(int Z1, int Z2)
+    {
+        return SCREENCONST * BOHR_RADIUS / (std::pow(Z1, 0.23) + std::pow(Z2, 0.23));
+    }
+
+    /* Universal screening function coefficients TRIM85 */
+    constexpr static const double C[] = { 0.18175, 0.50986, 0.28022, 0.028171 };
+    constexpr static const double A[] = { 3.19980, 0.94229, 0.40290, 0.201620 };
+
+    double operator()(const double &x) const
+    {
+        return C[0] * exp(-A[0] * x) + C[1] * exp(-A[1] * x) + C[2] * exp(-A[2] * x)
+                + C[3] * exp(-A[3] * x);
+    }
+};
 
 /**
- * @brief The xs_base class forms the basis of all cross-section classes
+ * @brief DE numerical integration from Press et al. Numerical Recipes 3rd ed.
+ */
+template <class T>
+class de_integrator
+{
+
+    double a, b, hmax, s;
+    T &func;
+    int n;
+
+    /*
+     * On the ﬁrst call to the function next (n=1), the routine returns
+     * the crudest estimate for the integral.
+     * Subsequent calls to next (n=2,3,...) will improve the accuracy by adding
+     * 2^(n-1) additional interior points.
+     */
+    double next()
+    {
+        double del, fact, q, qp1, sum, t, twoh;
+        int it, j;
+        n++;
+        if (n == 1) {
+            fact = 0.25;
+            return s = hmax * 2.0 * (b - a) * fact * func(0.5 * (b + a), 0.5 * (b - a));
+        } else {
+            for (it = 1, j = 1; j < n - 1; j++)
+                it <<= 1;
+            twoh = hmax / it;
+            // Twice the spacing of the points to be added.
+            t = 0.5 * twoh;
+            for (sum = 0.0, j = 0; j < it; j++) {
+                q = exp(-2.0 * sinh(t));
+                qp1 = 1.0 + q;
+                del = (b - a) * q / qp1;
+                fact = q / qp1 / qp1 * cosh(t);
+                sum += fact * (func(a + del, del) + func(b - del, del));
+                t += twoh;
+            }
+            return s = 0.5 * s + (b - a) * twoh * sum; // Replace s by its reﬁned value and return.
+        }
+    }
+
+public:
+    de_integrator(T &funcc, const double hmaxx = 3.7) : func(funcc), hmax(hmaxx) { }
+
+    double integrate(double aa, double bb, double eps = 1.e-10)
+    {
+        const int JMAX = 20;
+        double os = 0.0;
+        a = aa;
+        b = bb;
+        n = 0;
+        for (int j = 0; j < JMAX; j++) {
+            next();
+            if (j > 5) // Avoid spurious early convergence.
+                if (std::abs(s - os) < eps * std::abs(os) || (s == 0.0 && os == 0.0))
+                    return s;
+            os = s;
+        }
+        // too many iterations
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+};
+
+/**
+ * @brief The xs_cms class implements screened Coulomb scattering calculations
+ * in the center-of-mass system.
+ *
+ * The scattering integrals is evaluated by
+ * quadrature.
+ * Using the Gauss–Chebyshev scheme (https://dlmf.nist.gov/3.5#v) the scattering angle is evaluated
+ * as
+ *
+ * \f[
+ *   \theta = \pi - \frac{2\,s}{x_0} \frac{\pi}{N}
+ *   \sum_{j=0}^{N/2-1}{H\left[ \cos\left( \frac{\pi}{N}\,j + \frac{\pi}{2N} \right) \right]}
+ * \f]
+ * where
+ * \f[
+ * H(u) = \sqrt{\frac{1-u^2}{F(x_0/u)}}
+ * \f]
+ *
+ * For Screening::ZBL_MAGIC, \f$\theta\f$ is evaluated using the MAGIC approximation
+ * of Biersack & Haggmark (NIM1980).
+ *
+ * For the unscreened Coulomb potential (Screening::None),
+ * scattering is calculated by the exact analytical formulae.
  *
  * @tparam
- *   ScreeningType the type of screening function
+ *   ScreeningType specifies the type of screening function
  *
  * @ingroup XS
  */
 template <Screening ScreeningType>
-struct xs_base : public screening_function<ScreeningType>
+struct xs_cms : public screening_function<ScreeningType>
 {
     typedef screening_function<ScreeningType> Phi;
 
@@ -354,137 +462,6 @@ struct xs_base : public screening_function<ScreeningType>
         constexpr static const double sqrtpihalf = 1.25331413731550012081;
         return (x > 200) ? sqrtpihalf * exp(-x) / std::sqrt(x) : std::cyl_bessel_k(1, x);
     }
-};
-
-// Unscreened Coulomb minimal approach distance
-template <>
-inline double xs_base<Screening::None>::minApproach(double e, double s)
-{
-    double x0 = 1.0 / (2 * e);
-    return x0 + std::sqrt(x0 * x0 + s * s);
-}
-// ZBL potential impulse aprox
-template <>
-inline double xs_base<Screening::ZBL>::theta_impulse_approx(double e, double s)
-{
-    auto &C = Phi::C;
-    auto &A = Phi::A;
-    double th = C[0] * A[0] * bessel_k1(A[0] * s) + C[1] * A[1] * bessel_k1(A[1] * s)
-            + C[2] * A[2] * bessel_k1(A[2] * s) + C[3] * A[3] * bessel_k1(A[3] * s);
-    return th / e;
-}
-// KrC potential impulse aprox
-template <>
-inline double xs_base<Screening::KrC>::theta_impulse_approx(double e, double s)
-{
-    auto &C = Phi::C;
-    auto &A = Phi::A;
-    double th = C[0] * A[0] * bessel_k1(A[0] * s) + C[1] * A[1] * bessel_k1(A[1] * s)
-            + C[2] * A[2] * bessel_k1(A[2] * s);
-    return th / e;
-}
-// Moliere potential impulse aprox
-template <>
-inline double xs_base<Screening::Moliere>::theta_impulse_approx(double e, double s)
-{
-    auto &C = Phi::C;
-    auto &A = Phi::A;
-    double th = C[0] * A[0] * bessel_k1(A[0] * s) + C[1] * A[1] * bessel_k1(A[1] * s)
-            + C[2] * A[2] * bessel_k1(A[2] * s);
-    return th / e;
-}
-
-/**
- * @brief DE integration from Press et al. Numerical Recipes 3rd ed.
- */
-template <class T>
-class de_integrator
-{
-
-    double a, b, hmax, s;
-    T &func;
-    int n;
-
-    /*
-     * On the ﬁrst call to the function next (n=1), the routine returns
-     * the crudest estimate for the integral.
-     * Subsequent calls to next (n=2,3,...) will improve the accuracy by adding
-     * 2^(n-1) additional interior points.
-     */
-    double next()
-    {
-        double del, fact, q, qp1, sum, t, twoh;
-        int it, j;
-        n++;
-        if (n == 1) {
-            fact = 0.25;
-            return s = hmax * 2.0 * (b - a) * fact * func(0.5 * (b + a), 0.5 * (b - a));
-        } else {
-            for (it = 1, j = 1; j < n - 1; j++)
-                it <<= 1;
-            twoh = hmax / it;
-            // Twice the spacing of the points to be added.
-            t = 0.5 * twoh;
-            for (sum = 0.0, j = 0; j < it; j++) {
-                q = exp(-2.0 * sinh(t));
-                qp1 = 1.0 + q;
-                del = (b - a) * q / qp1;
-                fact = q / qp1 / qp1 * cosh(t);
-                sum += fact * (func(a + del, del) + func(b - del, del));
-                t += twoh;
-            }
-            return s = 0.5 * s + (b - a) * twoh * sum; // Replace s by its reﬁned value and return.
-        }
-    }
-
-public:
-    de_integrator(T &funcc, const double hmaxx = 3.7) : func(funcc), hmax(hmaxx) { }
-
-    double integrate(double aa, double bb, double eps = 1.e-10)
-    {
-        const int JMAX = 20;
-        double os = 0.0;
-        a = aa;
-        b = bb;
-        n = 0;
-        for (int j = 0; j < JMAX; j++) {
-            next();
-            if (j > 5) // Avoid spurious early convergence.
-                if (std::abs(s - os) < eps * std::abs(os) || (s == 0.0 && os == 0.0))
-                    return s;
-            os = s;
-        }
-        // too many iterations
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-};
-
-/**
- * @brief The xs_quad class implements screened potential scattering integral evaluation by
- * quadrature
- *
- * Using Gauss–Chebyshev quadrature (https://dlmf.nist.gov/3.5#v) the integral is evaluated as
- *
- * \f[
- *   \theta = \pi - \frac{2\,s}{x_0} \frac{\pi}{N}
- *   \sum_{j=0}^{N/2-1}{H\left[ \cos\left( \frac{\pi}{N}\,j + \frac{\pi}{2N} \right) \right]}
- * \f]
- * where
- * \f[
- * H(u) = \sqrt{\frac{1-u^2}{F(x_0/u)}}
- * \f]
- *
- * @tparam
- *   ScreeningType specifies the type of screening function
- *
- * @ingroup XS
- */
-template <Screening ScreeningType = Screening::ZBL>
-struct xs_quad : public xs_base<ScreeningType>
-{
-    using xs_base<ScreeningType>::F;
-    using xs_base<ScreeningType>::minApproach;
-    using xs_base<ScreeningType>::theta_impulse_approx;
 
     /**
      * @brief Return \f$ \sin^2(\theta/2) \f$
@@ -492,7 +469,7 @@ struct xs_quad : public xs_base<ScreeningType>
      * @param s the reduced impact parameter
      * @return the value of \f$ \sin^2(\theta/2) \f$
      */
-    static double sin2Thetaby2(const double &e, const double &s)
+    static double sin2Thetaby2(double e, double s)
     {
         double v = std::sin(0.5 * theta(e, s));
         return v * v;
@@ -726,6 +703,76 @@ public:
     }
 };
 
+// Unscreened Coulomb specializations
+template <>
+inline double xs_cms<Screening::None>::minApproach(double e, double s)
+{
+    double x = 1.0 / (2 * e);
+    return x + std::sqrt(x * x + s * s);
+}
+template <>
+inline double xs_cms<Screening::None>::sin2Thetaby2(double e, double s)
+{
+    double x = 2 * e * s;
+    return 1. / (1. + x * x);
+}
+template <>
+inline double xs_cms<Screening::None>::theta(double e, double s, int)
+{
+    return 2 * std::asin(std::sqrt(sin2Thetaby2(e, s)));
+}
+template <>
+inline double xs_cms<Screening::None>::findS(double e, double thetaCM, double)
+{
+    double x = std::sin(thetaCM / 2);
+    return 0.5 / e * std::sqrt(1. / (x * x) - 1.);
+}
+template <>
+inline double xs_cms<Screening::None>::crossSection(double e, double thetaCM, double)
+{
+    double x = std::sin(thetaCM / 2);
+    x *= x;
+    x *= 4 * e;
+    x *= x;
+    return 1. / x;
+}
+template <>
+inline double xs_cms<Screening::None>::stoppingPower(double, double, double)
+{
+    return std::numeric_limits<double>::infinity();
+}
+
+// impulse aprox specialization
+template <>
+inline double xs_cms<Screening::ZBL>::theta_impulse_approx(double e, double s)
+{
+    auto &C = Phi::C;
+    auto &A = Phi::A;
+    double th = C[0] * A[0] * bessel_k1(A[0] * s) + C[1] * A[1] * bessel_k1(A[1] * s)
+            + C[2] * A[2] * bessel_k1(A[2] * s) + C[3] * A[3] * bessel_k1(A[3] * s);
+    return th / e;
+}
+// KrC potential impulse aprox
+template <>
+inline double xs_cms<Screening::KrC>::theta_impulse_approx(double e, double s)
+{
+    auto &C = Phi::C;
+    auto &A = Phi::A;
+    double th = C[0] * A[0] * bessel_k1(A[0] * s) + C[1] * A[1] * bessel_k1(A[1] * s)
+            + C[2] * A[2] * bessel_k1(A[2] * s);
+    return th / e;
+}
+// Moliere potential impulse aprox
+template <>
+inline double xs_cms<Screening::Moliere>::theta_impulse_approx(double e, double s)
+{
+    auto &C = Phi::C;
+    auto &A = Phi::A;
+    double th = C[0] * A[0] * bessel_k1(A[0] * s) + C[1] * A[1] * bessel_k1(A[1] * s)
+            + C[2] * A[2] * bessel_k1(A[2] * s);
+    return th / e;
+}
+
 /**
  * @brief Screened potential cross-section by the MAGIC formula
  *
@@ -738,29 +785,9 @@ public:
  *
  * @ingroup XS
  */
-struct xs_zbl_magic : public xs_base<Screening::ZBL>
-{
-    using xs_base<Screening::ZBL>::minApproach;
-    /**
-     * @brief Scattering angle in center-of-mass (CM) system
-     *
-     * @param e reduced energy of the scattered particle in CM system
-     * @param s reduced impact parameter
-     * @return the scattering angle in rad
-     */
-    static double theta(double e, double s) { return 2 * std::acos(MAGIC(e, s)); }
 
-    /**
-     * @brief Return \f$ \sin^2(\theta/2) \f$
-     * @param e the reduced energy
-     * @param s the reduced impact parameter
-     * @return the value of \f$ \sin^2(\theta/2) \f$
-     */
-    static double sin2Thetaby2(const double &e, const double &s)
-    {
-        double m = MAGIC(e, s);
-        return 1. - m * m;
-    }
+struct ZBL_MAGIC_INTERP
+{
 
     /**
      * @brief Implementation of MAGIC formula
@@ -772,7 +799,7 @@ struct xs_zbl_magic : public xs_base<Screening::ZBL>
      * @param s is the reduced impact parameter
      * @return \f$ \cos(\theta/2) \f$
      */
-    static double MAGIC(const double &e, const double &s)
+    static double cosThetaBy2(double e, double s)
     {
         double cost2; /* cos(theta/2)*/
         double RoC, Delta, R, RR, A, G, alpha, beta, gamma, V, V1, FR, FR1, Q;
@@ -842,76 +869,27 @@ struct xs_zbl_magic : public xs_base<Screening::ZBL>
 
         return V;
     }
-
-    /**
-     * @brief Return the reduced impact parameter
-     *
-     * Use bisection to find the reduced impact parameter s
-     * given energy and scattering angle
-     *
-     * @param e reduced energy
-     * @param thetaCM scattering angle (rad) in center-of-mass system
-     * @return the reduced impact parameter
-     */
-    static double findS(double e, double thetaCM)
-    {
-
-        // inital guesses: Mendenhall & Weller NIMB 58 (1991) 11, eqs. 23-25
-        double gamma = (M_PI - thetaCM) / M_PI;
-        double x0 = minApproach((1.0 - gamma * gamma) * e, 1.e-8);
-        double x1 = 0.7 * gamma * x0;
-        double x2 = 1.0 / (2.0 * e * tan(thetaCM / 2.0));
-
-        // values for x1, x2 should be on either side of 0
-        assert(thetaCM - theta(e, x1) < 0.0 && thetaCM - theta(e, x2) > 0.0);
-
-        double xm = 0.5 * (x1 + x2);
-        double fm = thetaCM - theta(e, xm);
-        do {
-            if (fm < 0.)
-                x1 = xm;
-            else
-                x2 = xm;
-            xm = 0.5 * (x1 + x2);
-            fm = thetaCM - theta(e, xm);
-        } while (fabs(fm) > 1e-6);
-
-        return xm;
-    }
-
-    /**
-     * @brief Differential cross-section in center-of-mass system
-     *
-     * \f[
-     *   \frac{d\sigma}{d\Omega} = \frac{s}{\sin(\theta)}\left| \frac{ds}{d\theta}\right|
-     * \f]
-     *
-     * In units of \f$ a^2 \f$
-     *
-     * @param e is the reduced energy
-     * @param thetaCM is the center-of-mass scattering angle (rad)
-     * @return the reduced cross-section
-     */
-    static double crossSection(double e, double thetaCM)
-    {
-        // find corresponfding reduced impact parameter
-        double s = findS(e, thetaCM);
-
-        // ds/dTheta using five-point stencil
-        double ds = s * 0.001;
-        double dsdTheta = (12.0 * ds)
-                / (-theta(e, s + 2.0 * ds) + 8.0 * theta(e, s + ds) - 8.0 * theta(e, s - ds)
-                   + theta(e, s - 2.0 * ds));
-
-        return s / sin(thetaCM) * fabs(dsdTheta);
-    }
-
-    static double stoppingPower(double e, double theta_max = M_PI)
-    {
-        return 0.5 * std::log(1 + 1.1383 * e)
-                / (e + 0.01321 * std::pow(e, 0.21226) + 0.19593 * std::sqrt(e));
-    }
 };
+
+template <>
+inline double xs_cms<Screening::ZBL_MAGIC>::theta(double e, double s, int nsum)
+{
+    return 2 * std::acos(ZBL_MAGIC_INTERP::cosThetaBy2(e, s));
+}
+
+template <>
+inline double xs_cms<Screening::ZBL_MAGIC>::sin2Thetaby2(double e, double s)
+{
+    double m = ZBL_MAGIC_INTERP::cosThetaBy2(e, s);
+    return 1. - m * m;
+}
+
+template <>
+inline double xs_cms<Screening::ZBL_MAGIC>::stoppingPower(double e, double theta_max, double tol)
+{
+    return 0.5 * std::log(1 + 1.1383 * e)
+            / (e + 0.01321 * std::pow(e, 0.21226) + 0.19593 * std::sqrt(e));
+}
 
 /**
  * @brief The abstract_xs_lab class defines the interface for lab system cross-section objects
@@ -951,8 +929,9 @@ public:
     float sqrt_mass_ratio() const { return sqrt_mass_ratio_; }
     /// Returns \f$ \gamma = 4 A / (1 + A)^2 \f$
     float gamma() const { return gamma_; }
-    /// Return the reduced energy conversion factor \f$ f = a / (1+A)Z_1Z_2e^2  \f$ such that \f$
-    /// \epsilon = f\times E  \f$
+    /// Return the reduced energy conversion factor
+    /// \f[ f = \frac{a} {(1+A)Z_1Z_2e^2}  \f]
+    /// such that \f$ \epsilon = f\times E  \f$
     float red_E_conv() const { return red_E_conv_; }
 
     /**
@@ -983,7 +962,7 @@ public:
                          float &costheta) const = 0;
 
     /**
-     * @brief Retuerns the impact parameter for given initial projectile energy and target recoil
+     * @brief Returns the impact parameter for given initial projectile energy and target recoil
      * energy
      * @param E the projectile initial energy [eV]
      * @param T the target recoil energy [eV]
@@ -1050,11 +1029,17 @@ public:
         float sin2thetaby2 = xs_cm::sin2Thetaby2(e, S / screening_length_);
         recoil_erg = E * gamma_ * sin2thetaby2;
         /* convert scattering angle to lab frame of reference: */
-        costheta = 1.f - 2 * sin2thetaby2;
-        sintheta = std::sqrt(1.f - costheta * costheta);
-        float theta = atan(sintheta / (costheta + mass_ratio_));
-        sintheta = sin(theta);
-        costheta = cos(theta);
+        if (sin2thetaby2 < 1.f) {
+            costheta = 1.f - 2 * sin2thetaby2;
+            sintheta = std::sqrt(1.f - costheta * costheta);
+            float theta = atan(sintheta / (costheta + mass_ratio_));
+            sintheta = sin(theta);
+            costheta = cos(theta);
+        } else {
+            sintheta = 0.f;
+            costheta = 1.f;
+        }
+        assert(std::isfinite(sintheta) && std::isfinite(costheta));
     }
 
     virtual float impactPar(float E, float T) const override
@@ -1098,6 +1083,6 @@ public:
  *
  * @ingroup XS
  */
-typedef xs_lab<xs_zbl_magic> xs_lab_zbl_magic;
+typedef xs_lab<xs_cms<Screening::ZBL_MAGIC>> xs_lab_zbl_magic;
 
 #endif

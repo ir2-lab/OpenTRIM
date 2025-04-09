@@ -5,9 +5,6 @@
 #include "corteo_xs.h"
 #include "cascade_queue.h"
 
-#include <iostream>
-#include <type_traits>
-
 mccore::mccore()
     : source_(new ion_beam),
       target_(new target),
@@ -92,27 +89,21 @@ int mccore::init()
     scattering_matrix_ = ArrayND<abstract_xs_lab *>(natoms, natoms);
     for (int z1 = 0; z1 < natoms; z1++) {
         for (int z2 = 1; z2 < natoms; z2++) {
-            switch (par_.scattering_calculation) {
-            case Corteo4bitTable:
-                switch (par_.screening_type) {
-                case Screening::ZBL:
-                    scattering_matrix_(z1, z2) = new xs_lab_zbl;
-                    break;
-                case Screening::LenzJensen:
-                    scattering_matrix_(z1, z2) = new xs_lab_lj;
-                    break;
-                case Screening::KrC:
-                    scattering_matrix_(z1, z2) = new xs_lab_krc;
-                    break;
-                case Screening::Moliere:
-                    scattering_matrix_(z1, z2) = new xs_lab_moliere;
-                    break;
-                default:
-                    scattering_matrix_(z1, z2) = new xs_lab_zbl;
-                    break;
-                }
+
+            switch (par_.screening_type) {
+            case Screening::ZBL:
+                scattering_matrix_(z1, z2) = new xs_lab_zbl;
                 break;
-            case ZBL_MAGICK:
+            case Screening::LenzJensen:
+                scattering_matrix_(z1, z2) = new xs_lab_lj;
+                break;
+            case Screening::KrC:
+                scattering_matrix_(z1, z2) = new xs_lab_krc;
+                break;
+            case Screening::Moliere:
+                scattering_matrix_(z1, z2) = new xs_lab_moliere;
+                break;
+            case Screening::ZBL_MAGIC:
                 scattering_matrix_(z1, z2) = new xs_lab_zbl_magic;
                 break;
             default:

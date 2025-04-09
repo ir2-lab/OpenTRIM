@@ -101,7 +101,7 @@ int gencorteo4bit(const std::string &short_screening_name)
 {
     typedef xs_corteo_index corteo4bit; // 4bit corteo indexing
 
-    xs_quad<ScreeningType> xs;
+    xs_cms<ScreeningType> xs;
 
     cout << "Computing " << xs.screeningName() << " scattering table";
 

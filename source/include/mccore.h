@@ -68,15 +68,6 @@ public:
     };
 
     /**
-     * @brief Determines how ion scattering is simulated
-     */
-    enum scattering_calculation_t {
-        Corteo4bitTable = 0, /**< Using 4bit corteo-tabulated scattering integrals */
-        ZBL_MAGICK = 1, /**< Using the MAGIC formula for the scattering integrals (as in SRIM) */
-        InvalidScatteringOption = -1
-    };
-
-    /**
      * @brief Detail of NRT implementation in multielement materials
      */
     enum nrt_calculation_t {
@@ -94,8 +85,6 @@ public:
         simulation_type_t simulation_type{ FullCascade };
         /// screeninig
         Screening screening_type{ Screening::ZBL };
-        /// Way to calculate nuclear scattering
-        scattering_calculation_t scattering_calculation{ Corteo4bitTable };
         /// Electronic energy loss calculation option
         dedx_calc::eloss_calculation_t eloss_calculation{ dedx_calc::EnergyLoss };
         /// Model to use for calculating electronic straggling (if calculated)

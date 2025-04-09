@@ -38,14 +38,16 @@
                         "LenzJensen",
                         "KrC",
                         "Moliere",
-                        "ZBL"
+                        "ZBL",
+                        "ZBL_MAGIC"
                     ],
                     "valueLabels": [
                         "None (Unscreened)",
                         "LenzJensen",
                         "KrC",
                         "Moliere",
-                        "ZBL"
+                        "ZBL",
+                        "ZBL_MAGIC"
                     ],
                     "toolTip": "Define the type of screening potential.",
                     "whatsThis": [
@@ -53,25 +55,11 @@
                         "- LenzJensen: Lenz-Jensen screening",
                         "- KrC: Kr-C screening",
                         "- Moliere - Moliere screening",
-                        "- ZBL - Ziegler-Biersack-Littmark universal screening"
-                    ]
-                },
-                {
-                    "name": "scattering_calculation",
-                    "label": "Scattering Calculation",
-                    "type": "enum",
-                    "values": [
-                        "Corteo4bitTable",
-                        "ZBL_MAGICK"
-                    ],
-                    "valueLabels": [
-                        "Corteo4bitTable",
-                        "ZBL_MAGICK formula"
-                    ],
-                    "toolTip": "Define how ion scattering is calculated.",
-                    "whatsThis": [
-                        "- Corteo4bitTable: Using 4-bit Corteo interpolation tables",
-                        "- ZBL_MAGICK: Analytical calculation using ZBL's MAGICK formula"
+                        "- ZBL - Ziegler-Biersack-Littmark universal screening",
+                        "- ZBL_MAGIC - ZBL computed with MAGIC formula",
+                        "  ",
+                        "For Unscreened Coulomb and ZBL_MAGIC the scattering is calculated analytically.",
+                        "In all other cases interpolation tables are used."
                     ]
                 },
                 {

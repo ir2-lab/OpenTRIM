@@ -574,6 +574,9 @@ public:
  */
 inline void deflect_vector(vector3 &m, const vector3 &n)
 {
+    assert(m.allFinite());
+    assert(n.allFinite());
+
     // if the ion moves parallel to the z-axis
     // then the new direction is n
     float smz = 1 - m.z() * m.z();
@@ -587,6 +590,8 @@ inline void deflect_vector(vector3 &m, const vector3 &n)
     m.x() = m1.x() * n.z() + (m1.x() * m1.z() * n.x() - m1.y() * n.y()) / smz;
     m.y() = m1.y() * n.z() + (m1.y() * m1.z() * n.x() + m1.x() * n.y()) / smz;
     m.z() = m1.z() * n.z() - n.x() * smz;
+
+    assert(m.allFinite());
 
     // normalize
     m.normalize();

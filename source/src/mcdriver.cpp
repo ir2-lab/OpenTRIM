@@ -268,7 +268,6 @@ int mcdriver::options::validate(bool AcceptIncomplete)
     // Simulation & Transport
     CHECK_INVALID_ENUM(Simulation, simulation_type)
     CHECK_INVALID_ENUM(Simulation, screening_type)
-    CHECK_INVALID_ENUM(Simulation, scattering_calculation)
     CHECK_INVALID_ENUM(Simulation, eloss_calculation)
     CHECK_INVALID_ENUM(Simulation, straggling_model)
     CHECK_INVALID_ENUM(Simulation, nrt_calculation)
