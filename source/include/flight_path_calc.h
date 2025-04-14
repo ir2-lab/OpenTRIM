@@ -43,10 +43,18 @@ class mccore;
  * \ell = R_{at} \quad \mbox{and} \quad p = (\pi \ell N)^{-1/2}\sqrt{u}.
  * $$
  *
- * Finally, the \ref IPP algorithm does the following:
+ * Finally, the \ref FullMC algorithm does the following:
  * - \f$\ell = -\ell_0(E) \log{u_1}\f$
  * - \f$p = p_{max}(E)\sqrt{u_2}\f$
  * - Reject collision if \f$\ell > \ell_{max}(E)\f$
+ *
+ * The flight_path_calc class is first initialized for a given simulation by a calling
+ * flight_path_calc::init(). This pre-computes a number of data tables that will be used
+ * during the Monte-Carlo simulation.
+ *
+ * During the simulation, preload() is called to select pre-computed tables for a specific
+ * ion/material combination. Then, multiple calls to operator() can be made to sample the ion's
+ * flight path.
  *
  * \ingroup Core
  * \sa \ref flightpath
@@ -80,72 +88,64 @@ public:
     ArrayNDf fpmax() const { return fp_max_; }
     ArrayNDf Tcutoff() const { return Tcutoff_; }
 
-    /// Initialize object
+    /**
+     * @brief Initialize the object for a given simulation
+     *
+     * This function pre-computes all the data required for flight-path
+     * selection during a simulation.
+     *
+     * This includes
+     *   - the ion mean free path
+     *   - the max impact parameter
+     *   - the max flight path, set by the limit of rel. electronic energy loss
+     *
+     * The above quantities are calculated for all ion/material combinations
+     * in the given simulation and as a function of ion energy on an energy grid defined by @ref
+     * dedx_index.
+     *
+     * @param s The parent simulation object
+     * @return
+     */
     int init(const mccore &s);
 
-    /// Init object for a specific ion/material combination
-    int init(const ion *i, const material *m);
+    /// Preload internal data tables for the given ion/material combination
+    int preload(const ion *i, const material *m);
 
     /**
-     * @brief Select the ion's flight path and impact parameter
+     * @brief Generate samples for the ion's flight path and impact parameter
      *
-     * The selection is performed according to the algorithm specified by
-     * transport_options::flight_path_type, which can be any of the types defined by
-     * the mccore::flight_path_type_t enum.
+     * The selection is performed for the ion/material combination that has
+     * been set by the last call to preload() and according to the algorithm specified by
+     * transport_options::flight_path_type.
      *
-     * If transport_options::flight_path_type is equal to \ref AtomicSpacing or \ref Constant
-     * then the flight path \f$\ell\f$ is precalculated and equal to either the material's atomic
-     * radius \f$ R_{at} = \left(\frac{3}{4\pi}N\right)^{1/3} \f$ or to \ref
-     * parameters::flight_path_const, respectively.
-     *
-     * In both of these cases the impact parameter \f$p\f$ is calculated as
-     * $$
-     * p = (\pi \ell N)^{-1/2}\sqrt{u},
-     * $$
-     * where \f$u \in (0,1)\f$ is a random number.
-     *
-     * For the other algorithms there are precomputed tables as a function of energy
-     * of mean free path \$\ell_0\f$, max. impact parameter \f$p_{max}\f$ and
-     * maximum fligth path \$\ell_{max}\f$. For more information see \ref flightpath.
-     *
-     * The \ref MendenhallWeller algorithm is as follows:
-     * - If \f$p_{max}(E)<(\pi R_{at} N)^{-1/2}\f$ set
-     * $$
-     * p = p_{max}\sqrt{-\log{u}} \quad \mbox{and} \quad \ell=\ell_0(E).
-     * $$
-     * Reject collision if \f$p>p_{max}\f$.
-     * - otherwise:
-     * $$
-     * \ell = R_{at} \quad \mbox{and} \quad p = (\pi \ell N)^{-1/2}\sqrt{u}.
-     * $$
-     *
-     * Finally, the \ref IPP algorithm does the following:
-     * - \f$\ell = -\ell_0(E) \log{u_1}\f$
-     * - \f$p = p_{max}(E)\sqrt{u_2}\f$
-     * - Reject collision if \f$\ell > \ell_{max}(E)\f$
-     *
-     * @param[in] i pointer to the moving ion object
-     * @param[in] m pointer to the material the ion is in
-     * @param[inout] d struct to store the selected flight path and impact parameter
+     * @param[in] rng a random number generator object
+     * @param[in] E the ion's energy [eV]
+     * @param[out] fp the ion flight path [nm]
+     * @param[out] sqrtfp square root of ratio (flight path)/(atomic radius)
+     * @param[out] ip impact parameter [nm]
+
      * @return true if the ion should collide at the end of its flight path
      *
      * @sa \ref flightpath
      */
     bool operator()(random_vars &rng, float E, float &fp, float &sqrtfp, float &ip) const
     {
+        constexpr const float mhw_umin = 1. / M_E;
+
         bool doCollision = true;
         int ie;
+        float u = rng.u01s_open();
 
         switch (type_) {
         case AtomicSpacing:
             fp = fp_;
             sqrtfp = 1;
-            ip = ip_ * std::sqrt(rng.u01d_lopen());
+            ip = ip_ * std::sqrt(u);
             break;
         case Constant:
             fp = fp_;
             sqrtfp = sqrtfp_;
-            ip = ip_ * std::sqrt(rng.u01d_lopen());
+            ip = ip_ * std::sqrt(u);
             break;
         case MendenhallWeller:
             ie = dedx_index(E);
@@ -153,22 +153,24 @@ public:
             fp = mfp_tbl[ie];
             if (ip < ip_) {
                 sqrtfp = std::sqrt(fp / fp_);
-                ip *= std::sqrt(-std::log(rng.u01s_open()));
-                doCollision = (ip <= ipmax_tbl[ie]);
+                doCollision = u >= mhw_umin;
+                if (doCollision)
+                    ip *= std::sqrt(-std::log(u));
             } else { // atomic spacing
                 fp = fp_;
                 sqrtfp = 1;
-                ip = ip_ * std::sqrt(rng.u01d_lopen());
+                ip = ip_ * std::sqrt(u);
             }
             break;
         case FullMC:
             ie = dedx_index(E);
-            fp = mfp_tbl[ie] * (-std::log(rng.u01s_open()));
-            doCollision = fp <= fpmax_tbl[ie];
-            if (doCollision)
-                ip = ipmax_tbl[ie] * std::sqrt(rng.u01d_lopen());
-            else
+            doCollision = u >= umin_tbl[ie];
+            if (doCollision) {
+                fp = mfp_tbl[ie] * (-std::log(u));
+                ip = ipmax_tbl[ie] * std::sqrt(rng.u01s_lopen());
+            } else {
                 fp = fpmax_tbl[ie];
+            }
             sqrtfp = std::sqrt(fp / fp_);
             break;
         default:
@@ -188,7 +190,7 @@ protected:
     std::vector<float> ip0;
 
     // flight path selection par
-    ArrayNDf mfp_, ipmax_, fp_max_, Tcutoff_;
+    ArrayNDf mfp_, ipmax_, fp_max_, Tcutoff_, umin_;
 
     // Flight path [nm]
     float fp_;
@@ -202,6 +204,8 @@ protected:
     const float *mfp_tbl;
     // Tabulated max flight path as a function of ion energy
     const float *fpmax_tbl;
+    // Tabulated min random var to reject collisions
+    const float *umin_tbl;
 };
 
 #endif // FLIGHT_PATH_CALC_H

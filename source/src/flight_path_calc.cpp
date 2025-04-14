@@ -12,7 +12,8 @@ flight_path_calc::flight_path_calc(const flight_path_calc &o)
       mfp_(o.mfp_),
       ipmax_(o.ipmax_),
       fp_max_(o.fp_max_),
-      Tcutoff_(o.Tcutoff_)
+      Tcutoff_(o.Tcutoff_),
+      umin_(o.umin_)
 {
 }
 
@@ -75,6 +76,7 @@ int flight_path_calc::init(const mccore &s)
     ipmax_ = ArrayNDf(natoms, nmat, nerg);
     fp_max_ = ArrayNDf(natoms, nmat, nerg);
     Tcutoff_ = ArrayNDf(natoms, nmat, nerg);
+    umin_ = ArrayNDf(natoms, nmat, nerg);
     float delta_dedx = tr_opt_.max_rel_eloss;
     float Tmin = tr_opt_.min_recoil_energy;
     float mfp_ub = tr_opt_.max_mfp;
@@ -90,6 +92,7 @@ int flight_path_calc::init(const mccore &s)
                 float &ipmax = ipmax_(z1, im, ie);
                 float &fpmax = fp_max_(z1, im, ie);
                 float &T0 = Tcutoff_(z1, im, ie);
+                float &umin = umin_(z1, im, ie);
                 // float & dedxn = dedxn_(z1,im,ie);
                 float E = *ie;
                 T0 = Tmin;
@@ -125,6 +128,9 @@ int flight_path_calc::init(const mccore &s)
                 // Find the max impact parameter ipmax = (N*pi*mfp)^(-1/2)
                 ipmax = std::sqrt(1.f / M_PI / mfp / N);
 
+                // FullMC: u<umin reject collision
+                umin = std::exp(-fpmax / mfp);
+
                 // Calc dedxn for  T<T0 = N*sum_i { X_i * Sn(E,T0) }
                 // Add this to dedx
                 /// @TODO: this is very slow. dedxn is very small, can be ignored
@@ -149,7 +155,7 @@ int flight_path_calc::init(const mccore &s)
     return 0;
 }
 
-int flight_path_calc::init(const ion *i, const material *m)
+int flight_path_calc::preload(const ion *i, const material *m)
 {
     assert(i);
     assert(m);
@@ -173,6 +179,7 @@ int flight_path_calc::init(const ion *i, const material *m)
         ipmax_tbl = &(ipmax_(iid, mid, 0));
         mfp_tbl = &(mfp_(iid, mid, 0));
         fpmax_tbl = &(fp_max_(iid, mid, 0));
+        umin_tbl = &(umin_(iid, mid, 0));
         fp_ = m->atomicRadius();
         sqrtfp_ = 1.f;
         ip_ = ip0[mid];
