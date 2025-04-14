@@ -349,11 +349,11 @@ public:
      *
      * y is copied to an internal buffer.
      *
-     * @tparam Cont a container type
+     * @tparam sequence_t a container type with C-style indexing
      * @param y the data to interpolate
      */
-    template <class Cont>
-    explicit lin_interp(const Cont &y)
+    template <class sequence_t>
+    explicit lin_interp(const sequence_t &y)
     {
         set(y);
     }
@@ -368,11 +368,11 @@ public:
      *
      * y is copied to an internal buffer.
      *
-     * @tparam Cont a container type
+     * @tparam sequence_t a container type with C-style indexing
      * @param y the data to interpolate
      */
-    template <class Cont>
-    void set(const Cont &y)
+    template <class sequence_t>
+    void set(const sequence_t &y)
     {
         for (idx_t i, j(1); i < i.end() - 1; i++, j++) {
             y_[i] = y[i];
@@ -381,7 +381,7 @@ public:
         y_[idx_t::size - 1] = y[idx_t::size - 1];
     }
 
-    /// @brief Returns the linearly interpolated value y(x)
+    /// @brief Returns the linearly interpolated value \f$ y = y(x) \f$
     RealType operator()(const RealType &x) const
     {
         if (x <= idx_t::minVal)
@@ -425,14 +425,15 @@ public:
      * range of \ref idx_t.
      *
      * The size of y must be equal or larger than that of the corteo index \ref idx_t.
+     * The fisrt corteo_index::size elements of y will be used.
      *
      * y is copied to an internal buffer.
      *
-     * @tparam Cont a container type
+     * @tparam sequence_t a container type with C-style indexing
      * @param y the data to interpolate
      */
-    template <class Cont>
-    explicit log_interp(const Cont &y)
+    template <class sequence_t>
+    explicit log_interp(const sequence_t &y)
     {
         set(y);
     }
@@ -446,14 +447,15 @@ public:
      * log(y[i]) must be finite for all i in the range
      *
      * The size of y must be equal or larger than that of the corteo index \ref idx_t.
+     * The fisrt corteo_index::size elements of y will be used.
      *
      * y is copied to an internal buffer.
      *
-     * @tparam Cont a container type
+     * @tparam sequence_t a container type with C-style indexing
      * @param y the data to interpolate
      */
-    template <class Cont>
-    void set(const Cont &y)
+    template <class sequence_t>
+    void set(const sequence_t &y)
     {
         for (idx_t i, j(1); i < i.end() - 1; i++, j++) {
             d_[i] = (std::log2(y[j]) - std::log2(y[i])) / (std::log2(*j) - std::log2(*i));

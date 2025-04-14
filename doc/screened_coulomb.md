@@ -2,7 +2,7 @@
 
 ### Screened Coulomb potential definition
 
-The interaction of projectile ions \f$(Z_1,m_1)\f$ with target atoms \f$(Z_2,m_2)\f$ is described by the screened Coulomb potential 
+The interaction of projectile ions (atomic number \f$Z_1\f$, mass \f$m_1\f$) with target atoms \f$(Z_2,m_2)\f$ is described by the screened Coulomb potential 
 $$
 V(r) = \frac{Z_1 Z_2 e^2}{r} \Phi(r/a)
 $$

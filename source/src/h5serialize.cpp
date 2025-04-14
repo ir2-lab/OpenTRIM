@@ -2,7 +2,6 @@
 #include "dedx.h"
 #include "mcdriver.h"
 
-#include <iomanip>
 #include <iostream>
 #include <highfive/H5Easy.hpp>
 #include <highfive/highfive.hpp>
@@ -537,8 +536,8 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
                 k++;
             }
 
-            dump_array(h5f, "/tally/totals/data", t.at(0), dt.at(0), var_list, "tally totals",
-                       getSim()->ion_count());
+            dump_array(h5f, "/tally/totals/data", t.at(0), dt.at(0), var_list,
+                       "tally totals per atom", getSim()->ion_count());
             dump(h5f, "/tally/totals/column_names", t.arrayNames(), var_list, "names of totals");
 
             if (!ret)

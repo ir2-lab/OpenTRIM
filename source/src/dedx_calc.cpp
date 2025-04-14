@@ -54,7 +54,7 @@ int dedx_calc::init(const mccore &s)
     return 0;
 }
 
-int dedx_calc::init(const ion *i, const material *m)
+int dedx_calc::preload(const ion *i, const material *m)
 {
     assert(i);
     assert(m);

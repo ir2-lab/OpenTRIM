@@ -85,8 +85,8 @@ constexpr int dedx_max_Z{ 92 };
  * the two different constructors. In polyatomic materials the Bragg
  * mixing rule is applied.
  *
- * Call dedx_interp() to obtain the stopping power in eV/nm at a given
- * projectile energy in eV. The value is obtained by log-log interpolation
+ * Call the base class log_interp::operator() to obtain the stopping
+ * power in eV/nm at a given projectile energy in eV. The value is obtained by log-log interpolation
  * on the tabulated data stored internally.
  *
  * data() returns a pointer to the first element in the internal
@@ -153,8 +153,9 @@ enum class StragglingModel {
  * the two different constructors. In polyatomic materials the Bragg
  * mixing rule is applied.
  *
- * Call straggling_interp() to obtain the straggling in eV/nm^(1/2) at a given
- * projectile energy in eV. The value is obtained by log-log interpolation
+ * Call the base class log_interp::operator() to obtain the straggling coefficient
+ * \f$\Omega(E)\f$ in eV/nm^(1/2) at a given
+ * projectile energy \f$E\f$ in eV. The value is obtained by log-log interpolation
  * on the tabulated data stored internally.
  *
  * data() returns a pointer to the first element in the internal

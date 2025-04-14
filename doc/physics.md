@@ -59,7 +59,7 @@ The above is implemented in the function mccore::run().
 
 \page flightpath Flight Path Selection
 
-In MC particle transport simulations, the distance to the next collision is typically sampled from the Poisson distribution, \f$p(x) = e^{-N\sigma_0 x}=e^{-x/\ell}\f$, where \f$N\f$ is the atomic density of scattering centers, \f$\sigma_0\f$ the total cross-section and \f$\ell = (N\sigma_0)^{-1}\f$ denotes the mean free path (mfp).
+In MC particle transport simulations, the distance to the next collision is typically sampled from the exponential distribution, \f$p(x) = N\sigma_0 e^{-N\sigma_0 x}=\ell^{-1}e^{-x/\ell}\f$, where \f$N\f$ is the atomic density of scattering centers, \f$\sigma_0\f$ the total cross-section and \f$\ell = (N\sigma_0)^{-1}\f$ denotes the mean free path (mfp).
 
 There is a difficulty in employing this type of flight path selection for the Coulomb and screened Coulomb interactions because the total cross-section diverges. This can be circumvented by setting a lower cutoff, either w.r.t. the scattering angle or the recoil energy or some other scattering parameter. Scattering events below the cutoff are ignored. The cutoff value is selected so that the result of the calculation is not affected significantly.
 

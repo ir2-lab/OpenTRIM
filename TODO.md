@@ -1,4 +1,4 @@
-## Issues
+# TODO
 
 ## Bugs
 
@@ -6,11 +6,11 @@
 
 ## Functionality that needs to be completed
 
-GUI:
+### GUI:
 - [ ] Getting Started
 - [ ] About
 
-Dist:
+### Dist:
 - [ ] Program icon/logo
 - [ ] Desktop integration
 
@@ -27,26 +27,12 @@ Tally:
 
 ## Enhancements
 
-- cli:
-  - [ ] Block Ctrl-C signal so that data is saved before the program is aborted 
+### Core lib
 
-- Tally data:
-  - [ ] Instead of keeping the total sum for a tally bin, better keep the mean value and refine it every update interval.
-    Example: 
-      A bin has mean value b(N)=Σx_i/N after N histories. This is stored in the 'main' tally.
-      The execution thread(s) run additional ΔN histories which have mean value δb.
-      The new value of b, b'=b(N+ΔN), is obtained using the following formula
-        b' = b + (δb-b)*ΔN/(N+ΔN)
-      The same can be done for the square
+- [ ] Improve the FullMC flight path algorithm
+ - Implement the steps described in the docs, i.e., pre-compute the probability that a collision is rejected
 
-- [ ] Database of known atomic data (displacement energy, FP energy, density of elements)
-
-- GUI: 
-  - [ ] In material def form, add a button to calc density based on composition (by simple mixing)
-
-- [ ] Provide progress info for HDF5 i/o operations
-
-- [ ] Make user-defined tallies for various events. E.g.
+ - [ ] Make user-defined tallies for various events. E.g.
   - Implantation (position, atomic species)
   - Vacancy (position, atomic species)
   - Ion escape (have to distinguish backscattered/transmitted ions)
@@ -57,4 +43,27 @@ Tally:
     - vacancies generated
   - The tallies have their own mesh which can be defined in rect, spherical, cylindrical coordinates 
 
-- [ ] Handle surface effects
+- Tally data:
+  - [ ] Instead of keeping the total sum for a tally bin, better keep the mean value and refine it every update interval.
+    Example: 
+      A bin has mean value b(N)=Σx_i/N after N histories. This is stored in the 'main' tally.
+      The execution thread(s) run additional ΔN histories which have mean value δb.
+      The new value of b, b'=b(N+ΔN), is obtained using the following formula
+        b' = b + (δb-b)*ΔN/(N+ΔN)
+      The same can be done for the square
+
+- [ ] Handle surface effects (sputtering etc.)
+
+- [ ] Database of known atomic data (displacement energy, FP energy, density of elements)
+
+### User
+
+- GUI: 
+  - [ ] In material def form, add a button to calc density based on composition (by simple mixing)
+
+- CLI:
+  - [ ] Block Ctrl-C signal so that data is saved before the program is aborted
+
+- General
+  - [ ] Provide progress info for HDF5 i/o operations
+

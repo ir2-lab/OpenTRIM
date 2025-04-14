@@ -174,7 +174,7 @@ int mccore::run()
                 i->setErg(i->erg() - i->myAtom()->El());
                 if (par_.move_recoil) {
                     i->move(i->myAtom()->Rc());
-                    dedx_calc_.init(i, target_->cell(i->cellid()));
+                    dedx_calc_.preload(i, target_->cell(i->cellid()));
                     dedx_calc_(i, i->myAtom()->Rc());
                 }
                 q_.push_pka(i);
@@ -272,8 +272,8 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
     const material *mat = target_->cell(i->cellid());
     // init dEdx and fp data for ion/material combination
     if (mat) {
-        dedx_calc_.init(i, mat);
-        flight_path_calc_.init(i, mat);
+        dedx_calc_.preload(i, mat);
+        flight_path_calc_.preload(i, mat);
     }
 
     // transport loop
@@ -307,8 +307,8 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
                 // get new material and dEdx, mfp tables
                 mat = target_->cell(i->cellid());
                 if (mat) {
-                    dedx_calc_.init(i, mat);
-                    flight_path_calc_.init(i, mat);
+                    dedx_calc_.preload(i, mat);
+                    flight_path_calc_.preload(i, mat);
                 }
                 break;
             case BoundaryCrossing::External:
@@ -341,8 +341,8 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
             // get new material and dEdx, mfp tables
             mat = target_->cell(i->cellid());
             if (mat) {
-                dedx_calc_.init(i, mat);
-                flight_path_calc_.init(i, mat);
+                dedx_calc_.preload(i, mat);
+                flight_path_calc_.preload(i, mat);
             }
             doCollision = false; // the collision will be in the new material
             break;
@@ -393,8 +393,6 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
         vector3 dir0 = i->dir(); // store initial dir
         i->deflect(vector3(nx * sintheta, ny * sintheta, costheta));
         i->add_coll();
-
-        /// @TODO: special treatment of surface effects (sputtering etc.)
 
         // Check if recoil is displaced (T>=E_d)
         if (T >= z2->Ed()) {

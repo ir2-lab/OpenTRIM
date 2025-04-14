@@ -11,8 +11,16 @@ where `config.json` is a file containing the JSON configuration.
 
 In a C++ program one can use the \ref mcdriver::options class which offers
 a parseJSON() function to parse and validate the options.
+                        
+The easiest way to get started is to generate a template with all default options by running
+                                        
+    opentrim -t > template.json
+                        
+and make changes to the new template file.
 
-The JSON-formatted options string has the following self-explanatory structure shown bellow.
+@note `opentrim` accepts comments in JSON 
+
+The JSON config string has the following self-explanatory structure shown bellow.
 Click on any of the options to see more information.
 
 > <br>
@@ -85,15 +93,7 @@ Click on any of the options to see more information.
 <br>
 
 
-@note `opentrim` accepts comments in the JSON config string
-                        
-The easiest way to get started is to get a template with all default options by running
-                                        
-    opentrim -t > template.json
-                        
-and make changes to the new template file.
-                
-Most of the options shown above are default values and can be omitted.
+
 
 
 <table>

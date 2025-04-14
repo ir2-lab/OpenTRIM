@@ -66,7 +66,7 @@ static const float chu_coef[][4] = {
 /**
  * @brief Calculate ion straggling
  *
- * Calculates the ion straggling energy parameters for an ion Z1
+ * Calculates the ion straggling parameters for an ion Z1
  * traveling in a target with atomic number Z2 and sheet density Ns.
  *
  * Straggling is calculated for ion energies spanning the corteo dedx_index.

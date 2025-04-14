@@ -77,7 +77,7 @@ public:
      * @param m pointer to a \ref material object
      * @return 0 if succesfull
      */
-    int init(const ion *i, const material *m);
+    int preload(const ion *i, const material *m);
 
     /**
      * @brief Calculate electronic energy loss and straggling of the moving ion
