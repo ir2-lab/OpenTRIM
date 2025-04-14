@@ -130,11 +130,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    if (input_config_file.empty() && input_file.empty()) {
-        cerr << "Error: No input file." << endl;
-        return -1;
-    }
-
     if (!input_config_file.empty() && !input_file.empty()) {
         cerr << "Warning: JSON config ignored (HDF5 input will be used)." << endl;
         input_config_file.clear();
@@ -142,28 +137,7 @@ int main(int argc, char *argv[])
 
     mcdriver D;
 
-    if (!input_config_file.empty()) {
-
-        cout << "Parsing JSON config from " << input_config_file << endl;
-
-        std::ifstream is(input_config_file);
-        mcdriver::options opt;
-        if (opt.parseJSON(is, true, &cerr) != 0)
-            return -1;
-
-        // cli overrides
-        if (n > 0)
-            opt.Driver.max_no_ions = n;
-        if (j > 0)
-            opt.Driver.threads = j;
-        if (s > 0)
-            opt.Driver.seed = s;
-        if (!output_file.empty())
-            opt.Output.outfilename = output_file;
-
-        D.init(opt);
-
-    } else {
+    if (!input_file.empty()) {
 
         cout << "Loading simulation from " << input_file << endl;
 
@@ -183,6 +157,34 @@ int main(int argc, char *argv[])
             opts.outfilename = output_file;
             D.setOutputOptions(opts);
         }
+    } else {
+
+        mcdriver::options opt;
+
+        if (!input_config_file.empty()) {
+
+            cout << "Parsing JSON config from " << input_config_file << endl;
+
+            std::ifstream is(input_config_file);
+
+            if (opt.parseJSON(is, true, &cerr) != 0)
+                return -1;
+        } else {
+            if (opt.parseJSON(cin, true, &cerr) != 0)
+                return -1;
+        }
+
+        // cli overrides
+        if (n > 0)
+            opt.Driver.max_no_ions = n;
+        if (j > 0)
+            opt.Driver.threads = j;
+        if (s > 0)
+            opt.Driver.seed = s;
+        if (!output_file.empty())
+            opt.Output.outfilename = output_file;
+
+        D.init(opt);
     }
 
     cout << "Starting simulation '" << D.outputOptions().title << "'..." << endl << endl;
