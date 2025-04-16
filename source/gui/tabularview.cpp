@@ -166,8 +166,8 @@ public:
                 double dx = buff(1, i, j) * f1;
                 if (dx > 0.) {
                     dx = std::sqrt(dx) * f2;
-                    tblWidget_->item(i, j)->setText(
-                            QString::fromStdString(print_with_err(x, dx, 'g', 1)));
+                    tblWidget_->item(i, j)->setText(QString::fromStdString(
+                            error_fmt::print_with_err(x, dx, std::chars_format::general, 1)));
                 } else {
                     tblWidget_->item(i, j)->setText(QString::number(x, 'g'));
                 }
@@ -270,8 +270,8 @@ public:
                 double dx = buff(1, i, j) * f1;
                 if (dx > 0.) {
                     dx = std::sqrt(dx) * f2;
-                    tblWidget_->item(i, j)->setText(
-                            QString::fromStdString(print_with_err(x, dx, 'g', 1)));
+                    tblWidget_->item(i, j)->setText(QString::fromStdString(
+                            error_fmt::print_with_err(x, dx, std::chars_format::general, 1)));
                 } else {
                     tblWidget_->item(i, j)->setText(QString::number(x, 'g'));
                 }
@@ -406,8 +406,8 @@ public:
                 double dx = buff(1, i, j) * f1;
                 if (dx > 0.) {
                     dx = std::sqrt(dx) * f2;
-                    tblWidget_->item(i, j)->setText(
-                            QString::fromStdString(print_with_err(x, dx, 'g', 1)));
+                    tblWidget_->item(i, j)->setText(QString::fromStdString(
+                            error_fmt::print_with_err(x, dx, std::chars_format::general, 1)));
                 } else {
                     tblWidget_->item(i, j)->setText(QString::number(x, 'g'));
                 }
@@ -552,8 +552,8 @@ public:
                 double x = buff(0, i, j);
                 double dx = buff(1, i, j);
                 if (dx > 0.) {
-                    tblWidget_->item(i, j)->setText(
-                            QString::fromStdString(print_with_err(x, dx, 'g', 1)));
+                    tblWidget_->item(i, j)->setText(QString::fromStdString(
+                            error_fmt::print_with_err(x, dx, std::chars_format::general, 1)));
                 } else {
                     tblWidget_->item(i, j)->setText(QString::number(x, 'g'));
                 }

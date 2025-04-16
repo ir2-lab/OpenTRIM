@@ -36,6 +36,7 @@
 #include <fstream>
 #include <iomanip>
 #include <filesystem>
+#include <charconv>
 
 #ifdef WIN32
 const char endline[] = "\n";
@@ -157,14 +158,21 @@ int run_srim(int Z1, int Z2, vector<float> &data)
 }
 
 // print out a 32bit float so that it is read back the same
+// employ C++17 std::to_chars to be system locale independent
 std::ostream &printfloat(std::ostream &os, float x)
 {
-    char buff[32];
+    // print buffer
+    static constexpr int buff_len = 32;
+    char buff[buff_len]{};
     // get number of digits for a float -> text -> float round-trip
     static constexpr auto d = std::numeric_limits<float>::max_digits10;
-    std::sprintf(buff, "%.*g", d, x);
+    // print the number
+    std::to_chars_result ret =
+            std::to_chars(buff, buff + buff_len, x, std::chars_format::general, d);
+    *ret.ptr = 0;
     os << buff;
     return os;
+}s;
 }
 
 int print_cpp_matrix(ofstream &Z1cpp, int Z1, int Z2, const vector<float> &data)
