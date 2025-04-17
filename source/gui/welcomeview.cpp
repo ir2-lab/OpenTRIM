@@ -9,6 +9,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QScrollArea>
 #include <QButtonGroup>
 #include <QFontMetrics>
 #include <QListWidget>
@@ -182,17 +183,33 @@ WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ions
 
     /* create about view */
     {
-        QPlainTextEdit *about = new QPlainTextEdit;
-        about->setPlainText(
-                QString("%1 - %2\n\nVersion: %3\nBuild time: %4\nCompiler: %5 v%6\nSystem: %7")
-                        .arg(PROJECT_NAME)
-                        .arg(PROJECT_DESCRIPTION)
-                        .arg(PROJECT_VERSION)
-                        .arg(BUILD_TIME)
-                        .arg(COMPILER_ID)
-                        .arg(COMPILER_VERSION)
-                        .arg(SYSTEM_ID));
-        pushCenterWidget("About", about);
+        QFile loadFile(QStringLiteral(":/md/about.md"));
+        loadFile.open(QIODevice::ReadOnly);
+        QByteArray ba = loadFile.readAll();
+
+        QScrollArea *sa = new QScrollArea;
+        sa->setFrameShape(QFrame::StyledPanel);
+        sa->setFrameShadow(QFrame::Sunken);
+        sa->setWidgetResizable(true);
+
+        QLabel *about = new QLabel;
+        about->setStyleSheet(QStringLiteral("background-color: white;"));
+        about->setWordWrap(true);
+        about->setOpenExternalLinks(true);
+        about->setTextInteractionFlags(Qt::TextBrowserInteraction);
+        about->setTextFormat(Qt::MarkdownText);
+        about->setText(QString(ba)
+                               .arg(PROJECT_NAME)
+                               .arg(PROJECT_DESCRIPTION)
+                               .arg(PROJECT_VERSION)
+                               .arg(BUILD_TIME)
+                               .arg(COMPILER_ID)
+                               .arg(COMPILER_VERSION)
+                               .arg(SYSTEM_ID));
+
+        sa->setWidget(about);
+
+        pushCenterWidget("About", sa);
     }
 
     /* signal/slot connections */

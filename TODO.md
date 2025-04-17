@@ -8,7 +8,7 @@
 
 ### GUI:
 - [ ] Getting Started
-- [ ] About
+- [X] About
 
 ### Dist:
 - [ ] Program icon/logo

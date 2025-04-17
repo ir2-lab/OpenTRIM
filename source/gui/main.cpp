@@ -7,11 +7,10 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    QApplication::setStyle(QStyleFactory::create("Fusion"));
-
-    QFont f = app.font();
-    f.setPointSize(11);
-    app.setFont(f);
+    // select fusion style if available
+    // for consistent look among different platforms
+    if (QStyleFactory::keys().contains("fusion"))
+        QApplication::setStyle(QStyleFactory::create("fusion"));
 
     MainUI w;
     w.show();

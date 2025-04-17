@@ -317,7 +317,7 @@ void ResultsView::onExportCSV()
         return;
 
     QString fname =
-            QFileDialog::getSaveFileName(this, tr("Export data to CSV ..."), "ions_export.csv",
+            QFileDialog::getSaveFileName(this, tr("Export data to CSV ..."), "opentrim_export.csv",
                                          tr("CSV files [*.csv](*.csv);; All files (*.*)"));
     if (fname.isNull())
         return;
@@ -354,7 +354,7 @@ void ResultsView::onExportCSV()
 void ResultsView::onExportPlot()
 {
     // Export the plot to 160x120mm page
-    plotWidget->exportToFile("ions_export.pdf", QSize(160, 120));
+    plotWidget->exportToFile("opentrim_export.pdf", QSize(160, 120));
 }
 
 void ResultsView::updateDataSelection() { }
