@@ -6,9 +6,15 @@
 #include <QStyledItemDelegate>
 #include "mcdriver.h"
 
+// Q_DECLARE_TYPEINFO(vector3, Q_PRIMITIVE_TYPE);
+// Q_DECLARE_METATYPE(vector3)
+
+// Q_DECLARE_TYPEINFO(ivector3, Q_PRIMITIVE_TYPE);
+// Q_DECLARE_METATYPE(ivector3)
+
 class OptionsItem
 {
-    enum type_t { tEnum, tFloat, tInt, tBool, tString, tVector3D, tIntVector3D, tStruct, tInvalid };
+    enum type_t { tEnum, tFloat, tInt, tBool, tString, tVector, tIntVector, tStruct, tInvalid };
 
 public:
     virtual ~OptionsItem();
@@ -22,9 +28,9 @@ public:
     QString name() const { return name_; }
     QString toolTip() const { return toolTip_; }
     QString whatsThis() const { return whatsThis_; }
-    virtual QVariant displayValue() const { return value().toString(); }
-    virtual QVariant value() const;
-    virtual bool setValue(const QVariant &v);
+    QVariant displayValue() const { return value().toString(); }
+    QVariant value() const;
+    bool setValue(const QVariant &v);
 
     virtual QWidget *createEditor(QWidget *parent) const { return nullptr; }
     virtual void setEditorData(QWidget *editor, const QVariant &v) const { }
@@ -66,9 +72,6 @@ public:
                     const QString &name, OptionsItem *parent);
     const QStringList &values() { return enumValues_; }
     const QStringList &valueLabels() { return enumValueLabels_; }
-    virtual QVariant displayValue() const override { return enumValueLabels_.at(value().toInt()); }
-    virtual QVariant value() const override;
-    virtual bool setValue(const QVariant &v) override;
     virtual QWidget *createEditor(QWidget *parent) const override;
     virtual void setEditorData(QWidget *editor, const QVariant &v) const override;
     virtual QVariant getEditorData(QWidget *editor) override;
@@ -84,9 +87,6 @@ class FloatOptionsItem : public OptionsItem
 public:
     FloatOptionsItem(double fmin, double fmax, int digits, const QString &key, const QString &name,
                      OptionsItem *parent);
-    virtual QVariant value() const override;
-    virtual QVariant displayValue() const override;
-    virtual bool setValue(const QVariant &v) override;
     virtual QWidget *createEditor(QWidget *parent) const override;
     virtual void setEditorData(QWidget *editor, const QVariant &v) const override;
     virtual QVariant getEditorData(QWidget *editor) override;
@@ -102,8 +102,8 @@ class IntOptionsItem : public OptionsItem
 public:
     IntOptionsItem(int imin, int imax, const QString &key, const QString &name,
                    OptionsItem *parent);
-    virtual QVariant value() const override;
-    virtual bool setValue(const QVariant &v) override;
+    // virtual QVariant value() const override;
+    // virtual bool setValue(const QVariant &v) override;
     virtual QWidget *createEditor(QWidget *parent) const override;
     virtual void setEditorData(QWidget *editor, const QVariant &v) const override;
     virtual QVariant getEditorData(QWidget *editor) override;
@@ -117,8 +117,6 @@ class BoolOptionsItem : public OptionsItem
 {
 public:
     BoolOptionsItem(const QString &key, const QString &name, OptionsItem *parent);
-    virtual QVariant value() const override;
-    virtual bool setValue(const QVariant &v) override;
     virtual QWidget *createEditor(QWidget *parent) const override;
     virtual void setEditorData(QWidget *editor, const QVariant &v) const override;
     virtual QVariant getEditorData(QWidget *editor) override;
@@ -129,36 +127,36 @@ class StringOptionsItem : public OptionsItem
 {
 public:
     StringOptionsItem(const QString &key, const QString &name, OptionsItem *parent);
-    virtual QVariant value() const override;
-    virtual bool setValue(const QVariant &v) override;
     virtual QWidget *createEditor(QWidget *parent) const override;
     virtual void setEditorData(QWidget *editor, const QVariant &v) const override;
     virtual QVariant getEditorData(QWidget *editor) override;
     virtual const char *editorSignal() const override { return "editingFinished()"; }
 };
 
-class Vector3dOptionsItem : public FloatOptionsItem
+class VectorOptionsItem : public FloatOptionsItem
 {
-public:
-    Vector3dOptionsItem(double fmin, double fmax, int digits, const QString &key,
-                        const QString &name, OptionsItem *parent);
-    virtual QVariant value() const override;
-    virtual QVariant displayValue() const override;
+    int sz_;
+    typedef std::vector<float> vector_t;
 
-    virtual bool setValue(const QVariant &v) override;
+public:
+    VectorOptionsItem(int size, double fmin, double fmax, int digits, const QString &key,
+                      const QString &name, OptionsItem *parent);
     virtual QWidget *createEditor(QWidget *parent) const override;
     virtual void setEditorData(QWidget *editor, const QVariant &v) const override;
     virtual QVariant getEditorData(QWidget *editor) override;
 };
 
-class IVector3dOptionsItem : public IntOptionsItem
+class IVectorOptionsItem : public IntOptionsItem
 {
+    int sz_;
+    typedef std::vector<int> vector_t;
+
 public:
-    IVector3dOptionsItem(int imin, int imax, const QString &key, const QString &name,
-                         OptionsItem *parent);
-    virtual QVariant value() const override;
-    virtual QVariant displayValue() const override;
-    virtual bool setValue(const QVariant &v) override;
+    IVectorOptionsItem(int size, int imin, int imax, const QString &key, const QString &name,
+                       OptionsItem *parent);
+    // virtual QVariant value() const override;
+    // virtual QVariant displayValue() const override;
+    // virtual bool setValue(const QVariant &v) override;
     virtual QWidget *createEditor(QWidget *parent) const override;
     virtual void setEditorData(QWidget *editor, const QVariant &v) const override;
     virtual QVariant getEditorData(QWidget *editor) override;

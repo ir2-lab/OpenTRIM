@@ -150,20 +150,17 @@
                     "label": "Flight Path Type",
                     "type": "enum",
                     "values": [
-                        "AtomicSpacing",
                         "Constant",
-                        "MendenhallWeller",
+                        "MHW",
                         "FullMC"
                     ],
                     "valueLabels": [
-                        "Atomic Spacing",
                         "Constant",
-                        "Mendenhall-Weller",
+                        "Mendenhall-Weller (MHW)",
                         "FullMC"
                     ],
                     "toolTip": "Flight path selection algorithm.",
                     "whatsThis": [
-                        "- AtomicSpacing: Constant flight path equal to material's interatomic distance",
                         "- Constant: User defined constant flight path",
                         "- MendenhallWeller: SRIM-like path selection algorithm",
                         "- FullMC: Full Monte-Carlo flight path algorithm"
@@ -171,19 +168,19 @@
                 },
                 {
                     "name": "flight_path_const",
-                    "label": "Const. Flight Path (nm)",
+                    "label": "Const. Flight Path [units of atomic radius]",
                     "type": "float",
                     "min": 0.001,
                     "max": 1.0e6,
                     "digits": 3,
-                    "toolTip": "Constant Flight Path in nm.",
+                    "toolTip": "Constant Flight Path in units of the atomic radius.",
                     "whatsThis": [
                         "Used when flight_path_type=Constant"
                     ]
                 },
                 {
                     "name": "max_rel_eloss",
-                    "label": "Max ΔE/E",
+                    "label": "Max (ΔE/E)e",
                     "type": "float",
                     "min": 0.001,
                     "max": 1.0,
@@ -202,26 +199,33 @@
                     "digits": 3,
                     "toolTip": "Minimum recoil energy in eV.",
                     "whatsThis": [
+                        "Events with recoil energy below this value will be ignoredif the scattering angle is also below min_scattering_angle.",
                         "Applicable only when flight_path_type=MendenhallWeller or FullMC"
                     ]
                 },
                 {
-                    "name": "max_mfp",
-                    "label": "Max MFP (nm)",
+                    "name": "min_scattering_angle",
+                    "label": "Min θ (º)",
                     "type": "float",
                     "min": 0.001,
-                    "max": 1e30,
+                    "max": 90,
                     "digits": 3,
-                    "toolTip": "Maximum ion mean free path in nm.",
+                    "toolTip": "Minimum scattering angle in degrees.",
                     "whatsThis": [
-                        "Applicable only when flight_path_type=FullMC"
+                        "Refers to the projectile scattering angle in the lab reference frame.",
+                        "Events with scattering angle lower that this value will be ignotred if the recoil energy is also below min_recoil_energy.",
+                        "Applicable only when flight_path_type=MendenhallWeller or FullMC"
                     ]
                 },
                 {
-                    "name": "allow_sub_ml_scattering",
-                    "label": "Sub-ML flight path",
-                    "type": "bool",
-                    "toolTip": "Allow sub-monolayer ion flight path.",
+                    "name": "mfp_range",
+                    "label": "Range of ion mfp [units of Rat]",
+                    "type": "vector",
+                    "size": 2,
+                    "min": 0.001,
+                    "max": 1e30,
+                    "digits": 3,
+                    "toolTip": "Range of ion mean free path in units of atomic radius.",
                     "whatsThis": [
                         "Applicable only when flight_path_type=FullMC"
                     ]
@@ -369,7 +373,8 @@
                         {
                             "name": "center",
                             "label": "Center position (nm)",
-                            "type": "vector3d",
+                            "type": "vector",
+                            "size": 3,
                             "min": -1.0e10,
                             "max": 1.0e10,
                             "digits": 6,
@@ -417,7 +422,8 @@
                         {
                             "name": "center",
                             "label": "Center direction",
-                            "type": "vector3d",
+                            "type": "vector",
+                            "size": 3,
                             "min": -1.0e3,
                             "max": 1.0e3,
                             "digits": 3,
@@ -449,7 +455,8 @@
                 {
                     "name": "size",
                     "label": "Size [Lx, Ly, Lz] (nm)",
-                    "type": "vector3d",
+                    "type": "vector",
+                    "size": 3,
                     "min": 0.001,
                     "max": 1.0e7,
                     "digits": 6,
@@ -459,7 +466,8 @@
                 {
                     "name": "origin",
                     "label": "Origin [x₀,y₀,z₀] (nm)",
-                    "type": "vector3d",
+                    "type": "vector",
+                    "size": 3,
                     "min": -1.0e7,
                     "max": 1.0e7,
                     "digits": 6,
@@ -469,7 +477,8 @@
                 {
                     "name": "cell_count",
                     "label": "Cell count [Nx, Ny, Nz]",
-                    "type": "ivector3d",
+                    "type": "ivector",
+                    "size": 3,
                     "min": 1,
                     "max": 1000000,
                     "toolTip": "Number of simulation cells along the x-, y- and z-axis.",
@@ -478,7 +487,8 @@
                 {
                     "name": "periodic_bc",
                     "label": "Periodic boundary [x, y, z]",
-                    "type": "ivector3d",
+                    "type": "ivector",
+                    "size": 3,
                     "min": 0,
                     "max": 1,
                     "toolTip": "Select periodic boundary conditions along the axes (0=normal, 1=periodic).",

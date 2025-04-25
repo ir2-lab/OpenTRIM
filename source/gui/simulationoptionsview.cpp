@@ -194,12 +194,9 @@ void SimulationOptionsView::revert()
 void SimulationOptionsView::applyRules()
 {
     // Apply option combination rules
-    OptionsModel *model = mapper->model();
 
-    QModelIndex parent, idx1, idx2;
-    int i;
-    bool b;
-    QWidget *w;
+    // current unsaved options
+    const mcdriver::options *opt = mapper->model()->options();
 
     // Using a lambda expression for a short-lived function
     auto enable_if = [this](const QString &key, bool b) {
@@ -208,52 +205,41 @@ void SimulationOptionsView::applyRules()
             w->setEnabled(b);
     };
 
-    parent = model->index("Simulation");
-    idx1 = model->index("eloss_calculation", 1, parent);
-    i = model->data(idx1, Qt::EditRole).toInt();
-    b = i == dedx_calc::EnergyLossAndStraggling;
-    enable_if("/Simulation/straggling_model", b);
+    enable_if("/Simulation/straggling_model",
+              opt->Simulation.eloss_calculation == dedx_calc::EnergyLossAndStraggling);
 
-    parent = model->index("Transport");
     enable_if("/Transport/flight_path_const", false);
-    enable_if("/Transport/max_mfp", false);
-    enable_if("/Transport/allow_sub_ml_scattering", false);
+    enable_if("/Transport/mfp_range", false);
     enable_if("/Transport/max_rel_eloss", false);
     enable_if("/Transport/min_recoil_energy", false);
+    enable_if("/Transport/min_scattering_angle", false);
 
-    idx1 = model->index("flight_path_type", 1, parent);
-    i = model->data(idx1, Qt::EditRole).toInt();
-    auto fp_t = flight_path_calc::flight_path_type_t(i);
-    switch (fp_t) {
-    case flight_path_calc::AtomicSpacing:
-        break;
+    switch (opt->Transport.flight_path_type) {
     case flight_path_calc::Constant:
         enable_if("/Transport/flight_path_const", true);
         break;
-    case flight_path_calc::MendenhallWeller:
+    case flight_path_calc::MHW:
         enable_if("/Transport/max_rel_eloss", true);
         enable_if("/Transport/min_recoil_energy", true);
+        enable_if("/Transport/min_scattering_angle", true);
         break;
     case flight_path_calc::FullMC:
         enable_if("/Transport/max_rel_eloss", true);
         enable_if("/Transport/min_recoil_energy", true);
-        enable_if("/Transport/max_mfp", true);
-        enable_if("/Transport/allow_sub_ml_scattering", true);
+        enable_if("/Transport/min_scattering_angle", true);
+        enable_if("/Transport/mfp_range", true);
         break;
     default:
         break;
     }
 
     // enable fwhm in all ion beam distributions
-    parent = model->index("IonBeam");
-    for (const char *key :
-         { "energy_distribution", "angular_distribution", "spatial_distribution" }) {
-        QModelIndex idx = model->index(key, 0, parent);
-        idx = model->index("type", 1, idx);
-        int i = model->data(idx, Qt::EditRole).toInt();
-        enable_if(QString("/IonBeam/%1/fwhm").arg(key),
-                  ion_beam::distribution_t(i) != ion_beam::SingleValue);
-    }
+    enable_if("/IonBeam/energy_distribution/fwhm",
+              opt->IonBeam.energy_distribution.type != ion_beam::SingleValue);
+    enable_if("/IonBeam/angular_distribution/fwhm",
+              opt->IonBeam.angular_distribution.type != ion_beam::SingleValue);
+    enable_if("/IonBeam/spatial_distribution/fwhm",
+              opt->IonBeam.spatial_distribution.type != ion_beam::SingleValue);
 }
 
 QWidget *SimulationOptionsView::createIonBeamTab(const QModelIndex &parent)

@@ -13,7 +13,7 @@ using std::endl;
 using std::string;
 using std::vector;
 
-enum type_t { tEnum, tFloat, tInt, tBool, tString, tVector3D, tIntVector3D, tStruct, tInvalid };
+enum type_t { tEnum, tFloat, tInt, tBool, tString, tVector, tIntVector, tStruct, tInvalid };
 
 type_t toType(const string &typeName);
 void jsonPrint(std::ostream &os, const ojson &j, type_t type = tStruct, int level = 0,
@@ -152,10 +152,10 @@ type_t toType(const string &typeName)
         return tBool;
     else if (typeName == "string")
         return tString;
-    else if (typeName == "vector3d")
-        return tVector3D;
-    else if (typeName == "ivector3d")
-        return tIntVector3D;
+    else if (typeName == "vector")
+        return tVector;
+    else if (typeName == "ivector")
+        return tIntVector;
     else if (typeName == "struct")
         return tStruct;
     else
@@ -219,8 +219,8 @@ void jsonPrint(std::ostream &os, const ojson &j, type_t type, int level, string 
         break;
     case tEnum:
     case tFloat:
-    case tVector3D:
-    case tIntVector3D:
+    case tVector:
+    case tIntVector:
     case tInt:
     case tBool:
     case tString:
@@ -247,11 +247,11 @@ std::ostream &operator<<(std::ostream &os, type_t type)
     case tFloat:
         os << "Floating point number";
         break;
-    case tVector3D:
-        os << "Floating point 3d Vector";
+    case tVector:
+        os << "Vector of floating point values";
         break;
-    case tIntVector3D:
-        os << "Integer 3d Vector";
+    case tIntVector:
+        os << "Vector of integer values";
         break;
     case tInt:
         os << "Integer";
@@ -328,8 +328,15 @@ void jsonPrintTable(std::ostream &os, const ojson &j, type_t type, string path)
         os << "<tr><td>Default Value<td>" << val;
         break;
 
-    case tVector3D:
-    case tIntVector3D:
+    case tVector:
+    case tIntVector:
+
+        os << "<tr><td>Size<td>" << j["size"].template get<int>() << endl;
+        os << "<tr><td>Element range<td>";
+        os << j["min"].template get<float>() << "..." << j["max"].template get<float>() << endl;
+        os << "<tr><td>Default Value<td>" << val;
+        break;
+
     case tInt:
     case tFloat:
 

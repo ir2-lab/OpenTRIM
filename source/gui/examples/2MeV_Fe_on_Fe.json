@@ -6,12 +6,9 @@
     "Simulation": {
         "simulation_type": "FullCascade",
         "screening_type": "ZBL",
-        "scattering_calculation": "Corteo4bitTable"
     },
     "Transport": {
-        "flight_path_type": "AtomicSpacing",
-        "min_energy": 1.0,
-        "min_recoil_energy": 1.0
+        "flight_path_type": "FullMC"
     },
     "IonBeam": {
         "ion": {
@@ -77,8 +74,8 @@
     },
     "Output": {
         "title": "2MeV Fe on Fe example",
-        "store_pka_events": 1,
-        "store_dedx": 1,
-        "store_exit_events": 1
+        "store_pka_events": true,
+        "store_dedx": true,
+        "store_exit_events": true
     }
 }

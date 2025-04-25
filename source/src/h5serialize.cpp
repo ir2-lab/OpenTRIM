@@ -498,8 +498,6 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
                        "max impact parameter [nm], array [atoms x materials x energy]");
             dump_array(h5f, page + "fpmax", fpc.fpmax(), var_list,
                        "max flight path [nm], array [atoms x materials x energy]");
-            dump_array(h5f, page + "Tcutoff", fpc.Tcutoff(), var_list,
-                       "recoil energy cut0ff [eV], array [atoms x materials x energy]");
         }
 
         // 3. ion beam

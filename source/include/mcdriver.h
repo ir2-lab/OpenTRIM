@@ -74,11 +74,11 @@ public:
         /// Interval in sec to store the output @todo
         int storage_interval{ 1000 };
         /// Store ion exit events
-        int store_exit_events{ 0 };
+        bool store_exit_events{ false };
         /// Store the pka events
-        int store_pka_events{ 0 };
-        /// Store electron energy loss data
-        int store_dedx{ 1 };
+        bool store_pka_events{ false };
+        /// Store electronic energy loss data
+        bool store_dedx{ true };
     };
 
     /// Typedef for a function to be called during simulation execution

@@ -1,11 +1,8 @@
 #include "mcdriver.h"
-
-#include <fstream>
-#include <iostream>
-
 #include "json_defs_p.h"
-
 #include "periodic_table.h"
+
+#include <iostream>
 
 using std::cerr;
 using std::cout;
@@ -172,9 +169,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(mccore::nrt_calculation_t,
 
 NLOHMANN_JSON_SERIALIZE_ENUM(flight_path_calc::flight_path_type_t,
                              { { flight_path_calc::InvalidPath, nullptr },
-                               { flight_path_calc::AtomicSpacing, "AtomicSpacing" },
                                { flight_path_calc::Constant, "Constant" },
-                               { flight_path_calc::MendenhallWeller, "MendenhallWeller" },
+                               { flight_path_calc::MHW, "MHW" },
                                { flight_path_calc::FullMC, "FullMC" } })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(Screening,
@@ -221,7 +217,7 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::parameters, simulation_type, s
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::transport_options, flight_path_type,
                                           flight_path_const, min_energy, min_recoil_energy,
-                                          allow_sub_ml_scattering, max_mfp, max_rel_eloss)
+                                          min_scattering_angle, max_rel_eloss, mfp_range)
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcdriver::parameters, max_no_ions, max_cpu_time, threads,
                                           seed)

@@ -58,12 +58,10 @@ QVariant RegionsModel::data(const QModelIndex &index, int role) const
         V = QString::fromStdString(reg.material_id);
         break;
     case 2:
-        V = (role == Qt::DisplayRole) ? qstring_serialize<vector3>::toString(reg.origin)
-                                      : QVariant::fromValue(reg.origin);
+        V = qstring_serialize<vector3>::toString(reg.origin);
         break;
     case 3:
-        V = (role == Qt::DisplayRole) ? qstring_serialize<vector3>::toString(reg.size)
-                                      : QVariant::fromValue(reg.size);
+        V = qstring_serialize<vector3>::toString(reg.size);
         break;
     default:
         assert(0);
@@ -110,10 +108,10 @@ bool RegionsModel::setData(const QModelIndex &index, const QVariant &value, int 
         reg.material_id = value.toString().toStdString();
         break;
     case 2:
-        reg.origin = value.value<vector3>();
+        qstring_serialize<vector3>::fromString(value.toString(), reg.origin);
         break;
     case 3:
-        reg.size = value.value<vector3>();
+        qstring_serialize<vector3>::fromString(value.toString(), reg.size);
         break;
     }
 
@@ -238,7 +236,7 @@ QWidget *RegionDelegate::createEditor(QWidget *parent, const QStyleOptionViewIte
     } break;
     case 2:
     case 3: {
-        Vector3dLineEdit *edt = new Vector3dLineEdit(0.f, 1.e6f, 3, parent);
+        VectorLineEdit *edt = new VectorLineEdit(3, 0.f, 1.e6f, 3, parent);
         w = edt;
     } break;
     }
@@ -267,8 +265,8 @@ void RegionDelegate::setEditorData(QWidget *editor, const QModelIndex &index) co
     } break;
     case 2:
     case 3: {
-        Vector3dLineEdit *edt = (Vector3dLineEdit *)(editor);
-        edt->setValue(v.value<vector3>());
+        VectorLineEdit *edt = (VectorLineEdit *)(editor);
+        edt->setText(v.toString());
     } break;
     }
 }
@@ -295,8 +293,8 @@ void RegionDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
     } break;
     case 2:
     case 3: {
-        Vector3dLineEdit *edt = (Vector3dLineEdit *)(editor);
-        v = QVariant::fromValue(edt->value());
+        VectorLineEdit *edt = (VectorLineEdit *)(editor);
+        v = edt->text();
     } break;
     }
 

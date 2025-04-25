@@ -9,8 +9,8 @@ class QItemSelection;
 class QItemSelectionModel;
 class QTableView;
 
-class Vector3dLineEdit;
-class IntVector3dLineEdit;
+class VectorLineEdit;
+class IntVectorLineEdit;
 class OptionsModel;
 class MyDataWidgetMapper;
 class RegionsView;

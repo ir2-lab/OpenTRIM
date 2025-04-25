@@ -3,7 +3,6 @@
 
 #include <QLineEdit>
 #include <QValidator>
-#include "geometry.h"
 
 class FloatValidator : public QValidator
 {
@@ -53,64 +52,62 @@ struct num_convert<int>
 template <class vector_t>
 struct qstring_serialize
 {
-    typedef typename vector3::Scalar scalar_t;
+    typedef typename vector_t::value_type scalar_t;
 
-    static vector_t fromString(const QString &S, bool *ok = nullptr)
+    static bool fromString(const QString &S, vector_t &v)
     {
-        vector_t v;
-        bool myok;
-        bool &ok_ = ok ? *ok : myok;
-        ok_ = false;
-
         QString t = S.trimmed();
         if (t.startsWith('['))
             t.remove(0, 1);
         else
-            return v;
+            return false;
 
         if (t.endsWith(']'))
             t.chop(1);
         else
-            return v;
+            return false;
 
         QStringList lst = t.split(',', Qt::SkipEmptyParts);
-        if (lst.count() != 3)
-            return v;
+        if (lst.count() != v.size())
+            return false;
 
         bool numok = true;
         int i = 0;
-        while (i < 3 && numok) {
+        while (i < v.size() && numok) {
             v[i] = num_convert<scalar_t>::str2num(lst.at(i), numok);
             i++;
         }
         if (!numok)
-            return vector_t{};
+            return false;
 
-        ok_ = true;
-        return v;
+        return true;
     }
 
     static QString toString(const vector_t &v)
     {
-        return QString("[%1, %2, %3]").arg(v[0]).arg(v[1]).arg(v[2]);
+        int n = v.size();
+        if (n < 1)
+            return QString{};
+        QString S("[ ");
+        S += QString::number(v[0]);
+        for (int i = 1; i < n; ++i) {
+            S += ", ";
+            S += QString::number(v[i]);
+        }
+        S += "]";
+        return S;
     }
 };
 
-Q_DECLARE_TYPEINFO(vector3, Q_PRIMITIVE_TYPE);
-Q_DECLARE_METATYPE(vector3)
-
-Q_DECLARE_TYPEINFO(ivector3, Q_PRIMITIVE_TYPE);
-Q_DECLARE_METATYPE(ivector3)
-
-class Vector3dValidator : public QValidator
+class VectorValidator : public QValidator
 {
     Q_OBJECT
     Q_PROPERTY(float bottom READ bottom WRITE setBottom NOTIFY bottomChanged)
     Q_PROPERTY(float top READ top WRITE setTop NOTIFY topChanged)
 public:
-    explicit Vector3dValidator(QObject *parent = nullptr);
-    Vector3dValidator(float bottom, float top, QObject *parent = nullptr);
-    ~Vector3dValidator();
+    explicit VectorValidator(int size, QObject *parent = nullptr);
+    VectorValidator(int size, float bottom, float top, QObject *parent = nullptr);
+    ~VectorValidator();
     QValidator::State validate(QString &, int &) const override;
     virtual void setRange(float bottom, float top, int decimals = 0);
     void setBottom(float);
@@ -123,20 +120,21 @@ Q_SIGNALS:
     void topChanged(float top);
 
 private:
-    Q_DISABLE_COPY(Vector3dValidator)
+    Q_DISABLE_COPY(VectorValidator)
     float b;
     float t;
+    int sz;
 };
 
-class IntVector3dValidator : public QValidator
+class IntVectorValidator : public QValidator
 {
     Q_OBJECT
     Q_PROPERTY(int bottom READ bottom WRITE setBottom NOTIFY bottomChanged)
     Q_PROPERTY(int top READ top WRITE setTop NOTIFY topChanged)
 public:
-    explicit IntVector3dValidator(QObject *parent = nullptr);
-    IntVector3dValidator(int bottom, int top, QObject *parent = nullptr);
-    ~IntVector3dValidator();
+    explicit IntVectorValidator(int size, QObject *parent = nullptr);
+    IntVectorValidator(int size, int bottom, int top, QObject *parent = nullptr);
+    ~IntVectorValidator();
     QValidator::State validate(QString &, int &) const override;
     virtual void setRange(int bottom, int top, int decimals = 0);
     void setBottom(int);
@@ -149,9 +147,10 @@ Q_SIGNALS:
     void topChanged(int top);
 
 private:
-    Q_DISABLE_COPY(IntVector3dValidator)
+    Q_DISABLE_COPY(IntVectorValidator)
     int b;
     int t;
+    int sz;
 };
 
 class FloatLineEdit : public QLineEdit
@@ -169,31 +168,61 @@ private slots:
     void checkInput();
 };
 
-class Vector3dLineEdit : public QLineEdit
+class VectorLineEdit : public QLineEdit
 {
     Q_OBJECT
 
 public:
-    explicit Vector3dLineEdit(QWidget *parent = nullptr);
-    Vector3dLineEdit(float fmin, float fmax, int decimals, QWidget *parent = nullptr);
+    explicit VectorLineEdit(int size, QWidget *parent = nullptr);
+    VectorLineEdit(int size, float fmin, float fmax, int decimals, QWidget *parent = nullptr);
 
-    void setValue(const vector3 &v);
-    vector3 value() const;
+    template <class vector_t>
+    void setValue(const vector_t &v)
+    {
+        setText(qstring_serialize<vector_t>::toString(v));
+    }
+    template <class vector_t>
+    bool getValue(vector_t &v)
+    {
+        return qstring_serialize<vector_t>::fromString(text(), v);
+    }
+    template <class vector_t>
+    vector_t value()
+    {
+        vector_t v;
+        qstring_serialize<vector_t>::fromString(text(), v);
+        return v;
+    }
 
 private slots:
     void checkInput();
 };
 
-class IntVector3dLineEdit : public QLineEdit
+class IntVectorLineEdit : public QLineEdit
 {
     Q_OBJECT
 
 public:
-    explicit IntVector3dLineEdit(QWidget *parent = nullptr);
-    IntVector3dLineEdit(int imin, int imax, QWidget *parent = nullptr);
+    explicit IntVectorLineEdit(int size, QWidget *parent = nullptr);
+    IntVectorLineEdit(int size, int imin, int imax, QWidget *parent = nullptr);
 
-    void setValue(const ivector3 &v);
-    ivector3 value() const;
+    template <class vector_t>
+    void setValue(const vector_t &v)
+    {
+        setText(qstring_serialize<vector_t>::toString(v));
+    }
+    template <class vector_t>
+    bool getValue(vector_t &v)
+    {
+        return qstring_serialize<vector_t>::fromString(text(), v);
+    }
+    template <class vector_t>
+    vector_t value()
+    {
+        vector_t v;
+        qstring_serialize<vector_t>::fromString(text(), v);
+        return v;
+    }
 
 private slots:
     void checkInput();
