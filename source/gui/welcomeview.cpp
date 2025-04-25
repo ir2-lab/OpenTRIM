@@ -29,6 +29,7 @@
 #include <QMimeDatabase>
 #include <QMimeType>
 #include <QFileIconProvider>
+#include <QTextBrowser>
 
 #include "jsedit/jsedit.h"
 
@@ -170,7 +171,14 @@ WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ions
     }
     pushCenterWidget("Example simulations", examplePage);
 
-    pushCenterWidget("Getting Started", new QWidget);
+    /* create getting Started view */
+    {
+        QTextBrowser *quickstart = new QTextBrowser;
+        quickstart -> setSource(QUrl("qrc:./md/quick_start.md"));
+
+
+    pushCenterWidget("Getting Started", quickstart);
+    }
 
     /* create about view */
     {

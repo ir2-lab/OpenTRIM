@@ -27,5 +27,23 @@
         <file>assets/ionicons/list-outline.png</file>
         <file>assets/ionicons/bar-chart-outline.png</file>
         <file>assets/lucide/chart-line.svg</file>
+        <file>md/quick_start.md</file>
+        <file>md/images/intro.png</file>
+        <file>md/images/intro2.png</file>
+        <file>md/images/intro22.png</file>
+        <file>md/images/intro3.png</file>
+        <file>md/images/intro33.png</file>
+        <file>md/images/plots.png</file>
+        <file>md/images/plots11.png</file>
+        <file>md/images/run1.png</file>
+        <file>md/images/run11.png</file>
+        <file>md/images/run12.png</file>
+        <file>md/images/Screenshot from 2025-04-15 13-18-22.png</file>
+        <file>md/images/Screenshot from 2025-04-15 13-24-29.png</file>
+        <file>md/images/Screenshot from 2025-04-15 13-26-18.png</file>
+        <file>md/images/Screenshot_20250415_172951.png</file>
+        <file>md/images/Screenshot_20250415_173101.png</file>
+        <file>md/images/sum.png</file>
+        <file>md/images/sum1.png</file>
     </qresource>
 </RCC>
