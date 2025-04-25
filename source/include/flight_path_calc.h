@@ -5,6 +5,10 @@
 #include "arrays.h"
 #include "random_vars.h"
 
+#define SAMPLE_P_AND_N 1
+
+#define SQRT_4over3 1.1547005f
+
 class ion;
 class material;
 class mccore;
@@ -70,10 +74,9 @@ public:
      * free flight path \f$\ell\f$ between collisions.
      */
     enum flight_path_type_t {
-        AtomicSpacing = 0, /**< Constant, equal to interatomic distance */
-        Constant = 1, /**< Constant, equal to user supplied value */
-        MendenhallWeller = 2, /**< Algorithm from Mendenhall-Weller NIMB2005*/
-        FullMC = 3, /**< Full Monte-Carlo flight path algorithm */
+        Constant = 0, /**< Constant flight path */
+        MHW = 1, /**< Algorithm from Mendenhall-Weller NIMB2005, SRIM-like*/
+        FullMC = 2, /**< Full Monte-Carlo flight path selection */
         InvalidPath = -1
     };
 
@@ -86,7 +89,6 @@ public:
     ArrayNDf mfp() const { return mfp_; }
     ArrayNDf ipmax() const { return ipmax_; }
     ArrayNDf fpmax() const { return fp_max_; }
-    ArrayNDf Tcutoff() const { return Tcutoff_; }
 
     /**
      * @brief Initialize the object for a given simulation
@@ -128,37 +130,41 @@ public:
      *
      * @sa \ref flightpath
      */
-    bool operator()(random_vars &rng, float E, float &fp, float &sqrtfp, float &ip) const
+    bool operator()(random_vars &rng, float E, float &fp, float &sqrtfp, float &ip)
     {
         constexpr const float mhw_umin = 1. / M_E;
 
         bool doCollision = true;
         int ie;
-        float u = rng.u01s_open();
+        float u;
+
+#if SAMPLE_P_AND_N == 1
+
+        rng.random_azimuth_dir_norm(nx_, ny_, u);
+
+#else
+
+        u = rng.u01s_open();
+
+#endif
 
         switch (type_) {
-        case AtomicSpacing:
-            fp = fp_;
-            sqrtfp = 1;
-            ip = ip_ * std::sqrt(u);
-            break;
         case Constant:
             fp = fp_;
-            sqrtfp = sqrtfp_;
             ip = ip_ * std::sqrt(u);
             break;
-        case MendenhallWeller:
+        case MHW:
             ie = dedx_index(E);
             ip = ipmax_tbl[ie];
             fp = mfp_tbl[ie];
-            if (ip < ip_) {
-                sqrtfp = std::sqrt(fp / fp_);
+            if (ip < ip_) { // : ipmax < Rat
                 doCollision = u >= mhw_umin;
-                if (doCollision)
+                if (doCollision) {
                     ip *= std::sqrt(-std::log(u));
-            } else { // atomic spacing
+                    fp *= rng.u01s();
+                }
+            } else { // ipmax = Rat
                 fp = fp_;
-                sqrtfp = 1;
                 ip = ip_ * std::sqrt(u);
             }
             break;
@@ -171,7 +177,6 @@ public:
             } else {
                 fp = fpmax_tbl[ie];
             }
-            sqrtfp = std::sqrt(fp / fp_);
             break;
         default:
             assert(false); // never get here
@@ -181,21 +186,24 @@ public:
         return doCollision;
     }
 
+    float nx() const { return nx_; }
+    float ny() const { return ny_; }
+
 protected:
     flight_path_type_t type_;
 
     // helper variables for flight path calc
     std::vector<float> fp_const;
-    std::vector<float> sqrtfp_const;
     std::vector<float> ip0;
 
-    // flight path selection par
-    ArrayNDf mfp_, ipmax_, fp_max_, Tcutoff_, umin_;
+    // optional random 2d dir
+    float nx_, ny_;
+
+    // flight path selection tables
+    ArrayNDf mfp_, ipmax_, fp_max_, umin_;
 
     // Flight path [nm]
     float fp_;
-    // Square root of ratio (flight path)/(atomic radius) (used for straggling)
-    float sqrtfp_;
     // Impact parameter [nm]
     float ip_;
     // Tabulated max impact parameter as a function of ion energy

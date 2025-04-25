@@ -7,12 +7,10 @@ flight_path_calc::flight_path_calc() { }
 flight_path_calc::flight_path_calc(const flight_path_calc &o)
     : type_(o.type_),
       fp_const(o.fp_const),
-      sqrtfp_const(o.sqrtfp_const),
       ip0(o.ip0),
       mfp_(o.mfp_),
       ipmax_(o.ipmax_),
       fp_max_(o.fp_max_),
-      Tcutoff_(o.Tcutoff_),
       umin_(o.umin_)
 {
 }
@@ -29,43 +27,23 @@ int flight_path_calc::init(const mccore &s)
     // auto& tr_opt_ = s_->getTransportOptions();
     int nmat = materials.size();
     fp_const.resize(nmat);
-    sqrtfp_const.resize(nmat);
     ip0.resize(nmat);
     for (int i = 0; i < nmat; i++) {
-        fp_const[i] = tr_opt_.flight_path_const;
-        sqrtfp_const[i] = std::sqrt(fp_const[i] / materials[i]->atomicRadius());
-        ip0[i] = materials[i]->meanImpactPar();
-        if (type_ == Constant)
-            ip0[i] /= sqrtfp_const[i];
+        if (type_ == Constant) {
+            ip0[i] = SQRT_4over3 / std::sqrt(tr_opt_.flight_path_const)
+                    * materials[i]->atomicRadius();
+            fp_const[i] = tr_opt_.flight_path_const * materials[i]->atomicRadius();
+        } else {
+            fp_const[i] = (4.0f / 3) * materials[i]->atomicRadius();
+            ip0[i] = materials[i]->atomicRadius();
+        }
     }
 
     /*
-     * create tables of parameters for flight path selection, pairs of (mfp, ipmax)
+     * create tables of parameters for flight path selection,
+     * (mfp, ipmax, fpmax, umin)
      *
-     * - Set a low cutoff recoil energy T0 (min_recoil_energy)
-     * - T0 = min(min_recoil_energy, 0.01*Tm)
-     * - Scattering events with T<T0 are not considered in the MC
-     * - T0/Tm = sin(th0/2)^2, th0 : low cutoff scattering angle
-     * - ipmax = ip(e,th0) : max impact parameter
-     * - sig0 = pi*ipmax^2 : total xs for events T>T0
-     * - mfp = 1/(N*sig0) : mean free path
-     *
-     * Additional conditions:
-     *
-     * - Electron energy loss
-     *   - Δxmax for el. energy loss below 5%
-     *   - mfp = min(mfp, Dxmax)
-     *
-     * - Allow flight path < atomic radius Rat ??
-     *   - if not then mfp = max(mfp, Rat)
-     *
-     * - User selected max_mfp
-     *   - mfp = min(mfp, max_mfp)
-
-     * Finally:
-     *
-     * - ipmax = 1/(pi*mfp*N)^(1/2)
-     *
+     * @sa flightpath
      */
     auto &atoms = trgt.atoms();
     int natoms = atoms.size();
@@ -75,61 +53,95 @@ int flight_path_calc::init(const mccore &s)
     mfp_ = ArrayNDf(natoms, nmat, nerg);
     ipmax_ = ArrayNDf(natoms, nmat, nerg);
     fp_max_ = ArrayNDf(natoms, nmat, nerg);
-    Tcutoff_ = ArrayNDf(natoms, nmat, nerg);
     umin_ = ArrayNDf(natoms, nmat, nerg);
     float delta_dedx = tr_opt_.max_rel_eloss;
     float Tmin = tr_opt_.min_recoil_energy;
-    float mfp_ub = tr_opt_.max_mfp;
-    float Tmin_rel = 0.99f; /// @TODO: make it user option
+    float mfp_lb = tr_opt_.mfp_range[0];
+    float mfp_ub = tr_opt_.mfp_range[1];
+
     for (int z1 = 0; z1 < natoms; z1++) {
         for (int im = 0; im < materials.size(); im++) {
             const material *m = materials[im];
             const float &N = m->atomicDensity();
             const float &Rat = m->atomicRadius();
-            float mfp_lb = type_ == FullMC && tr_opt_.allow_sub_ml_scattering ? 0.f : Rat;
+
+            // if (type_ == FullMC && tr_opt_.allow_sub_ml_scattering)
+            //     fpmin = 0;
             for (dedx_index ie; ie != ie.end(); ie++) {
                 float &mfp = mfp_(z1, im, ie);
                 float &ipmax = ipmax_(z1, im, ie);
                 float &fpmax = fp_max_(z1, im, ie);
-                float &T0 = Tcutoff_(z1, im, ie);
+                float T0;
                 float &umin = umin_(z1, im, ie);
-                // float & dedxn = dedxn_(z1,im,ie);
+
                 float E = *ie;
                 T0 = Tmin;
 
-                // ensure Tmin is below Tm of all target atoms
+                // find the lowest T0 so that T0 < Tmin & Theta < Theta_min
                 for (const atom *a : m->atoms()) {
                     int z2 = a->id();
                     float Tm = E * ScMatrix(z1, z2)->gamma();
-                    if (T0 > Tmin_rel * Tm)
-                        T0 = Tmin_rel * Tm;
+                    float theta_min = tr_opt_.min_scattering_angle / 180.f * M_PI;
+                    theta_min *= (1 + ScMatrix(z1, z2)->mass_ratio());
+                    float ss = std::sin(0.5 * theta_min);
+                    float T0_ = Tm * ss * ss;
+                    if (T0 > T0_)
+                        T0 = T0_;
                 }
 
                 // Calc mfp corresponding to T0, mfp = 1/(N*sig0), sig0 = pi*sum_i{ X_i *
                 // [P_i(E,T0)]^2 }
-                mfp = 0.f;
+                ipmax = 0.f;
                 for (const atom *a : m->atoms()) {
                     int z2 = a->id();
                     float d = ScMatrix(z1, z2)->impactPar(E, T0);
-                    mfp += a->X() * d * d;
+                    ipmax += a->X() * d * d;
                 }
-                mfp = 1 / N / M_PI / mfp; // mfp = 1/(N*sig0) = 1/(N*pi*sum_i(ip_i^2))
+                ipmax = std::sqrt(ipmax);
 
-                // ensure mfp*dEdx/E is below max_rel_eloss
-                fpmax = delta_dedx * E / dedx(z1, im)->data()[ie];
-                mfp = std::min(mfp, fpmax);
+                // calc fpmax : fpmax*dEdx/E < max_rel_eloss
+                fpmax = 1e30f;
+                if (s.getSimulationParameters().eloss_calculation != dedx_calc::EnergyLossOff) {
+                    fpmax = delta_dedx * E / dedx(z1, im)->data()[ie];
+                }
 
-                // ensure mfp not smaller than lower bound
-                mfp = std::max(mfp, mfp_lb);
+                if (type_ == FullMC) {
 
-                // ensure mfp not larger than upper bound
-                mfp = std::min(mfp, mfp_ub);
+                    // calc mfp
+                    mfp = 1.f / M_PI / N / ipmax / ipmax;
 
-                // Find the max impact parameter ipmax = (N*pi*mfp)^(-1/2)
-                ipmax = std::sqrt(1.f / M_PI / mfp / N);
+                    // ensure mfp not smaller than lower bound
+                    if (mfp < mfp_lb) {
+                        mfp = mfp_lb;
+                        ipmax = std::sqrt(1.f / M_PI / mfp / N);
+                    }
 
-                // FullMC: u<umin reject collision
-                umin = std::exp(-fpmax / mfp);
+                    // ensure mfp not larger than upper bound
+                    if (mfp > mfp_ub) {
+                        mfp = mfp_ub;
+                        ipmax = std::sqrt(1.f / M_PI / mfp / N);
+                    }
+
+                    // FullMC: u<umin -> reject collision
+                    umin = std::exp(-fpmax / mfp);
+
+                } else if (type_ == MHW) {
+
+                    // calc mfp
+                    mfp = 1.f / M_PI / N / ipmax / ipmax;
+
+                    // ensure mfp not larger than fpmax
+                    if (mfp > fpmax) {
+                        mfp = fpmax;
+                        ipmax = std::sqrt(1.f / M_PI / mfp / N);
+                    }
+
+                    // ensure ipmax not larger than Rat
+                    if (ipmax > Rat) {
+                        ipmax = Rat;
+                        mfp = 1.f / M_PI / N / ipmax / ipmax;
+                    }
+                }
 
                 // Calc dedxn for  T<T0 = N*sum_i { X_i * Sn(E,T0) }
                 // Add this to dedx
@@ -157,35 +169,26 @@ int flight_path_calc::init(const mccore &s)
 
 int flight_path_calc::preload(const ion *i, const material *m)
 {
+
     assert(i);
     assert(m);
 
     int iid = i->myAtom()->id();
     int mid = m->id();
 
+    fp_ = fp_const[mid];
+    ip_ = ip0[mid];
+
     switch (type_) {
-    case AtomicSpacing:
-        fp_ = m->atomicRadius();
-        sqrtfp_ = 1.f;
-        ip_ = ip0[mid];
-        break;
-    case Constant:
-        fp_ = fp_const[mid];
-        sqrtfp_ = sqrtfp_const[mid];
-        ip_ = ip0[mid];
-        break;
-    case MendenhallWeller:
+    case MHW:
     case FullMC:
         ipmax_tbl = &(ipmax_(iid, mid, 0));
         mfp_tbl = &(mfp_(iid, mid, 0));
         fpmax_tbl = &(fp_max_(iid, mid, 0));
         umin_tbl = &(umin_(iid, mid, 0));
-        fp_ = m->atomicRadius();
-        sqrtfp_ = 1.f;
-        ip_ = ip0[mid];
         break;
     default:
-        assert(false); // should never reach here
+        break;
     }
 
     return 0;

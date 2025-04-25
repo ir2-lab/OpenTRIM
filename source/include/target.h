@@ -184,19 +184,11 @@ class material : public target_item
 
     float atomicRadius_; // nm
     float sqrtAtomicDistance_;
-    float layerDistance_;
 
     // float atomicDensity_; // at/cm^3 ??
     float atomicDensityNM_; // at/nm^3
-    float sqrtRecFlDensity_;
     float meanZ_;
     float meanM_;
-
-    // SRIM like stuff
-    float meanF_;
-    float meanA_;
-    float meanMinRedTransfer_;
-    float meanImpactPar_;
 
     // LSS & NRT
     float lss_Kd_;
@@ -246,15 +238,6 @@ public:
     float massDensity() const { return massDensity_; }
     /// Returns the atomic radius \f$ (4\pi N/3)^{-1/3} \f$ [nm]
     float atomicRadius() const { return atomicRadius_; }
-    /// Returns the monolayer distance \f$ N^{-1/3} \f$ [nm]
-    float layerDistance() const { return layerDistance_; }
-
-    // the following are used for SRIM ffp algorithm
-    float meanF() const { return meanF_; }
-    float meanA() const { return meanA_; }
-    float meanMinRedTransfer() const { return meanMinRedTransfer_; }
-    float meanImpactPar() const { return meanImpactPar_; }
-    float sqrtRecFlDensity() const { return sqrtRecFlDensity_; }
 
     // this is used for generating options structure
     material_desc_t getDescription() const;

@@ -330,7 +330,7 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
         BoundaryCrossing crossing = i->propagate(fp, sqrtfp);
 
         // subtract ionization & straggling
-        dedx_calc_(i, fp, sqrtfp, rng);
+        dedx_calc_(i, fp, rng);
 
         // handle boundary
         switch (crossing) {
@@ -384,7 +384,17 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
 
         // get random azimuthal dir
         float nx, ny; // nx = cos(phi), ny = sin(phi), phi: az. angle
+
+#if SAMPLE_P_AND_N == 1
+
+        nx = flight_path_calc_.nx();
+        ny = flight_path_calc_.ny();
+
+#else
+
         rng.random_azimuth_dir(nx, ny);
+
+#endif
 
         // register scattering event (before changing ion data)
         // t(Event::Scattering,*i);

@@ -405,6 +405,31 @@ public:
         ny = 2 * nx * ny / r2;
         nx = (s1 - s2) / r2;
     }
+
+    /**
+     * @brief Generate a random azimuthal direction and radius
+     *
+     * The same as random_azimuth_dir() but returning additionally
+     * a random 2d vector squared norm, \f$ r^2 \f$, distributed uniformly in
+     * \f$ (0,1) \f$
+     *
+     * @param nx sin(phi)
+     * @param ny cos(phi)
+     * @param r2 uniform random number, 0<r2<1
+     */
+    void random_azimuth_dir_norm(float &nx, float &ny, float &r2)
+    {
+        float s1, s2;
+        do {
+            nx = 2.f * u01s() - 1.f;
+            ny = u01s();
+            s1 = nx * nx;
+            s2 = ny * ny;
+            r2 = s1 + s2;
+        } while (r2 >= 1.f || r2 == 0.f);
+        ny = 2 * nx * ny / r2;
+        nx = (s1 - s2) / r2;
+    }
 };
 
 #endif // RANDOM_VARS_H

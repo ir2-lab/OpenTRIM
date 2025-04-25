@@ -110,19 +110,19 @@ public:
     struct transport_options
     {
         /// Free flight path selection algorithm
-        flight_path_calc::flight_path_type_t flight_path_type{ flight_path_calc::AtomicSpacing };
+        flight_path_calc::flight_path_type_t flight_path_type{ flight_path_calc::Constant };
         /// The constant flight path (for algorithm flight_path_type_t=Constant) [nm]
-        float flight_path_const{ 0.1f };
+        float flight_path_const{ 4.0f / 3 };
         /// Minimum energy cutoff for ion transport [eV]
         float min_energy{ 1.f };
-        /// Minimum recoil energy
+        /// Minimum recoil energy [eV]
         float min_recoil_energy{ 1.f };
-        /// Scattering at shorter distances than interatomic distance
-        bool allow_sub_ml_scattering{ false };
-        /// Max mfp
-        float max_mfp{ 1.0e30f };
+        /// Minimum scattering angle [degrees]
+        float min_scattering_angle{ 2.f };
         /// Max dE/E per mfp, dE = dEdx*mfp
         float max_rel_eloss{ 0.05f };
+        /// Mean free path range
+        std::array<float, 2> mfp_range{ 4.0f / 3, 1e30f };
     };
 
 protected:

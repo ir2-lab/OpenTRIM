@@ -104,12 +104,42 @@ class dedx_interp : public corteo::log_interp<dedx_index>
 public:
     /**
      * @brief Construct an interpolator for monoatomic targets
+     *
+     * The average atomic mass is used for both projectile and target.
+     *
+     * @param Z1 projectile atomic number
+     * @param Z2 target atom atomic number
+     * @param N target atomic density in [at/nm3]
+     */
+    dedx_interp(int Z1, int Z2, float N = 1.f);
+    /**
+     * @brief Construct an interpolator for monoatomic targets
+     *
+     * The average atomic mass is used for the target atom.
+     *
      * @param Z1 projectile atomic number
      * @param M1 projectile atomic mass
      * @param Z2 target atom atomic number
      * @param N target atomic density in [at/nm3]
      */
     dedx_interp(int Z1, float M1, int Z2, float N = 1.f);
+    /**
+     * @brief Construct an interpolator for polyatomic targets
+     *
+     * The total stopping power is given by the Bragg mixing rule:
+     * \f[
+     * dE/dx = N\sum_i{X_i (dE/dx)_i}
+     * \f]
+     * where the sum is over all atomic species in the target.
+     *
+     * The average atomic mass is used for both projectile and target.
+     *
+     * @param Z1 projectile atomic number
+     * @param Z2 vector of target atom atomic numbers
+     * @param X2 vector of target atomic fractions (sum of X2 assumed equal to 1.0)
+     * @param N target atomic density in [at/nm3]
+     */
+    dedx_interp(int Z1, const std::vector<int> &Z2, const std::vector<float> &X2, float N = 1);
     /**
      * @brief Construct an interpolator for polyatomic targets
      *

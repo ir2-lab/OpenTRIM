@@ -1,11 +1,5 @@
 #include "target.h"
-#include "xs.h"
-#include "dedx.h"
 #include "random_vars.h"
-#include "periodic_table.h"
-
-#include <sstream>
-#include <stdexcept>
 
 atom::atom(const parameters &p) : target_item(nullptr), id_(0), mat_(nullptr), p_(p) { }
 
@@ -69,20 +63,6 @@ void material::init()
     for (int i = 1; i < atoms_.size(); i++)
         cumX_[i] += X_[i] + cumX_[i - 1];
 
-    /*
-     * For testing purposes and comparisons for SRIM,
-     * we calculate the mean screening length and
-     * energy reduction factor (as in ZBL85)
-     */
-    if (target_) {
-        int ionZ = target_->projectile()->Z();
-        float ionM = target_->projectile()->M();
-        meanA_ = screening_function<Screening::ZBL>::screeningLength(ionZ, meanZ_); // nm
-        meanF_ = meanA_ * meanM_ / (ionZ * meanZ_ * (ionM + meanM_) * E2C2);
-        meanMinRedTransfer_ = dedx_index::minVal * meanF_ * (ionM + meanM_) * (ionM + meanM_)
-                / (4 * ionM * meanM_);
-    }
-
     static const float AvogadroNum = 6.02214076e2f; // note the nm^3
     if (atomicDensityNM_ <= 0) {
         atomicDensityNM_ = AvogadroNum * massDensity_ / meanM_;
@@ -90,13 +70,8 @@ void material::init()
         massDensity_ = atomicDensityNM_ * meanM_ / AvogadroNum;
     }
 
-    atomicRadius_ = 1.0 / std::pow(4.0 * M_PI * atomicDensityNM_ / 3, 1.0 / 3);
-    layerDistance_ = 1.0 / std::pow(atomicDensityNM_, 1.0 / 3);
+    atomicRadius_ = 1.0 / std::pow(4.0 * M_PI * atomicDensityNM_ / 3.0, 1.0 / 3.0);
     sqrtAtomicDistance_ = std::sqrt(atomicRadius_);
-    sqrtRecFlDensity_ =
-            1.0 / std::sqrt(M_PI * atomicDensityNM_); // TODO  x 1 / sqrt(flight_length_constant)
-
-    meanImpactPar_ = 1.0 / std::sqrt(M_PI * atomicDensityNM_ * atomicRadius_);
 
     // LSS & NRT
     lss_Kd_ = 0.1334f * std::pow(1.f * meanZ_, 2.0f / 3.0f) / std::sqrt(meanM_);

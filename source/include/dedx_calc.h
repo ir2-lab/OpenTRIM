@@ -107,20 +107,20 @@ public:
      *
      * @param i pointer to an \ref ion object
      * @param fp the ion's flight path [nm]
-     * @param sqrtfp sqrt of fp/(atomic radius) (used for straggling)
      * @param rng random number generator (used for straggling)
      * @return  the total energy loss [eV]
      */
-    void operator()(ion *i, float fp, float sqrtfp, random_vars &rng) const
+    void operator()(ion *i, float fp, random_vars &rng) const
     {
         if (type_ == EnergyLossOff)
             return;
+
         float E = i->erg();
         float de_stopping = fp * (*stopping_interp_)(E);
 
         if (type_ == EnergyLossAndStraggling) {
             dedx_index ie(E);
-            float de_straggling = straggling_interp_->data()[ie] * rng.normal() * sqrtfp;
+            float de_straggling = straggling_interp_->data()[ie] * rng.normal() * std::sqrt(fp);
 
             /* IRADINA
              * Due to gaussian distribution, the straggling can in some cases
@@ -166,6 +166,7 @@ public:
     {
         if (type_ == EnergyLossOff)
             return;
+
         float E = i->erg();
         float de_stopping = fp * (*stopping_interp_)(E);
 

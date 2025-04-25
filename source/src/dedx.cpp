@@ -14,9 +14,20 @@ const float *raw_dedx(int Z1, int Z2)
             : nullptr;
 }
 
+dedx_interp::dedx_interp(int Z1, int Z2, float atomicDensity)
+{
+    init(Z1, most_abundant_isotope_mass[Z1], { Z2 }, { 1.f }, atomicDensity);
+}
+
 dedx_interp::dedx_interp(int Z1, float M1, int Z2, float atomicDensity)
 {
     init(Z1, M1, { Z2 }, { 1.f }, atomicDensity);
+}
+
+dedx_interp::dedx_interp(int Z1, const std::vector<int> &Z2, const std::vector<float> &X2,
+                         float atomicDensity)
+{
+    init(Z1, most_abundant_isotope_mass[Z1], Z2, X2, atomicDensity);
 }
 
 dedx_interp::dedx_interp(int Z1, float M1, const std::vector<int> &Z2, const std::vector<float> &X2,
@@ -96,7 +107,7 @@ int straggling_interp::init(StragglingModel model, int Z1, float M1, const std::
     for (int i = 0; i < Z2.size(); i++)
         calcStraggling(dedx_ion, dedx_H, Z1, M1, Z2[i], Nl0 * X2[i], model, buff.data());
     for (dedx_index ie; ie != ie.end(); ie++)
-        buff[ie] = std::sqrt(buff[ie]);
+        buff[ie] = std::sqrt(buff[ie] / Rat);
 
     set(buff);
 
