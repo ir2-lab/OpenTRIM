@@ -1,14 +1,57 @@
-# Usage: th = screened_coulomb_theta(e,s)
+# -*- texinfo -*-
+# @deftypefn {Function File} {@var{theta}=} screened_coulomb_theta (@var{e}, @var{s}, @var{screening})
+# @deftypefnx {Function File} {@var{theta}=} screened_coulomb_theta (@var{e}, @var{s})
 #
-# Calculate the center-of-mass scattering angle
-# for a screened Coulomb potential
+# Calculate the screened Coulomb potential scattering angle in the center-of-mass system.
 #
-# INPUT
-#     e : reduced center-of-mass energy 
-#     s : reduced impact factor
+# @var{e} and @var{s} are the reduced energy and impact parameter, respectively.
+# They can be either both arrays with equal number of elements N or one of them a scalar
+# and the other an array. A corresponding array of scattering angle values is returned
+# in @var{theta}.
 #
-# The input arguments can be 
-#   - arrays with the same number of elements 
-#   - scalars
-#   - one array and one scalar.
+# The optional 3rd argument @var{screening} is a string defining the type of screening
+# potential and can take up one of the following values:
+#   "None", "LenzJensen", "KrC", "Moliere", "ZBL", "ZBL_MAGIC"
 #
+# The default is "ZBL"
+#
+# @seealso{screened_coulomb_ip, screened_coulomb_xs, screened_coulomb_sn}
+# @end deftypefn
+#
+
+function th = screened_coulomb_theta(e,s,screening)
+
+ne = length(e);
+ns = length(s);
+
+if (ne>1) && (ns>1) && (ne!=ns)
+  error("screened_coulomb_theta: 1st and 2nd args different number of elements");
+endif
+
+if nargin<3,
+  screening = "ZBL";
+endif
+
+if !ischar(screening),
+  error("screened_coulomb_theta: 3rd arg must be a string");
+endif
+
+k=-1;
+screening_types = {"None", "LenzJensen", "KrC", "Moliere", "ZBL", "ZBL_MAGIC"};
+
+for i=1:length(screening_types)
+  if strcmp(screening_types{i},screening),
+    k = i-1;
+    break;
+  endif
+endfor
+
+if k<0,
+  error("screened_coulomb_theta: 3rd arg is not a valid screening type");
+endif
+
+th = __screened_coulomb_theta__(e,s,k);
+
+
+
+
