@@ -10,7 +10,7 @@ It consists of the following components:
 - A \ref XS "library of C++ classes" for screened Coulomb scattering calculations 
 - The \ref dedx containing tables of electronic stopping data
 
-The documentation is divide in the following parts
+The documentation is divided in the following parts
 
 - \ref physics
 - \ref userdoc

@@ -35,12 +35,12 @@ Click on any of the options to see more information.
 &emsp;&emsp;},<br>
 &emsp;&emsp;\ref _Transport "\"Transport\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Transport_min_energy "\"min_energy\"": 1.0,<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Transport_flight_path_type "\"flight_path_type\"": "AtomicSpacing",<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Transport_flight_path_const "\"flight_path_const\"": 0.1,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Transport_flight_path_type "\"flight_path_type\"": "Constant",<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Transport_flight_path_const "\"flight_path_const\"": 1.3333334,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Transport_max_rel_eloss "\"max_rel_eloss\"": 0.05,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Transport_min_recoil_energy "\"min_recoil_energy\"": 1.0,<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Transport_max_mfp "\"max_mfp\"": 1e+30,<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Transport_allow_sub_ml_scattering "\"allow_sub_ml_scattering\"": false<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Transport_min_scattering_angle "\"min_scattering_angle\"": 2.0,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Transport_mfp_range "\"mfp_range\"": [1.3333334,1e+30]<br>
 &emsp;&emsp;},<br>
 &emsp;&emsp;\ref _IonBeam "\"IonBeam\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _IonBeam_ion "\"ion\"": {<br>
@@ -80,9 +80,9 @@ Click on any of the options to see more information.
 &emsp;&emsp;\ref _Output "\"Output\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_title "\"title\"": "Ion Simulation",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_storage_interval "\"storage_interval\"": 1000,<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Output_store_exit_events "\"store_exit_events\"": 0,<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Output_store_pka_events "\"store_pka_events\"": 0,<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Output_store_dedx "\"store_dedx\"": 1<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Output_store_exit_events "\"store_exit_events\"": false,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Output_store_pka_events "\"store_pka_events\"": false,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Output_store_dedx "\"store_dedx\"": true<br>
 &emsp;&emsp;},<br>
 &emsp;&emsp;\ref _Driver "\"Driver\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Driver_max_no_ions "\"max_no_ions\"": 100,<br>
@@ -147,16 +147,15 @@ In all other cases interpolation tables are used.<br>
 When the energy of an ion goes below this cutoff,<br>
 the ion history is terminated.<br>
 <tr><th colspan="2">\anchor _Transport_flight_path_type Transport.flight_path_type<tr><td>Type <td>Enumerator
-<tr><td>Values<td> AtomicSpacing | Constant | MendenhallWeller | FullMC
-<tr><td>Default Value<td>"AtomicSpacing"<tr><td>Description <td>Flight path selection algorithm.
+<tr><td>Values<td> Constant | MHW | FullMC
+<tr><td>Default Value<td>"Constant"<tr><td>Description <td>Flight path selection algorithm.
 <br>
-- AtomicSpacing: Constant flight path equal to material's interatomic distance<br>
 - Constant: User defined constant flight path<br>
 - MendenhallWeller: SRIM-like path selection algorithm<br>
 - FullMC: Full Monte-Carlo flight path algorithm<br>
 <tr><th colspan="2">\anchor _Transport_flight_path_const Transport.flight_path_const<tr><td>Type <td>Floating point number
 <tr><td>Range<td>0.001...1e+06
-<tr><td>Default Value<td>0.1<tr><td>Description <td>Constant Flight Path in nm.
+<tr><td>Default Value<td>1.3333334<tr><td>Description <td>Constant Flight Path in units of the atomic radius.
 <br>
 Used when flight_path_type=Constant<br>
 <tr><th colspan="2">\anchor _Transport_max_rel_eloss Transport.max_rel_eloss<tr><td>Type <td>Floating point number
@@ -168,14 +167,19 @@ Applicable only when flight_path_type=MendenhallWeller or FullMC<br>
 <tr><td>Range<td>0.001...1e+06
 <tr><td>Default Value<td>1.0<tr><td>Description <td>Minimum recoil energy in eV.
 <br>
+Events with recoil energy below this value will be ignoredif the scattering angle is also below min_scattering_angle.<br>
 Applicable only when flight_path_type=MendenhallWeller or FullMC<br>
-<tr><th colspan="2">\anchor _Transport_max_mfp Transport.max_mfp<tr><td>Type <td>Floating point number
-<tr><td>Range<td>0.001...1e+30
-<tr><td>Default Value<td>1e+30<tr><td>Description <td>Maximum ion mean free path in nm.
+<tr><th colspan="2">\anchor _Transport_min_scattering_angle Transport.min_scattering_angle<tr><td>Type <td>Floating point number
+<tr><td>Range<td>0.001...90
+<tr><td>Default Value<td>2.0<tr><td>Description <td>Minimum scattering angle in degrees.
 <br>
-Applicable only when flight_path_type=FullMC<br>
-<tr><th colspan="2">\anchor _Transport_allow_sub_ml_scattering Transport.allow_sub_ml_scattering<tr><td>Type <td>Boolean
-<tr><td>Default Value<td>false<tr><td>Description <td>Allow sub-monolayer ion flight path.
+Refers to the projectile scattering angle in the lab reference frame.<br>
+Events with scattering angle lower that this value will be ignotred if the recoil energy is also below min_recoil_energy.<br>
+Applicable only when flight_path_type=MendenhallWeller or FullMC<br>
+<tr><th colspan="2">\anchor _Transport_mfp_range Transport.mfp_range<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>2
+<tr><td>Element range<td>0.001...1e+30
+<tr><td>Default Value<td>[1.3333334,1e+30]<tr><td>Description <td>Range of ion mean free path in units of atomic radius.
 <br>
 Applicable only when flight_path_type=FullMC<br>
 <tr><th colspan="2">\anchor _IonBeam IonBeam<tr><td>Type <td>Option group
@@ -227,8 +231,9 @@ Surface(2D) distributions are sampled on the left yz-plane bounding the simulati
 In a Uniform surface(volume) distribution, the position is sampled uniformly in a square(cube) of width fwhm around the center.<br>
 In a Gaussian distribution, each component of the position vector is sampled from a Gaussian with the same fwhm around the center.<br>
 When sampling from a distribution, out-of-bounds positions are rejected and a new sample is drawn.<br>
-<tr><th colspan="2">\anchor _IonBeam_spatial_distribution_center IonBeam.spatial_distribution.center<tr><td>Type <td>Floating point 3d Vector
-<tr><td>Range<td>-1e+10...1e+10
+<tr><th colspan="2">\anchor _IonBeam_spatial_distribution_center IonBeam.spatial_distribution.center<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>3
+<tr><td>Element range<td>-1e+10...1e+10
 <tr><td>Default Value<td>[0.0,0.0,0.0]<tr><td>Description <td>Central initial position of generated ions, [x,y,z] in nm.
 <tr><th colspan="2">\anchor _IonBeam_spatial_distribution_fwhm IonBeam.spatial_distribution.fwhm<tr><td>Type <td>Floating point number
 <tr><td>Range<td>0.1...1e+10
@@ -242,8 +247,9 @@ When sampling from a distribution, out-of-bounds positions are rejected and a ne
 - Single Value: All ions have the same initial direction<br>
 - Uniform: Ion direction distributed uniformly within a cone around the central direction<br>
 - Gaussian: Ion direction distributed according to the Gaussian(Normal) distribution around the central direction<br>
-<tr><th colspan="2">\anchor _IonBeam_angular_distribution_center IonBeam.angular_distribution.center<tr><td>Type <td>Floating point 3d Vector
-<tr><td>Range<td>-1000...1000
+<tr><th colspan="2">\anchor _IonBeam_angular_distribution_center IonBeam.angular_distribution.center<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>3
+<tr><td>Element range<td>-1000...1000
 <tr><td>Default Value<td>[1.0,0.0,0.0]<tr><td>Description <td>Ion beam central direction vector, [nx,ny,nz], unnormalized.
 <tr><th colspan="2">\anchor _IonBeam_angular_distribution_fwhm IonBeam.angular_distribution.fwhm<tr><td>Type <td>Floating point number
 <tr><td>Range<td>0.01...1000
@@ -253,17 +259,21 @@ For the Uniform distribution, fwhm defines a cone around the main direction, whe
 The Gaussian distrubution is not yet implemented<br>
 <tr><th colspan="2">\anchor _Target Target<tr><td>Type <td>Option group
 <tr><td>Description <td>Target
-<tr><th colspan="2">\anchor _Target_size Target.size<tr><td>Type <td>Floating point 3d Vector
-<tr><td>Range<td>0.001...1e+07
+<tr><th colspan="2">\anchor _Target_size Target.size<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>3
+<tr><td>Element range<td>0.001...1e+07
 <tr><td>Default Value<td>[100.0,100.0,100.0]<tr><td>Description <td>Size in nm of the simulation volume along the x-, y- and z-axis.
-<tr><th colspan="2">\anchor _Target_origin Target.origin<tr><td>Type <td>Floating point 3d Vector
-<tr><td>Range<td>-1e+07...1e+07
+<tr><th colspan="2">\anchor _Target_origin Target.origin<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>3
+<tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[0.0,0.0,0.0]<tr><td>Description <td>Origin of the simulation space.
-<tr><th colspan="2">\anchor _Target_cell_count Target.cell_count<tr><td>Type <td>Integer 3d Vector
-<tr><td>Range<td>1...1e+06
+<tr><th colspan="2">\anchor _Target_cell_count Target.cell_count<tr><td>Type <td>Vector of integer values
+<tr><td>Size<td>3
+<tr><td>Element range<td>1...1e+06
 <tr><td>Default Value<td>[1,1,1]<tr><td>Description <td>Number of simulation cells along the x-, y- and z-axis.
-<tr><th colspan="2">\anchor _Target_periodic_bc Target.periodic_bc<tr><td>Type <td>Integer 3d Vector
-<tr><td>Range<td>0...1
+<tr><th colspan="2">\anchor _Target_periodic_bc Target.periodic_bc<tr><td>Type <td>Vector of integer values
+<tr><td>Size<td>3
+<tr><td>Element range<td>0...1
 <tr><td>Default Value<td>[0,1,1]<tr><td>Description <td>Select periodic boundary conditions along the axes (0=normal, 1=periodic).
 <tr><th colspan="2">\anchor _Target_materials Target.materials<tr><td>Type <td>Option group
 <tr><td>Description <td>Target materials definition
@@ -277,11 +287,11 @@ The Gaussian distrubution is not yet implemented<br>
 <tr><td>Range<td>100...2.14748e+09
 <tr><td>Default Value<td>1000<tr><td>Description <td>Time interval (ms) to update stored data.
 <tr><th colspan="2">\anchor _Output_store_exit_events Output.store_exit_events<tr><td>Type <td>Boolean
-<tr><td>Default Value<td>0<tr><td>Description <td>Store a table of ion exit events.
+<tr><td>Default Value<td>false<tr><td>Description <td>Store a table of ion exit events.
 <tr><th colspan="2">\anchor _Output_store_pka_events Output.store_pka_events<tr><td>Type <td>Boolean
-<tr><td>Default Value<td>0<tr><td>Description <td>Store a table of PKA events.
+<tr><td>Default Value<td>false<tr><td>Description <td>Store a table of PKA events.
 <tr><th colspan="2">\anchor _Output_store_dedx Output.store_dedx<tr><td>Type <td>Boolean
-<tr><td>Default Value<td>1<tr><td>Description <td>Store electronic stopping tables for each ion/material combination.
+<tr><td>Default Value<td>true<tr><td>Description <td>Store electronic stopping tables for each ion/material combination.
 <tr><th colspan="2">\anchor _Driver Driver<tr><td>Type <td>Option group
 <tr><td>Description <td>Options for the simulation driver.
 <tr><th colspan="2">\anchor _Driver_max_no_ions Driver.max_no_ions<tr><td>Type <td>Integer
