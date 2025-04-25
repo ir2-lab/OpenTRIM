@@ -1,66 +1,80 @@
+This is a short guide to running your first **OpenTRIM** simulation. 
 
-This is a guide for running your first simulations with **openTrim**. The easiest way is by modifying existing examples, and this is what is described in the following steps.
+The easiest way is to modify an existing example. This is what is described in the following steps.
 
+### 1. Click the "Examples" button. 
 
-1. On start Screen click on "Examples" button. 
+![intro](./images/intro.png) 
 
-   ![intro](./images/intro.png) 
+### 2. Double-click one of the examples. 
+We'll use "1MeV Xe on UO2" in this guide
 
-2. Double-click on one example. ( In order to demonstrate some capabilities, third example is going to be run )
-
-   ![intro](./images/intro22.png) 
+![intro](./images/intro22.png) 
    
 
-3. Click **OK** on the pop-up box asking you to discard current simulation.
+### 3. Click OK on the pop-up box 
+This will discard the current simulation.
 
-   ![intro](./images/intro33.png)   
+![intro](./images/intro33.png)   
 
-4. User will be relocated at **CONFIGURATION PANEL**
-   -  On top line the title can be seen and modified manualy.
-  
-   -  At the bottom left side of the ***Configuration***  panel one can either **run** simulation by pressing **play button** (1) or navigate through options and modify them.
-  
-   -  At the bottom one can choose number of ions to be run (2), number of threads to be used for the simulation (3), ect and data progress of simulation data are depicted in real time on relevant boxes.
-  
-    ![intro](./images/run12.png)
-  
+### 4. The program switches to the "Config" panel
 
+In this panel there are several tabs with configuration options
+  - On top there is the user-defined simulation title
+  - **General Simulation options (I)** 
+     
+    This tab contains options regarding simulation types, physical models and processes. 
+    Further details regarding these can be found in [Documentation](https://ir2-lab.gitlab.io/opentrim/) .
+
+  - **Ion transport options (II)**
+
+    This tab contains options like energy cutoff, flight path sampling, etc.
+
+  - **Ion Source (III)**
+
+    Define source particle type, energy, spatial and directional distribution.
+
+  - **Target (IV)**
+
+    Define target size, materials and configuration.
+
+  - **Output (V)**
+    
+    Set options for output data handling.
+
+  - **JSON (VI)**
+
+    Inspect the configuration data in json format.
+
+![intro](./images/run12.png)
+
+  - After reviewing or modifying the options, press the **play button** (1) at the bottom left to **run the simulation**.
   
- - ***This panel consists of four tabs***:
+  - Change the number of ions to be run (2), the number of threads to use (3), ect in the relevant boxes 
   
-   ### I. General Simulation options
-   This tab contains options regarding simulation types, physical models and processes. Further details regarding these can be found in [Documentation](https://ir2-lab.gitlab.io/opentrim/) .
+  - The simulation progress and other data are depicted in real time.
 
-   ### II. Ion transport options
-   This tab contains options regarding energy cutoff under which ions are not recorded anymore and flight path type along with related options.
-
-   ### III. Ion Source
-   Here the user can load/modify data regarding physical properties and geomatrical distribution of ion source of the simulation.
-
-   ### IV. Target
-   This tab contains options regarding target materials, geometry and binning.
+### 5 "Summary" panel
    
-   ### V. Output
-   At this tab data regarding output data handling can be found.
+![intro](./images/sum1.png)
 
-   ### VI. JSON
-   Data of all tabs are stored in a .json file format which can be seen at this final tab.
-
-   **After tabs are reviewed and/or modified accordingly press play button and simulation will run** 
-
-5. **SUMMARY PANEL**
-   
-   ![intro](./images/sum1.png)
-
-   During simulation run, user can find information on physical properties of interest in real time and in a variety of units. These information are recorded in four tabs: 
-
+This panel summarizes key simulation results in four tables: 
    - Damage Events (I)
    - Energy Deposition (II)
    - PKA damage (III)
    - Ion Statistics (IV)
 
-6. **PLOTS PANEL**
-   
-   ![intro](./images/plots11.png)
+The data is updated in real time. Statistical variance is also shown.
 
-   Data reported in former "Summary Panel" are plotted in real time at the **Plots Tab** for ions and each target material required by the user. All plots can also be saved in .pdf or .csv format by pressing **Export** button. 
+### 6 "Plots" panel
+   
+![intro](./images/plots11.png)
+
+In this panel, simulation data are plotted in real time.
+
+Select the tally table to plot from the list on the left side.
+
+Below the graph there are controls for setting the axis (X/Y/Z) and selecting
+which ion or target atom to show. 
+
+All plots can also be exported to .pdf or .csv format by pressing **Export** button. 
