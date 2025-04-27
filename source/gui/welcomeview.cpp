@@ -174,11 +174,28 @@ WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ions
 
     /* create getting Started view */
     {
-        QTextBrowser *quickstart = new QTextBrowser;
-        quickstart -> setSource(QUrl("qrc:./md/quick_start.md"));
+        QWidget *w = new QWidget;
+        QVBoxLayout *vbox = new QVBoxLayout;
+        vbox->setContentsMargins(0, 0, 0, 0);
 
+        w->setLayout(vbox);
+        {
+            QHBoxLayout *hbox = new QHBoxLayout;
+            btPopupQuickStart = new QPushButton(QIcon(":/assets/ionicons/open-outline.svg"),
+                                                "Open in separate window");
 
-    pushCenterWidget("Getting Started", quickstart);
+            hbox->addWidget(btPopupQuickStart);
+            hbox->addStretch();
+            vbox->addLayout(hbox);
+        }
+
+        {
+            QTextBrowser *quickstart = new QTextBrowser;
+            quickstart->setSource(QUrl("qrc:./md/quick_start.md"));
+            vbox->addWidget(quickstart);
+        }
+
+        pushCenterWidget("Getting Started", w);
     }
 
     /* create about view */
@@ -222,8 +239,8 @@ WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ions
 
     connect(btNew, &QPushButton::clicked, this, &WelcomeView::onNew);
 
-    //    connect(ionsui->driverObj(),&McDriverObj::modificationChanged,
-    //            actSaveJson,&QAction::setEnabled);
+    connect(btPopupQuickStart, &QPushButton::clicked, iui, &MainUI::showQuickStartWidget);
+
     connect(ionsui->driverObj(), &McDriverObj::modificationChanged, this,
             &WelcomeView::onDriverStatusChanged);
     connect(ionsui->driverObj(), &McDriverObj::statusChanged, this,
@@ -231,8 +248,10 @@ WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ions
     connect(ionsui->driverObj(), &McDriverObj::fileNameChanged, this,
             &WelcomeView::onFileNameChanged);
 
-    btAbout->setChecked(true);
-    changeCenterWidget(3);
+    // select page to show 1st
+
+    btGettingStarted->setChecked(true);
+    changeCenterWidget(2);
 }
 
 void WelcomeView::changeCenterWidget(int id)
@@ -530,7 +549,7 @@ void WelcomeView::openJson(const QString &path)
     QByteArray json = f.readAll();
 
     // Is it a valid json config ??
-    mcdriver::options opt;
+    mcconfig opt;
     std::istringstream is(json.constData());
     std::ostringstream os;
     if (opt.parseJSON(is, false, &os) != 0) {

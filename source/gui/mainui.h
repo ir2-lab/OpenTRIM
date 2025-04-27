@@ -45,6 +45,7 @@ public:
 
 public slots:
     void setCurrentPage(PageId id);
+    void showQuickStartWidget();
 
 private slots:
     void changePage(int idx);
@@ -65,6 +66,7 @@ private:
     QStackedWidget *_stackedWidget;
     QThread runnerThread;
     QButtonGroup *pageButtonGrp;
+    QWidget *quickStartWidget;
 
     SimControlWidget *ctrlWidget;
 };

@@ -66,6 +66,7 @@ private:
     QPushButton *btOpenExample;
     QPushButton *btGettingStarted;
     QPushButton *btAbout;
+    QPushButton *btPopupQuickStart;
 
     QAction *actSaveJson;
     QAction *actSaveJsonAs;

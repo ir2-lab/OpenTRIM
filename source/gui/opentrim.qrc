@@ -35,5 +35,6 @@
         <file>md/images/run12.png</file>
         <file>md/images/sum1.png</file>
         <file>md/about.md</file>
+        <file>assets/ionicons/open-outline.svg</file>
     </qresource>
 </RCC>

@@ -24,12 +24,10 @@
 #include <QFile>
 #include <QButtonGroup>
 
-#include <sstream>
-
 #define SIDEBAR_W 70
 #define SIDEBAR_H 70
 
-MainUI::MainUI(QWidget *parent) : QWidget(parent)
+MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
 {
     /* create runner thread */
     driverObj_ = new McDriverObj;
@@ -126,6 +124,9 @@ MainUI::~MainUI()
         driverObj_->start(false);
     runnerThread.quit();
     runnerThread.wait();
+
+    if (quickStartWidget)
+        delete quickStartWidget;
 }
 
 void MainUI::changePage(int idx)
@@ -145,19 +146,29 @@ void MainUI::updateWindowTitle()
 
 void MainUI::closeEvent(QCloseEvent *event)
 {
+    bool driver_ok;
+
     McDriverObj::DriverStatus st = driverObj_->status();
     if (st == McDriverObj::mcReset) {
-        event->accept();
-        return;
-    }
-    QString msg = st == McDriverObj::mcRunning
-            ? "Stop the running simulation, discard data & quit program?"
-            : "Discard simulation data & quit program?";
-    int ret = QMessageBox::warning(this, QString("Close %1").arg(PROJECT_NAME), msg,
-                                   QMessageBox::Ok | QMessageBox::Cancel);
-    if (ret == QMessageBox::Ok) {
-        event->accept();
+        driver_ok = true;
     } else {
+        QString msg = st == McDriverObj::mcRunning
+                ? "Stop the running simulation, discard data & quit program?"
+                : "Discard simulation data & quit program?";
+        int ret = QMessageBox::warning(this, QString("Close %1").arg(PROJECT_NAME), msg,
+                                       QMessageBox::Ok | QMessageBox::Cancel);
+        driver_ok = (ret == QMessageBox::Ok);
+    }
+
+    if (driver_ok) {
+
+        if (quickStartWidget)
+            quickStartWidget->close();
+
+        event->accept();
+
+    } else {
+
         event->ignore();
     }
 }
@@ -205,4 +216,24 @@ MainUI::PageId MainUI::currentPage() const
 void MainUI::setCurrentPage(PageId id)
 {
     pageButtonGrp->button((int)id)->click();
+}
+
+void MainUI::showQuickStartWidget()
+{
+    if (quickStartWidget) {
+        quickStartWidget->show();
+        quickStartWidget->raise();
+    } else {
+        quickStartWidget = new QWidget;
+        QVBoxLayout *vbox = new QVBoxLayout;
+        quickStartWidget->setLayout(vbox);
+        QLabel *label = new QLabel("OpenTRIM Quick Start Guide");
+        label->setStyleSheet("font-size : 14pt; font-weight : bold;");
+        vbox->addWidget(label);
+        QTextBrowser *quickstart = new QTextBrowser;
+        quickstart->setSource(QUrl("qrc:./md/quick_start.md"));
+        vbox->addWidget(quickstart);
+        quickStartWidget->resize(800, 800);
+        quickStartWidget->show();
+    }
 }
