@@ -5,11 +5,10 @@
     },
     "Simulation": {
         "simulation_type": "FullCascade",
-        "screening_type": "ZBL",
-        "scattering_calculation": "Corteo4bitTable"
+        "screening_type": "ZBL"
     },
     "Transport": {
-        "flight_path_type": "AtomicSpacing",
+        "flight_path_type": "Constant",
         "min_energy": 1.0,
         "min_recoil_energy": 1.0
     },
@@ -88,8 +87,7 @@
     "Output": {
         "title": "300keV Xe on UO2 benchmark",
         "outfilename": "b5",
-        "store_pka_events": 1,
-        "store_dedx": 1,
-        "store_exit_events": 1
+        "store_pka_events": true,
+        "store_exit_events": true
     }
 }

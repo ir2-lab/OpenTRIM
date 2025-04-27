@@ -1,70 +1,87 @@
 {
-    "Driver" : {        
-        "max_no_ions" : 200000,
-        "threads" : 4
+    "Driver": {
+        "max_no_ions": 200000,
+        "threads": 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",
         "screening_type": "ZBL",
-        "scattering_calculation": "Corteo4bitTable",
         "eloss_calculation": "EnergyLoss",
         "straggling_model": "BohrStraggling",
         "nrt_calculation": "NRT_element"
     },
     "Transport": {
-        "flight_path_type": "AtomicSpacing",
+        "flight_path_type": "Constant",
         "min_energy": 1.0,
         "min_recoil_energy": 1.0,
         "allow_sub_ml_scattering": false,
         "max_mfp": 1.0e30,
         "max_rel_eloss": 0.05
     },
-    "IonBeam" : {
-        "ion" : {
-            "symbol" : "He",
-            "atomic_mass" : 4.0026
+    "IonBeam": {
+        "ion": {
+            "symbol": "He",
+            "atomic_mass": 4.0026
         },
-        "energy_distribution" : {
-            "center" : 270000
+        "energy_distribution": {
+            "center": 270000
         },
-        "spatial_distribution" : {
-            "center" : [0, 600, 600]
+        "spatial_distribution": {
+            "center": [
+                0,
+                600,
+                600
+            ]
         }
     },
-    "Target" : {
-        "size" : [440, 10000, 10000],
-        "cell_count" : [1, 1, 1],
-        "periodic_bc" : [0, 1, 1],
-        "materials" : [
+    "Target": {
+        "size": [
+            440,
+            10000,
+            10000
+        ],
+        "cell_count": [
+            1,
+            1,
+            1
+        ],
+        "periodic_bc": [
+            0,
+            1,
+            1
+        ],
+        "materials": [
             {
-                "id" : "Carbon foil",
-                "density" : 2.27, 
-                "composition" : [
+                "id": "Carbon foil",
+                "density": 2.27,
+                "composition": [
                     {
-                        "element" : {
-                            "symbol" : "C"
+                        "element": {
+                            "symbol": "C"
                         },
-                        "X" : 1,
-                        "Ed" : 20,
-                        "El" : 3,
-                        "Es" : 3,
-                        "Er" : 20
+                        "X": 1,
+                        "Ed": 20,
+                        "El": 3,
+                        "Es": 3,
+                        "Er": 20
                     }
                 ]
             }
         ],
-        "regions" : [
-            {   
-                "id" : "R1",
-                "material_id" : "Carbon foil",
-                "size" : [1000, 10000, 10000]
+        "regions": [
+            {
+                "id": "R1",
+                "material_id": "Carbon foil",
+                "size": [
+                    1000,
+                    10000,
+                    10000
+                ]
             }
         ]
     },
-    "Output" : {
-        "title" : "270keV H in 100μm/cm^2 C foil",
-        "store_pka_events" : 0,
-        "store_dedx" : 1,
-        "store_exit_events" : 1
+    "Output": {
+        "title": "270keV H in 100μm/cm^2 C foil",
+        "store_exit_events": true
     }
 }

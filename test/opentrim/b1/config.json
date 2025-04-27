@@ -1,16 +1,15 @@
 {
-    "Driver": {
+    "Run": {
         "max_no_ions": 20000,
         "threads": 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",
         "screening_type": "ZBL",
-        "scattering_calculation": "Corteo4bitTable",
         "eloss_calculation": "EnergyLoss"
     },
     "Transport": {
-        "flight_path_type": "AtomicSpacing",
+        "flight_path_type": "Constant",
         "min_energy": 1.0,
         "min_recoil_energy": 1.0
     },
@@ -80,7 +79,7 @@
     "Output": {
         "title": "2MeV Fe on Fe example",
         "outfilename": "b1",
-        "store_pka_events": 1,
-        "store_dedx": 1
+        "store_pka_events": true,
+        "store_dedx": true
     }
 }

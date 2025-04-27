@@ -5,8 +5,7 @@
     },
     "Simulation": {
         "simulation_type": "FullCascade",
-        "screening_type": "ZBL",
-        "scattering_calculation": "Corteo4bitTable"
+        "screening_type": "ZBL"
     },
     "Transport": {
         "flight_path_type": "FullMC"

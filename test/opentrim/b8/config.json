@@ -6,13 +6,12 @@
     "Simulation": {
         "simulation_type": "CascadesOnly",
         "screening_type": "ZBL",
-        "scattering_calculation": "Corteo4bitTable",
         "eloss_calculation": "EnergyLossOff",
         "intra_cascade_recombination": true,
         "correlated_recombination": true
     },
     "Transport": {
-        "flight_path_type": "AtomicSpacing",
+        "flight_path_type": "Constant",
         "min_energy": 1.0,
         "min_recoil_energy": 1.0
     },
@@ -85,8 +84,7 @@
     "Output": {
         "title": "50keV Fe in Fe cascades, benchmark 8",
         "outfilename": "b8",
-        "store_pka_events": 1,
-        "store_dedx": 1,
-        "store_exit_events": 1
+        "store_pka_events": true,
+        "store_exit_events": true
     }
 }
