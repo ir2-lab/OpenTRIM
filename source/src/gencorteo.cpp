@@ -1,5 +1,5 @@
 #include "xs.h"
-#include "corteo_xs.h"
+#include "xs_corteo.h"
 
 #include <iostream>
 #include <fstream>

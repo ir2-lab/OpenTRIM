@@ -2,7 +2,7 @@
 #include "random_vars.h"
 #include "dedx.h"
 #include "event_stream.h"
-#include "corteo_xs.h"
+#include "xs_corteo.h"
 #include "cascade_queue.h"
 
 mccore::mccore()
@@ -90,29 +90,32 @@ int mccore::init()
     for (int z1 = 0; z1 < natoms; z1++) {
         for (int z2 = 1; z2 < natoms; z2++) {
 
+            int Z1 = atoms[z1]->Z();
+            float M1 = atoms[z1]->M();
+            int Z2 = atoms[z2]->Z();
+            float M2 = atoms[z2]->M();
+
             switch (par_.screening_type) {
             case Screening::ZBL:
-                scattering_matrix_(z1, z2) = new xs_lab_zbl;
+                scattering_matrix_(z1, z2) = new xs_lab_zbl(Z1, M1, Z2, M2);
                 break;
             case Screening::LenzJensen:
-                scattering_matrix_(z1, z2) = new xs_lab_lj;
+                scattering_matrix_(z1, z2) = new xs_lab_lj(Z1, M1, Z2, M2);
                 break;
             case Screening::KrC:
-                scattering_matrix_(z1, z2) = new xs_lab_krc;
+                scattering_matrix_(z1, z2) = new xs_lab_krc(Z1, M1, Z2, M2);
                 break;
             case Screening::Moliere:
-                scattering_matrix_(z1, z2) = new xs_lab_moliere;
+                scattering_matrix_(z1, z2) = new xs_lab_moliere(Z1, M1, Z2, M2);
                 break;
             case Screening::ZBL_MAGIC:
-                scattering_matrix_(z1, z2) = new xs_lab_zbl_magic;
+                scattering_matrix_(z1, z2) = new xs_lab_zbl_magic(Z1, M1, Z2, M2);
                 break;
             default:
-                scattering_matrix_(z1, z2) = new xs_lab_zbl;
+                scattering_matrix_(z1, z2) = new xs_lab_zbl(Z1, M1, Z2, M2);
                 break;
             }
 
-            scattering_matrix_(z1, z2)->init(atoms[z1]->Z(), atoms[z1]->M(), atoms[z2]->Z(),
-                                             atoms[z2]->M());
         }
     }
 
@@ -259,18 +262,15 @@ int mccore::run()
 
 int mccore::transport(ion *i, tally &t, cascade_queue *q)
 {
-    // pointers to dEdx & straggling tables
-    const dedx_interp *de_stopping_tbl = nullptr;
-    const straggling_interp *de_straggling_tbl = nullptr;
-
     // collision flag
     bool doCollision;
-    // collision and flight path parameters
-    float fp, sqrtfp, ip;
+    // flight path & impact parameter
+    float fp, ip;
 
     // get the material at the ion's position
     const material *mat = target_->cell(i->cellid());
-    // init dEdx and fp data for ion/material combination
+
+    // preload dEdx and fp tables for ion/material combination
     if (mat) {
         dedx_calc_.preload(i, mat);
         flight_path_calc_.preload(i, mat);
@@ -294,8 +294,7 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
             // Then the boundary crossing algorithm
             // will take care of things
             fp = 1e30f;
-            sqrtfp = 1e15f;
-            BoundaryCrossing crossing = i->propagate(fp, sqrtfp);
+            BoundaryCrossing crossing = i->propagate(fp);
             switch (crossing) {
             case BoundaryCrossing::None:
             case BoundaryCrossing::InternalPBC:
@@ -324,10 +323,10 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
         }
 
         // select flight path & impact param.
-        doCollision = flight_path_calc_(rng, i->erg(), fp, sqrtfp, ip);
+        doCollision = flight_path_calc_(rng, i->erg(), fp, ip);
 
         // propagate ion, checking also for boundary crossing
-        BoundaryCrossing crossing = i->propagate(fp, sqrtfp);
+        BoundaryCrossing crossing = i->propagate(fp);
 
         // subtract ionization & straggling
         dedx_calc_(i, fp, rng);
@@ -484,15 +483,27 @@ ArrayNDd mccore::getTallyTable(int i) const
 {
     if (i < 0 || i >= tally::tEnd)
         return ArrayNDd();
-    std::lock_guard<std::mutex> lock(*tally_mutex_);
-    return tally_.at(i).copy();
+
+    ArrayNDd A;
+    {
+        std::lock_guard<std::mutex> lock(*tally_mutex_);
+        A = tally_.at(i).copy();
+    }
+
+    return A;
 }
 ArrayNDd mccore::getTallyTableVar(int i) const
 {
     if (i < 0 || i >= tally::tEnd)
         return ArrayNDd();
-    std::lock_guard<std::mutex> lock(*tally_mutex_);
-    return dtally_.at(i).copy();
+
+    ArrayNDd A;
+    {
+        std::lock_guard<std::mutex> lock(*tally_mutex_);
+        A = dtally_.at(i).copy();
+    }
+
+    return A;
 }
 void mccore::copyTallyTable(int i, ArrayNDd &A) const
 {

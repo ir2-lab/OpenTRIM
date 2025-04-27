@@ -12,7 +12,7 @@
  *
  * This class is used for storing tally and other numeric
  * or other table data
- * that may be shared read-only among the threads of execution.
+ * that may be shared read-only among threads of execution.
  *
  * Explicitly shared means that in the following code
  * @code {.cpp}

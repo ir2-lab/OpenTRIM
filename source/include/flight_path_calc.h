@@ -130,7 +130,7 @@ public:
      *
      * @sa \ref flightpath
      */
-    bool operator()(random_vars &rng, float E, float &fp, float &sqrtfp, float &ip)
+    bool operator()(random_vars &rng, float E, float &fp, float &ip)
     {
         constexpr const float mhw_umin = 1. / M_E;
 

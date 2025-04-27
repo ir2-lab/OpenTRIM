@@ -272,7 +272,7 @@ public:
         path_ = ioniz_ = phonon_ = recoil_ = 0.0;
     }
 
-    BoundaryCrossing propagate(float &s, float &sqrtfp);
+    BoundaryCrossing propagate(float &s);
 
     float move(float s);
 };

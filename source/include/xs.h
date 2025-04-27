@@ -12,10 +12,8 @@
  * \defgroup XS Library for screened Coulomb scattering calculations
  * @{
  *
- * A set of C++ objects for classical scattering calculations of screened
- * Coulomb interatomic potentials.
- *
- * The general form of the potential is
+ * A set of C++ objects for classical scattering calculations for the screened
+ * Coulomb potential
  * \f[
  * V(r) = \frac{Z_1 Z_2 e^2}{r} \Phi(r/a)
  * \f]
@@ -23,57 +21,38 @@
  *
  * Different types of screening functions are defined
  * by the \ref screening_function templated structure with the enum class \ref Screening
- * as template parameter. The most used screening potentials are defined:
+ * as template parameter:
  * - Ziegler-Biersack-Littmark (ZBL) Universal potential, Screening::ZBL
  * - Lenz-Jensen, Screening::LenzJensen
  * - Kr-C, Screening::KrC
  * - Moliere, Screening::Moliere
  *
- * The scattering angle in the center-of-mass system can be obtained by
- * the scattering integral
- * \f[
- * \theta = \pi - 2 s \int_{x_0}^\infty {x^{-2}F^{-1/2}(x)\,dx}
- * \f]
- * where
- * \f[
- * F(x) = 1 - \frac{\Phi(x)}{x\,\epsilon} - \frac{s^2}{x^2}
- * \f]
- * and \f$ x_0 \f$ is the distance of closest approach which satisfies
- * \f$ F(x_0)=0 \f$.
+ * For a short overview of the definitions see \ref screened-coulomb.
  *
- * \f$  \epsilon = E_{CM} a/Z_1 Z_2 e^2\f$ and \f$ s = p/a\f$ are the
- * reduced center-of-mass energy and impact parameter.
- *
- * The integral is evaluated by quadrature in the
+ * The center-of-mass scattering angle is evaluated by quadrature in the
  * \ref xs_cms template class, where the
  * Screening enum is again the template parameter.
  *
  * In the case of ZBL, the so-called MAGIC approximation of Biersack-Haggmark
  * for the scattering integral is also implemented (with Screening::ZBL_MAGIC template parameter).
  *
- * The scattering from the unscreened Coulomb potential is computed by the
- * analytical formulae.
+ * For the unscreened Coulomb potential
+ * analytical formulae are used.
  *
- * As quadrature is a costly operation, the scattering integrals are typically tabulated
- * for use in Monte-Carlo codes.
- * Here we adapt the tabulation method of the program Corteo, see \ref CorteoIdx.
- *
- * The class template \ref xs_corteo4bit provides access to
- * pre-calculated tables of \f$ \sin^2 \theta/2 \f$
- * as a function of
- * \f$  \epsilon \f$ and \f$ s \f$ for all \ref Screening types (except Screening::None and
- * Screening::ZBL_MAGIC). The tables are compiled into dynamic libraries and can be linked for use
- * in external programs.
- *
- * For scattering calculations in the lab system, \ref abstract_xs_lab defines
- * the interface.
+ * \ref abstract_xs_lab defines the interface for scattering calculations in the lab system,
  *
  * The \ref xs_lab class template provides an implementation of a lab system cross-section
- * object, taking a \ref xs_cms class as a template parameter and using its functions
- * to make the calculations.
+ * object, using \ref xs_cms internally for CMS calculations.
  *
- * The \ref corteo_xs_lab class template uses the pre-computed tables for the
- * center-of-mass scattering angle to simulate scattering in the lab system.
+ * As numerical quadrature is a costly operation, the scattering integrals are typically
+ * tabulated for use in Monte-Carlo codes.
+ * Here we adapt the tabulation method of the program Corteo, see \ref CorteoIdx.
+ *
+ * The \ref corteo_xs_lab class template utilizes
+ * pre-calculated tables of \f$ \sin^2 \theta/2 \f$
+ * for all \ref Screening types (except Screening::None and
+ * Screening::ZBL_MAGIC). The tables are compiled into dynamic libraries and can be linked for use
+ * in external programs.
  *
  */
 
@@ -236,8 +215,12 @@ struct screening_function<Screening::ZBL_MAGIC>
     }
 };
 
-/**
- * @brief DE numerical integration from Press et al. Numerical Recipes 3rd ed.
+/*
+ * DE numerical integration from Press et al. Numerical Recipes 3rd ed.
+ *
+ * We use it to calculated the stopping cross-section integral
+ *   int_0^Tm {T dσ(E,T)}
+ *
  */
 template <class T>
 class de_integrator
@@ -305,11 +288,12 @@ public:
  * @brief The xs_cms class implements screened Coulomb scattering calculations
  * in the center-of-mass system.
  *
- * The scattering integrals is evaluated by
- * quadrature.
- * Using the Gauss–Chebyshev scheme (https://dlmf.nist.gov/3.5#v) the scattering angle is evaluated
- * as
+ * The class provides functions for calculating all aspects of the scattering
+ * process as a function of reduced energy and impact parameter:
+ * closest approach distance, scattering angle, cross-section, stopping cross-section.
  *
+ * The scattering integral is generally evaluated by
+ * Gauss–Chebyshev quadrature (https://dlmf.nist.gov/3.5#v)
  * \f[
  *   \theta = \pi - \frac{2\,s}{x_0} \frac{\pi}{N}
  *   \sum_{j=0}^{N/2-1}{H\left[ \cos\left( \frac{\pi}{N}\,j + \frac{\pi}{2N} \right) \right]}
@@ -325,6 +309,10 @@ public:
  * For the unscreened Coulomb potential (Screening::None),
  * scattering is calculated by the exact analytical formulae.
  *
+ * find_s() inverts numerically the scattering integral to obtain
+ * the reduced impact paramter as a function of energy and scattering
+ * angle, \f$s = s(\epsilon,\theta)\f$.
+ *
  * @tparam
  *   ScreeningType specifies the type of screening function
  *
@@ -335,7 +323,7 @@ struct xs_cms : public screening_function<ScreeningType>
 {
     typedef screening_function<ScreeningType> Phi;
 
-    /**
+    /*
      * @brief The function \f$ F(x) \f$ under the scattering integral
      *
      * \f[
@@ -364,7 +352,7 @@ struct xs_cms : public screening_function<ScreeningType>
      *
      * For screened potentials \f$ x_0 \f$ is found by numerically solving
      * \f$ F(x_0)=0 \f$
-     * using bysection.
+     * using bisection.
      *
      * @param e reduced energy of the scattered particle
      * @param s reduced impact parameter
@@ -448,12 +436,13 @@ struct xs_cms : public screening_function<ScreeningType>
      */
     static double theta_impulse_approx(double e, double s)
     {
-        // exact unscreened Coulomb theta
+        // Below is exact unscreened Coulomb theta
+        // The function is specialized for the various screening funcs
         double x = 2 * e * s;
         return 2 * std::asin(std::sqrt(1. / (1 + x * x)));
     }
 
-    // Modified bessel 2nd kind K1(x) with large x approx
+    // Modified Bessel of the 2nd kind K1(x) with large x approx
     // Error for x>200 ~ below 1%
     // K1(200) ~ 1e-88
     static double bessel_k1(double x)
@@ -464,7 +453,7 @@ struct xs_cms : public screening_function<ScreeningType>
     }
 
     /**
-     * @brief Return \f$ \sin^2(\theta/2) \f$
+     * @brief Return \f$ \sin^2(\theta(\epsilon, s)/2) \f$
      * @param e the reduced energy
      * @param s the reduced impact parameter
      * @return the value of \f$ \sin^2(\theta/2) \f$
@@ -475,7 +464,7 @@ struct xs_cms : public screening_function<ScreeningType>
         return v * v;
     }
 
-    /**
+    /*
      * @brief The function \f$ H(u) \f$ used in the quadrature sum
      *
      * \f[
@@ -505,7 +494,7 @@ struct xs_cms : public screening_function<ScreeningType>
      *
      * For \f$ s\cdot \epsilon^{1/6} > 100 \f$ where the scattering angle is very small
      * (\f$ \theta < 10^{-8} \f$) this function
-     * returns the impulse approx xs_base::theta_impulse_approx.
+     * returns the impulse approximation theta_impulse_approx().
      *
      * The region of \f$ (\epsilon,s) \f$ where impulse approximation can
      * be applied has been found empirically.
@@ -526,6 +515,8 @@ struct xs_cms : public screening_function<ScreeningType>
         return M_PI - pi_minus_theta(e, s, nsum);
     }
 
+    // This function actually implements the Gauss-Chebyshev quadrature
+    // It returns π-θ
     static double pi_minus_theta(double e, double s, int nsum = 100)
     {
         double x0 = minApproach(e, s);
@@ -543,17 +534,18 @@ struct xs_cms : public screening_function<ScreeningType>
     }
 
     /**
-     * @brief Return the reduced impact parameter
+     * @brief Return the reduced impact parameter \f$ s=s(\epsilon,\theta) \f$
      *
-     * Use bisection to find the reduced impact parameter s
-     * given energy and scattering angle
+     * Use bisection to invert the function \f$ \theta=\theta(\epsilon,s) \f$
+     * and obtain the reduced impact parameter s
+     * for given energy and scattering angle
      *
      * @param e reduced energy
      * @param thetaCM scattering angle (rad) in center-of-mass system
      * @return the reduced impact parameter
      */
-    static double findS(double e, double thetaCM,
-                        double tol = std::numeric_limits<double>::epsilon())
+    static double find_s(double e, double thetaCM,
+                         double tol = std::numeric_limits<double>::epsilon())
     {
 
         if (thetaCM == 0.)
@@ -627,7 +619,7 @@ struct xs_cms : public screening_function<ScreeningType>
                                double tol = std::numeric_limits<double>::epsilon())
     {
         // find corresponfding reduced impact parameter
-        double s = findS(e, thetaCM, tol);
+        double s = find_s(e, thetaCM, tol);
 
         if (s < 1.e-6) { // quasi head on collision
             double dth = pi_minus_theta(e, s);
@@ -653,6 +645,7 @@ struct xs_cms : public screening_function<ScreeningType>
     }
 
 private:
+    // integrant for numerical integration to obtain stopping cross-section
     struct eloss_functor_
     {
         double e_;
@@ -666,33 +659,29 @@ private:
 
 public:
     /**
-     * @brief Reduced stopping power
+     * @brief Reduced stopping cross-section \f$ s_n(\epsilon) \f$
      *
-     * Calculate the reduced stopping power
+     * Calculate the reduced stopping cross-section
      *
      * \f[
-     * S_n(\epsilon) = \frac{\epsilon}{\pi\, a^2 T_m N} \frac{dE}{dx} =
-     * \frac{4 \epsilon}{a^2 T_m^2} \int_0^{T_m}{T\,\sigma(T) dT}
+     * s_n(\epsilon) = \frac{\epsilon}{\pi\, a^2 T_m} S_n(E) =
+     * \frac{\epsilon}{\pi a^2} \int_0^{\pi}
+     * {\sin^2(\theta/2)\frac{d\sigma}{d\Omega} d\Omega(\theta)}
      * \f]
      *
-     * where \f$ \sigma \f$ is the reduced cross-section.
-     *
-     * The integral is evaluated numerically.
+     * The integral is evaluated by numerical quadrature.
      *
      * Optionally, the function calculates the stopping power
-     * for scattering angles below `theta_max`. In this case the
-     * upper limit in the integral is replaced with
-     *
-     * \f[
-     * T(\theta_m) = T_m \, \sin^2 \theta_m/2
-     * \f]
+     * for scattering angles up to a maximum value.
+     * In this case the
+     * upper limit in the integral is replaced by \f$\theta_{max}\f$.
      *
      * @param e the reduced energy
      * @param theta_max optional maximum scattering angle, defaults to \f$ \pi \f$
      * @param tol optional rel. tolerance of the integration, default is 1e-6
      * @return the energy loss cross-section
      */
-    static double stoppingPower(double e, double theta_max = M_PI, double tol = 1.e-6)
+    static double sn(double e, double theta_max = M_PI, double tol = 1.e-6)
     {
         eloss_functor_ F;
         de_integrator<eloss_functor_> I(F);
@@ -722,7 +711,7 @@ inline double xs_cms<Screening::None>::theta(double e, double s, int)
     return 2 * std::asin(std::sqrt(sin2Thetaby2(e, s)));
 }
 template <>
-inline double xs_cms<Screening::None>::findS(double e, double thetaCM, double)
+inline double xs_cms<Screening::None>::find_s(double e, double thetaCM, double)
 {
     double x = std::sin(thetaCM / 2);
     return 0.5 / e * std::sqrt(1. / (x * x) - 1.);
@@ -737,7 +726,7 @@ inline double xs_cms<Screening::None>::crossSection(double e, double thetaCM, do
     return 1. / x;
 }
 template <>
-inline double xs_cms<Screening::None>::stoppingPower(double, double, double)
+inline double xs_cms<Screening::None>::sn(double, double, double)
 {
     return std::numeric_limits<double>::infinity();
 }
@@ -773,8 +762,8 @@ inline double xs_cms<Screening::Moliere>::theta_impulse_approx(double e, double 
     return th / e;
 }
 
-/**
- * @brief ZBL potential scattering angle by the MAGIC formula
+/*
+ * ZBL potential scattering angle by the MAGIC formula
  *
  * Calculate the scattering angle in the
  * center-of-mass system for the
@@ -783,14 +772,13 @@ inline double xs_cms<Screening::Moliere>::theta_impulse_approx(double e, double 
  *
  * Ref.: Biersack & Haggmark NIM1980
  *
- * @ingroup XS
  */
 
 struct ZBL_MAGIC_INTERP
 {
 
-    /**
-     * @brief Implementation of MAGIC formula
+    /*
+     * Implementation of MAGIC formula
      *
      * Returns \f$ \cos(\theta/2) \f$ where \f$ \theta \f$ is the center-of-mass
      * scattering angle
@@ -842,7 +830,7 @@ struct ZBL_MAGIC_INTERP
         return cost2;
     }
 
-    /**
+    /*
      * @brief ZBL potential
      *
      * Evaluate the ZBL potential and optionally the 1st derivative dV/dR
@@ -871,6 +859,8 @@ struct ZBL_MAGIC_INTERP
     }
 };
 
+// xs_cms template specializations for ZBL_MAGIC
+
 template <>
 inline double xs_cms<Screening::ZBL_MAGIC>::theta(double e, double s, int nsum)
 {
@@ -885,7 +875,7 @@ inline double xs_cms<Screening::ZBL_MAGIC>::sin2Thetaby2(double e, double s)
 }
 
 template <>
-inline double xs_cms<Screening::ZBL_MAGIC>::stoppingPower(double e, double theta_max, double tol)
+inline double xs_cms<Screening::ZBL_MAGIC>::sn(double e, double theta_max, double tol)
 {
     return 0.5 * std::log(1 + 1.1383 * e)
             / (e + 0.01321 * std::pow(e, 0.21226) + 0.19593 * std::sqrt(e));
@@ -893,6 +883,23 @@ inline double xs_cms<Screening::ZBL_MAGIC>::stoppingPower(double e, double theta
 
 /**
  * @brief The abstract_xs_lab class defines the interface for lab system cross-section objects
+ *
+ * The cross-section is defined for a particular
+ * projectile/target combination, which is declared in the class constructor.
+ *
+ * The class can be used to perform calculations of various
+ * scattering parameters.
+ *
+ * The scatter() function gives the recoil energy and lab scattering angle sine & cosine
+ * for the scattering of a projectile with given energy and impact parameter.
+ *
+ * crossSection() gives the differential cross-section as a function of projectile and recoil
+ * energy.
+ *
+ * Sn() calculates the stopping cross-section as a function of projectile energy.
+ *
+ * Finally, find_p() gives the impact parameter as a function of
+ * projectile and recoil energy.
  *
  * @ingroup XS
  */
@@ -906,19 +913,24 @@ protected:
     float red_E_conv_; /* reduced energy conversion factor */
     float sig0_; /* pi a^2 [nm^2] */
 
-    template <class _XScm>
-    void init_impl_(float Z1, float M1, float Z2, float M2)
-    {
-        /* Adapted from the corteo code */
-        screening_length_ = _XScm::screeningLength(Z1, Z2);
-        mass_ratio_ = M1 / M2;
-        sqrt_mass_ratio_ = std::sqrt(mass_ratio_);
-        gamma_ = 4 * mass_ratio_ / ((mass_ratio_ + 1) * (mass_ratio_ + 1));
-        red_E_conv_ = screening_length_ / ((mass_ratio_ + 1) * Z1 * Z2 * E2C2);
-        sig0_ = M_PI * screening_length_ * screening_length_;
-    }
-
 public:
+    /**
+     * @brief Construct a cross-section object for a specific projectile-target combination
+     * @param a the screening length
+     * @param Z1 the projectile atomic number
+     * @param M1 the projectile mass
+     * @param Z2 the target atomic number
+     * @param M2 the target mass
+     */
+    abstract_xs_lab(float a, int Z1, float M1, int Z2, float M2)
+        : screening_length_(a),
+          mass_ratio_(M1 / M2),
+          sqrt_mass_ratio_(std::sqrt(mass_ratio_)),
+          gamma_(4 * mass_ratio_ / ((mass_ratio_ + 1) * (mass_ratio_ + 1))),
+          red_E_conv_(screening_length_ / ((mass_ratio_ + 1) * Z1 * Z2 * E2C2)),
+          sig0_(M_PI * screening_length_ * screening_length_)
+    {
+    }
     virtual ~abstract_xs_lab() { }
 
     /// Returns the screening length \f$ a(Z_1,Z_2) \f$ in nm
@@ -935,15 +947,6 @@ public:
     float red_E_conv() const { return red_E_conv_; }
 
     /**
-     * @brief Initialize the cross-section object for a specific projectile-target combination
-     * @param Z1 the projectile atomic number
-     * @param M1 the projectile mass
-     * @param Z2 the target atomic number
-     * @param M2 the target mass
-     */
-    virtual void init(float Z1, float M1, float Z2, float M2) = 0;
-
-    /**
      * @brief Calculate scattering angle and target recoil energy.
      *
      * Given the initial energy E and impact parameter S of an incoming
@@ -953,12 +956,12 @@ public:
      * All quantities refer to the lab system.
      *
      * @param E is the initial projectile energy [eV]
-     * @param S is the impact factor [nm]
+     * @param P is the impact factor [nm]
      * @param recoil_erg is the target recoil energy [eV]
      * @param sintheta the sin of the scattering angle in the lab system
      * @param costheta the cos of the scattering angle in the lab system
      */
-    virtual void scatter(float E, float S, float &recoil_erg, float &sintheta,
+    virtual void scatter(float E, float P, float &recoil_erg, float &sintheta,
                          float &costheta) const = 0;
 
     /**
@@ -968,7 +971,7 @@ public:
      * @param T the target recoil energy [eV]
      * @return the corresponding impact factor [nm]
      */
-    virtual float impactPar(float E, float T) const = 0;
+    virtual float find_p(float E, float T) const = 0;
 
     /**
      * @brief Differential cross-section \f$ d\sigma(E,T)/dT \f$
@@ -984,49 +987,69 @@ public:
     virtual float crossSection(float E, float T) const = 0;
 
     /**
-     * @brief Stopping power \f$ S_n(E) = N^{-1}dE/dx \f$
+     * @brief Stopping cross-section \f$ S_n(E) \f$
+     *
+     * This function returns the stopping cross-section
+     * \f[
+     *   S_n(E) = \int_0^{\gamma E}{T\, d\sigma(E,T)}
+     * \f]
      *
      * @param E projectile energy [eV]
      * @return the stopping power [eV-nm^2]
      */
-    virtual float stoppingPower(float E) const = 0;
+    virtual float Sn(float E) const = 0;
 
     /**
-     * @brief Stopping power of collisions with recoil energy \f$ T \leq T_1 \f$
+     * @brief Stopping cross-section \f$ S_n(E,T) \f$
+     *
+     * This function returns the stopping cross-section for
+     * energy tranfers up to \f$ T \f$:
+     * \f[
+     *   S_n(E,T) = \int_0^{T}{T'\, d\sigma(E,T')}
+     * \f]
      *
      * @param E projectile energy [eV]
-     * @param T1 maximum recoil energy [eV]
+     * @param T maximum recoil energy [eV]
      * @return the stopping power [eV-nm^2]
      */
-    virtual float stoppingPower(float E, float T1) const = 0;
+    virtual float Sn(float E, float T) const = 0;
 };
 
 /**
- * @brief The xs_lab class template describes a cross-section in lab system
+ * @brief The xs_lab class template implements a screened Coulomb cross-section in the lab system
  *
- * After initializing the class with XSlab::init for a given combination
- * of projectile and target, the function XSlab::scatter can be used to
- * calculate scattering quantities.
+ * The class inherits \ref abstract_xs_cms and uses internally a center-of-mass cross-section of
+ * type \ref xs_cms with the type of screening defined by the template parameter \a ScreeningType.
+ *
+ * It then uses the cms cross-section to calculate scattering quantities in
+ * the lab system, for the specific projectile/target combination given in the
+ * constructor.
  *
  * @tparam
- *   xs_cm is the class of the center-of-mass cross-section
+ *   ScreeningType specifies the type of screening function
  *
  * @ingroup XS
  */
-template <class xs_cm>
+template <Screening ScreeningType>
 class xs_lab : public abstract_xs_lab
 {
+    typedef xs_cms<ScreeningType> _xs_cms_t;
+
 public:
-    virtual void init(float Z1, float M1, float Z2, float M2) override
+    /**
+     * @brief Construct the xs_lab object for a specific projectile (Z1,M1)/target(Z2,M2)
+     * combination
+     */
+    xs_lab(int Z1, float M1, int Z2, float M2)
+        : abstract_xs_lab(_xs_cms_t::screeningLength(Z1, Z2), Z1, M1, Z2, M2)
     {
-        abstract_xs_lab::init_impl_<xs_cm>(Z1, M1, Z2, M2);
     }
 
     virtual void scatter(float E, float S, float &recoil_erg, float &sintheta,
                          float &costheta) const override
     {
         float e = E * red_E_conv_;
-        float sin2thetaby2 = xs_cm::sin2Thetaby2(e, S / screening_length_);
+        float sin2thetaby2 = _xs_cms_t::sin2Thetaby2(e, S / screening_length_);
         recoil_erg = E * gamma_ * sin2thetaby2;
         /* convert scattering angle to lab frame of reference: */
         if (sin2thetaby2 < 1.f) {
@@ -1042,7 +1065,7 @@ public:
         assert(std::isfinite(sintheta) && std::isfinite(costheta));
     }
 
-    virtual float impactPar(float E, float T) const override
+    virtual float find_p(float E, float T) const override
     {
         double thetaCM = 1.0 * T / E / gamma_;
         if (thetaCM > 1.0)
@@ -1050,7 +1073,7 @@ public:
         if (thetaCM == 1.0)
             return 0.f;
         thetaCM = 2. * std::asin(std::sqrt(thetaCM));
-        return xs_cm::findS(E * red_E_conv_, thetaCM) * screening_length_;
+        return _xs_cms_t::find_s(E * red_E_conv_, thetaCM) * screening_length_;
     }
 
     virtual float crossSection(float E, float T) const override
@@ -1059,30 +1082,30 @@ public:
         if (thetaCM > 1.0)
             return std::numeric_limits<float>::quiet_NaN();
         thetaCM = 2. * std::asin(std::sqrt(thetaCM));
-        return xs_cm::crossSection(E * red_E_conv_, thetaCM) * 4 * sig0_ / E / gamma_;
+        return _xs_cms_t::crossSection(E * red_E_conv_, thetaCM) * 4 * sig0_ / E / gamma_;
     }
 
-    virtual float stoppingPower(float E) const override
+    virtual float Sn(float E) const override
     {
-        return xs_cm::stoppingPower(E * red_E_conv_) * sig0_ * gamma_ / red_E_conv_;
+        return _xs_cms_t::sn(E * red_E_conv_) * sig0_ * gamma_ / red_E_conv_;
     }
 
-    virtual float stoppingPower(float E, float T1) const override
+    virtual float Sn(float E, float T1) const override
     {
         double theta_max = 1.0 * T1 / E / gamma_;
         if (theta_max >= 1.)
-            return stoppingPower(E);
+            return Sn(E);
         theta_max = 2. * std::asin(std::sqrt(theta_max));
-        return xs_cm::stoppingPower(E * red_E_conv_, theta_max) * sig0_ * gamma_ / red_E_conv_;
+        return _xs_cms_t::sn(E * red_E_conv_, theta_max) * sig0_ * gamma_ / red_E_conv_;
     }
 };
 
-/**
+/*
  * @brief xs_lab implementation with ZBL potential and MAGIC formula for center-of-mass scattering
  * angle
  *
  * @ingroup XS
  */
-typedef xs_lab<xs_cms<Screening::ZBL_MAGIC>> xs_lab_zbl_magic;
+typedef xs_lab<Screening::ZBL_MAGIC> xs_lab_zbl_magic;
 
 #endif

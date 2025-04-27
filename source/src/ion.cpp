@@ -91,12 +91,17 @@ void ion::init_recoil(const atom *a, double T)
 // #pragma GCC push_options
 // #pragma GCC optimize("O0")
 
-BoundaryCrossing ion::propagate(float &fp, float &sqrtfp)
+BoundaryCrossing ion::propagate(float &fp)
 {
-    float fp0(fp);
     vector3 x = pos_ + fp * dir_; // calc new ion position
     if (grid_->contains_with_bc(x)) { // is the ion still inside the target ?
-        if (!grid_->contains(icell_, x)) { // does the ion exit the cell ?
+        if (grid_->contains(icell_, x)) { // is the ion still inside the cell ?
+            // yes we remain in the cell
+            path_ += fp;
+            t_ += fp / std::sqrt(erg_) * s_erg_to_t_;
+            pos_ = x;
+            return BoundaryCrossing::None;
+        } else { // ion exits the cell
             // propagate to the boundary
             x = pos_;
             fp = grid_->bring2boundary(icell_, x, dir_);
@@ -105,15 +110,14 @@ BoundaryCrossing ion::propagate(float &fp, float &sqrtfp)
             ivector3 ix = grid_->pos2cell(x);
             path_ += fp;
             t_ += fp / std::sqrt(erg_) * s_erg_to_t_;
-            sqrtfp *= std::sqrt(fp / fp0);
             pos_ = x;
-            if (ix != icell_) {
+            if (ix != icell_) { // we crossed an internal cell boundary
                 icell_ = ix;
                 prev_cellid_ = cellid_;
                 cellid_ = grid_->cellid(icell_);
                 return BoundaryCrossing::Internal;
             } else {
-                /* Boundary Crossing without change of cell !!
+                /* We crossed an internal boundary but did not change cell !!
                  *
                  * This is a rare case where although grid_->contains(icell_,x)
                  * returned false in the end the particle does not change cell.
@@ -130,11 +134,6 @@ BoundaryCrossing ion::propagate(float &fp, float &sqrtfp)
                  */
                 return BoundaryCrossing::InternalPBC;
             }
-        } else { // we remain in the cell
-            path_ += fp;
-            t_ += fp / std::sqrt(erg_) * s_erg_to_t_;
-            pos_ = x;
-            return BoundaryCrossing::None;
         }
     } else { // ion is bound to exit simulation
         // 1. Reduce s to just cross the boundary
@@ -144,7 +143,6 @@ BoundaryCrossing ion::propagate(float &fp, float &sqrtfp)
         assert(finite(fp));
         path_ += fp;
         t_ += fp / std::sqrt(erg_) * s_erg_to_t_;
-        sqrtfp *= std::sqrt(fp / fp0);
         grid_->apply_bc(x);
         // 2. still exiting ?
         if (!grid_->contains_with_bc(x)) {

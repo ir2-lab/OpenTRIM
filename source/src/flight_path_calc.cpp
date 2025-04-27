@@ -94,7 +94,7 @@ int flight_path_calc::init(const mccore &s)
                 ipmax = 0.f;
                 for (const atom *a : m->atoms()) {
                     int z2 = a->id();
-                    float d = ScMatrix(z1, z2)->impactPar(E, T0);
+                    float d = ScMatrix(z1, z2)->find_p(E, T0);
                     ipmax += a->X() * d * d;
                 }
                 ipmax = std::sqrt(ipmax);
