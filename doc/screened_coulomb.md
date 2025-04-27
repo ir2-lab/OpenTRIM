@@ -1,6 +1,6 @@
-\page screened-coulomb Screened Coulomb scattering
+# Screened Coulomb scattering {#screened-coulomb}
 
-### Screened Coulomb potential definition
+## Screened Coulomb potential definition
 
 The interaction of projectile ions (atomic number \f$Z_1\f$, mass \f$m_1\f$) with target atoms \f$(Z_2,m_2)\f$ is described by the screened Coulomb potential 
 $$
@@ -22,6 +22,8 @@ $$
 \Phi(x) = \sum_i {A_i \, e^{-b_ix}}, \quad \sum_i{A_i}=1
 $$
 OpenTRIM has several definitions for screening functions of this type and the user can select the preferred one by setting \ref _Simulation_screening_type "`Simulation.screening_type`" in the \ref json_config "configuration options".
+
+## Scattering angle
 
 The scattering of the incoming projectile ions of energy \f$E\f$ is elastic, and can be adequately described by classical kinematics.
 
@@ -57,7 +59,7 @@ Employing the Gauss–Chebyshev scheme (https://dlmf.nist.gov/3.5#v) it is obtai
 As this is a computationally costly operation, the scattering integrals are typically pre-calculated and tabulated
 for use in Monte-Carlo codes. 
 
-### Cross-section and stopping power
+## Cross-section and stopping power
 
 The differential cross-section in the center-of-mass system is given by
 
@@ -95,26 +97,26 @@ The *reduced* stopping cross-section is
   \frac{\epsilon}{\pi a^2}\, \langle \sigma\Omega \rangle.
 \f]
 
-### Results for the un-screened Coulomb potential
+## Analytical results for the un-screened Coulomb potential
 
-In this case the analytical expressions for the above quantities are (\f$ a=1\f$):
+For the un-screened Coulomb potential the analytical expressions for the above quantities are (\f$ a=1\f$):
 
-Distance of closest approach
+- Distance of closest approach
 \f[
   x_0 = \frac{1}{2\epsilon} + \sqrt{\frac{1}{(2\epsilon)^2} + s^2}
 \f]
 
-The closest approach for head-on collisions (s=0)
+- The closest approach for head-on collisions (s=0)
 \f[
   b_0 = \frac{a}{\epsilon} = \frac{Z_1 Z_2 e^2}{E_{CM}}
 \f]
 
-Scattering angle
+- Scattering angle
 \f[
   \sin^2 (\theta/2) = \frac{1}{1 + 4 \epsilon^2 s^2}
 \f]
 
-Cross-section
+- Differential cross-section
 \f[
   \frac{d\sigma}{d\Omega} = \frac{a^2}{16 \epsilon^2}\, \frac{1}{\sin^4 (\theta/2)} = \frac{b_0^2}{16} \frac{1}{\sin^4 (\theta/2)}
 \f]
@@ -133,6 +135,7 @@ The stopping cross-section diverges in this case. However, setting a mininum cut
 ### OpenTRIM implementation
 
 OpenTRIM includes a \ref XS "library of C++ classes" that can be utilized to perform the above calculations. 
+
 Additionally, a set of \ref xs_corteo "pre-computed scattering tables" are provided for different screening functions. These are employed in the OpenTRIM simulations but can also be used independently as external libraries. 
 
 \sa XS, xs_corteo

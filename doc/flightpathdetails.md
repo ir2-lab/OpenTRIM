@@ -1,9 +1,11 @@
 # OpenTRIM flight path selection {#flightpathdetails}
 
-OpenTRIM has 3 different flight path sampling algorithms, which cover all the above techniques. The preferred mode for a given simulation is selected by the option \ref _Transport_flight_path_type "Transport.flight_path_type":
-- **"Constant"** - Constant flight path
-- **"MHW"** - Mendenhall-Weber / SRIM-like algorithm
-- **"FullMC"** - "Full" Monte-Carlo algorithm (see text)
+OpenTRIM has 3 different flight path sampling algorithms. 
+
+The preferred mode can be set by the option \ref _Transport_flight_path_type "Transport.flight_path_type":
+- \ref const_fp "\"Constant\"" - Constant flight path
+- \ref mhw_fp "\"MHW\"" - Mendenhall-Weber / SRIM-like algorithm
+- \ref fullmc_fp "\"FullMC\"" - "Full" Monte-Carlo algorithm (see text)
 
 Each type of sampling can be adjusted by a set of parameters, which are described below.
 
@@ -42,7 +44,7 @@ The relevant algorithms are implemented in the class \ref flight_path_calc. A sh
   \f[\ell \in [(4/3) R_{at}, \, \infty)\f]
   It is used only in the FullMC mode.
 
-## Constant flight path
+## Constant flight path {#const_fp}
 
 This is the simplest mode of flight path selection. The flight path is fixed to a constant value, \f$\Delta x\f$, and no sampling is performed.
 
@@ -50,7 +52,7 @@ This is the simplest mode of flight path selection. The flight path is fixed to 
 
 This type of flight path selection is analogous to SRIM's "Monolayer" mode.
 
-## Mendenhal-Weber (MHW) flight path selection
+## Mendenhal-Weber (MHW) flight path selection {#mhw_fp}
 
 OpenTRIM implements the MHW flight path algorithm, which is very similar to SRIM, extending it with 2 additional components:
 -  the effective total cross-section is obtained by setting a lower cutoff not only on the recoil energy but also on the scattering angle. This ensures that the ion trajectory is accurately simulated. 
@@ -157,16 +159,18 @@ Then, to select a flight path for an ion with energy \f$E\f$ do the following:
    - \f$\Delta x = 1.1547\, R_{at}\f$
 
 
-## FullMC flight path selection
+## FullMC flight path selection {#fullmc_fp}
 
-OpenTRIM implements a "full Monte-Carlo algorithm", without the simplifications employed in MHW & SRIM. Thus, the flight path is first sampled from the exponential distribution \f$e^{-x/\ell}\f$ and the impact parameter is sampled uniformly within 
+OpenTRIM implements a "full Monte-Carlo algorithm", without the simplifications employed in SRIM and the Mendenhall-Weber method. 
+
+The flight path is first sampled from the exponential distribution \f$e^{-x/\ell}\f$. Then, the impact parameter is sampled uniformly within 
 the circle of area \f$\sigma_0 = \pi p_{max}^2\f$.
 
-This requires 2 random generator calls. In practice, this does not severely hinder the efficiency even on a PC of average capacity. The advent of modern, fast random generator algorithms helps a lot in this direction.
+This requires more random generator calls. However, in practice, it does not severely hinder the efficiency, even on a PC of average capacity. The advent of modern, fast random generator algorithms helps a lot in this direction.
 
 The advantages of the FullMC flight path selection strategy are:
 - Correct spatial distribution of scattering events
-- Statistically sound implementation of path cutoff due to electronic energy loss \f$\Delta E_e\f$. If the sampled flight path leads to \f$\Delta E_e\f$ above the threshold, the scattering is rejected and the particle path is truncated.
+- Statistically sound implementation of path cutoff due to electronic energy loss \f$\Delta E_e\f$. If the sampled flight path leads to \f$\Delta E_e\f$ above the threshold, the scattering is rejected and the particle path is truncated accordingly.
 
 ### Parameters:
 - \f$T_c\f$: recoil energy cutoff
@@ -176,14 +180,13 @@ The advantages of the FullMC flight path selection strategy are:
 
 ### Maximum impact parameter & mean free path
  
-The maximum impact parameter is calculated exactly as in the MHW case. However, no truncation is performed by default. Limits are imposed by the optional mfp range. The requirement that the mfp, \f$\ell = (N\pi p_{max}^2)^{-1}\f$, remains within the specified range results in 
+The maximum impact parameter is calculated exactly as in the MHW case. However, no truncation is performed by default on $p_{max}$. 
+
+Limits can be optionally set by restricting the mfp range (option \ref _Transport_mfp_range "Transport.mfp_range"). \n
+The requirement that the mfp, \f$\ell = (N\pi p_{max}^2)^{-1}\f$, remains within the specified range results sets also the limits of \f$p_{max}\f$ 
 
 \f[
-p_{max} = \min \left\{ (N\pi \ell_{min})^{-1/2}, \; p_{max} \right\}
-\f]
-
-\f[
-p_{max} = \max \left\{ (N\pi \ell_{max})^{-1/2}, \; p_{max} \right\}
+(N\pi \ell_{max})^{-1/2} < p_{max} < (N\pi \ell_{min})^{-1/2}
 \f]
 
 The default mfp range actually employs the conventional truncation of the potential, since this is the most anticipated condition for most users. It can be easily lifted by setting \f$\ell_{min}=0\f$

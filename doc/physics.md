@@ -35,15 +35,20 @@ The simulation is based on the following models and approximations:
 
 The simulation of ion transport typically proceeds in the following manner:
 
-1. Sample the distance to the next collision and the impact parameter of that collision. This is a very important part of the whole algorithm and is discussed in more detail in \ref flightpath.
-2. Propagate the particle to the collision site. If a cell boundary is reached before collision then the particle is transferred to the new cell and the algorithm is restarted. If the boundary is an external boundary of the simulation volume, the ion exits and the current history ends. This step is implemented in the \ref ion::propagate() function.
-3. Calculate the electronic stopping and straggling for the flight path and subtract from the ion energy. For details see \ref dedx.
-4. Select collision partner. An atom is selected randomly, taking into account the target composition.
-5. Calculate scattering angle and recoil energy. This is implemented in \ref xs_lab::scatter().
-6. If the energy of the recoiling target atom is above the displacement threshold, then a recoil ion is produced and stored in the \ref ion_queue "ion queue" to be processed later.
+1. Sample the distance to the next collision and the impact parameter of that collision. \n
+   This is a very important part of the whole algorithm and is discussed in more detail in \ref flightpath.
+2. Propagate the particle to the collision site. \n
+   If a cell boundary is reached before collision then the particle is transferred to the new cell and the algorithm is restarted. If the boundary is an external boundary of the simulation volume, the ion exits and the current history ends. This step is implemented in the \ref ion::propagate() function.
+3. Calculate the electronic stopping and straggling for the flight path and adjust the ion energy. \n
+   For details see \ref dedx.
+4. Select collision partner. \n
+   An atom is selected randomly, taking into account the target composition.
+5. Calculate scattering angle and recoil energy. \n
+   This is implemented in \ref xs_lab::scatter().
+6. If the energy transfer is above the displacement threshold, generate a recoil ion and store in the \ref ion_queue "ion queue" to be processed later.
 7. Repeat the sequence from step 2 until either
   - the ion exits the simulation volume, or,
-  - the ion energy goes below the cutoff (\ref mccore::parameters::min_energy \f$\sim 1\f$ eV), whereupon it stops and remains implanted in the target
+  - the ion energy goes below the cutoff (\ref _Transport_min_energy "Transport.min_energy" \f$\sim 1\f$ eV), whereupon it stops and remains implanted in the target
 
 The above algorithm is encapsulated in the function mccore::transport().
 
