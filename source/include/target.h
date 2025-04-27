@@ -323,6 +323,24 @@ public:
     /**
      * @brief The region stucture descrines a rectangular volume within the target filled with a
      * specific material
+     *
+     * A region is defined by its origin [x0, y0, z0], size [Lx, Ly, Lz],
+     * and material.
+     *
+     * A region may contain many cells. All these cells are filled with
+     * the region's material.
+     *
+     * A cell belongs to a region when the cell center position is within
+     * the region volume.
+     *
+     * The order by which the regions are declared in the configuration options
+     * is important. When the simulation box is constructed, the regions are
+     * filled with material one after the other in the order that they appear in
+     * the configuration. If there is overlap between regions, then the material
+     * in a given cell will be defined by the last region that it belongs to.
+     * This provides some flexibility for implementing certain target configurations.
+     *
+     *
      * @ingroup TargetG
      */
     struct region
@@ -331,9 +349,9 @@ public:
         std::string id;
         /// The id of the material that fills this region
         std::string material_id;
-        /// Position of the region's lower left corner
+        /// Position of the region's lower left corner, [x0, y0, z0] [nm]
         vector3 origin{ 0.f, 0.f, 0.f };
-        /// Position of the region's upper right corner
+        /// Size of the region, [Lx, Ly, Lz] [nm]
         vector3 size{ 100.f, 100.f, 100.f };
     };
 

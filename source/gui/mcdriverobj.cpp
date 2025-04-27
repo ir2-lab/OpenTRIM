@@ -36,18 +36,18 @@ McDriverObj::~McDriverObj()
     delete driver_;
 }
 
-const mcdriver::options &McDriverObj::options() const
+const mcconfig &McDriverObj::options() const
 {
     return options_;
 }
 
-void McDriverObj::setOptions(const mcdriver::options &opt, bool initFromFile)
+void McDriverObj::setOptions(const mcconfig &opt, bool initFromFile)
 {
     options_ = opt;
     if (initFromFile) {
-        max_ions_ = opt.Driver.max_no_ions;
-        nThreads_ = opt.Driver.threads;
-        seed_ = opt.Driver.seed;
+        max_ions_ = opt.Run.max_no_ions;
+        nThreads_ = opt.Run.threads;
+        seed_ = opt.Run.seed;
         updInterval_ = opt.Output.storage_interval;
     }
     emit configChanged();
@@ -56,10 +56,10 @@ void McDriverObj::setOptions(const mcdriver::options &opt, bool initFromFile)
 
 std::string McDriverObj::json() const
 {
-    mcdriver::options opt(options_);
-    opt.Driver.max_no_ions = max_ions_;
-    opt.Driver.seed = seed_;
-    opt.Driver.threads = nThreads_;
+    mcconfig opt(options_);
+    opt.Run.max_no_ions = max_ions_;
+    opt.Run.seed = seed_;
+    opt.Run.threads = nThreads_;
     opt.Output.storage_interval = updInterval_;
     return opt.toJSON();
 }
@@ -137,11 +137,11 @@ void McDriverObj::update_tally_totals_()
 
 bool McDriverObj::validateOptions(QString *msg) const
 {
-    mcdriver::options opt(options_);
+    mcconfig opt(options_);
 
-    opt.Driver.max_no_ions = max_ions_;
-    opt.Driver.seed = seed_;
-    opt.Driver.threads = nThreads_;
+    opt.Run.max_no_ions = max_ions_;
+    opt.Run.seed = seed_;
+    opt.Run.threads = nThreads_;
     opt.Output.storage_interval = updInterval_;
 
     bool isValid = true;
@@ -161,7 +161,7 @@ void McDriverObj::loadJsonTemplate(const QString &path)
 {
     reset();
 
-    mcdriver::options opt;
+    mcconfig opt;
 
     if (!path.isNull()) {
         // path should point to an example in resources.
@@ -188,7 +188,7 @@ void McDriverObj::loadJsonFile(const QString &path)
 {
     reset();
 
-    mcdriver::options opt;
+    mcconfig opt;
 
     // path should point to a valid config file.
     // open file and read config, no checks!
@@ -245,8 +245,7 @@ bool McDriverObj::loadH5File(const QString &path)
     driver_ = test_driver_;
     test_driver_ = nullptr;
 
-    mcdriver::options opt;
-    driver_->getOptions(opt);
+    mcconfig opt = driver_->config();
     setOptions(opt, true);
 
     setFileName(path);
@@ -275,14 +274,14 @@ void McDriverObj::saveJson(const QString &fname)
     setFileName(fname);
 
     // get from our local json
-    mcdriver::options opt(options_);
+    mcconfig opt(options_);
     // if there is an active sim
     if (driver_->getSim())
-        driver_->getOptions(opt); // get options from mccore object
+        opt = driver_->config(); // get options from mccore object
     else { // get my current driver options
-        opt.Driver.max_no_ions = max_ions_;
-        opt.Driver.seed = seed_;
-        opt.Driver.threads = nThreads_;
+        opt.Run.max_no_ions = max_ions_;
+        opt.Run.seed = seed_;
+        opt.Run.threads = nThreads_;
         opt.Output.storage_interval = updInterval_;
     }
 
@@ -343,10 +342,10 @@ void McDriverObj::start(bool b)
     } else if (b) {
 
         if (driver_->getSim() == nullptr) {
-            mcdriver::options opt(options_);
-            opt.Driver.max_no_ions = max_ions_;
-            opt.Driver.seed = seed_;
-            opt.Driver.threads = nThreads_;
+            mcconfig opt(options_);
+            opt.Run.max_no_ions = max_ions_;
+            opt.Run.seed = seed_;
+            opt.Run.threads = nThreads_;
             opt.Output.storage_interval = updInterval_;
 
             driver_->init(opt);
@@ -358,12 +357,12 @@ void McDriverObj::start(bool b)
             setStatus(mcIdle);
 
         } else {
-            mcdriver::parameters par = driver_->driverOptions();
+            mcconfig::run_options par = driver_->config().Run;
             par.max_no_ions = max_ions_;
             par.threads = nThreads_;
-            driver_->setDriverOptions(par);
+            driver_->setRunOptions(par);
 
-            mcdriver::output_options opts = driver_->outputOptions();
+            mcconfig::output_options opts = driver_->config().Output;
             opts.storage_interval = updInterval_;
             driver_->setOutputOptions(opts);
         }
@@ -376,7 +375,7 @@ void McDriverObj::start(bool b)
 
 void McDriverObj::start_()
 {
-    size_t updInterval = driver_->outputOptions().storage_interval;
+    size_t updInterval = driver_->config().Output.storage_interval;
 
     is_running_ = true;
     setStatus(mcRunning);
@@ -410,7 +409,7 @@ void McDriverObj::onLoadH5_(const QString &path)
 
 void McDriverObj::onSaveH5_()
 {
-    mcdriver::output_options opts = driver_->outputOptions();
+    mcconfig::output_options opts = driver_->config().Output;
     opts.outfilename = fileName_.toStdString();
     driver_->setOutputOptions(opts);
 
@@ -472,7 +471,7 @@ void McDriverObj::running_sim_info::init(const McDriverObj &D)
     tstart_ = hr_clock_t::now();
     nstart_ = D.driver_->getSim()->ion_count();
     ncurr_ = nstart_;
-    ntarget_ = D.driver_->driverOptions().max_no_ions;
+    ntarget_ = D.driver_->config().Run.max_no_ions;
     progress_ = int(1000.0 * ncurr_ / ntarget_);
     total_elapsed_ += elapsed_;
     elapsed_ = 0.;

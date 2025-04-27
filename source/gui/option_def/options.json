@@ -553,8 +553,8 @@
             ]
         },
         {
-            "name": "Driver",
-            "label": "Options for the simulation driver.",
+            "name": "Run",
+            "label": "Options for running the simulation.",
             "type": "struct",
             "fields": [
                 {

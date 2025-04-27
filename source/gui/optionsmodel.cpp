@@ -19,7 +19,7 @@ OptionsItem::OptionsItem(OptionsItem *parent) : m_parentItem(parent)
     if (parent)
         options_ = parent->options_;
     else
-        options_ = std::make_shared<mcdriver::options>();
+        options_ = std::make_shared<mcconfig>();
 }
 OptionsItem::OptionsItem(const QString &key, OptionsItem *parent)
     : OptionsItem(key, key, parent) { }
@@ -559,18 +559,18 @@ OptionsModel::~OptionsModel()
     delete rootItem;
 }
 
-void OptionsModel::setOptions(const mcdriver::options &opt)
+void OptionsModel::setOptions(const mcconfig &opt)
 {
     // beginResetModel();
     *(rootItem->options_) = opt;
     // endResetModel();
 }
-const mcdriver::options *OptionsModel::options() const
+const mcconfig *OptionsModel::options() const
 {
     return rootItem->options_.get();
 }
 
-mcdriver::options *OptionsModel::options()
+mcconfig *OptionsModel::options()
 {
     return rootItem->options_.get();
 }

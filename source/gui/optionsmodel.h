@@ -62,7 +62,7 @@ protected:
     bool get_(QString &qs) const;
     bool set_(const QString &qs);
 
-    std::shared_ptr<mcdriver::options> options_;
+    std::shared_ptr<mcconfig> options_;
 };
 
 class EnumOptionsItem : public OptionsItem
@@ -192,9 +192,9 @@ public:
     explicit OptionsModel(QObject *parent = nullptr);
     ~OptionsModel();
 
-    void setOptions(const mcdriver::options &opt);
-    const mcdriver::options *options() const;
-    mcdriver::options *options();
+    void setOptions(const mcconfig &opt);
+    const mcconfig *options() const;
+    mcconfig *options();
 
     QVariant data(const QModelIndex &index, int role) const override;
     QVariant headerData(int section, Qt::Orientation orientation,

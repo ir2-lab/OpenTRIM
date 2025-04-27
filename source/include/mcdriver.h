@@ -30,6 +30,170 @@
  */
 
 /**
+ * @brief mcconfig contains all configuration options for seting up and running simulation.
+ *
+ * The various options are organized in groups
+ * - mcconfig::Simulation - general simulation configuration options
+ * - mcconfig::Transport - options related to ion transport
+ * - mcconfig::IonBeam - ion beam source definition
+ * - mcconfig::Target - target definition
+ * - mcconfig::Run - options for running the simulation
+ * - mcconfig::Output - options for data output.
+ *
+ * Each option group is a C++ struct and is a field of
+ * mcconfig which itself is also a struct.
+ *
+ * The configuration info can be easily transfered to/from a \ref json_config "JSON string" with
+ * the functions parseJSON(), printJSON(), toJSON().
+ *
+ * \ref json_config "The JSON config string" is used for passing configuration options
+ * to the \ref cliapp "opentrim cli program" and can also be loaded in opentrim-gui.
+ *
+ * @note The mnemonic used in JSON for each option is the same as name of the option in C++.
+ * E.g. the type of simulation is defined at JSON path "/Simulation/simulation_type" and in
+ * the C++ value mcconfig::Simulation::simulation_type
+ *
+ * The functions get() and set() can read and write the options in the C++ structure
+ * using JSON formatting.
+ *
+ * Finally, createSimulation() uses the info stored in the \a mcconfig struct to create a
+ * \ref mccore object ready to run.
+ *
+ * @ingroup Driver
+ */
+struct mcconfig
+{
+    /// parameters for running the simulation
+    struct run_options
+    {
+        /// Maximum number of ions to run
+        size_t max_no_ions{ 100 };
+        /// Maximum cpu time to run (s)
+        size_t max_cpu_time{ 0 };
+        /// Number of threads to use
+        int threads{ 1 };
+        /// Seed for the random number generator
+        unsigned int seed{ 123456789 };
+    };
+
+    /// output parameters
+    struct output_options
+    {
+        /// Simulation title
+        std::string title{ "Ion Simulation" };
+        /// Base name for the output file
+        std::string outfilename{ "out" };
+        /// Interval in sec to store the output @todo
+        int storage_interval{ 1000 };
+        /// Store ion exit events
+        bool store_exit_events{ false };
+        /// Store the pka events
+        bool store_pka_events{ false };
+        /// Store electronic energy loss data
+        bool store_dedx{ true };
+    };
+
+    /// General Simulation parameters
+    mccore::parameters Simulation;
+    /// Ion transport parameters
+    mccore::transport_options Transport;
+    /// Source ion beam parameters
+    ion_beam::parameters IonBeam;
+    /// Target definition
+    target::target_desc_t Target;
+    /// Options for running the simulation
+    run_options Run;
+    /// Output options
+    output_options Output;
+
+    /**
+     * @brief Parse simulation mcconfig from JSON formatted input
+     *      * For a full list of available mcconfig and details on JSON
+     * formatting see \ref json_config.
+     *      * The function first parses the whole JSON string. On formatting errors
+     * the function stops and prints an error message to stderr.
+     *      * After that validate() is called to check the given mcconfig. Errors
+     * are again reported to stderr.
+     *      * @param js a JSON formatted input stream
+     * @param doValidation if true the function calls validate()
+     * @return 0 if succesfull, negative value otherwise
+     */
+    int parseJSON(std::istream &js, bool doValidation = true, std::ostream *os = nullptr);
+
+    /// Pretty print JSON formattet mcconfig to a stream
+    void printJSON(std::ostream &os) const;
+
+    /// Return mcconfig as a JSON string
+    std::string toJSON() const;
+
+    /**
+     * @brief Set config options using JSON
+     *
+     * Example to set the number of ions to run:
+     * @code{.cpp}
+     * mcconfig config;
+     * config.set("/Run/max_no_ions","1000");
+     * @endcode
+     *
+     * Enum options are string-encoded in JSON. In this case
+     * the value must be pased with double quotes so that the JSON
+     * parser encodes it as a string. Example
+     *
+     * @code{.cpp}
+     * mcconfig config;
+     * config.set("/Simulation/simulation_type","\"FullCascade\"");
+     * @endcode
+     *
+     * @param path the json path to the configuration option
+     * @param json_str json formatted value to be stored
+     * @param os optional stream to receive warnings and error messages
+     * @return true if succesfull, false otherwise
+     */
+    bool set(const std::string &path, const std::string &json_str, std::ostream *os = nullptr);
+
+    /**
+     * @brief Get config options in JSON format
+     *
+     * Example to get the number of ions to run:
+     * @code{.cpp}
+     * mcconfig config;
+     * std::string s;
+     * config.get("/Run/max_no_ions",s); // s = "100"
+     * @endcode
+     *
+     * @param path the json path to the configuration option
+     * @param json_str json formatted value of the option
+     * @param os optional stream to receive warnings and error messages
+     * @return true if succesfull, false otherwise
+     */
+    bool get(const std::string &path, std::string &json_str, std::ostream *os = nullptr) const;
+
+    /**
+     * @brief Validate the simulation mcconfig
+     *      * A number of checks are performed
+     * including
+     * - correct parameter range
+     * - allowed parameter combinations
+     * - target definition (geometry, materials, regions)
+     *      * On error, a std::invalid_argument exception is thrown.
+     * exception::what() returns a relevant error message.
+     *      * @param AcceptIncomplete if true, empty values are accepted
+     * @return
+     */
+    int validate(bool AcceptIncomplete = false);
+
+    /**
+     * @brief Create a simulation object from the given mcconfig
+     * @return a pointer to a mccore object
+     */
+    mccore *createSimulation() const;
+
+private:
+    void set_impl_(const std::string &path, const std::string &json_str);
+    void get_impl_(const std::string &path, std::string &json_str) const;
+};
+
+/**
  * @brief The mcdriver class facilitates the setup and running of a simulation.
  *
  * A typical usage scenario would be:
@@ -51,105 +215,9 @@
 class mcdriver
 {
 public:
-    /// mcdriver parameters for running the simulation
-    struct parameters
-    {
-        /// Maximum number of ions to run
-        size_t max_no_ions{ 100 };
-        /// Maximum cpu time to run (s)
-        size_t max_cpu_time{ 0 };
-        /// Number of threads to use
-        int threads{ 1 };
-        /// Seed for the random number generator
-        unsigned int seed{ 123456789 };
-    };
-
-    /// mcdriver output options
-    struct output_options
-    {
-        /// Simulation title
-        std::string title{ "Ion Simulation" };
-        /// Base name for the output file
-        std::string outfilename{ "out" };
-        /// Interval in sec to store the output @todo
-        int storage_interval{ 1000 };
-        /// Store ion exit events
-        bool store_exit_events{ false };
-        /// Store the pka events
-        bool store_pka_events{ false };
-        /// Store electronic energy loss data
-        bool store_dedx{ true };
-    };
 
     /// Typedef for a function to be called during simulation execution
-    typedef void (*progress_callback)(const mcdriver &v, void *p);
-
-    /**
-     * @brief mcdriver::options is a helper class for parsing and validating all simulation options
-     */
-    struct options
-    {
-        mcdriver::parameters Driver;
-        mcdriver::output_options Output;
-        mccore::parameters Simulation;
-        mccore::transport_options Transport;
-        ion_beam::parameters IonBeam;
-        target::target_desc_t Target;
-
-        /**
-         * @brief Parse simulation options from JSON formatted input
-         *
-         * For a full list of available options and details on JSON
-         * formatting see \ref json_config.
-         *
-         * The function first parses the whole JSON string. On formatting errors
-         * the function stops and prints an error message to stderr.
-         *
-         * After that validate() is called to check the given options. Errors
-         * are again reported to stderr.
-         *
-         * @param js a JSON formatted input stream
-         * @param doValidation if true the function calls validate()
-         * @return 0 if succesfull, negative value otherwise
-         */
-        int parseJSON(std::istream &js, bool doValidation = true, std::ostream *os = nullptr);
-
-        /// Pretty print JSON formattet options to a stream
-        void printJSON(std::ostream &os) const;
-
-        /// Return options as a JSON string
-        std::string toJSON() const;
-
-        bool set(const std::string &path, const std::string &json_str, std::ostream *os = nullptr);
-        bool get(const std::string &path, std::string &json_str, std::ostream *os = nullptr) const;
-
-        /**
-         * @brief Validate the simulation options
-         *
-         * A number of checks are performed
-         * including
-         * - correct parameter range
-         * - allowed parameter combinations
-         * - target definition (geometry, materials, regions)
-         *
-         * On error, a std::invalid_argument exception is thrown.
-         * exception::what() returns a relevant error message.
-         *
-         * @param AcceptIncomplete if true, empty values are accepted
-         * @return
-         */
-        int validate(bool AcceptIncomplete = false);
-
-        /**
-         * @brief Create a simulation object from the given options
-         * @return a pointer to a mccore object
-         */
-        mccore *createSimulation() const;
-
-    private:
-        void set_impl_(const std::string &path, const std::string &json_str);
-        void get_impl_(const std::string &path, std::string &json_str) const;
-    };
+    typedef void (*progress_callback)(const mcdriver &v, void *p);    
 
     struct run_data
     {
@@ -165,9 +233,8 @@ public:
 protected:
     std::vector<run_data> run_history_;
 
-    // driver parameters
-    parameters par_;
-    output_options out_opts_;
+    // config
+    mcconfig config_;
 
     // the simulation object
     mccore *s_;
@@ -184,10 +251,9 @@ public:
     ~mcdriver();
 
     /**
-     * @brief Get the currently active driver/simulation options
-     * @param opt A mcdriver::options struct to receive the data
+     * @brief Get the currently active configuration
      */
-    void getOptions(options &opt) const;
+    const mcconfig &config() const { return config_; }
 
     /**
      * @brief Initialize the driver with the given options
@@ -196,22 +262,18 @@ public:
      * kill and delete the current simulation, if it exists.
      *
      * Then it creates a new simulation according to the
-     * options in @a opt.
+     * options in @a config.
      *
-     * @param opt A mcdriver::options struct with the required specs
+     * @param config A \ref mcconfig struct with the required specs
      */
-    void init(const options &opt);
+    void init(const mcconfig &config);
 
     std::string outFileName() const;
 
-    /// Returns the output options
-    const output_options &outputOptions() const { return out_opts_; }
     /// Set the output options.
-    void setOutputOptions(const output_options &opts) { out_opts_ = opts; }
-    /// Returns the driver options
-    const parameters &driverOptions() const { return par_; }
-    /// Set the driver options.
-    void setDriverOptions(const parameters &opts) { par_ = opts; }
+    void setOutputOptions(const mcconfig::output_options &opts) { config_.Output = opts; }
+    /// Set the run options.
+    void setRunOptions(const mcconfig::run_options &opts) { config_.Run = opts; }
     /// Returns a const pointer to the mccore simulation object
     const mccore *getSim() const { return s_; }
     /// Returns true if the simulation is running

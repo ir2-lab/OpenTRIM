@@ -46,10 +46,10 @@ SimControlWidget::SimControlWidget(MainUI *ui, QWidget *parent)
     runIndicator->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
     runIndicator->setStyleSheet("font-size: 24px");
 
-    // These /Driver/xxx items are NOT connected to mapper
+    // These /Run/xxx items are NOT connected to mapper
     // because they can be overriden every time we run the sim
     OptionsModel *model = mainui_->optionsModel;
-    QModelIndex driverOptionsIdx = model->index("Driver");
+    QModelIndex driverOptionsIdx = model->index("Run");
     QModelIndex idx = model->index("max_no_ions", 0, driverOptionsIdx);
     OptionsItem *item = model->getItem(idx);
     sbIons = (QSpinBox *)item->createEditor(this);

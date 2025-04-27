@@ -120,7 +120,7 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
         PUBLIC FILE_SET HEADERS 
             BASE_DIRS source/include
             FILES
-                source/include/corteo_xs.h
+                source/include/xs_corteo.h
                 source/include/xs.h
                 source/include/periodic_table.h
                 source/include/ion.h 
@@ -140,7 +140,7 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
 else()
     set_property(TARGET ${LIB_TARGET}
         PROPERTY PUBLIC_HEADER
-            source/include/corteo_xs.h
+            source/include/xs_corteo.h
             source/include/xs.h
             source/include/periodic_table.h
             source/include/ion.h 

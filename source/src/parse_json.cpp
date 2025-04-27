@@ -28,16 +28,16 @@ struct adl_serializer<Eigen::AlignedVector3<T>>
 
 } // end namespace nlohmann
 
-// serialization of options struct
-void to_json(ojson &j, const mcdriver::options &p);
-void from_json(const ojson &j, mcdriver::options &p);
+// serialization of mcconfig struct
+void to_json(ojson &j, const mcconfig &p);
+void from_json(const ojson &j, mcconfig &p);
 
-int mcdriver::options::parseJSON(std::istream &js, bool doValidation, std::ostream *os)
+int mcconfig::parseJSON(std::istream &js, bool doValidation, std::ostream *os)
 {
     if (os) {
         try {
             ojson j = ojson::parse(js, nullptr, true, true);
-            *this = j.template get<mcdriver::options>();
+            *this = j.template get<mcconfig>();
             if (doValidation)
                 validate();
         } catch (const ojson::exception &e) {
@@ -51,7 +51,7 @@ int mcdriver::options::parseJSON(std::istream &js, bool doValidation, std::ostre
         }
     } else {
         ojson j = ojson::parse(js, nullptr, true, true);
-        *this = j.template get<mcdriver::options>();
+        *this = j.template get<mcconfig>();
         if (doValidation)
             validate();
     }
@@ -219,10 +219,10 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::transport_options, flight_path
                                           flight_path_const, min_energy, min_recoil_energy,
                                           min_scattering_angle, max_rel_eloss, mfp_range)
 
-MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcdriver::parameters, max_no_ions, max_cpu_time, threads,
+MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::run_options, max_no_ions, max_cpu_time, threads,
                                           seed)
 
-MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcdriver::output_options, title, outfilename,
+MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::output_options, title, outfilename,
                                           storage_interval, store_exit_events, store_pka_events,
                                           store_dedx)
 
@@ -295,19 +295,19 @@ void from_json(const ojson &nlohmann_json_j, target::target_desc_t &nlohmann_jso
     }
 }
 
-void to_json(ojson &j, const mcdriver::options &p)
+void to_json(ojson &j, const mcconfig &p)
 {
     j["Simulation"] = p.Simulation;
     j["Transport"] = p.Transport;
     j["IonBeam"] = p.IonBeam;
     j["Target"] = p.Target;
     j["Output"] = p.Output;
-    j["Driver"] = p.Driver;
+    j["Run"] = p.Run;
 }
 
-void from_json(const ojson &j, mcdriver::options &p)
+void from_json(const ojson &j, mcconfig &p)
 {
-    p = mcdriver::options();
+    p = mcconfig();
 
     if (j.contains("Simulation"))
         p.Simulation = j["Simulation"];
@@ -317,28 +317,28 @@ void from_json(const ojson &j, mcdriver::options &p)
         p.Output = j["Output"];
     if (j.contains(("IonBeam")))
         p.IonBeam = j["IonBeam"];
-    if (j.contains(("Driver")))
-        p.Driver = j["Driver"];
+    if (j.contains(("Run")))
+        p.Run = j["Run"];
     if (!j.contains("Target")) {
         throw std::invalid_argument("Required section \"Target\" not found.");
     }
     p.Target = j["Target"];
 }
 
-void mcdriver::options::printJSON(std::ostream &os) const
+void mcconfig::printJSON(std::ostream &os) const
 {
     ojson j(*this);
     os << j.dump(4) << endl;
 }
 
-std::string mcdriver::options::toJSON() const
+std::string mcconfig::toJSON() const
 {
     std::ostringstream os;
     printJSON(os);
     return os.str();
 }
 
-bool mcdriver::options::set(const std::string &path, const std::string &json_str, std::ostream *os)
+bool mcconfig::set(const std::string &path, const std::string &json_str, std::ostream *os)
 {
     if (os) {
         try {
@@ -358,7 +358,7 @@ bool mcdriver::options::set(const std::string &path, const std::string &json_str
     return true;
 }
 
-bool mcdriver::options::get(const std::string &path, std::string &json_str, std::ostream *os) const
+bool mcconfig::get(const std::string &path, std::string &json_str, std::ostream *os) const
 {
     if (os) {
         try {
@@ -374,7 +374,7 @@ bool mcdriver::options::get(const std::string &path, std::string &json_str, std:
     return true;
 }
 
-void mcdriver::options::set_impl_(const std::string &path, const std::string &json_str)
+void mcconfig::set_impl_(const std::string &path, const std::string &json_str)
 {
     ojson j(*this);
     ojson::json_pointer ptr(path.c_str());
@@ -384,7 +384,7 @@ void mcdriver::options::set_impl_(const std::string &path, const std::string &js
     validate(true);
 }
 
-void mcdriver::options::get_impl_(const std::string &path, std::string &json_str) const
+void mcconfig::get_impl_(const std::string &path, std::string &json_str) const
 {
     ojson j(*this);
     ojson::json_pointer ptr(path.c_str());

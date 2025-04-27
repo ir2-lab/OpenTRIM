@@ -64,9 +64,9 @@ public:
     explicit McDriverObj();
     virtual ~McDriverObj() override;
 
-    // get/set the simulation options
-    const mcdriver::options &options() const;
-    void setOptions(const mcdriver::options &opt, bool initFromFile);
+    // get/set the simulation mcconfig
+    const mcconfig &options() const;
+    void setOptions(const mcconfig &opt, bool initFromFile);
     // return options as json
     std::string json() const;
 
@@ -174,7 +174,7 @@ signals:
 private:
     mcdriver *driver_;
     mcdriver *test_driver_;
-    mcdriver::options options_;
+    mcconfig options_;
     bool modified_;
     bool template_;
     QString fileName_;

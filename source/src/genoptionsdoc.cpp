@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <iomanip>
 #include <string>
 
 using std::cerr;
@@ -23,7 +22,7 @@ void jsonPrintTable(std::ostream &os, const ojson &j, type_t type = tStruct, str
 int linkID;
 
 const char *preampleJSON = R"(
-## The JSON configuration file {#json_config}
+## The JSON configuration string {#json_config}
 
 All configuration parameters for a simulation are coded in a [JSON](https://www.json.org/json-el.html) formatted string. 
 
@@ -33,14 +32,15 @@ This can be loaded directly from a file to the \ref cliapp "opentrim cli program
 
 where `config.json` is a file containing the JSON configuration.
 
-In a C++ program one can use the \ref mcdriver::options class which offers
-a parseJSON() function to parse and validate the options.
+In C++ program one can use the \ref mcconfig class which has
+functions to parse and validate the JSON string.
                         
-The easiest way to get started is to generate a template with all default options by running
+The easiest way to get started with preparing a JSON config is to generate
+a template with 
                                         
     opentrim -t > template.json
                         
-and make changes to the new template file.
+This generates a template with all options set to default values.
 
 @note `opentrim` accepts comments in JSON 
 
@@ -66,31 +66,20 @@ information can be found within the file itself.
 Dimensions of tables depend on:
 - \f$N_{at}\f$ : # of atoms, i.e., all atoms in the target plus the
 projectile. Note that the same atom species belonging to different
-materials is counted as different atom.
+materials is counted as different atom. \n
+The order of atoms can be seen in `/target/atoms/labels`.
 - \f$N_{mat}\f$ : # of target materials
 - \f$N_x, N_y, N_z\f$ : # of grid points along the 3 axes
 - \f$N_c=(N_x-1)(N_y-1)(N_z-1)\f$ : # of target cells
 - \f$N_e\f$ : # of energy points for energy loss tables
 - \f$N_{ev}\f$ : # of events
 
+To reach a variable in the archive use the complete path, e.g. `/tally/energy_deposition/Ionization`.
+
 )";
 
 const char *postH5 = R"(
-To reach a variable in the archive use the complete path, e.g. `/tally/damage/Tdam`.
 
-Each number in the tally tables is a mean value over all histories.
-For each tally table the standard error of the mean (SEM) is also included. This is a separate table of equal dimension and with the same name plus the ending `_sem`. E.g., for the table `/tally/damage/Tdam` there is also `/tally/damage/Tdam_sem`.
-
-The definition of SEM employed is as follows: if \f$x_i\f$ is the contribution to the table entry \f$x\f$ from the \f$i\f$-th ion history, then the mean, \f$\bar{x}\f$, and the SEM, \f$\f$\sigma_{\bar{x}}\f$\f$, listed in the output file are calculated as:
-$$
-\bar{x} = \frac{1}{N_h} \sum_i {x_i}
-$$
-$$
-\sigma_{\bar{x}}^2 = \frac{1}{N_h(N_h-1)} \sum_i { (x_i - \bar{x})^2 }=
-\frac{\bar{{x^2}} - \bar{x}^2}{N_h-1}
-$$
-
-\see tally
 
 )";
 
@@ -185,7 +174,7 @@ void linkCode(std::ostream &os, const string &path, bool ref)
 void jsonPrint(std::ostream &os, const ojson &j, type_t type, int level, string path)
 {
     string val;
-    mcdriver::options opt;
+    mcconfig opt;
 
     if (level) {
         path += '/';
@@ -271,19 +260,20 @@ std::ostream &operator<<(std::ostream &os, type_t type)
 
 void printPath(std::ostream &os, const string &path)
 {
-    for (int i = 1; i < path.size(); i++) {
-        char c = path[i];
-        if (c == '/')
-            c = '.';
-        os << c;
-    }
+    os << path;
+    // for (int i = 1; i < path.size(); i++) {
+    //     char c = path[i];
+    //     if (c == '/')
+    //         c = '.';
+    //     os << c;
+    // }
 }
 
 void jsonPrintTable(std::ostream &os, const ojson &j, type_t type, string path)
 {
     bool is_root = path.empty();
     string name, val;
-    mcdriver::options opt;
+    mcconfig opt;
 
     if (!is_root) {
         name = j["name"].template get<std::string>();

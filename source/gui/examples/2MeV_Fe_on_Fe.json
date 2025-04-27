@@ -1,11 +1,11 @@
 {
-    "Driver": {
-        "max_no_ions": 20000,
+    "Run": {
+        "max_no_ions": 10000,
         "threads": 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",
-        "screening_type": "ZBL",
+        "screening_type": "ZBL"
     },
     "Transport": {
         "flight_path_type": "FullMC"

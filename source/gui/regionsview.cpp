@@ -45,7 +45,7 @@ QVariant RegionsModel::data(const QModelIndex &index, int role) const
     if (i < 0 || i >= rowCount())
         return QVariant();
 
-    const mcdriver::options *opt = model_->options();
+    const mcconfig *opt = model_->options();
     const target::region &reg = opt->Target.regions[i];
 
     QVariant V;
@@ -97,7 +97,7 @@ bool RegionsModel::setData(const QModelIndex &index, const QVariant &value, int 
     if (i < 0 || i >= rowCount())
         return false;
 
-    mcdriver::options *opt = model_->options();
+    mcconfig *opt = model_->options();
     target::region &reg = opt->Target.regions[i];
 
     switch (j) {
@@ -127,7 +127,7 @@ bool RegionsModel::insertRows(int position, int rows, const QModelIndex &parent)
     assert(position == rowCount());
 
     beginInsertRows(parent, position, position);
-    mcdriver::options *opt = model_->options();
+    mcconfig *opt = model_->options();
     auto &materials = opt->Target.materials;
     target::region reg;
     reg.id = "Region XX";
@@ -147,7 +147,7 @@ bool RegionsModel::removeRows(int position, int rows, const QModelIndex &parent)
 {
     assert(rows == 1);
 
-    mcdriver::options *opt = model_->options();
+    mcconfig *opt = model_->options();
     auto &regions = opt->Target.regions;
     if (regions.empty() || position >= regions.size())
         return false;
@@ -165,7 +165,7 @@ bool RegionsModel::removeRows(int position, int rows, const QModelIndex &parent)
 }
 bool RegionsModel::moveRow(int from, int to)
 {
-    mcdriver::options *opt = model_->options();
+    mcconfig *opt = model_->options();
     auto &regions = opt->Target.regions;
 
     if (regions.empty())
@@ -227,7 +227,7 @@ QWidget *RegionDelegate::createEditor(QWidget *parent, const QStyleOptionViewIte
         break;
     case 1: {
         QComboBox *cb = new QComboBox(parent);
-        const mcdriver::options *opt = rmodel->model_->options();
+        const mcconfig *opt = rmodel->model_->options();
         auto &materials = opt->Target.materials;
         for (int i = 0; i < materials.size(); ++i) {
             cb->addItem(QString::fromStdString(materials[i].id));

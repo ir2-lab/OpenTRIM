@@ -1,6 +1,6 @@
 {
-    "Driver": {
-        "max_no_ions": 2000,
+    "Run": {
+        "max_no_ions": 20000,
         "threads": 4
     },
     "Simulation": {

@@ -48,7 +48,7 @@ mcdriver::~mcdriver()
 
 std::string mcdriver::outFileName() const
 {
-    std::string s(out_opts_.outfilename);
+    std::string s(config_.Output.outfilename);
     s += ".h5";
     return s;
 }
@@ -76,22 +76,11 @@ void mcdriver::reset()
     }
 }
 
-void mcdriver::getOptions(options &opt) const
-{
-    opt.Driver = par_;
-    opt.Output = out_opts_;
-    opt.Simulation = s_->getSimulationParameters();
-    opt.Transport = s_->getTransportOptions();
-    opt.IonBeam = s_->getSource().getParameters();
-    opt.Target = s_->getTarget().getDescription();
-}
-
-void mcdriver::init(const options &o)
+void mcdriver::init(const mcconfig &config)
 {
     reset();
-    s_ = o.createSimulation();
-    par_ = o.Driver;
-    out_opts_ = o.Output;
+    config_ = config;
+    s_ = config_.createSimulation();
     s_->init();
 }
 
@@ -113,7 +102,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // cpu time
     struct timespec t_start, t_end;
 
-    int nthreads = par_.threads;
+    int nthreads = config_.Run.threads;
     if (nthreads < 1)
         nthreads = 1;
 
@@ -123,21 +112,21 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
     // ion counts
     size_t n_start = s_->ion_count();
-    size_t n_end = par_.max_no_ions;
+    size_t n_end = config_.Run.max_no_ions;
     if (n_end <= n_start)
         return -1;
 
     // check cpu time limit
     double tlim = std::numeric_limits<double>::max();
-    if (par_.max_cpu_time) {
-        tlim = par_.max_cpu_time;
+    if (config_.Run.max_cpu_time) {
+        tlim = config_.Run.max_cpu_time;
         for (auto &rd : run_history_)
             tlim -= rd.cpu_time;
     }
 
     // If ion_count == 0, i.e. simulation starts, seed the rng
     if (s_->ion_count() == 0)
-        s_->seed(par_.seed);
+        s_->seed(config_.Run.seed);
 
     // create simulation clones
     sim_clones_.resize(nthreads);
@@ -152,18 +141,18 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
     // open clone streams
     for (int i = 0; i < nthreads; i++) {
-        if (out_opts_.store_pka_events)
+        if (config_.Output.store_pka_events)
             sim_clones_[i]->open_pka_stream();
-        if (out_opts_.store_exit_events)
+        if (config_.Output.store_exit_events)
             sim_clones_[i]->open_exit_stream();
     }
 
     // If ion_count == 0, i.e. simulation starts,
     // open the main streams
     if (s_->ion_count() == 0) {
-        if (out_opts_.store_pka_events)
+        if (config_.Output.store_pka_events)
             s_->open_pka_stream();
-        if (out_opts_.store_exit_events)
+        if (config_.Output.store_exit_events)
             s_->open_exit_stream();
     }
 
@@ -256,13 +245,13 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     return 0;
 }
 
-int mcdriver::options::validate(bool AcceptIncomplete)
+int mcconfig::validate(bool AcceptIncomplete)
 {
-    // Driver
-    if (Driver.max_no_ions <= 0)
+    // Run
+    if (Run.max_no_ions <= 0)
         throw std::invalid_argument("Simulation.max_no_ions must be larger than 0.");
 
-    if (Driver.threads <= 0)
+    if (Run.threads <= 0)
         throw std::invalid_argument("Simulation.threads must be 1 or larger.");
 
     // Simulation & Transport
@@ -439,7 +428,7 @@ int mcdriver::options::validate(bool AcceptIncomplete)
     return 0;
 }
 
-mccore *mcdriver::options::createSimulation() const
+mccore *mcconfig::createSimulation() const
 {
     mccore *S = new mccore(Simulation, Transport);
 
@@ -450,6 +439,7 @@ mccore *mcdriver::options::createSimulation() const
 
     for (auto md : Target.materials)
         T.addMaterial(md);
+
     for (auto rd : Target.regions)
         T.addRegion(rd);
 

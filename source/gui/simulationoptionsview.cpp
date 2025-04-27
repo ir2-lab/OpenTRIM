@@ -61,7 +61,7 @@ SimulationOptionsView::SimulationOptionsView(MainUI *iui, QWidget *parent)
         OptionsItem *item = model->getItem(idx);
 
         QString category = item->key();
-        if (category == "Driver")
+        if (category == "Run")
             continue;
 
         QWidget *widget;
@@ -161,7 +161,7 @@ SimulationOptionsView::SimulationOptionsView(MainUI *iui, QWidget *parent)
 
 void SimulationOptionsView::submit()
 {
-    const mcdriver::options *opt = mapper->model()->options();
+    const mcconfig *opt = mapper->model()->options();
     ionsui->driverObj()->setOptions(*opt, false);
     jsonView->setPlainText(QString::fromStdString(ionsui->driverObj()->json()));
     setModified(false);
@@ -176,7 +176,7 @@ void SimulationOptionsView::help()
 
 void SimulationOptionsView::revert()
 {
-    const mcdriver::options &opt = ionsui->driverObj()->options();
+    const mcconfig &opt = ionsui->driverObj()->options();
     mapper->model()->setOptions(opt);
     mapper->revert();
     materialsView->setWidgetData();
@@ -195,8 +195,8 @@ void SimulationOptionsView::applyRules()
 {
     // Apply option combination rules
 
-    // current unsaved options
-    const mcdriver::options *opt = mapper->model()->options();
+    // current unsaved mcconfig
+    const mcconfig *opt = mapper->model()->options();
 
     // Using a lambda expression for a short-lived function
     auto enable_if = [this](const QString &key, bool b) {

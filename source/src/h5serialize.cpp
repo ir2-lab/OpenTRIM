@@ -335,9 +335,6 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
         if (writeFileHeader(h5f, os) != 0)
             return -1;
 
-        options opt;
-        getOptions(opt);
-
         // variable list
         dset_list_t var_list;
 
@@ -345,7 +342,7 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
         std::string page = "/run_info/";
 
         // title
-        dump(h5f, page + "title", opt.Output.title, var_list, "User supplied simulation title");
+        dump(h5f, page + "title", config_.Output.title, var_list, "User supplied simulation title");
 
         dump(h5f, page + "total_ion_count", getSim()->ion_count(), var_list,
              "Total number of simulated ions");
@@ -353,7 +350,7 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
         // save options
         {
             std::stringstream ss;
-            opt.printJSON(ss);
+            config_.printJSON(ss);
             dump(h5f, page + "config_json", ss.str(), var_list,
                  "JSON formatted simulation options");
         }
@@ -465,7 +462,7 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
             dump(h5f, page + "atomic_radius", rat, var_list, "atomic radius [nm]");
         }
 
-        if (opt.Output.store_dedx) {
+        if (config_.Output.store_dedx) {
 
             page = "/target/dedx/";
 
@@ -544,9 +541,9 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
 
         // 5. events
         page = "/events/";
-        if (opt.Output.store_pka_events)
+        if (config_.Output.store_pka_events)
             dump_event_stream(h5f, page + "pka", s_->pka_stream(), var_list);
-        if (opt.Output.store_exit_events)
+        if (config_.Output.store_exit_events)
             dump_event_stream(h5f, page + "exit", s_->exit_stream(), var_list);
 
         // dump the variable list
@@ -585,12 +582,12 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
         // TODO
         // In future versions check file version
 
-        // load and check simulation options
-        options opt;
+        // load and check simulation mcconfig
+        mcconfig opt;
         {
             std::string json = h5e::load<std::string>(h5f, "/run_info/config_json");
             std::stringstream is(json);
-            if (opt.parseJSON(is, true, os) != 0)
+            if (config_.parseJSON(is, true, os) != 0)
                 return -1;
         }
 
@@ -646,13 +643,13 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
         }
 
         // load pka events
-        if (opt.Output.store_pka_events) {
+        if (config_.Output.store_pka_events) {
             s_->open_pka_stream();
             load_event_stream(h5f, "/events/pka", s_->pka_stream());
         }
 
         // load pka events
-        if (opt.Output.store_exit_events) {
+        if (config_.Output.store_exit_events) {
             s_->open_exit_stream();
             load_event_stream(h5f, "/events/exit", s_->exit_stream());
         }

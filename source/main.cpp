@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
             return 0;
         }
         if (result.count("template")) {
-            mcdriver::options opt;
+            mcconfig opt;
             opt.printJSON(cout);
             return 0;
         }
@@ -145,21 +145,21 @@ int main(int argc, char *argv[])
             return -1;
 
         // cli overrides
-        mcdriver::parameters par = D.driverOptions();
+        mcconfig::run_options par = D.config().Run;
         if (n > 0)
             par.max_no_ions = n;
         if (j > 0)
             par.threads = j;
-        D.setDriverOptions(par);
+        D.setRunOptions(par);
 
-        mcdriver::output_options opts = D.outputOptions();
+        mcconfig::output_options opts = D.config().Output;
         if (!output_file.empty()) {
             opts.outfilename = output_file;
             D.setOutputOptions(opts);
         }
     } else {
 
-        mcdriver::options opt;
+        mcconfig config;
 
         if (!input_config_file.empty()) {
 
@@ -167,27 +167,28 @@ int main(int argc, char *argv[])
 
             std::ifstream is(input_config_file);
 
-            if (opt.parseJSON(is, true, &cerr) != 0)
+            if (config.parseJSON(is, true, &cerr) != 0)
                 return -1;
         } else {
-            if (opt.parseJSON(cin, true, &cerr) != 0)
+
+            if (config.parseJSON(cin, true, &cerr) != 0)
                 return -1;
         }
 
         // cli overrides
         if (n > 0)
-            opt.Driver.max_no_ions = n;
+            config.Run.max_no_ions = n;
         if (j > 0)
-            opt.Driver.threads = j;
+            config.Run.threads = j;
         if (s > 0)
-            opt.Driver.seed = s;
+            config.Run.seed = s;
         if (!output_file.empty())
-            opt.Output.outfilename = output_file;
+            config.Output.outfilename = output_file;
 
-        D.init(opt);
+        D.init(config);
     }
 
-    cout << "Starting simulation '" << D.outputOptions().title << "'..." << endl << endl;
+    cout << "Starting simulation '" << D.config().Output.title << "'..." << endl << endl;
 
     info.init(D);
     info.print();
@@ -196,7 +197,7 @@ int main(int argc, char *argv[])
 
     const mcdriver::run_data &rd = D.run_history().back();
     cout << endl << endl << "Completed " << rd.total_ion_count << " ion histories." << endl;
-    cout << "Threads: " << D.driverOptions().threads << endl;
+    cout << "Threads: " << D.config().Run.threads << endl;
     cout << "Cpu time (s):  " << rd.cpu_time << ",\t" << "Ions/cpu-s:  " << rd.ips << endl;
     cout << "Real time (s): " << info.elapsed() << ",\t" << "Ions/real-s: " << info.ips() << endl;
     cout << "Storing results in " << D.outFileName() << " ...";
@@ -212,7 +213,7 @@ void running_sim_info::init(const mcdriver &d)
     tstart_ = hr_clock_t::now();
     nstart_ = d.getSim()->ion_count();
     ncurr_ = nstart_;
-    ntarget_ = d.driverOptions().max_no_ions;
+    ntarget_ = d.config().Run.max_no_ions;
     progress_ = int(1.0 * max_progress_ * ncurr_ / ntarget_);
     elapsed_ = 0.;
     etc_ = 0;
