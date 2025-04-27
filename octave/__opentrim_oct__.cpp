@@ -50,7 +50,7 @@ struct theta_functor
 template <Screening ScreeningType>
 struct ip_functor
 {
-    double operator()(double x, double y) { return xs_cms<ScreeningType>::findS(x, y); }
+    double operator()(double x, double y) { return xs_cms<ScreeningType>::find_s(x, y); }
 };
 
 template <Screening ScreeningType>
@@ -62,7 +62,7 @@ struct xs_functor
 template <Screening ScreeningType>
 struct sn_functor
 {
-    double operator()(double x, double y) { return xs_cms<ScreeningType>::stoppingPower(x, y); }
+    double operator()(double x, double y) { return xs_cms<ScreeningType>::sn(x, y); }
 };
 
 DEFUN_DLD(__screened_coulomb_theta__, args, nargout, "Do not call directly")

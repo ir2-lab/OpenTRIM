@@ -1,6 +1,6 @@
 #include <octave/oct.h>
 
-#include "corteo_xs.h"
+#include "xs_corteo.h"
 
 typedef xs_corteo4bit<Screening::ZBL> xs_t;
 typedef xs_t::corteo_idx_t::e_index e_idx;
