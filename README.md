@@ -18,9 +18,18 @@ Documentation can be found here: https://ir2-lab.gitlab.io/opentrim
 
 ### Binary packages
 
-Binary packages and repositories for a number of **Linux** distributions (Ubuntu, RHEL, OpenSUSE, etc.) are built on the [openSUSE Build Service](https://software.opensuse.org//download.html?project=home%3Amaxiotis%3Agapost&package=opentrim). Please follow the instructions found there to install OpenTRIM on your system.
+Binary packages and repositories for a number of **Linux** distributions (Ubuntu, RHEL, OpenSUSE, etc.) are built on the [openSUSE Build Service](https://software.opensuse.org//download.html?project=home%3Amaxiotis%3Agapost&package=opentrim). 
+There are different packages for each program component :
 
-On **Windows**, please download the latest binary distribution release provided as a zip file and extract to some location. To be able to run the program from the windows command line, add the program folder to the user or system path.
+    opentrim
+    opentrim-gui
+    opentrim-libs
+    opentrim-tests
+    opentrim-dev
+    
+Please follow the installation instructions found on the [OBS page](https://software.opensuse.org//download.html?project=home%3Amaxiotis%3Agapost&package=opentrim).
+
+On **Windows**, please download the latest [binary distribution release](https://github.com/ir2-lab/OpenTRIM/releases) provided as a zip file and extract to some location. To be able to run the program from the windows command line, add the program folder to the user path or to the global system path.
 
 ### Building from source
 
@@ -34,7 +43,7 @@ Clone the project using
 ```
 or download a tarball of the last version.
 
-To build OpenTRIM you will need the following libraries:
+OpenTRIM has the following dependencies:
 - [Eigen v3.4.0](https://eigen.tuxfamily.org) for vector operations
 - [HDF5 v1.10.7](https://www.hdfgroup.org/solutions/hdf5/) for file storage
 - [Qt5 or Qt6](https://www.qt.io/) for the GUI program

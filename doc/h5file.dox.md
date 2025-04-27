@@ -11,12 +11,15 @@ information can be found within the file itself.
 Dimensions of tables depend on:
 - \f$N_{at}\f$ : # of atoms, i.e., all atoms in the target plus the
 projectile. Note that the same atom species belonging to different
-materials is counted as different atom.
+materials is counted as different atom. \n
+The order of atoms can be seen in `/target/atoms/labels`.
 - \f$N_{mat}\f$ : # of target materials
 - \f$N_x, N_y, N_z\f$ : # of grid points along the 3 axes
 - \f$N_c=(N_x-1)(N_y-1)(N_z-1)\f$ : # of target cells
 - \f$N_e\f$ : # of energy points for energy loss tables
 - \f$N_{ev}\f$ : # of events
+
+To reach a variable in the archive use the complete path, e.g. `/tally/energy_deposition/Ionization`.
 
 <table>
 <caption>HDF5 output archive structure</caption>
@@ -320,21 +323,7 @@ materials is counted as different atom.
 <td>event data column descriptions
 </table>
 
-To reach a variable in the archive use the complete path, e.g. `/tally/damage/Tdam`.
 
-Each number in the tally tables is a mean value over all histories.
-For each tally table the standard error of the mean (SEM) is also included. This is a separate table of equal dimension and with the same name plus the ending `_sem`. E.g., for the table `/tally/damage/Tdam` there is also `/tally/damage/Tdam_sem`.
-
-The definition of SEM employed is as follows: if \f$x_i\f$ is the contribution to the table entry \f$x\f$ from the \f$i\f$-th ion history, then the mean, \f$\bar{x}\f$, and the SEM, \f$\f$\sigma_{\bar{x}}\f$\f$, listed in the output file are calculated as:
-$$
-\bar{x} = \frac{1}{N_h} \sum_i {x_i}
-$$
-$$
-\sigma_{\bar{x}}^2 = \frac{1}{N_h(N_h-1)} \sum_i { (x_i - \bar{x})^2 }=
-\frac{\bar{{x^2}} - \bar{x}^2}{N_h-1}
-$$
-
-\see tally
 
 
 
