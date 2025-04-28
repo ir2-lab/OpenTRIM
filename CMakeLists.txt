@@ -30,9 +30,7 @@ add_compile_definitions(PROJECT_NAME="${PROJECT_NAME}"
                         SYSTEM_ID="${CMAKE_CXX_PLATFORM_ID}"
                         COMPILER_ID="${CMAKE_CXX_COMPILER_ID}"
                         COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}"
-                        BUILD_TIME="${CMAKE_BUILD_TIME}")
-
-include (GNUInstallDirs) 
+                        BUILD_TIME="${CMAKE_BUILD_TIME}") 
 
 # by default, install into $HOME/.local (not /usr/local), so that no root access (and sudo!!) is needed
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -44,6 +42,10 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 message (STATUS "Install prefix =  ${CMAKE_INSTALL_PREFIX}")
 
+# this should be called after setting the prefix !!
+include (GNUInstallDirs)
+
+# Get external packages and define some helper cmake funcs
 include(Externals)
 include(HelperFunctions)
 

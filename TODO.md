@@ -2,7 +2,8 @@
 
 ## Bugs
 
-- [ ] The rpath is not correctly set the 1st time that cmake configures the project. (problem for local builds/installs to $HOME/.local)
+- [X] The rpath is not correctly set the 1st time that cmake configures the project. (problem for local builds/installs to $HOME/.local)
+  Solved - include(GNUInstalldirs) must be called after setting the prefix !!
 
 ## Functionality that needs to be completed
 
