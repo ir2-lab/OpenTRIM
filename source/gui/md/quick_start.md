@@ -7,7 +7,7 @@ The easiest way is to modify an existing example. This is what is described in t
 ![intro](./images/intro.png) 
 
 ### 2. Double-click one of the examples. 
-We'll use "1MeV Xe on UO2" in this guide
+We'll use "3 MeV Xe on UO2" in this guide
 
 ![intro](./images/intro22.png) 
    
@@ -72,9 +72,16 @@ The data is updated in real time. Statistical variance is also shown.
 
 In this panel, simulation data are plotted in real time.
 
-Select the tally table to plot from the list on the left side.
+Select the tally table to plot from the list on the left side **(1)**.
 
 Below the graph there are controls for setting the axis (X/Y/Z) and selecting
 which ion or target atom to show. 
 
-All plots can also be exported to .pdf or .csv format by pressing **Export** button. 
+All plots can also be exported to .pdf or .csv format by pressing **Export** button **(2)**. 
+
+### 7 Save results
+
+In order to save all simulation data return to **"Welcome" panel** and click on the corresponding button. 
+You can save both simulation settings in a .json format file and simulated data in an .hdf5 file format. 
+Details about content of these files can be found for [.json files](https://ir2-lab.gitlab.io/opentrim/json_config.html) and 
+for [.hdf5 files](https://ir2-lab.gitlab.io/opentrim/out_file.html) at the corresponding links.
