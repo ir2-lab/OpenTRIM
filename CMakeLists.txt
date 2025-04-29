@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12.0)
     
 project(OpenTRIM 
-        VERSION 1.0.0
+        VERSION 1.0.2
         DESCRIPTION "Monte-Carlo simulation of ion transport in materials"
         HOMEPAGE_URL https://gitlab.com/ir2-lab/
         LANGUAGES C CXX)
