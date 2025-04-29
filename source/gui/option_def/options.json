@@ -521,6 +521,15 @@
                     "whatsThis": ""
                 },
                 {
+                    "name": "outfilename",
+                    "label": "Output file name",
+                    "type": "string",
+                    "toolTip": "Name of the output file without the extention.",
+                    "whatsThis": ["The extention '.h5' will be added.",
+                                  "The name can contain the relative or absolute path to the file."
+                ]
+                },
+                {
                     "name": "storage_interval",
                     "label": "Update interval (ms)",
                     "type": "int",

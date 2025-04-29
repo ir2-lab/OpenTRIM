@@ -16,6 +16,14 @@ Compiler: %5 v%6
 
 System: %7
 
+### Contributors
+
+George Apostolopoulos <<gapost@ipta.demokritos.gr>>
+
+Eleni Mitsi <<elmitsi@ipta.demokritos.gr>>
+
+Michael Axiotis <<axiotis@inp.demokritos.gr>>
+
 ### Credits
 
 `OpenTRIM` draws heavily on [SRIM](http://www.srim.org/) by J.F. Ziegler, one of the first ion simulation programs created in the 80s and still widely used until today. The electronic energy loss data in `OpenTRIM` have been obtained from the [SRIM-2013](http://www.srim.org/) distribution using the provided utility `SRmodule.exe`.

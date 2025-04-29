@@ -351,7 +351,7 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
         {
             std::stringstream ss;
             config_.printJSON(ss);
-            dump(h5f, page + "config_json", ss.str(), var_list,
+            dump(h5f, page + "json_config", ss.str(), var_list,
                  "JSON formatted simulation options");
         }
 

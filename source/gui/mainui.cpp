@@ -232,6 +232,7 @@ void MainUI::showQuickStartWidget()
         vbox->addWidget(label);
         QTextBrowser *quickstart = new QTextBrowser;
         quickstart->setSource(QUrl("qrc:./md/quick_start.md"));
+        quickstart->setOpenExternalLinks(true);
         vbox->addWidget(quickstart);
         quickStartWidget->resize(800, 800);
         quickStartWidget->show();

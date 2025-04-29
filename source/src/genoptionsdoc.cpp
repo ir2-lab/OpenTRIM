@@ -21,70 +21,8 @@ void jsonPrintTable(std::ostream &os, const ojson &j, type_t type = tStruct, str
 
 int linkID;
 
-const char *preampleJSON = R"(
-## The JSON configuration string {#json_config}
-
-All configuration parameters for a simulation are coded in a [JSON](https://www.json.org/json-el.html) formatted string. 
-
-This can be loaded directly from a file to the \ref cliapp "opentrim cli program" with the following command:
-
-    opentrim -f config.json
-
-where `config.json` is a file containing the JSON configuration.
-
-In C++ program one can use the \ref mcconfig class which has
-functions to parse and validate the JSON string.
-                        
-The easiest way to get started with preparing a JSON config is to generate
-a template with 
-                                        
-    opentrim -t > template.json
-                        
-This generates a template with all options set to default values.
-
-@note `opentrim` accepts comments in JSON 
-
-The JSON config string has the following self-explanatory structure shown bellow.
-Click on any of the options to see more information.
-
-)";
-
-const char *postJSON = R"(
-
-)";
-
-const char *preampleH5 = R"(
-## The HDF5 output archive {#out_file}
-
-The simulation produces a single HDF5 output file which contains all
-results from tallies and events along with the input conditions, run
-timing and other information. 
- 
-A brief description of the file contents is given here. More detailed
-information can be found within the file itself. 
-
-Dimensions of tables depend on:
-- \f$N_{at}\f$ : # of atoms, i.e., all atoms in the target plus the
-projectile. Note that the same atom species belonging to different
-materials is counted as different atom. \n
-The order of atoms can be seen in `/target/atoms/labels`.
-- \f$N_{mat}\f$ : # of target materials
-- \f$N_x, N_y, N_z\f$ : # of grid points along the 3 axes
-- \f$N_c=(N_x-1)(N_y-1)(N_z-1)\f$ : # of target cells
-- \f$N_e\f$ : # of energy points for energy loss tables
-- \f$N_{ev}\f$ : # of events
-
-To reach a variable in the archive use the complete path, e.g. `/tally/energy_deposition/Ionization`.
-
-)";
-
-const char *postH5 = R"(
-
-
-)";
-
 const char *tableStart = "<table>\n"
-                         "<caption>Detailed Description</caption>\n";
+                         "<caption>OpenTRIM JSON config - Detailed Description</caption>\n";
 
 const char *tableEnd = "</table>\n";
 
@@ -99,13 +37,14 @@ int main(int argc, char *argv[])
 
         std::ofstream os("options.dox.md");
 
-        os << preampleJSON;
+        os << "## JSON config string" << endl << endl;
+
         os << "> <br>" << endl;
         linkID = 0;
         jsonPrint(os, j);
         os << "<br>" << endl << endl;
 
-        os << postJSON;
+        os << "## Detailed description" << endl << endl;
 
         os << endl << endl;
         os << tableStart;
@@ -117,11 +56,9 @@ int main(int argc, char *argv[])
     {
         std::ofstream os("h5file.dox.md");
 
-        os << preampleH5;
+        os << "## Archive structure" << endl << endl;
 
         printH5table(os);
-
-        os << postH5;
 
         os << endl << endl;
     }
@@ -386,7 +323,7 @@ int create_h5_dir(dsd &root)
         run_info.add(
                 { "total_ion_count", ds_numeric, { "Scalar" }, "Total number of simulated ions" });
         run_info.add(
-                { "config_json", ds_string, { "Scalar" }, "JSON formatted simulation options" });
+                { "json_config", ds_string, { "Scalar" }, "JSON formatted simulation options" });
         run_info.add({ "variable_list",
                        ds_string,
                        { "Scalar" },
@@ -558,7 +495,7 @@ void printH5table(std::ostream &os)
     create_h5_dir(root);
 
     os << "<table>\n"
-          "<caption>HDF5 output archive structure</caption>\n";
+          "<caption>OpenTRIM HDF5 output archive structure</caption>\n";
 
     os << "<tr><th>Path\n<th>Type\n<th>Size\n<th>Description\n";
     h5Print(os, root);

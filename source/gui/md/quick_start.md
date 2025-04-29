@@ -54,7 +54,7 @@ In this panel there are several tabs with configuration options
   
   - The simulation progress and other data are depicted in real time.
 
-### 5 "Summary" panel
+### 5. "Summary" panel
    
 ![intro](./images/sum1.png)
 
@@ -66,7 +66,7 @@ This panel summarizes key simulation results in four tables:
 
 The data is updated in real time. Statistical variance is also shown.
 
-### 6 "Plots" panel
+### 6. "Plots" panel
    
 ![intro](./images/plots11.png)
 
@@ -79,9 +79,12 @@ which ion or target atom to show.
 
 All plots can also be exported to .pdf or .csv format by pressing **Export** button **(2)**. 
 
-### 7 Save results
+### 7. Save results
 
-In order to save all simulation data return to **"Welcome" panel** and click on the corresponding button. 
-You can save both simulation settings in a .json format file and simulated data in an .hdf5 file format. 
-Details about content of these files can be found for [.json files](https://ir2-lab.gitlab.io/opentrim/json_config.html) and 
-for [.hdf5 files](https://ir2-lab.gitlab.io/opentrim/out_file.html) at the corresponding links.
+In order to save your work, return to the **"Welcome" panel** and click on **"Save"** or **"Save As"** button. 
+
+You have the option to save:
+- Only the configuration in a `.json` file (see [JSON details here](https://ir2-lab.gitlab.io/opentrim/json_config.html))
+- Both configuration + data in a HDF5 archive file (extention `.h5`, more [details on HDF5 here](https://ir2-lab.gitlab.io/opentrim/out_file.html))
+
+

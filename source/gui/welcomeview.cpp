@@ -192,6 +192,7 @@ WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ions
         {
             QTextBrowser *quickstart = new QTextBrowser;
             quickstart->setSource(QUrl("qrc:./md/quick_start.md"));
+            quickstart->setOpenExternalLinks(true);
             vbox->addWidget(quickstart);
         }
 

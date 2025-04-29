@@ -14,18 +14,20 @@ class material;
 class mccore;
 
 /**
- * @brief The flight_path_calc class estimates the ion's flight path
+ * @brief The flight_path_calc class samples the ion's flight path and impact parameter
  *
- * The calculation is performed according to the algorithm specified by the
+ * The sampling is performed according to the algorithm specified by the
  * \ref flight_path_type_t enum.
  *
- * If \ref flight_path_type_t is equal to \ref AtomicSpacing or \ref Constant
- * then the flight path \f$\ell\f$ is precalculated and equal either to the current
- * material's atomic radius
- * \f$ R_{at} = \left(\frac{3}{4\pi}N\right)^{1/3} \f$ or
- * to user specified constant value, respectively.
+ * If \ref flight_path_type_t is \ref Constant
+ * then the flight path \f$\ell\f$ is equal to the user specified
+ * parameter mccore::transport_options::flight_path_const.
  *
- * In both of these cases the impact parameter \f$p\f$ is calculated as
+ * The value is in units of the current
+ * material's atomic radius
+ * \f$ R_{at} = \left(\frac{3}{4\pi}N\right)^{-1/3} \f$.
+ *
+ * The impact parameter \f$p\f$ is calculated as
  * $$
  * p = (\pi \ell N)^{-1/2}\sqrt{u},
  * $$
@@ -35,16 +37,16 @@ class mccore;
  * of the mean free path \f$\ell_0\f$ , the maximum impact parameter \f$p_{max}\f$ and
  * the maximum fligth path \f$\ell_{max}\f$. For more information see \ref flightpath.
  *
- * In the \ref MendenhallWeller algorithm \f$\ell\f$ and \f$p\f$
+ * In the \ref MHW algorithm, \f$\ell\f$ and \f$p\f$
  * are computed  as follows:
- * - If \f$p_{max}(E)<(\pi R_{at} N)^{-1/2}\f$ set
+ * - If \f$p_{max}(E)< R_{at} \f$ set
  * $$
  * p = p_{max}\sqrt{-\log{u}} \quad \mbox{and} \quad \ell=\ell_0(E).
  * $$
  * Reject collision if \f$p>p_{max}\f$.
  * - otherwise:
  * $$
- * \ell = R_{at} \quad \mbox{and} \quad p = (\pi \ell N)^{-1/2}\sqrt{u}.
+ * \ell = (4/3)R_{at} \quad \mbox{and} \quad p = R_{at} \sqrt{u}.
  * $$
  *
  * Finally, the \ref FullMC algorithm does the following:
@@ -52,13 +54,13 @@ class mccore;
  * - \f$p = p_{max}(E)\sqrt{u_2}\f$
  * - Reject collision if \f$\ell > \ell_{max}(E)\f$
  *
- * The flight_path_calc class is first initialized for a given simulation by a calling
+ * The flight_path_calc class is first initialized for a given simulation by calling
  * flight_path_calc::init(). This pre-computes a number of data tables that will be used
  * during the Monte-Carlo simulation.
  *
  * During the simulation, preload() is called to select pre-computed tables for a specific
  * ion/material combination. Then, multiple calls to operator() can be made to sample the ion's
- * flight path.
+ * flight path and impact parameter.
  *
  * \ingroup Core
  * \sa \ref flightpath

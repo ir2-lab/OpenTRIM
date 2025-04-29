@@ -26,6 +26,7 @@ class mccore;
  *
  *
  * \ingroup Core
+ *
  * \sa dedx
  */
 class dedx_calc
@@ -78,25 +79,6 @@ public:
      * @return 0 if succesfull
      */
     int preload(const ion *i, const material *m);
-
-    /**
-     * @brief Calculate electronic energy loss and straggling of the moving ion
-     *
-     * The specific stopping & straggling values are obtained by
-     * calling dedx_interp() on the respective interpolator object.
-     *
-     * Tables follow the corteo indexing scheme, see \ref dedx_index.
-     *
-     * @param rng random number generator (used for straggling calc)
-     * @param E ion energy [eV]
-     * @param fp flight path [nm]
-     * @param sqrtfp sqrt of fp/(atomic radius) (used for straggling)
-     * @param stopping_tbl pointer to stopping interpolator
-     * @param straggling_tbl pointer to straggling interpolator
-     * @return the energy loss [eV]
-     *
-     * \sa dedx
-     */
 
     /**
      * @brief Calculate and subtract electronic energy loss and straggling of a moving ion
