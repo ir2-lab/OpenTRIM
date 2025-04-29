@@ -1,28 +1,4 @@
-
-## The JSON configuration string {#json_config}
-
-All configuration parameters for a simulation are coded in a [JSON](https://www.json.org/json-el.html) formatted string. 
-
-This can be loaded directly from a file to the \ref cliapp "opentrim cli program" with the following command:
-
-    opentrim -f config.json
-
-where `config.json` is a file containing the JSON configuration.
-
-In C++ program one can use the \ref mcconfig class which has
-functions to parse and validate the JSON string.
-                        
-The easiest way to get started with preparing a JSON config is to generate
-a template with 
-                                        
-    opentrim -t > template.json
-                        
-This generates a template with all options set to default values.
-
-@note `opentrim` accepts comments in JSON 
-
-The JSON config string has the following self-explanatory structure shown bellow.
-Click on any of the options to see more information.
+## JSON config string
 
 > <br>
 {<br>
@@ -80,6 +56,7 @@ Click on any of the options to see more information.
 &emsp;&emsp;},<br>
 &emsp;&emsp;\ref _Output "\"Output\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_title "\"title\"": "Ion Simulation",<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Output_outfilename "\"outfilename\"": "out",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_storage_interval "\"storage_interval\"": 1000,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_store_exit_events "\"store_exit_events\"": false,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_store_pka_events "\"store_pka_events\"": false,<br>
@@ -93,12 +70,12 @@ Click on any of the options to see more information.
 }<br>
 <br>
 
-
+## Detailed description
 
 
 
 <table>
-<caption>Detailed Description</caption>
+<caption>OpenTRIM JSON config - Detailed Description</caption>
 <tr><th colspan="2">\anchor _Simulation /Simulation<tr><td>Type <td>Option group
 <tr><td>Description <td>General simulation options
 <tr><th colspan="2">\anchor _Simulation_simulation_type /Simulation/simulation_type<tr><td>Type <td>Enumerator
@@ -284,6 +261,11 @@ The Gaussian distrubution is not yet implemented<br>
 <tr><td>Description <td>Output options
 <tr><th colspan="2">\anchor _Output_title /Output/title<tr><td>Type <td>String
 <tr><td>Default Value<td>"Ion Simulation"<tr><td>Description <td>Short title describing the simulation.
+<tr><th colspan="2">\anchor _Output_outfilename /Output/outfilename<tr><td>Type <td>String
+<tr><td>Default Value<td>"out"<tr><td>Description <td>Name of the output file without the extention.
+<br>
+The extention '.h5' will be added.<br>
+The name can contain the relative or absolute path to the file.<br>
 <tr><th colspan="2">\anchor _Output_storage_interval /Output/storage_interval<tr><td>Type <td>Integer
 <tr><td>Range<td>100...2.14748e+09
 <tr><td>Default Value<td>1000<tr><td>Description <td>Time interval (ms) to update stored data.

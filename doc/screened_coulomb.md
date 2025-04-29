@@ -132,7 +132,7 @@ The stopping cross-section diverges in this case. However, setting a mininum cut
   \langle T \rangle = T_m \log (\gamma E / T_m)
 \f]
 
-### OpenTRIM implementation
+## OpenTRIM implementation
 
 OpenTRIM includes a \ref XS "library of C++ classes" that can be utilized to perform the above calculations. 
 

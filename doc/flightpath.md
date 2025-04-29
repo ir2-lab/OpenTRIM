@@ -72,5 +72,6 @@ Thus, OpenTRIM employs also a more "standard" algorithm for path and impact para
 >   - compute the impact parameter as \f$p = p_{max}\sqrt{u_2}\f$, where \f$u_{2} \in (0,1)\f$ is a 2nd random sample 
 >   - Propagate the particle by \f$\Delta x\f$ and make a collision
 
+See \ref flightpathdetails for a more detailed description of the employed algorithms.
 
 

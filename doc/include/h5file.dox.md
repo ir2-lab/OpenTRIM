@@ -1,28 +1,7 @@
-
-## The HDF5 output archive {#out_file}
-
-The simulation produces a single HDF5 output file which contains all
-results from tallies and events along with the input conditions, run
-timing and other information. 
- 
-A brief description of the file contents is given here. More detailed
-information can be found within the file itself. 
-
-Dimensions of tables depend on:
-- \f$N_{at}\f$ : # of atoms, i.e., all atoms in the target plus the
-projectile. Note that the same atom species belonging to different
-materials is counted as different atom. \n
-The order of atoms can be seen in `/target/atoms/labels`.
-- \f$N_{mat}\f$ : # of target materials
-- \f$N_x, N_y, N_z\f$ : # of grid points along the 3 axes
-- \f$N_c=(N_x-1)(N_y-1)(N_z-1)\f$ : # of target cells
-- \f$N_e\f$ : # of energy points for energy loss tables
-- \f$N_{ev}\f$ : # of events
-
-To reach a variable in the archive use the complete path, e.g. `/tally/energy_deposition/Ionization`.
+## Archive structure
 
 <table>
-<caption>HDF5 output archive structure</caption>
+<caption>OpenTRIM HDF5 output archive structure</caption>
 <tr><th>Path
 <th>Type
 <th>Size
@@ -39,7 +18,7 @@ To reach a variable in the archive use the complete path, e.g. `/tally/energy_de
 <td>Numeric
 <td>Scalar
 <td>Total number of simulated ions
-<tr><td>&emsp;&emsp;&emsp;&emsp;config_json
+<tr><td>&emsp;&emsp;&emsp;&emsp;json_config
 <td>String
 <td>Scalar
 <td>JSON formatted simulation options
@@ -322,8 +301,5 @@ To reach a variable in the archive use the complete path, e.g. `/tally/energy_de
 <td>10
 <td>event data column descriptions
 </table>
-
-
-
 
 

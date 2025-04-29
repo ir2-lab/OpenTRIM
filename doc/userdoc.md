@@ -1,6 +1,7 @@
 \page userdoc User Documentation
 
 - \subpage install "Installation"
+- \subpage opentrim_gui 
 - \subpage cliapp "Using the command line application"
 - \subpage json_config "The JSON configuration file"
 - \subpage out_file "The HDF5 output archive"
