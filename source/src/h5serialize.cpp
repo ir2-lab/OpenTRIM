@@ -194,6 +194,8 @@ int load_array(h5::File &file, const std::string &path, ArrayND<T> &A, const siz
 {
     auto dset = file.getDataSet(path);
 
+    auto adim = A.dim();
+    auto dsetdim = dset.getDimensions();
     assert(dset.getDimensions() == A.dim());
 
     dset.read(A.data());
@@ -585,9 +587,9 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
         // load and check simulation mcconfig
         mcconfig opt;
         {
-            std::string json = h5e::load<std::string>(h5f, "/run_info/config_json");
+            std::string json = h5e::load<std::string>(h5f, "/run_info/json_config");
             std::stringstream is(json);
-            if (config_.parseJSON(is, true, os) != 0)
+            if (opt.parseJSON(is, true, os) != 0)
                 return -1;
         }
 
