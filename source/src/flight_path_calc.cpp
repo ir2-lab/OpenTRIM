@@ -56,26 +56,23 @@ int flight_path_calc::init(const mccore &s)
     umin_ = ArrayNDf(natoms, nmat, nerg);
     float delta_dedx = tr_opt_.max_rel_eloss;
     float Tmin = tr_opt_.min_recoil_energy;
-    float mfp_lb = tr_opt_.mfp_range[0];
-    float mfp_ub = tr_opt_.mfp_range[1];
 
     for (int z1 = 0; z1 < natoms; z1++) {
         for (int im = 0; im < materials.size(); im++) {
             const material *m = materials[im];
             const float &N = m->atomicDensity();
             const float &Rat = m->atomicRadius();
+            float mfp_lb = tr_opt_.mfp_range[0] * Rat;
+            float mfp_ub = tr_opt_.mfp_range[1] * Rat;
 
-            // if (type_ == FullMC && tr_opt_.allow_sub_ml_scattering)
-            //     fpmin = 0;
             for (dedx_index ie; ie != ie.end(); ie++) {
                 float &mfp = mfp_(z1, im, ie);
                 float &ipmax = ipmax_(z1, im, ie);
                 float &fpmax = fp_max_(z1, im, ie);
-                float T0;
                 float &umin = umin_(z1, im, ie);
 
                 float E = *ie;
-                T0 = Tmin;
+                float T0 = Tmin;
 
                 // find the lowest T0 so that T0 < Tmin & Theta < Theta_min
                 for (const atom *a : m->atoms()) {
