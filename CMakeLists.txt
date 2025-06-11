@@ -93,6 +93,7 @@ add_library(${LIB_TARGET} SHARED
     source/src/mcdriver.cpp
     source/src/dedx.cpp
     source/src/straggling.cpp
+    source/src/user_tally.cpp
 )
 
 set(OPENTRIM_HEADERS 
@@ -113,6 +114,7 @@ set(OPENTRIM_HEADERS
     source/include/event_stream.h 
     source/include/tally.h 
     source/include/mcdriver.h 
+    source/include/user_tally.h
 )
 
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
