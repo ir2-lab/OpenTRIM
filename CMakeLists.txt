@@ -116,6 +116,7 @@ add_library(${LIB_TARGET} SHARED
     source/src/parse_json.cpp    
     source/src/mcdriver.cpp
     source/src/dedx_calc.cpp
+    source/src/user_tally.cpp
 )
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
     target_sources(${LIB_TARGET}
@@ -138,6 +139,7 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
                 source/include/event_stream.h 
                 source/include/tally.h 
                 source/include/mcdriver.h 
+                source/include/user_tally.h
     )
 else()
     set_property(TARGET ${LIB_TARGET}
@@ -158,6 +160,7 @@ else()
             source/include/event_stream.h 
             source/include/tally.h 
             source/include/mcdriver.h 
+            source/include/user_tally.h
     )
 endif()
 target_sources(${LIB_TARGET}
