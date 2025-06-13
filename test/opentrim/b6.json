@@ -1,0 +1,84 @@
+{
+    "Run": {
+        "max_no_ions": 20000,
+        "threads": 4
+    },
+    "Simulation": {
+        "simulation_type": "FullCascade"
+    },
+    "Transport": {
+        "flight_path_type": "FullMC",
+        "mfp_range": [
+            1.3333334,
+            100
+        ]
+    },
+    "IonBeam": {
+        "ion": {
+            "symbol": "H",
+            "atomic_mass": 1.00784
+        },
+        "energy_distribution": {
+            "center": 3e6
+        },
+        "spatial_distribution": {
+            "center": [
+                0,
+                5000,
+                5000
+            ]
+        }
+    },
+    "Target": {
+        "size": [
+            50000,
+            10000,
+            10000
+        ],
+        "cell_count": [
+            100,
+            1,
+            1
+        ],
+        "periodic_bc": [
+            0,
+            1,
+            1
+        ],
+        "materials": [
+            {
+                "id": "Fe",
+                "density": 7.8658, // g/cm^3
+                "composition": [
+                    {
+                        "element": {
+                            "symbol": "Fe"
+                        },
+                        "X": 1,
+                        "Ed": 40,
+                        "El": 3,
+                        "Es": 3,
+                        "Er": 40
+                    }
+                ]
+            }
+        ],
+        "regions": [
+            {
+                "id": "R1",
+                "material_id": "Fe",
+                "size": [
+                    50000,
+                    10000,
+                    10000
+                ]
+            }
+        ]
+    },
+    "Output": {
+        "title": "3 MeV H on Fe",
+        "outfilename": "b6",
+        "store_pka_events": true,
+        "store_exit_events": true
+    }
+}

@@ -1,38 +1,39 @@
 {
-    "Driver": {
+    "Run": {
         "max_no_ions": 20000,
         "threads": 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",
-        "screening_type": "ZBL"
+        "screening_type": "ZBL",
+        "eloss_calculation": "EnergyLoss"
     },
     "Transport": {
-        "flight_path_type": "Constant",
+        "flight_path_type": "FullMC",
         "min_energy": 1.0,
         "min_recoil_energy": 1.0
     },
     "IonBeam": {
         "ion": {
-            "symbol": "H",
-            "atomic_mass": 1.00784
+            "symbol": "Fe",
+            "atomic_mass": 55.935
         },
         "energy_distribution": {
-            "center": 1e6
+            "center": 2e6
         },
         "spatial_distribution": {
             "center": [
                 0,
-                5000,
-                5000
+                600,
+                600
             ]
         }
     },
     "Target": {
         "size": [
-            10000,
-            10000,
-            10000
+            1200,
+            1200,
+            1200
         ],
         "cell_count": [
             100,
@@ -47,7 +48,7 @@
         "materials": [
             {
                 "id": "Fe",
-                "density": 7.8658, // g/cm^3
+                "density": 7.8658,
                 "composition": [
                     {
                         "element": {
@@ -57,7 +58,8 @@
                         "Ed": 40,
                         "El": 3,
                         "Es": 3,
-                        "Er": 40
+                        "Er": 40,
+                        "Rc": 0.8
                     }
                 ]
             }
@@ -67,17 +69,17 @@
                 "id": "R1",
                 "material_id": "Fe",
                 "size": [
-                    10000,
-                    10000,
-                    10000
+                    1200,
+                    1200,
+                    1200
                 ]
             }
         ]
     },
     "Output": {
-        "title": "3 MeV H on Fe benchmark 6",
-        "outfilename": "b6",
+        "title": "2MeV Fe on Fe",
+        "outfilename": "b1",
         "store_pka_events": true,
-        "store_exit_events": true
+        "store_dedx": true
     }
 }

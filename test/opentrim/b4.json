@@ -1,16 +1,14 @@
 {
-    "Driver": {
+    "Run": {
         "max_no_ions": 20000,
         "threads": 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",
-        "screening_type": "ZBL"
+        "nrt_calculation": "NRT_average"
     },
     "Transport": {
-        "flight_path_type": "Constant",
-        "min_energy": 1.0,
-        "min_recoil_energy": 1.0
+        "flight_path_type": "FullMC"
     },
     "IonBeam": {
         "ion": {
@@ -46,7 +44,7 @@
         ],
         "materials": [
             {
-                "id": "UO2",
+                "id": "Uranium oxide",
                 "density": 10.97,
                 "composition": [
                     {
@@ -57,7 +55,7 @@
                         "Ed": 40,
                         "El": 4,
                         "Es": 4,
-                        "Er": 40
+                        "Er": 20
                     },
                     {
                         "element": {
@@ -75,7 +73,7 @@
         "regions": [
             {
                 "id": "R1",
-                "material_id": "UO2",
+                "material_id": "Uranium oxide",
                 "size": [
                     1200,
                     1200,
@@ -85,7 +83,7 @@
         ]
     },
     "Output": {
-        "title": "1MeV Xe on UO2 benchmark",
+        "title": "1MeV Xe on UO2",
         "outfilename": "b4",
         "store_pka_events": true,
         "store_exit_events": true
