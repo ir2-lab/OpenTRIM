@@ -7,8 +7,14 @@
 
 ## Functionality that needs to be completed
 
+### Tests
+
+- [ ] Run SRIM-FC & Iradina benchmark #2 for 20000 histories 
+- [ ] Run SRIM & Iradina QC benchmarks and compare 
+
 ### GUI:
-- [ ] Getting Started
+
+- [X] Getting Started
 - [X] About
 
 ### Dist:
@@ -30,10 +36,14 @@ Tally:
 
 ### Core lib
 
-- [ ] Improve the FullMC flight path algorithm
- - Implement the steps described in the docs, i.e., pre-compute the probability that a collision is rejected
+- [ ] json parser: un-recognized options should create an error
+  - This will aid in checking if a .json file is valid OpenTRIM options
+  - With the possibility to relax the rule in the future to allow extra/new options
 
- - [ ] Make user-defined tallies for various events. E.g.
+- [x] Improve the FullMC flight path algorithm
+  - Implement the steps described in the docs, i.e., pre-compute the probability that a collision is rejected
+
+- [ ] Make user-defined tallies for various events. E.g.
   - Implantation (position, atomic species)
   - Vacancy (position, atomic species)
   - Ion escape (have to distinguish backscattered/transmitted ions)
