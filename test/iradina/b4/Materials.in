@@ -10,6 +10,6 @@ ElementsConc=1,2
 ElementsDispEnergy=40,20
 ElementsLattEnergy=4,2
 ElementsSurfEnergy=40,20
-ElementsReplEnergy=40,20
+ElementsReplEnergy=20,20
 IonSurfEnergy=0.0
 
