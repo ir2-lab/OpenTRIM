@@ -1,11 +1,25 @@
-clear
+function plot_benchmark(nb, printfname)
+#
+# function plot_benchmark(nb, printfname)
+#
+# This function loads simulation results from OpenTRIM
+# for benchmark number nb = 1..7 and produces detailed plots
+# of all quantities of interest.
+# If printfname is given, a file "printfname.pdf" is created with
+# all plots
 
-# Benchmark Number
-nb = 8;
+# nb : 1..8, Benchmark Number
+if nb<1 || nb>8,
+  error('plot_benchmark: invalid benchmark number. nb=1,2,...,8');
+end
+
+if nargin<2,
+  printfname = '';
+end
 
 # Load HDF5 Results
 pkg load hdf5oct
-data = h5load(['../opentrim/b' num2str(nb) '/b' num2str(nb) '.h5']);
+data = h5load(['../opentrim/b' num2str(nb) '.h5']);
 
 # Title
 titlestr = data.run_info.title;
@@ -170,26 +184,11 @@ title([titlestr ' - Lost ions'])
 legend(atom_labels)
 xlabel('x (nm)')
 
-# PDF report name
-pname = ['../opentrim/b' num2str(nb) '/b' num2str(nb) '.pdf'];
-
-## TODO: fix this code for v0.3.3
-% Get the table in string form.
-# TString = sprintf('{\\bf\\fontsize{20}%s}\n\n',titlestr);
-# TString = [TString evalc(['table_compare_all(' num2str(nb) ')'])];
+# Print to PDF
+if length(printfname)>0,
 
 
-# % Get a fixed-width font.
-# FixedWidth = get(0,'FixedWidthFontName');
-
-# figure 5
-# clf
-# set(gcf,'papertype','a4','paperorientation','landscape')
-# % Output the table using the annotation command.
-# annotation('textbox',[0.3 0 1 1],'string',TString,...
-#     'FontName',FixedWidth,'Units','Normalized',...
-#     "verticalalignment",'middle',...
-#     'fitboxtotext','off','edgecolor','none');
+pname = [printfname '.pdf'];
 
 figure 1
 set(gcf,'papertype','a4','paperorientation','landscape')
@@ -200,6 +199,9 @@ for i=2:4
   set(gcf,'papertype','a4','paperorientation','landscape')
   print(gcf,'-dpdf','-fillpage','-append',pname)
 endfor
+
+end
+
 
 
 
