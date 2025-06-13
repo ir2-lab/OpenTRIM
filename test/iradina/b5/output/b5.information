@@ -3,8 +3,8 @@ ions_simulated=20000
 cmd_line_override_number_of_ions=0
 cmd_line_override_ion_energy=0
 ion_energy=300000
-simulation_start=2024-04-29_17:31:10
-results_stored__=2024-04-29_17:32:15
+simulation_start=2025-06-13_13:50:03
+results_stored__=2025-06-13_13:51:05
 
 [iradina]
 version=1.2.3
