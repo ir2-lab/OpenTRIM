@@ -40,14 +40,14 @@ public:
 
     /// @brief Copy contents from another tally
     /// @param t another tally object
-    void copy(const tally &t)
+    void copy(const user_tally &t)
     {
         data_ = t.data_.copy();
     }
 
     /// @brief Copy contents to another tally
     /// @param t another tally object
-    void copyTo(tally &t) const
+    void copyTo(user_tally &t) const
     {
         data_.copyTo(t.data_);
     }
@@ -56,7 +56,7 @@ public:
     /// @param t another tally object
     user_tally clone() const
     {
-        tally t;
+        user_tally t;
         t.data_ = data_.copy();
         return t;
     }
