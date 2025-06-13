@@ -7,9 +7,9 @@
 #include <iomanip>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-	#define WINDOWS_BUILD
-	#include <Windows.h>
-	#include <cstdio>
+#  define WINDOWS_BUILD
+#  include <Windows.h>
+#  include <cstdio>
 #endif
 
 using std::cerr;
@@ -66,10 +66,10 @@ void progress_callback(const mcdriver &d, void *)
 
 int main(int argc, char *argv[])
 {
-	
+
 #ifdef WINDOWS_BUILD
-	// https://stackoverflow.com/questions/45575863/how-to-print-utf-8-strings-to-stdcout-on-windows
-	// Set console code page to UTF-8 so console known how to interpret string data
+    // https://stackoverflow.com/questions/45575863/how-to-print-utf-8-strings-to-stdcout-on-windows
+    // Set console code page to UTF-8 so console known how to interpret string data
     SetConsoleOutputCP(CP_UTF8);
 
     // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
@@ -163,12 +163,18 @@ int main(int argc, char *argv[])
 
         if (!input_config_file.empty()) {
 
-            cout << "Parsing JSON config from " << input_config_file << endl;
-
             std::ifstream is(input_config_file);
+
+            if (!is.is_open()) {
+                cerr << "Error opening JSON config file " << input_config_file << endl;
+                return -1;
+            } else {
+                cout << "Parsing JSON config from " << input_config_file << endl;
+            }
 
             if (config.parseJSON(is, true, &cerr) != 0)
                 return -1;
+
         } else {
 
             if (config.parseJSON(cin, true, &cerr) != 0)
@@ -250,7 +256,7 @@ const char *mytimefmt_(double t, bool ceil = false)
 
 // print to console the progress bar, progress &
 // ETC = estimated time of completion
-#ifdef WINDOWS_BUILD  // on windows console use only full block char and no color
+#ifdef WINDOWS_BUILD // on windows console use only full block char and no color
 
 void running_sim_info::print()
 {
@@ -340,7 +346,7 @@ void running_sim_info::print()
         std::cout << ws;
         n++;
     }
-	
+
     // reset color
     cout << "\033[0m";
 
