@@ -1,44 +1,41 @@
 {
-    "Driver": {
+    "Output": {
+        "title": "270keV H in 100μm/cm^2 C foil",
+        "outfilename": "HinC",
+        "store_exit_events": true
+    },
+    "Run": {
         "max_no_ions": 1000000,
         "threads": 4
     },
     "Simulation": {
-        "simulation_type": "FullCascade",
-        "screening_type": "ZBL",
-        "eloss_calculation": "EnergyLoss",
-        "straggling_model": "BohrStraggling",
-        "nrt_calculation": "NRT_element"
+        "simulation_type": "IonsOnly"
     },
     "Transport": {
         "flight_path_type": "FullMC",
-        "min_energy": 1.0,
-        "min_recoil_energy": 100.0,
-        "allow_sub_ml_scattering": false,
-        "max_mfp": 15.0,
-        "max_rel_eloss": 0.05
+        "min_scattering_angle": 0.05
     },
     "IonBeam": {
         "ion": {
-            "symbol": "He",
-            "atomic_mass": 4.0026
+            "symbol": "H",
+            "atomic_mass": 1.00783
         },
         "energy_distribution": {
-            "center": 270000
+            "center": 270000.0
         },
         "spatial_distribution": {
             "center": [
-                0,
-                600,
-                600
+                0.0,
+                600.0,
+                600.0
             ]
         }
     },
     "Target": {
         "size": [
-            440,
-            10000,
-            10000
+            440.0,
+            10000.0,
+            10000.0
         ],
         "cell_count": [
             1,
@@ -57,7 +54,8 @@
                 "composition": [
                     {
                         "element": {
-                            "symbol": "C"
+                            "symbol": "C",
+                            "atomic_mass": 12.011
                         },
                         "X": 1,
                         "Ed": 20,
@@ -73,15 +71,11 @@
                 "id": "R1",
                 "material_id": "Carbon foil",
                 "size": [
-                    1000,
-                    10000,
-                    10000
+                    1000.0,
+                    10000.0,
+                    10000.0
                 ]
             }
         ]
-    },
-    "Output": {
-        "title": "270keV H in 100μm/cm^2 C foil",
-        "store_exit_events": true
     }
 }
