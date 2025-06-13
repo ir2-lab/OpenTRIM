@@ -1,44 +1,39 @@
 {
-    "Driver": {
-        "max_no_ions": 10000,
+    "Run": {
+        "max_no_ions": 20000,
         "threads": 4
     },
     "Simulation": {
-        "simulation_type": "CascadesOnly",
-        "screening_type": "ZBL",
-        "eloss_calculation": "EnergyLossOff",
-        "intra_cascade_recombination": true,
-        "correlated_recombination": true
+        "simulation_type": "FullCascade"
     },
     "Transport": {
-        "flight_path_type": "Constant",
-        "min_energy": 1.0,
-        "min_recoil_energy": 1.0
+        "flight_path_type": "FullMC",
+        "mfp_range": [
+            1.3333334,
+            80
+        ]
     },
     "IonBeam": {
         "ion": {
-            "symbol": "Fe",
-            "atomic_mass": 55.935
+            "symbol": "H",
+            "atomic_mass": 1.00784
         },
         "energy_distribution": {
-            "type": "SingleValue",
-            "center": 50000,
-            "fwhm": 1
+            "center": 1e6
         },
         "spatial_distribution": {
-            "geometry": "Volume",
             "center": [
-                20,
-                20,
-                20
+                0,
+                5000,
+                5000
             ]
         }
     },
     "Target": {
         "size": [
-            100,
-            100,
-            100
+            10000,
+            10000,
+            10000
         ],
         "cell_count": [
             100,
@@ -47,13 +42,13 @@
         ],
         "periodic_bc": [
             0,
-            0,
-            0
+            1,
+            1
         ],
         "materials": [
             {
                 "id": "Fe",
-                "density": 7.8658,
+                "density": 7.8658, // g/cm^3
                 "composition": [
                     {
                         "element": {
@@ -63,8 +58,7 @@
                         "Ed": 40,
                         "El": 3,
                         "Es": 3,
-                        "Er": 40,
-                        "Rc": 0.8
+                        "Er": 40
                     }
                 ]
             }
@@ -82,9 +76,10 @@
         ]
     },
     "Output": {
-        "title": "50keV Fe in Fe cascades, benchmark 8",
-        "outfilename": "b8",
+        "title": "1 MeV H on Fe",
+        "outfilename": "b7",
         "store_pka_events": true,
+        "store_dedx": true,
         "store_exit_events": true
     }
 }

@@ -1,25 +1,22 @@
 {
     "Run": {
-        "max_no_ions": 20000,
+        "max_no_ions": 8000,
         "threads": 4
     },
     "Simulation": {
         "simulation_type": "FullCascade",
-        "screening_type": "ZBL",
-        "eloss_calculation": "EnergyLoss"
+        "nrt_calculation": "NRT_average"
     },
     "Transport": {
-        "flight_path_type": "Constant",
-        "min_energy": 1.0,
-        "min_recoil_energy": 1.0
+        "flight_path_type": "FullMC"
     },
     "IonBeam": {
         "ion": {
-            "symbol": "Fe",
-            "atomic_mass": 55.935
+            "symbol": "Xe",
+            "atomic_mass": 131.904
         },
         "energy_distribution": {
-            "center": 2e6
+            "center": 3e6
         },
         "spatial_distribution": {
             "center": [
@@ -47,19 +44,28 @@
         ],
         "materials": [
             {
-                "id": "Fe",
-                "density": 7.8658,
+                "id": "Uranium oxide",
+                "density": 10.97,
                 "composition": [
                     {
                         "element": {
-                            "symbol": "Fe"
+                            "symbol": "U"
                         },
                         "X": 1,
                         "Ed": 40,
-                        "El": 3,
-                        "Es": 3,
-                        "Er": 40,
-                        "Rc": 0.8
+                        "El": 4,
+                        "Es": 4,
+                        "Er": 20
+                    },
+                    {
+                        "element": {
+                            "symbol": "O"
+                        },
+                        "X": 2,
+                        "Ed": 20,
+                        "El": 2,
+                        "Es": 2,
+                        "Er": 20
                     }
                 ]
             }
@@ -67,7 +73,7 @@
         "regions": [
             {
                 "id": "R1",
-                "material_id": "Fe",
+                "material_id": "Uranium oxide",
                 "size": [
                     1200,
                     1200,
@@ -77,9 +83,9 @@
         ]
     },
     "Output": {
-        "title": "2MeV Fe on Fe example",
-        "outfilename": "b1",
+        "title": "3MeV Xe on UO2",
+        "outfilename": "b3",
         "store_pka_events": true,
-        "store_dedx": true
+        "store_exit_events": true
     }
 }

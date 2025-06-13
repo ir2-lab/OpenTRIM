@@ -14,25 +14,25 @@
     },
     "IonBeam": {
         "ion": {
-            "symbol": "H",
-            "atomic_mass": 1.00784
+            "symbol": "Fe",
+            "atomic_mass": 55.935
         },
         "energy_distribution": {
-            "center": 1e6
+            "center": 5e5
         },
         "spatial_distribution": {
             "center": [
                 0,
-                5000,
-                5000
+                600,
+                600
             ]
         }
     },
     "Target": {
         "size": [
-            10000,
-            10000,
-            10000
+            600,
+            1200,
+            1200
         ],
         "cell_count": [
             100,
@@ -67,18 +67,17 @@
                 "id": "R1",
                 "material_id": "Fe",
                 "size": [
-                    10000,
-                    10000,
-                    10000
+                    1200,
+                    1200,
+                    1200
                 ]
             }
         ]
     },
     "Output": {
-        "title": "1 MeV H on Fe benchmark 7",
-        "outfilename": "b7",
+        "title": "500 keV Fe on Fe",
+        "outfilename": "b2",
         "store_pka_events": true,
-        "store_dedx": true,
         "store_exit_events": true
     }
 }
