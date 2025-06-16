@@ -196,7 +196,7 @@ function [titles, shorttitles, ylabels, data] = getOpenTRIMdata(fname, natoms, a
   ii++;
 
   titles{ii} = ['Total Phonon energy fraction $E_{Ph}/E_0$'];
-  shorttitles{ii} = ['EPh(r)/E0'];
+  shorttitles{ii} = ['EPh(tot)/E0'];
   ylabels{ii} = '1 / ion';
   data{ii} = (sum(h5read(fname,'/tally/energy_deposition/Lattice'),2) + ...
              sum(h5read(fname,'/tally/energy_deposition/Stored'),2))/E0;
@@ -239,7 +239,7 @@ function dataout = getSrimData(folder,natoms,datain,E0)
   dataout{ii} = [datain{ii} S.EIr*dx/E0];
   ii++;
   # Ionization total
-  dataout{ii} = [datain{ii} (dataout{ii-1}+dataout{ii-2})];
+  dataout{ii} = [datain{ii} (S.EIi+S.EIr)*dx/E0];
   ii++;
   # Phonons by ions
   dataout{ii} = [datain{ii} S.EPi*dx/E0];
@@ -248,7 +248,7 @@ function dataout = getSrimData(folder,natoms,datain,E0)
   dataout{ii} = [datain{ii} S.EPr*dx/E0];
   ii++;
   # Phonons total
-  dataout{ii} = [datain{ii} (dataout{ii-1}+dataout{ii-2})];
+  dataout{ii} = [datain{ii} (S.EPi+S.EPr)*dx/E0];
   ii++;
   # Total energy
   dataout{ii} = [datain{ii} ((S.EIi+S.EIr+S.EPi+S.EPr)*dx/E0)];
