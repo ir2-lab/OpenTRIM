@@ -16,47 +16,14 @@ Fe cascades in Fe to compare to Nordlund2015
 8. 50 keV Fe cascade in Fe
 
 The above should be run for comparison in 
-- SRIM QC & FC mode.
-- #6 and #7 also in SRIM ML mode (see below)
-- IRADINA
+- SRIM FC mode + setting "Lowest E" in `TDATA.sav` equal to $E_d$ - **done!** 
+- SRIM QC - *todo*
+- #6 and #7 also in SRIM ML mode (see below) - **done!**
+- Iradina - **done!**
 
 N ions = 20000
 
-## Multiple scattering
-
-Compare to the data of Mendenhall-Weller 2005 for 270 keV He and H ions on a 100μg/cm2 C foil.
-
-We run the same test cases with MW2005 with the following settings:
-
-1. mfp = ML (mfp = mean free path)
-2. mfp = d/100 (d is the foil thickness)
-3. mfp = d/30
-4. mfp = d/10
-5. Mendenhall-Weller algorithm, T>1 eV
-
-The config files to run the cases are in folders 
-- `test/msc/HinC/b1 to /b5` for the H on C
-- `test/msc/HeinC/b1 to /b5` for the He on C
-
-In each case there is a `run_all` script that runs all cases.
-
-This is a  small angle multiple scattering calculation. In MW2005 they use a 1eV lower bound for the recoil energy and calculate the mfp accordingly. (for more details on flight path selection algorithms see [doc/FlightPath.md](../doc/FlightPath.md)) They report that the resulting mfp was very long and this was a problem for the calculation because there were very few scattering events.
-They improved the results by biasing the algorithm to impose scattering in the foil.
-
-In our case we use an upper bound for the mfp. Thus, we can adjust the number of events in the foil.
-As seen in the figures, at 100 scattering events/ion (MFP = d/100) the curve is very close to the "monolayer" (ML) mode, where we have approx. 3500 events/ion. With MFP=d/100 the calculation is reduced by ~30 times wrt to ML.
-
-Compared to MW2005, our calculation is "analog", i.e., no biasing/variance reduction is used. 
-
-However, our results are much different from MW2005. Why ???
-
-![270keV H in 100μg/cm2 C](octave/msc_HinC.png)
-![M-W 2005 Fig. 6](octave/MW2005-FIG6.png)
-
-![270keV He in 100μg/cm2 C](octave/msc_HeinC.png)
-![M-W 2005 Fig. 5](octave/MW2005-FIG5.png)
-
-## SRIM monolayer mode
+### SRIM monolayer mode
 
 *This is another not well documented SRIM feature !!!!*
 
@@ -73,13 +40,61 @@ It is suggested that you try TRIM to see if any of these anomalous peaks and dip
 
 However, there are the following problems:
 
-1. **VACANCY.txt**: In monolayer mode the file has 2 columns (V by ions, V by recoils) just as in QC. Note that FC has different columns: e.g. for H in Fe (V by H - the ion, Fe vacancies)
-2. In the VACANCY.txt of monolayer mode there is another warning (!!!):
+1. **VACANCY.txt**: In monolayer mode the file has 2 columns ("V by ions", "V by recoils") just as in QC. Note that FC has different columns: e.g. for H in Fe ("H knock-ons", "Fe vacancies")
+2. However, it seems that the column designation in ML mode is in error! Specifically, the SRIM-ML results for benchmarks #6 & #7 are comparable to SRIM-FC and OpenTRIM only if it is assumed that the 2nd column in VACANCY.txt, "V by recoils", is actually "Fe Vacancies" as in FC mode.
+3. In the VACANCY.txt of monolayer mode there is another warning (!!!):
 > NOTE: Vacancies not accurately calculated in SPUTTERING calculation.   
 > Atoms move if Energy > E(surface) instead of Energy > E(displacement)  
 > Quick Fix for near-surface vacancies: Make E(surface)= E(displacement),
 > and use Monolayer Steps (TRIM Damage Setup). Not perfect, but OK.  
 
-Thus we must additionally put Es = Ed
+Thus we must additionally put Es = Ed ??
 
 We should test it in the future
+
+## Multiple scattering
+
+Compare to the data of Mendenhall-Weller 2005 for 270 keV He and H ions passing through a 100μg/cm2 C foil.
+
+We run the same test cases with MW2005 with the following OpenTRIM settings:
+```javascript
+"Transport": {
+        "flight_path_type": "FullMC",
+        "min_scattering_angle": 0.1
+    }
+```
+
+The minimum scattering angle $\theta=0.1^\circ \approx 0.002$ rad ensures that we will have correct results down to the smallest histogram bin.
+
+This is a  small angle multiple scattering calculation. In MW2005 they use a 1eV lower bound for the recoil energy and calculate the mfp accordingly. (for more details on flight path selection algorithms see the documentation). They report that the resulting mfp was very long and this was a problem for the calculation because there were very few scattering events.
+They improved the results by biasing the algorithm to impose scattering in the foil.
+
+
+In our case we set a minimum scattering angle $\theta_{min}$. This ensures that scattering events with angles as low as $\theta_{min}$ will be included. 
+We run the same test cases as MW2005 with the following OpenTRIM settings:
+```javascript
+"Transport": {
+        "flight_path_type": "FullMC",
+        "min_scattering_angle": 0.1
+    }
+``` 
+The minimum scattering angle $\theta_{min}=0.1^\circ \approx 0.002$ rad ensures that we will have correct results down to the smallest required histogram bin.
+
+The results are shown in the 2 following graphs in comparison to the corresponding MW2005 data. An MCNP obtained curve is also shown.
+
+It is seen that OpenTRIM almost coincides with MW2005's "Quasi Analytic" curves, which they consider most accurate. Their Monte-Carlo results obtained by Geant4 with their special coding of screened Coulomb interaction are not so accurate.
+This is due to 
+1. their use of only a recoil energy cutoff and not an angle cutoff 
+2. their biasing/variance reduction scheme 
+
+
+![270keV H in 100μg/cm2 C](octave/msc_HinC.png)
+
+![270keV He in 100μg/cm2 C](octave/msc_HeinC.png)
+
+The config files to run the cases are in folders 
+- `test/msc/opentrim` has config files to run the 2 cases 
+- `test/msc/MW2005` has the MW2005 data, digitized from figs 5 & 6
+- `test/msc/mcnp` has the MCNP results
+
+
