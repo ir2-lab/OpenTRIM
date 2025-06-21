@@ -4,11 +4,17 @@
 
 user_tally::user_tally() : bins(nbins, 0)
 {
-    data_ = ArrayNDd(nbins);
-    // for (int i=0;i<nbins;i++)bins[i]=i*(xmax-xmin)/nbins;
-    auto i = bins.begin();
-    for (; i != bins.end(); i++)
-        *i = (i - bins.begin()) * (xmax - xmin) / nbins;
+    // data_ = ArrayNDd(nbins);
+    // // for (int i=0;i<nbins;i++)bins[i]=i*(xmax-xmin)/nbins;
+    // auto i = bins.begin();
+    // for (; i != bins.end(); i++)
+    //     *i = (i - bins.begin()) * (xmax - xmin) / nbins;
+
+    float factor = std::pow(xmax / xmin, 1.0f / nbins); // geometric spacing
+    bins[0] = xmin;
+    for (int i = 1; i <= nbins; ++i) {
+        bins[i] = bins[i - 1] * factor;
+    }
 }
 
 void user_tally::clear()
