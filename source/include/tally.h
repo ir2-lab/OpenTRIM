@@ -19,7 +19,7 @@
  * @ingroup Tallies
  *
  */
-enum class Event : uint32_t {
+enum class Event : int32_t {
     NewSourceIon = 1 << 0, /**< A new ion track is started. */
     NewRecoil = 1 << 1, /**< A new recoil track is started. */
     Scattering = 1 << 2, /**< An ion scattering occured. */
@@ -30,7 +30,8 @@ enum class Event : uint32_t {
     Vacancy = 1 << 7, /**< A vacancy is created. */
     CascadeComplete = 1 << 8, /**< A PKA cascade is complete. */
     NewFlightPath = 1 << 9,
-    NEvent = 1 << 10
+    NEvent = 1 << 10,
+    Invalid = -1
 };
 
 /**

@@ -2,12 +2,19 @@
 #define USER_TALLY_H
 
 #include "tally.h"
+#include "ion.h"
 
 class user_tally
 {
-    ArrayNDd data_;
 public:
     user_tally();
+
+    struct parameters
+    {
+        std::string id{"My tally"};
+        Event event{Event::IonStop};
+    };
+
 
     const ArrayNDd& data() const { return data_; }
 
@@ -17,10 +24,11 @@ public:
     }
 
     /// @brief Zero-out all tally scores
-    void clear()
-    {
-        data_.clear();
-    }
+    void clear();
+    // {
+    //     // data_.clear();
+    //     std::fill(bins.begin(), bins.end(), 0);
+    // }
 
     /// @brief Add the scores from another tally
     /// @param t another tally object
@@ -61,11 +69,23 @@ public:
         return t;
     }
 
+    void print() const;
+
     /// @brief Score an event
     /// @param ev the event type
     /// @param i the ion causing the event
     /// @param pv pointer to additional data, if available
     void operator()(Event ev, const ion &i, const void *pv = 0);
+
+
+private:
+    ArrayNDd data_;
+    static constexpr int nbins = 100;
+    static constexpr float xmin = 0.0;
+    static constexpr float xmax = 1000.0;
+    std::vector<float> bins;        // count ions per bin
+
+    int get_bin(double x) const;  // helper
 
 };
 
