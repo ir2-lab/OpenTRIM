@@ -1,7 +1,7 @@
 #include "mcdriver.h"
 #include "json_defs_p.h"
 #include "periodic_table.h"
-
+#include "user_tally.h"
 #include <iostream>
 
 using std::cerr;
@@ -188,6 +188,20 @@ NLOHMANN_JSON_SERIALIZE_ENUM(StragglingModel,
                                { StragglingModel::Chu, "ChuStraggling" },
                                { StragglingModel::Yang, "YangStraggling" } })
 
+NLOHMANN_JSON_SERIALIZE_ENUM(Event,
+                             { { Event::Invalid, nullptr },
+                               { Event::NewSourceIon, "NewSourceIon" },
+                               { Event::NewRecoil, "NewRecoil" },
+                               { Event::Scattering, "Scattering" },
+                               { Event::Scattering, "IonExit" },
+                               { Event::Scattering, "IonStop" },
+                               { Event::Scattering, "BoundaryCrossing" },
+                               { Event::Scattering, "Replacement" },
+                               { Event::Scattering, "Vacancy" },
+                               { Event::Scattering, "CascadeComplete" },
+                               { Event::Scattering, "NewFlightPath" },
+                               { Event::Scattering, "NEvent" } })
+
 // option struct serialization
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(target::region, id, material_id, origin, size)
@@ -225,6 +239,8 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::run_options, max_no_ions, ma
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::output_options, title, outfilename,
                                           storage_interval, store_exit_events, store_pka_events,
                                           store_dedx)
+
+MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(user_tally::parameters, id, event)
 
 // MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 //     target::target_desc_t,
@@ -303,6 +319,7 @@ void to_json(ojson &j, const mcconfig &p)
     j["Target"] = p.Target;
     j["Output"] = p.Output;
     j["Run"] = p.Run;
+    j["UserTally"] = p.UserTally;
 }
 
 void from_json(const ojson &j, mcconfig &p)
@@ -323,6 +340,9 @@ void from_json(const ojson &j, mcconfig &p)
         throw std::invalid_argument("Required section \"Target\" not found.");
     }
     p.Target = j["Target"];
+
+    if (j.contains(("UserTally")))
+        p.UserTally = j["UserTally"];
 }
 
 void mcconfig::printJSON(std::ostream &os) const
