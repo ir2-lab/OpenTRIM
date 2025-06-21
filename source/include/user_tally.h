@@ -11,7 +11,6 @@ public:
     static constexpr float xmin = 0.0;
     static constexpr float xmax = 1000.0;
     std::vector<float> bins; // count ions per bin
-    user_tally();
 
     struct parameters
     {
@@ -19,10 +18,13 @@ public:
         Event event{ Event::IonStop };
     };
 
+    user_tally(const parameters &p) : par_(p) { }
+    user_tally(const user_tally &o) : par_(o.par_), data_(o.data_.copy()) { }
+
     const ArrayNDd &data() const { return data_; }
 
     /// @brief Initialize tally buffers for given # of atoms and cells
-    void init() { }
+    void init();
 
     /// @brief Zero-out all tally scores
     void clear();
@@ -56,7 +58,7 @@ public:
     /// @param t another tally object
     user_tally clone() const
     {
-        user_tally t;
+        user_tally t(*this);
         t.data_ = data_.copy();
         return t;
     }
@@ -70,6 +72,7 @@ public:
     void operator()(Event ev, const ion &i, const void *pv = 0);
 
 private:
+    parameters par_;
     ArrayNDd data_;
     int get_bin(double x) const; // helper
 };

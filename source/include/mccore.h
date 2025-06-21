@@ -7,6 +7,7 @@
 #include "ion.h"
 #include "xs.h"
 #include "tally.h"
+#include "user_tally.h"
 #include "event_stream.h"
 #include "dedx.h"
 #include "flight_path_calc.h"
@@ -137,6 +138,7 @@ protected:
     ion_beam *source_;
     target *target_;
     tally tally_, dtally_, tion_;
+    user_tally *utally_, *dutally_, *ution_;
     random_vars rng;
     event_stream pka_stream_, exit_stream_;
     pka_event pka;
@@ -220,6 +222,8 @@ public:
     ArrayNDd getTallyTableVar(int i) const;
     void copyTallyTable(int i, ArrayNDd &A) const;
     void copyTallyTableVar(int i, ArrayNDd &dA) const;
+
+    void addUserTally(const user_tally::parameters &p);
 
     /// Open file stream to store \ref pka_event data
     int open_pka_stream() { return pka_stream_.open(pka); }
@@ -341,7 +345,7 @@ protected:
      * @param t reference to the tally object
      * @return 0 if succesfull
      */
-    int transport(ion *i, tally &t, cascade_queue *q = nullptr);
+    int transport(ion *i, cascade_queue *q = nullptr);
 
     /**
      * @brief Generate a new recoil ion
@@ -382,6 +386,13 @@ protected:
             q_.push_recoil(j);
 
         return j;
+    }
+
+    void ionEvent(Event ev, const ion &i, const void *pv = 0)
+    {
+        tion_(ev, i, pv);
+        if (ution_)
+            (*ution_)(ev, i, pv);
     }
 };
 
