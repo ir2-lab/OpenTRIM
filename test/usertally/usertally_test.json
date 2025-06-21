@@ -11,8 +11,8 @@
         ]
     },
     "Run": {
-        "max_no_ions": 20000,
-        "threads": 4
+        "max_no_ions": 100,
+        "threads": 1
     },
     "Simulation": {
         "simulation_type": "FullCascade",

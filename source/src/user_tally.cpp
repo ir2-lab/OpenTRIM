@@ -2,7 +2,7 @@
 #include "ion.h"
 #include <iostream>
 
-user_tally::user_tally() : bins(nbins, 0)
+void user_tally::init()
 {
     // data_ = ArrayNDd(nbins);
     // // for (int i=0;i<nbins;i++)bins[i]=i*(xmax-xmin)/nbins;
@@ -10,6 +10,9 @@ user_tally::user_tally() : bins(nbins, 0)
     // for (; i != bins.end(); i++)
     //     *i = (i - bins.begin()) * (xmax - xmin) / nbins;
 
+    data_ = ArrayNDd(nbins);
+
+    bins.resize(nbins, 0);
     float factor = std::pow(xmax / xmin, 1.0f / nbins); // geometric spacing
     bins[0] = xmin;
     for (int i = 1; i <= nbins; ++i) {
@@ -19,6 +22,7 @@ user_tally::user_tally() : bins(nbins, 0)
 
 void user_tally::clear()
 {
+    data_.clear();
     std::fill(bins.begin(), bins.end(), 0);
 }
 
@@ -37,9 +41,10 @@ void user_tally::operator()(Event ev, const ion &i, const void *pv)
 
     double x = i.pos()[0]; // ion x-position
     int bin = get_bin(x);
-    if (bin >= 0)
+    if (bin >= 0) {
         bins[bin]++;
-    data_(bin) += 1;
+        data_(bin) += 1;
+    }
 }
 
 void user_tally::print() const

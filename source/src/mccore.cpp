@@ -1,6 +1,5 @@
 ﻿#include "mccore.h"
 #include "random_vars.h"
-#include "dedx.h"
 #include "event_stream.h"
 #include "xs_corteo.h"
 #include "cascade_queue.h"
@@ -12,7 +11,10 @@ mccore::mccore()
       ion_counter_(new std::atomic_size_t(0)),
       thread_ion_counter_(0),
       abort_flag_(new std::atomic_bool()),
-      tally_mutex_(new std::mutex)
+      tally_mutex_(new std::mutex),
+      utally_(nullptr),
+      dutally_(nullptr),
+      ution_(nullptr)
 {
 }
 
@@ -25,7 +27,10 @@ mccore::mccore(const parameters &p, const transport_options &t)
       ion_counter_(new std::atomic_size_t(0)),
       thread_ion_counter_(0),
       abort_flag_(new std::atomic_bool()),
-      tally_mutex_(new std::mutex)
+      tally_mutex_(new std::mutex),
+      utally_(nullptr),
+      dutally_(nullptr),
+      ution_(nullptr)
 {
 }
 
@@ -43,7 +48,10 @@ mccore::mccore(const mccore &s)
       flight_path_calc_(s.flight_path_calc_),
       scattering_matrix_(s.scattering_matrix_),
       rng(s.rng),
-      pka(s.pka)
+      pka(s.pka),
+      utally_(nullptr),
+      dutally_(nullptr),
+      ution_(nullptr)
 {
     tally_.copy(s.tally_);
     dtally_.copy(s.dtally_);
@@ -51,6 +59,15 @@ mccore::mccore(const mccore &s)
     tally_.clear();
     dtally_.clear();
     tion_.clear();
+
+    if (s.utally_) {
+        utally_ = new user_tally(*s.utally_);
+        dutally_ = new user_tally(*s.utally_);
+        ution_ = new user_tally(*s.utally_);
+        utally_->clear();
+        dutally_->clear();
+        ution_->clear();
+    }
 }
 
 mccore::~mccore()
@@ -130,6 +147,15 @@ int mccore::init()
     dtally_.init(natoms, ncells);
     tion_.init(natoms, ncells);
 
+    /*
+     * Init user tally(ies)
+     */
+    if (utally_) {
+        utally_->init();
+        dutally_->init();
+        ution_->init();
+    }
+
     // prepare event buffers
     std::vector<std::string> atom_labels = target_->atom_labels();
     atom_labels.erase(atom_labels.begin());
@@ -184,7 +210,7 @@ int mccore::run()
             } else
                 q_.free_ion(i);
         } else {
-            transport(i, tion_);
+            transport(i);
             // free the ion buffer
             q_.free_ion(i);
         }
@@ -204,11 +230,11 @@ int mccore::run()
                 if (cq)
                     cq->init(j);
 
-                transport(j, tion_, cq);
+                transport(j, cq);
 
                 // transport all secondary recoils
                 while (ion *k = q_.pop_recoil()) {
-                    transport(k, tion_, cq);
+                    transport(k, cq);
                     // free the ion buffer
                     q_.free_ion(k);
                 }
@@ -244,10 +270,16 @@ int mccore::run()
             std::lock_guard<std::mutex> lock(*tally_mutex_);
             tally_ += tion_;
             dtally_.addSquared(tion_);
+            if (utally_) {
+                *utally_ += *ution_;
+                dutally_->addSquared(*ution_);
+            }
         }
 
         // clear the tally scores
         tion_.clear();
+        if (utally_)
+            ution_->clear();
 
         // update thread counter
         thread_ion_counter_++;
@@ -260,7 +292,7 @@ int mccore::run()
     return 0;
 }
 
-int mccore::transport(ion *i, tally &t, cascade_queue *q)
+int mccore::transport(ion *i, cascade_queue *q)
 {
     // collision flag
     bool doCollision;
@@ -282,7 +314,7 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
         // Check if ion has enough energy to continue
         if (i->erg() < tr_opt_.min_energy) {
             /* projectile has to stop. Store as implanted/interstitial atom*/
-            t(Event::IonStop, *i);
+            ionEvent(Event::IonStop, *i);
             if (q) // q->push(Event::IonStop,*i);
                 q->push_i(i);
             return 0; // history ends
@@ -301,7 +333,7 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
                 break;
             case BoundaryCrossing::Internal:
                 // register event
-                t(Event::BoundaryCrossing, *i);
+                ionEvent(Event::BoundaryCrossing, *i);
                 i->reset_counters();
                 // get new material and dEdx, mfp tables
                 mat = target_->cell(i->cellid());
@@ -312,7 +344,7 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
                 break;
             case BoundaryCrossing::External:
                 // register ion exit event
-                t(Event::IonExit, *i);
+                ionEvent(Event::IonExit, *i);
                 if (exit_stream_.is_open()) {
                     exit_ev.set(i);
                     exit_stream_.write(&exit_ev);
@@ -335,7 +367,7 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
         switch (crossing) {
         case BoundaryCrossing::Internal:
             // register event
-            t(Event::BoundaryCrossing, *i);
+            ionEvent(Event::BoundaryCrossing, *i);
             i->reset_counters();
             // get new material and dEdx, mfp tables
             mat = target_->cell(i->cellid());
@@ -352,7 +384,7 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
             break;
         case BoundaryCrossing::External:
             // register ion exit event
-            t(Event::IonExit, *i);
+            ionEvent(Event::IonExit, *i);
             if (exit_stream_.is_open()) {
                 exit_ev.set(i);
                 exit_stream_.write(&exit_ev);
@@ -443,7 +475,7 @@ int mccore::transport(ion *i, tally &t, cascade_queue *q)
              */
             if ((i->myAtom()->Z() == z2->Z()) && (i->erg() < z2->Er())) {
                 // Replacement event, ion energy goes to Phonons
-                t(Event::Replacement, *i, z2);
+                ionEvent(Event::Replacement, *i, z2);
                 j->setUid(i->uid());
                 // if (q) q->push(Event::Replacement,*i);
                 return 0; // end of ion history
@@ -518,4 +550,11 @@ void mccore::copyTallyTableVar(int i, ArrayNDd &dA) const
         return;
     std::lock_guard<std::mutex> lock(*tally_mutex_);
     dtally_.at(i).copyTo(dA);
+}
+
+void mccore::addUserTally(const user_tally::parameters &p)
+{
+    utally_ = new user_tally(p);
+    dutally_ = new user_tally(p);
+    ution_ = new user_tally(p);
 }
