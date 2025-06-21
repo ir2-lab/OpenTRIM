@@ -7,21 +7,22 @@
 class user_tally
 {
 public:
+    static constexpr int nbins = 100;
+    static constexpr float xmin = 0.0;
+    static constexpr float xmax = 1000.0;
+    std::vector<float> bins; // count ions per bin
     user_tally();
 
     struct parameters
     {
-        std::string id{"My tally"};
-        Event event{Event::IonStop};
+        std::string id{ "My tally" };
+        Event event{ Event::IonStop };
     };
 
-
-    const ArrayNDd& data() const { return data_; }
+    const ArrayNDd &data() const { return data_; }
 
     /// @brief Initialize tally buffers for given # of atoms and cells
-    void init()
-    {
-    }
+    void init() { }
 
     /// @brief Zero-out all tally scores
     void clear();
@@ -41,24 +42,15 @@ public:
 
     /// @brief Add the squared scores from another tally, i.e., x[i] += x'[i]*x'[i]
     /// @param t another tally object
-    void addSquared(const user_tally &t)
-    {
-        data_.addSquared(t.data_);
-    }
+    void addSquared(const user_tally &t) { data_.addSquared(t.data_); }
 
     /// @brief Copy contents from another tally
     /// @param t another tally object
-    void copy(const user_tally &t)
-    {
-        data_ = t.data_.copy();
-    }
+    void copy(const user_tally &t) { data_ = t.data_.copy(); }
 
     /// @brief Copy contents to another tally
     /// @param t another tally object
-    void copyTo(user_tally &t) const
-    {
-        data_.copyTo(t.data_);
-    }
+    void copyTo(user_tally &t) const { data_.copyTo(t.data_); }
 
     /// @brief Copy contents to another tally
     /// @param t another tally object
@@ -77,16 +69,9 @@ public:
     /// @param pv pointer to additional data, if available
     void operator()(Event ev, const ion &i, const void *pv = 0);
 
-
 private:
     ArrayNDd data_;
-    static constexpr int nbins = 100;
-    static constexpr float xmin = 0.0;
-    static constexpr float xmax = 1000.0;
-    std::vector<float> bins;        // count ions per bin
-
-    int get_bin(double x) const;  // helper
-
+    int get_bin(double x) const; // helper
 };
 
 #endif // USER_TALLY_H
