@@ -5,6 +5,8 @@
 
 #include <ctime>
 #include <thread>
+#include "user_tally.h"
+
 
 /**
  * \defgroup Driver Driver
@@ -105,6 +107,8 @@ struct mcconfig
     run_options Run;
     /// Output options
     output_options Output;
+    /// UserTally options
+    user_tally::parameters UserTally;
 
     /**
      * @brief Parse simulation mcconfig from JSON formatted input
@@ -215,9 +219,8 @@ private:
 class mcdriver
 {
 public:
-
     /// Typedef for a function to be called during simulation execution
-    typedef void (*progress_callback)(const mcdriver &v, void *p);    
+    typedef void (*progress_callback)(const mcdriver &v, void *p);
 
     struct run_data
     {

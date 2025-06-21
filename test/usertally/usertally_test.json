@@ -1,0 +1,94 @@
+{
+    "UserTally": {
+        "id": "Test tally",
+        "event": "IonExit",
+        "x": [
+            0,
+            1,
+            2,
+            3,
+            4
+        ]
+    },
+    "Run": {
+        "max_no_ions": 20000,
+        "threads": 4
+    },
+    "Simulation": {
+        "simulation_type": "FullCascade",
+        "screening_type": "ZBL"
+    },
+    "Transport": {
+        "flight_path_type": "Constant",
+        "min_energy": 1.0,
+        "min_recoil_energy": 1.0
+    },
+    "IonBeam": {
+        "ion": {
+            "symbol": "Fe",
+            "atomic_mass": 55.935
+        },
+        "energy_distribution": {
+            "center": 5e5
+        },
+        "spatial_distribution": {
+            "center": [
+                0,
+                600,
+                600
+            ]
+        }
+    },
+    "Target": {
+        "size": [
+            600,
+            1200,
+            1200
+        ],
+        "cell_count": [
+            100,
+            1,
+            1
+        ],
+        "periodic_bc": [
+            0,
+            1,
+            1
+        ],
+        "materials": [
+            {
+                "id": "Fe",
+                "density": 7.8658, // g/cm^3
+                "composition": [
+                    {
+                        "element": {
+                            "symbol": "Fe"
+                        },
+                        "X": 1,
+                        "Ed": 40,
+                        "El": 3,
+                        "Es": 3,
+                        "Er": 40
+                    }
+                ]
+            }
+        ],
+        "regions": [
+            {
+                "id": "R1",
+                "material_id": "Fe",
+                "size": [
+                    1200,
+                    1200,
+                    1200
+                ]
+            }
+        ]
+    },
+    "Output": {
+        "title": "500 keV Fe on Fe",
+        "outfilename": "b2",
+        "store_pka_events": true,
+        "store_exit_events": true
+    }
+}
