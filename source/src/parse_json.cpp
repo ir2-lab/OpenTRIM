@@ -193,14 +193,14 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Event,
                                { Event::NewSourceIon, "NewSourceIon" },
                                { Event::NewRecoil, "NewRecoil" },
                                { Event::Scattering, "Scattering" },
-                               { Event::Scattering, "IonExit" },
-                               { Event::Scattering, "IonStop" },
-                               { Event::Scattering, "BoundaryCrossing" },
-                               { Event::Scattering, "Replacement" },
-                               { Event::Scattering, "Vacancy" },
-                               { Event::Scattering, "CascadeComplete" },
-                               { Event::Scattering, "NewFlightPath" },
-                               { Event::Scattering, "NEvent" } })
+                               { Event::IonExit, "IonExit" },
+                               { Event::IonStop, "IonStop" },
+                               { Event::BoundaryCrossing, "BoundaryCrossing" },
+                               { Event::Replacement, "Replacement" },
+                               { Event::Vacancy, "Vacancy" },
+                               { Event::CascadeComplete, "CascadeComplete" },
+                               { Event::NewFlightPath, "NewFlightPath" },
+                               { Event::NEvent, "NEvent" } })
 
 // option struct serialization
 
