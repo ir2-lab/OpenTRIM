@@ -29,10 +29,10 @@ void user_tally::init()
 
 int user_tally::get_bin(double x) const
 {
-    // return std::upper_bound(bins.begin(), bins.end(), x) - bins.begin() - 1;
-    auto bin_bound = std::upper_bound(bins.begin(), bins.end(), x);
-    auto binit = std::find(bins.begin(), bins.end(), *bin_bound); //bin bound iterator
-    int binid = std::distance(bins.begin(), binit) - 1; // id of bin starting from 0
+    auto binid= std::upper_bound(bins.begin(), bins.end(), x) - bins.begin() - 1;
+    // auto bin_bound = std::upper_bound(bins.begin(), bins.end(), x);
+    // auto binit = std::find(bins.begin(), bins.end(), *bin_bound); //bin bound iterator
+    // int binid = std::distance(bins.begin(), binit) - 1; // id of bin starting from 0
     return binid;
 }
 
@@ -45,7 +45,6 @@ void user_tally::operator()(Event ev, const ion &i, const void *pv)
     int bin = get_bin(x);
 
     if (bin >= 0) {
-        bins[bin]++;
         data_(bin) += 1;
     }
 }
