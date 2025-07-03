@@ -7,10 +7,11 @@
 class user_tally
 {
 public:
-    static constexpr int nbins = 100;
-    static constexpr float xmin = 0.0;
-    static constexpr float xmax = 1000.0;
-    std::vector<float> bins; // count ions per bin
+    static constexpr int nbins = 8;
+    static constexpr double xmin = 0.0;
+    static constexpr double xmax = 600.0;
+    std::vector<double> bins; // count ions per bin
+
 
     struct parameters
     {
@@ -19,7 +20,7 @@ public:
     };
 
     user_tally(const parameters &p) : par_(p) { }
-    user_tally(const user_tally &o) : par_(o.par_), data_(o.data_.copy()) { }
+    user_tally(const user_tally &o) : par_(o.par_), data_(o.data_.copy()), bins(o.bins) { }
 
     const ArrayNDd &data() const { return data_; }
 
@@ -27,11 +28,10 @@ public:
     void init();
 
     /// @brief Zero-out all tally scores
-    void clear();
-    // {
-    //     // data_.clear();
-    //     std::fill(bins.begin(), bins.end(), 0);
-    // }
+    void clear()
+    {
+        data_.clear();
+    }
 
     /// @brief Add the scores from another tally
     /// @param t another tally object
