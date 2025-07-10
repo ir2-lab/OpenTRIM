@@ -7,20 +7,16 @@
 class user_tally
 {
 public:
-    static constexpr int nbins = 8;
-    static constexpr double xmin = 0.0;
-    static constexpr double xmax = 600.0;
-    std::vector<double> bins; // count ions per bin
-
 
     struct parameters
     {
         std::string id{ "My tally" };
         Event event{ Event::IonStop };
+        std::vector<float> x, y, z;
     };
 
     user_tally(const parameters &p) : par_(p) { }
-    user_tally(const user_tally &o) : par_(o.par_), data_(o.data_.copy()), bins(o.bins) { }
+    user_tally(const user_tally &o) : par_(o.par_), data_(o.data_.copy()), bins(o.bins), bin_codes(o.bin_codes), bin_sizes(o.bin_sizes) { }
 
     const ArrayNDd &data() const { return data_; }
 
@@ -63,8 +59,6 @@ public:
         return t;
     }
 
-    void print() const;
-
     /// @brief Score an event
     /// @param ev the event type
     /// @param i the ion causing the event
@@ -74,7 +68,11 @@ public:
 private:
     parameters par_;
     ArrayNDd data_;
-    int get_bin(double x) const; // helper
+    std::vector<size_t> get_bin(const ion& i) const;
+    enum variable_code {cX, cY, cZ, cCart, cCyl, cSph};
+    std::vector<variable_code> bin_codes;
+    std::vector<std::vector<float>> bins;
+    std::vector<size_t> bin_sizes;
 };
 
 #endif // USER_TALLY_H

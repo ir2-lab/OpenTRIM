@@ -148,6 +148,10 @@ public:
     /// Returns the (i,j,k) element with () operator, i,j,k are zero based, row-major storage layout
     Scalar &operator()(int i, int j, int k) { return P_->buffer[P_->idx(i, j, k)]; }
     const Scalar &operator()(int i, int j, int k) const { return P_->buffer[P_->idx(i, j, k)]; }
+    /// Returns the element at multidimensional index i with () operator, indices are zero based, row-major storage layout
+    Scalar &operator()(const std::vector<size_t> i) { return P_->buffer[P_->idx(i)]; }
+    const Scalar &operator()(const std::vector<size_t> i) const { return P_->buffer[P_->idx(i)]; }
+
     /// Returns a pointer to the data
     Scalar *data() { return P_->buffer.data(); }
     const Scalar *data() const { return P_->buffer.data(); }
