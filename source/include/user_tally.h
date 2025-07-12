@@ -10,9 +10,9 @@ public:
 
     struct parameters
     {
-        std::string id{ "My tally" };
+        std::string id{ "My tally" }, coordinates;
         Event event{ Event::IonStop };
-        std::vector<float> x, y, z;
+        std::vector<float> x, y, z, rho, phi, r, theta;
     };
 
     user_tally(const parameters &p) : par_(p) { }
@@ -69,7 +69,7 @@ private:
     parameters par_;
     ArrayNDd data_;
     std::vector<size_t> get_bin(const ion& i) const;
-    enum variable_code {cX, cY, cZ, cCart, cCyl, cSph};
+    enum variable_code {cX, cY, cZ, cRho, cPhi, cR, cTheta};
     std::vector<variable_code> bin_codes;
     std::vector<std::vector<float>> bins;
     std::vector<size_t> bin_sizes;
