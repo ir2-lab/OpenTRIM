@@ -99,6 +99,7 @@ add_library(${LIB_TARGET} SHARED
     source/src/straggling.cpp
     source/src/options_spec.cpp
     source/src/user_tally.cpp
+    source/src/mcinfo.cpp
 )
 
 set(OPENTRIM_HEADERS 
@@ -118,6 +119,7 @@ set(OPENTRIM_HEADERS
     source/include/tally.h 
     source/include/mcdriver.h 
     source/include/user_tally.h
+    source/include/mcinfo.h
 )
 
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
