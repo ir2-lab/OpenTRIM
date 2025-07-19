@@ -55,13 +55,16 @@ void user_tally::init()
             bin_sizes.push_back(par_.phi.size());
         }
     }
+
+    int n = bin_codes.size();
+    idx.resize(bin_codes.size()); // same size as bin_sizes
     data_ = ArrayNDd(bin_sizes);
 }
 
-std::vector<size_t> user_tally::get_bin(const ion &i) const
+std::vector<size_t> user_tally::get_bin(const ion &i) //const
 {
     int n = bin_codes.size();
-    std::vector<size_t> idx(n); // same size as bin_sizes
+    // std::vector<size_t> idx(n); // same size as bin_sizes
 
     double pos = 0;
     if (par_.coordinates == "xyz"){

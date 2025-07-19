@@ -16,7 +16,7 @@ public:
     };
 
     user_tally(const parameters &p) : par_(p) { }
-    user_tally(const user_tally &o) : par_(o.par_), data_(o.data_.copy()), bins(o.bins), bin_codes(o.bin_codes), bin_sizes(o.bin_sizes) { }
+    user_tally(const user_tally &o) : par_(o.par_), data_(o.data_.copy()), bins(o.bins), bin_codes(o.bin_codes), bin_sizes(o.bin_sizes), idx(o.idx) { }
 
     const ArrayNDd &data() const { return data_; }
 
@@ -68,11 +68,12 @@ public:
 private:
     parameters par_;
     ArrayNDd data_;
-    std::vector<size_t> get_bin(const ion& i) const;
+    std::vector<size_t> get_bin(const ion& i); //const;
     enum variable_code {cX, cY, cZ, cRho, cPhi, cR, cTheta};
     std::vector<variable_code> bin_codes;
     std::vector<std::vector<float>> bins;
     std::vector<size_t> bin_sizes;
+    std::vector<size_t> idx; // will be same size as bin_sizes
 };
 
 #endif // USER_TALLY_H
