@@ -56,96 +56,62 @@ void user_tally::init()
         }
     }
 
-    int n = bin_codes.size();
+    // int n = bin_codes.size();
     idx.resize(bin_codes.size()); // same size as bin_sizes
     data_ = ArrayNDd(bin_sizes);
 }
 
-std::vector<size_t> user_tally::get_bin(const ion &i) //const
+// std::vector<size_t> user_tally::get_bin(const ion &i) //const
+bool user_tally::get_bin(const ion &i)
 {
     int n = bin_codes.size();
-    // std::vector<size_t> idx(n); // same size as bin_sizes
-
-    double pos = 0;
-    if (par_.coordinates == "xyz"){
-        for (int j=0;j<n;++j){
-            switch (bin_codes[j]) {
-            case cX:
-                pos = i.pos()[0]; // ion x-position
-                idx[j] = std::upper_bound(par_.x.begin(), par_.x.end(), pos) - par_.x.begin() - 1; // id of bin starting from 0
-                break;
-            case cY:
-                pos = i.pos()[1]; // ion y-position
-                idx[j] = std::upper_bound(par_.y.begin(), par_.y.end(), pos) - par_.y.begin() - 1;
-                break;
-            case cZ:
-                pos = i.pos()[2]; // ion z-position
-                idx[j] = std::upper_bound(par_.z.begin(), par_.z.end(), pos) - par_.z.begin() - 1;
-                break;
-            default:
-                break;
-            }
+    for (int j=0;j<n;++j){
+        float pos;
+        switch (bin_codes[j]) {
+        case cX:
+            pos = i.pos()[0]; // ion x-position
+            // idx[j] = std::upper_bound(par_.x.begin(), par_.x.end(), pos) - par_.x.begin() - 1; // id of bin starting from 0
+            break;
+        case cY:
+            pos = i.pos()[1]; // ion y-position
+            // idx[j] = std::upper_bound(par_.y.begin(), par_.y.end(), pos) - par_.y.begin() - 1;
+            break;
+        case cZ:
+            pos = i.pos()[2]; // ion z-position
+            // idx[j] = std::upper_bound(par_.z.begin(), par_.z.end(), pos) - par_.z.begin() - 1;
+            break;
+        case cRho:
+            pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)); // ion_rho = sqrt(x^2+y^2)
+            // idx[j] = std::upper_bound(par_.rho.begin(), par_.rho.end(), pos) - par_.rho.begin() - 1; // id of bin starting from 0
+            break;
+        case cPhi:
+            // pos = atan(i.pos()[1]/i.pos()[0]); // ion_phi = atan(y/x)
+            pos = std::atan2(i.pos()[1], i.pos()[0]); // ion_phi = atan(y/x)
+            // idx[j] = std::upper_bound(par_.phi.begin(), par_.phi.end(), pos) - par_.phi.begin() - 1;
+            break;
+        case cR:
+            pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)+pow(i.pos()[2],2)); // ion_r = sqrt(x^2+y^2+z^2)
+            // idx[j] = std::upper_bound(par_.r.begin(), par_.r.end(), pos) - par_.r.begin() - 1; // id of bin starting from 0
+            break;
+        case cTheta:
+            // pos = atan( sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)) / i.pos()[2] ); // ion_theta = atan(sqrt(x^2+y^2)/z)
+            pos = std::atan2( sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)), i.pos()[2] ); // ion_theta = atan(sqrt(x^2+y^2)/z)
+            // idx[j] = std::upper_bound(par_.theta.begin(), par_.theta.end(), pos) - par_.theta.begin() - 1;
+            break;
+        default:
+            break;
         }
+        idx[j] = std::upper_bound(bins[j].begin(), bins[j].end(), pos) - bins[j].begin() - 1;
+        if (idx[j] < 0 || idx[j] >= bin_sizes[j]) return false; // invalid index -> reject
     }
-    else if (par_.coordinates == "cyl"){ // rho, phi, z
-        for (int j=0;j<n;++j){
-            switch (bin_codes[j]) {
-            case cRho:
-                pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)); // ion_rho = sqrt(x^2+y^2)
-                idx[j] = std::upper_bound(par_.rho.begin(), par_.rho.end(), pos) - par_.rho.begin() - 1; // id of bin starting from 0
-                break;
-            case cPhi:
-                pos = atan(i.pos()[1]/i.pos()[0]); // ion_phi = atan(y/x)
-                idx[j] = std::upper_bound(par_.phi.begin(), par_.phi.end(), pos) - par_.phi.begin() - 1;
-                break;
-            case cZ:
-                pos = i.pos()[2]; // ion z-position
-                idx[j] = std::upper_bound(par_.z.begin(), par_.z.end(), pos) - par_.z.begin() - 1;
-                break;
-            }
-        }
-    }
-
-    else if (par_.coordinates == "sph"){ // r, theta, phi
-        for (int j=0;j<n;++j){
-            switch (bin_codes[j]) {
-            case cR:
-                pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)+pow(i.pos()[2],2)); // ion_r = sqrt(x^2+y^2+z^2)
-                idx[j] = std::upper_bound(par_.r.begin(), par_.r.end(), pos) - par_.r.begin() - 1; // id of bin starting from 0
-                break;
-            case cTheta:
-                pos = atan( sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)) / i.pos()[2] ); // ion_theta = atan(sqrt(x^2+y^2)/z)
-                idx[j] = std::upper_bound(par_.theta.begin(), par_.theta.end(), pos) - par_.theta.begin() - 1;
-                break;
-            case cPhi:
-                pos = atan(i.pos()[1]/i.pos()[0]); // ion_phi = atan(y/x)
-                idx[j] = std::upper_bound(par_.phi.begin(), par_.phi.end(), pos) - par_.phi.begin() - 1;
-                break;
-            }
-        }
-    }
-
-    return idx;
+    return true;
 }
-
-// int user_tally::get_bin_old(double xion) const
-// {
-//     auto binid = std::upper_bound(x.begin(), x.end(), xion) - x.begin() - 1;
-//     // auto bin_bound = std::upper_bound(x.begin(), x.end(), xion);
-//     // auto binit = std::find(x.begin(), x.end(), *bin_bound); //bin bound iterator
-//     // int binid = std::distance(x.begin(), binit) - 1; // id of bin starting from 0
-//     return binid;
-// }
 
 void user_tally::operator()(Event ev, const ion &i, const void *pv)
 {
     if (ev != Event::IonStop)
         return;
-    auto idx = get_bin(i);
-
-
-    data_(idx)++;
-
+    if (get_bin(i)) data_(idx)++;
 }
 
 
