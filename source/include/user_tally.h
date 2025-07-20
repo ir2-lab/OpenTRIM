@@ -68,7 +68,7 @@ public:
 private:
     parameters par_;
     ArrayNDd data_;
-    std::vector<size_t> get_bin(const ion& i); //const;
+    bool get_bin(const ion& i); //const;
     enum variable_code {cX, cY, cZ, cRho, cPhi, cR, cTheta};
     std::vector<variable_code> bin_codes;
     std::vector<std::vector<float>> bins;
