@@ -208,6 +208,13 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Event,
                                { Event::NewFlightPath, "NewFlightPath" },
                                { Event::NEvent, "NEvent" } })
 
+NLOHMANN_JSON_SERIALIZE_ENUM(user_tally::coordinate_t,
+                             { { user_tally::Invalid, nullptr },
+                               { user_tally::xyz, "xyz" },
+                               { user_tally::cyl, "cyl" },
+                               { user_tally::sph, "sph" },
+                               })
+
 // option struct serialization
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(target::region, id, material_id, origin, size)
@@ -350,6 +357,14 @@ void from_json(const ojson &j, mcconfig &p)
     if (j.contains(("UserTally")))
         p.UserTally = j["UserTally"];
 }
+
+// void from_json(const ojson &nlohmann_json_j, user_tally::parameters &nlohmann_json_t)
+// {
+//     const user_tally::parameters nlohmann_json_default_obj{};
+
+//     NLOHMANN_JSON_FROM_WITH_DEFAULT(coordinates);
+// }
+
 
 void mcconfig::printJSON(std::ostream &os) const
 {

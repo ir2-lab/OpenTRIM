@@ -7,12 +7,13 @@
 class user_tally
 {
 public:
-
+    enum coordinate_t { Invalid, xyz, cyl, sph };
     struct parameters
     {
-        std::string id{ "My tally" }, coordinates;
+        std::string id{ "My tally" };
         Event event{ Event::IonStop };
         std::vector<float> x, y, z, rho, phi, r, theta;
+        coordinate_t coordinates = xyz;
     };
 
     user_tally(const parameters &p) : par_(p) { }
