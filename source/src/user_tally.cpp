@@ -4,6 +4,7 @@
 
 void user_tally::init()
 {
+    t.init(par_.zaxis, par_.xzvec, par_.org);
     switch (par_.coordinates){
     case xyz:
         if (par_.x.size()){
@@ -57,36 +58,50 @@ void user_tally::init()
 
     idx.resize(bin_codes.size()); // same size as bin_sizes
     data_ = ArrayNDd(bin_sizes);
+
 }
 
 // std::vector<size_t> user_tally::get_bin(const ion &i) //const
 bool user_tally::get_bin(const ion &i)
 {
     int n = bin_codes.size();
-    for (int j=0;j<n;++j){
-        float pos;
+    float pos;
+
+    xyzuser << i.pos()[0], i.pos()[1], i.pos()[2];
+    t.transformPoint(xyzuser);
+    auto xu = xyzuser[0]; // ion's x in user coordinate system
+    auto yu = xyzuser[1]; // ion's y in user coordinate system
+    auto zu = xyzuser[2]; // ion's z in user coordinate system
+
+    for (int j=0;j<n;++j){        
         switch (bin_codes[j]) {
         case cX:
-            pos = i.pos()[0]; // ion x-position
+            // pos = i.pos()[0]; // ion x-position
+            pos = xu; // ion x-position
             break;
         case cY:
-            pos = i.pos()[1]; // ion y-position
+            // pos = i.pos()[1]; // ion y-position
+            pos = yu; // ion y-position
             break;
         case cZ:
-            pos = i.pos()[2]; // ion z-position
+            // pos = i.pos()[2]; // ion z-position
+            pos = zu; // ion z-position
             break;
         case cRho:
-            pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)); // ion_rho = sqrt(x^2+y^2)
+            // pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)); // ion_rho = sqrt(x^2+y^2)
+            pos = sqrt(pow(xu,2)+pow(yu,2)); // ion_rho = sqrt(x^2+y^2)
             break;
         case cPhi:
-            pos = std::atan2(i.pos()[1], i.pos()[0]); // ion_phi = atan(y/x)
+            // pos = std::atan2(i.pos()[1], i.pos()[0]); // ion_phi = atan(y/x)
+            pos = std::atan2(yu, xu); // ion_phi = atan(y/x)
             break;
-
         case cR:
-            pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)+pow(i.pos()[2],2)); // ion_r = sqrt(x^2+y^2+z^2)
+            // pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)+pow(i.pos()[2],2)); // ion_r = sqrt(x^2+y^2+z^2)
+            pos = sqrt(pow(xu,2)+pow(yu,2)+pow(zu,2)); // ion_r = sqrt(x^2+y^2+z^2)
             break;
         case cTheta:
-            pos = std::atan2( sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)), i.pos()[2] ); // ion_theta = atan(sqrt(x^2+y^2)/z)
+            // pos = std::atan2( sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)), i.pos()[2] ); // ion_theta = atan(sqrt(x^2+y^2)/z)
+            pos = std::atan2( sqrt(pow(xu,2)+pow(yu,2)), zu ); // ion_theta = atan(sqrt(x^2+y^2)/z)
             break;
         default:
             break;
