@@ -597,4 +597,126 @@ inline void deflect_vector(vector3 &m, const vector3 &n)
     m.normalize();
 }
 
+/**
+ * @brief Class xyz_frame_change encapsulates a trasformation to different rectilinear reference frame
+ *
+ * This class can be used to trasform the rectilinear coordinates \$(x,y,z)\$ of a vector
+ * or point from the current coordinate system CS0
+ * to a different, non-aligned rectilinear frame CS1, not having a common origin with CS0.
+ *
+ * CS1 is defined by 3 vectors:
+ * - a vector parallel to the z-axis direction,
+ * - a vector lying on the xz-plane
+ * - the vector of the origin
+ * All three vectors are given in CS0 coordinates.
+ *
+ * The transformation is actually a tranlation+rotation operation.
+ * \f[
+ *   \vec{x}' = R \cdot (\vec{x} - \vec{x_0})
+ * \f]
+ * where \f$R\f$ is the rotation matrix and  \f$x_0\f$ is the origin of CS1.
+ *
+ * If \f$(\vec{n_x}, \vec{n_y}, \vec{n_z})\f$ are the basis vectors of CS1 then
+ * the rotation matrix is
+ * \f[
+ *   R = \left[ \vec{n_x}, \vec{n_y}, \vec{n_z} \right]
+ * \f]
+ */
+class xyz_frame_change
+{
+public:
+    /// Default constructor creates an identity transformation.
+    xyz_frame_change()
+        : identity_(true)
+          , rotation_(Eigen::Matrix3f::Identity())
+          , origin_(vector3::Zero())
+    {}
+    /**
+     * @brief Initialize the transformation
+     *
+     * Initializes the transformation to a rectilinear system CS1 specified by
+     * 3 vectors:
+     * - a vector parallel to the z-axis direction,
+     * - a vector lying on the xz-plane
+     * - the vector of the origin
+     *
+     * The initialization fails if the z-axis and xz-plane vectors are almost parallel.
+     * The function return false and the transformation is reset to the identity.
+     *
+     * @param z_axis vector parallel to z-axis of CS1
+     * @param xz_vec vector lying on xz-plane of CS1
+     * @param origin CS1 origin
+     * @return true if initialization is succesfull
+     */
+    bool init(const vector3 &z_axis, const vector3 &xz_vec, const vector3 &origin = vector3::Zero())
+    {
+        vector3 nz = z_axis.normalized();
+        vector3 xzn = xz_vec.normalized();
+
+               // check if z_axis is nearly parallel to xz_vec
+        if (std::abs(nz.dot(xzn) - 1) < 10 * std::numeric_limits<float>::epsilon())
+            return false;
+
+        vector3 ny = nz.cross(xzn).normalized();
+        vector3 nx = ny.cross(nz).normalized();
+
+        rotation_ << nx, ny, nz;
+        origin_ = origin;
+        identity_ = false;
+        return true;
+    }
+    /// Reset to the identity transformation.
+    void reset()
+    {
+        identity_ = true;
+        rotation_ = Eigen::Matrix3f::Identity();
+        origin_ = vector3::Zero();
+    }
+    /**
+     * @brief Transform a point to the new system.
+     *
+     * Calls
+     * @code
+     * p = rotation() * (p - origin());
+     * @endcode
+     *
+     * @param p
+     */
+    void transformPoint(vector3 &p) const
+    {
+        if (identity_)
+            return;
+        p -= origin_;
+        p = rotation_ * p;
+    }
+    /**
+     * @brief Transform a vector to the new system.
+     *
+     * Calls
+     * @code
+     * v = rotation() * v;
+     * @endcode
+     *
+     * @param p
+     */
+    void transformVector(vector3 &v) const
+    {
+        if (identity_)
+            return;
+        v = rotation_ * v;
+    }
+    /// Returns the rotation matrix.
+    const Eigen::Matrix3f &rotation() const { return rotation_; }
+    /// Returns the origin of the new system.
+    const vector3 &origin() const { return origin_; }
+    /// Returns true if this is an identity transformation.
+    bool is_identity() const { return identity_; }
+
+private:
+    bool identity_;
+    Eigen::Matrix3f rotation_;
+    vector3 origin_;
+};
+
+
 #endif // GEOMETRY_H

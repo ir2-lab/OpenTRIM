@@ -14,10 +14,13 @@ public:
         Event event{ Event::IonStop };
         std::vector<float> x, y, z, rho, phi, r, theta;
         coordinate_t coordinates = xyz;
+        vector3 zaxis{0, 0, 1}; // z-axis direction
+        vector3 xzvec{1, 1, 0}; // vector in xz plane
+        vector3 org{0.5, 0.5, 0.5}; // system center
     };
 
     user_tally(const parameters &p) : par_(p) { }
-    user_tally(const user_tally &o) : par_(o.par_), data_(o.data_.copy()), bins(o.bins), bin_codes(o.bin_codes), bin_sizes(o.bin_sizes), idx(o.idx) { }
+    user_tally(const user_tally &o) : par_(o.par_), data_(o.data_.copy()), bins(o.bins), bin_codes(o.bin_codes), bin_sizes(o.bin_sizes), idx(o.idx), t(o.t), xyzuser(o.xyzuser) { }
 
     const ArrayNDd &data() const { return data_; }
 
@@ -75,6 +78,8 @@ private:
     std::vector<std::vector<float>> bins;
     std::vector<size_t> bin_sizes;
     std::vector<size_t> idx; // will be same size as bin_sizes
+    xyz_frame_change t;
+    vector3 xyzuser; //x, y, z in user coordinate system
 };
 
 #endif // USER_TALLY_H
