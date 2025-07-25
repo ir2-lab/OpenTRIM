@@ -598,7 +598,8 @@ inline void deflect_vector(vector3 &m, const vector3 &n)
 }
 
 /**
- * @brief Class xyz_frame_change encapsulates a trasformation to different rectilinear reference frame
+ * @brief Class xyz_frame_change encapsulates a trasformation to different rectilinear reference
+ * frame
  *
  * This class can be used to trasform the rectilinear coordinates \$(x,y,z)\$ of a vector
  * or point from the current coordinate system CS0
@@ -619,18 +620,15 @@ inline void deflect_vector(vector3 &m, const vector3 &n)
  * If \f$(\vec{n_x}, \vec{n_y}, \vec{n_z})\f$ are the basis vectors of CS1 then
  * the rotation matrix is
  * \f[
- *   R = \left[ \vec{n_x}, \vec{n_y}, \vec{n_z} \right]
+ *   R = \left[ \vec{n_x}, \vec{n_y}, \vec{n_z} \right]^T
  * \f]
  */
 class xyz_frame_change
 {
 public:
     /// Default constructor creates an identity transformation.
-    xyz_frame_change()
-        : identity_(true)
-          , rotation_(Eigen::Matrix3f::Identity())
-          , origin_(vector3::Zero())
-    {}
+    xyz_frame_change() { reset(); }
+
     /**
      * @brief Initialize the transformation
      *
@@ -661,10 +659,12 @@ public:
         vector3 nx = ny.cross(nz).normalized();
 
         rotation_ << nx, ny, nz;
+        rotation_.transposeInPlace();
         origin_ = origin;
         identity_ = false;
         return true;
     }
+
     /// Reset to the identity transformation.
     void reset()
     {
@@ -672,6 +672,7 @@ public:
         rotation_ = Eigen::Matrix3f::Identity();
         origin_ = vector3::Zero();
     }
+
     /**
      * @brief Transform a point to the new system.
      *
@@ -682,13 +683,14 @@ public:
      *
      * @param p
      */
-    void transformPoint(vector3 &p) const
+    vector3 transformPoint(const vector3 &p) const
     {
         if (identity_)
-            return;
-        p -= origin_;
-        p = rotation_ * p;
+            return p;
+
+        return transformVector(p - origin_);
     }
+
     /**
      * @brief Transform a vector to the new system.
      *
@@ -699,16 +701,20 @@ public:
      *
      * @param p
      */
-    void transformVector(vector3 &v) const
+    vector3 transformVector(const vector3 &v) const
     {
         if (identity_)
-            return;
-        v = rotation_ * v;
+            return v;
+
+        return rotation_ * v;
     }
+
     /// Returns the rotation matrix.
     const Eigen::Matrix3f &rotation() const { return rotation_; }
+
     /// Returns the origin of the new system.
     const vector3 &origin() const { return origin_; }
+
     /// Returns true if this is an identity transformation.
     bool is_identity() const { return identity_; }
 
