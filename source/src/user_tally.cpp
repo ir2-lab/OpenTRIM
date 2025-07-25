@@ -1,10 +1,19 @@
 #include "user_tally.h"
 #include "ion.h"
-#include <iostream>
 
 void user_tally::init()
 {
-    t.init(par_.zaxis, par_.xzvec, par_.org);
+    // Init coord transformation (if needed)
+    t.reset();
+    if (par_.zaxis.size() || par_.xzvec.size() || par_.org.size())
+        t.init(par_.zaxis, par_.xzvec, par_.org);
+
+    // clear bins
+    bin_codes.clear();
+    bins.clear();
+    bin_sizes.clear();
+
+    // get bins from user options
     switch (par_.coordinates){
     case xyz:
         if (par_.x.size()){
@@ -22,6 +31,7 @@ void user_tally::init()
             bins.push_back(par_.z);
             bin_sizes.push_back(par_.z.size());
         }
+        break;
     case cyl:
         if (par_.rho.size()){
             bin_codes.push_back(cRho);
@@ -37,7 +47,8 @@ void user_tally::init()
             bin_codes.push_back(cZ);
             bins.push_back(par_.z);
             bin_sizes.push_back(par_.z.size());
-        }        
+        }
+        break;
     case sph:
         if (par_.r.size()){
             bin_codes.push_back(cR);
@@ -54,6 +65,10 @@ void user_tally::init()
             bins.push_back(par_.phi);
             bin_sizes.push_back(par_.phi.size());
         }
+        break;
+    case Invalid:
+        assert(false); // never get here!
+        break;
     }
 
     idx.resize(bin_codes.size()); // same size as bin_sizes
@@ -65,49 +80,50 @@ void user_tally::init()
 bool user_tally::get_bin(const ion &i)
 {
     int n = bin_codes.size();
-    float pos;
 
-    xyzuser << i.pos()[0], i.pos()[1], i.pos()[2];
-    t.transformPoint(xyzuser);
-    auto xu = xyzuser[0]; // ion's x in user coordinate system
-    auto yu = xyzuser[1]; // ion's y in user coordinate system
-    auto zu = xyzuser[2]; // ion's z in user coordinate system
+    // get ion position at user tally ref. frame
+    vector3 pos = t.transformPoint(i.pos());
 
-    for (int j=0;j<n;++j){        
+    for (int j = 0; j < n; ++j) {
+
+        float v; // value for tally scoring
+
         switch (bin_codes[j]) {
         case cX:
             // pos = i.pos()[0]; // ion x-position
-            pos = xu; // ion x-position
+            v = pos.x(); // ion x-position
             break;
         case cY:
             // pos = i.pos()[1]; // ion y-position
-            pos = yu; // ion y-position
+            v = pos.y(); // ion y-position
             break;
         case cZ:
             // pos = i.pos()[2]; // ion z-position
-            pos = zu; // ion z-position
+            v = pos.z(); // ion z-position
             break;
         case cRho:
             // pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)); // ion_rho = sqrt(x^2+y^2)
-            pos = sqrt(pow(xu,2)+pow(yu,2)); // ion_rho = sqrt(x^2+y^2)
+            v = std::sqrt(pos.x() * pos.x() + pos.y() * pos.y()); // ion_rho = sqrt(x^2+y^2)
             break;
         case cPhi:
             // pos = std::atan2(i.pos()[1], i.pos()[0]); // ion_phi = atan(y/x)
-            pos = std::atan2(yu, xu); // ion_phi = atan(y/x)
+            v = std::atan2(pos.y(), pos.x()); // ion_phi = atan(y/x)
             break;
         case cR:
             // pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)+pow(i.pos()[2],2)); // ion_r = sqrt(x^2+y^2+z^2)
-            pos = sqrt(pow(xu,2)+pow(yu,2)+pow(zu,2)); // ion_r = sqrt(x^2+y^2+z^2)
+            v = pos.norm(); // ion_r = sqrt(x^2+y^2+z^2)
             break;
         case cTheta:
             // pos = std::atan2( sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)), i.pos()[2] ); // ion_theta = atan(sqrt(x^2+y^2)/z)
-            pos = std::atan2( sqrt(pow(xu,2)+pow(yu,2)), zu ); // ion_theta = atan(sqrt(x^2+y^2)/z)
+            v = std::atan2(std::sqrt(pos.x() * pos.x() + pos.y() * pos.y()),
+                           pos.z()); // ion_theta = atan(sqrt(x^2+y^2)/z)
             break;
         default:
             break;
         }
 
-        idx[j] = std::upper_bound(bins[j].begin(), bins[j].end(), pos) - bins[j].begin() - 1; // id of bin starting from 0
+        idx[j] = std::upper_bound(bins[j].begin(), bins[j].end(), v) - bins[j].begin()
+                - 1; // id of bin starting from 0
         if (idx[j] < 0 || idx[j] >= bin_sizes[j]) return false; // invalid index -> reject
     }
 

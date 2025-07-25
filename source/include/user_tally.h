@@ -20,7 +20,16 @@ public:
     };
 
     user_tally(const parameters &p) : par_(p) { }
-    user_tally(const user_tally &o) : par_(o.par_), data_(o.data_.copy()), bins(o.bins), bin_codes(o.bin_codes), bin_sizes(o.bin_sizes), idx(o.idx), t(o.t), xyzuser(o.xyzuser) { }
+    user_tally(const user_tally &o)
+        : par_(o.par_),
+          data_(o.data_.copy()),
+          bins(o.bins),
+          bin_codes(o.bin_codes),
+          bin_sizes(o.bin_sizes),
+          idx(o.idx),
+          t(o.t)
+    {
+    }
 
     const ArrayNDd &data() const { return data_; }
 
@@ -78,8 +87,7 @@ private:
     std::vector<std::vector<float>> bins;
     std::vector<size_t> bin_sizes;
     std::vector<size_t> idx; // will be same size as bin_sizes
-    xyz_frame_change t;
-    vector3 xyzuser; //x, y, z in user coordinate system
+    xyz_frame_change t; // trasform to tally reference frame
 };
 
 #endif // USER_TALLY_H
