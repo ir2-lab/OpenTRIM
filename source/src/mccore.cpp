@@ -501,6 +501,12 @@ void mccore::mergeTallies(mccore &other)
     other.tally_.clear();
     dtally_ += other.dtally_;
     other.dtally_.clear();
+    if (utally_) {
+        *utally_ += *(other.utally_);
+        other.utally_->clear();
+        *dutally_ += *(other.dutally_);
+        other.dutally_->clear();
+    }
 }
 
 void mccore::mergeEvents(mccore &other)
