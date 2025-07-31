@@ -6,6 +6,7 @@
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_simulation_type "\"simulation_type\"": "FullCascade",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_screening_type "\"screening_type\"": "ZBL",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_eloss_calculation "\"eloss_calculation\"": "EnergyLoss",<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Simulation_stopping_model "\"stopping_model\"": "SRIM13",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_straggling_model "\"straggling_model\"": "BohrStraggling",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_nrt_calculation "\"nrt_calculation\"": "NRT_element",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_intra_cascade_recombination "\"intra_cascade_recombination\"": false<br>
@@ -105,6 +106,13 @@ In all other cases interpolation tables are used.<br>
 - EnergyLossOff: No energy loss calculation<br>
 - EnergyLoss: Only energy loss is calculated<br>
 - EnergyLossAndStraggling: Both energy loss and straggling are calculated<br>
+<tr><th colspan="2">\anchor _Simulation_stopping_model /Simulation/stopping_model<tr><td>Type <td>Enumerator
+<tr><td>Values<td> SRIM96 | SRIM13 | DPASS22
+<tr><td>Default Value<td>"SRIM13"<tr><td>Description <td>Model/parametrization used for electronic stopping calculations.
+<br>
+- SRIM96: SRIM version 1996<br>
+- SRIM13: SRIM version 2013<br>
+- DPASS22: DPASS version 21.06<br>
 <tr><th colspan="2">\anchor _Simulation_straggling_model /Simulation/straggling_model<tr><td>Type <td>Enumerator
 <tr><td>Values<td> BohrStraggling | ChuStraggling | YangStraggling
 <tr><td>Default Value<td>"BohrStraggling"<tr><td>Description <td>Model used for electronic straggling calculations.

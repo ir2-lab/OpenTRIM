@@ -19,17 +19,18 @@ class mccore;
  *
  * @{
  *
- * The stopping tables have been compiled with the program
- * `SRmodule.exe`
- * distributed with SRIM-2013 (http://www.srim.org).
+ * Electronic stopping cross-section data are taken from the `libdedx` project
+ * (https://github.com/ir2-lab/libdedx), which is a compilation of the following parametrizations:
+ * - SRIM version 1996
+ * - SRIM version 2013
+ * - DPASS version 21.06
  *
- * \f$dE/dx\f$ is given as a function of ion energy on a log-spaced corteo range
- * defined by \ref dedx_index.
+ * Tables are provided for all projectile (\f$Z=Z_1\f$) / target (\f$Z=Z_2\f$) combinations with \f$
+ * 1 \leq Z_1, Z_2 \leq 92\f$.
  *
- * Tables are provided for all projectile (\f$Z=Z_1\f$) / target (\f$Z=Z_2\f$) compinations with \f$
- * 1 \leq Z_1, Z_2 \leq 92\f$
+ * The parametrization to be used by OpenTRIM is specified by the \ref StoppingModel enum.
  *
- * The data are compiled into a dynamic library (libdedx.so or .dll).
+ * Stopping data are interpolated from a log-spaced energy range defined by \ref dedx_erange.
  *
  * The \ref dedx_interp interpolator object can be used for stopping
  * calculations in mono- and polyatomic materials. The stopping at a given
@@ -37,8 +38,6 @@ class mccore;
  *
  * \ref straggling_interp is a similar interpolator class for calculating
  * energy straggling.
- *
- * Direct access to the stopping tables is provided by the function \ref raw_dedx().
  *
  * @}
  *
@@ -69,28 +68,6 @@ enum class StoppingModel {
  *
  */
 typedef corteo::index<float, int, 4, 4, 30> dedx_erange;
-
-/**
- * @brief Return a table of electronic stopping for a projectile (atomic number Z1) moving inside a
- * target (atomic number Z2)
- *
- * Stopping data is calculated at log-spaced ion energy values given by \ref dedx_index.
- *
- * The tables have been generated for all \f$ (Z_1,Z_2) \f$ combinations,
- * with \f$  1 \leq Z_{i=1,2} \leq 92 \f$,
- * using the free program `SRModule.exe` provided by SRIM-2013.
- *
- * The energy loss is in units of eV / [10^15 at/cm^2] = 10^-15 eV-cm^2.
- *
- * Multiply by the target atomic density to obtain the stopping power dE/dx in eV/cm.
- *
- * @param Z1 projectile atomic number
- * @param Z2 target atomic number
- * @return pointer to the first data point in the table
- *
- * @ingroup dedx
- */
-const float *raw_dedx(int Z1, int Z2);
 
 /**
  * @brief Interpolator class for ion electronic stopping calculations
@@ -204,7 +181,7 @@ enum class StragglingModel {
  * the two different constructors. In polyatomic materials the Bragg
  * mixing rule is applied.
  *
- * Call the base class log_interp::operator() to obtain the straggling coefficient
+ * Call the base class \ref log_interp::operator() to obtain the straggling coefficient
  * \f$\Omega(E)\f$ in eV/nm^(1/2) at a given
  * projectile energy \f$E\f$ in eV. The value is obtained by log-log interpolation
  * on the tabulated data stored internally.
@@ -251,19 +228,17 @@ public:
 };
 
 /**
- * @brief The dedx_calc class is used for electronic energy loss and straggling calculations
+ * @brief Electronic energy loss and straggling calculator used in OpenTRIM simulations
  *
  * The class stores pre-computed interpolation tables for all ion/material combinations
  * present in a given simulation. These tables are generated initially with a call to init(const
  * mccore& s).
  *
- * During the simulation, init(const ion* i, const material* m) should be
+ * During the simulation, preload(const ion* i, const material* m) should be
  * called each time a new ion/material combination arises, to preload the
  * required tables for max efficiency.
  *
- * Then, the energy loss of the ion for a given flight path is effected by calling
- * operator() on the dedx_calc object.
- *
+ * dedx_calc::operator() implements energy loss & stragling for a given ion flight path.
  *
  * \ingroup dedx
  *
@@ -275,7 +250,7 @@ public:
      * @brief Determines electronic energy loss calculation mode
      */
     enum eloss_calculation_t {
-        EnergyLossOff = 0, /**< Electronic energy loss disabled */
+        EnergyLossOff = 0, /**< Electronic effects disabled */
         EnergyLoss = 1, /**< Only electronic energy loss is calculated */
         EnergyLossAndStraggling = 2, /**< Both energy loss & straggling are calculated */
         InvalidEnergyLoss = -1
