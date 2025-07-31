@@ -9,8 +9,7 @@
 #include "tally.h"
 #include "event_stream.h"
 #include "dedx.h"
-#include "flight_path_calc.h"
-#include "dedx_calc.h"
+#include "flight_path.h"
 
 // for thread sync
 #include <atomic>
@@ -89,6 +88,8 @@ public:
         Screening screening_type{ Screening::ZBL };
         /// Electronic energy loss calculation option
         dedx_calc::eloss_calculation_t eloss_calculation{ dedx_calc::EnergyLoss };
+        /// Model to use for calculating electronic straggling (if calculated)
+        StoppingModel stopping_model{ StoppingModel::SRIM13 };
         /// Model to use for calculating electronic straggling (if calculated)
         StragglingModel straggling_model{ StragglingModel::Bohr };
         /// Way to calculate NRT vacancies in multielement materials

@@ -76,6 +76,32 @@ else()
    FetchContent_MakeAvailable(external_periodic)
 endif()
 
+FetchContent_Declare(external_libdedx
+   GIT_REPOSITORY https://github.com/ir2-lab/libdedx.git
+   GIT_TAG main
+   GIT_SUBMODULES_RECURSE FALSE
+   GIT_SHALLOW TRUE
+)
+if(PACKAGE_BUILD)
+   set(external_libdedx_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext5)
+else()
+   FetchContent_MakeAvailable(external_libdedx)
+endif()
+
+FetchContent_Declare(external_spline
+   GIT_REPOSITORY https://github.com/ttk592/spline.git
+   GIT_TAG master
+   GIT_SUBMODULES_RECURSE FALSE
+   GIT_SHALLOW TRUE
+   EXCLUDE_FROM_ALL
+   SOURCE_SUBDIR dummy
+)
+if(PACKAGE_BUILD)
+   set(external_spline_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext5)
+else()
+   FetchContent_MakeAvailable(external_spline)
+endif()
+
 if (BUILD_GUI)
    FetchContent_Declare(external_qmatplotwidget
       GIT_REPOSITORY https://gitlab.com/qdaq/qmatplotwidget.git

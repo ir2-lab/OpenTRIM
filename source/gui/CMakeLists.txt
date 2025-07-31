@@ -64,6 +64,7 @@ endif()
 target_include_directories(${GUI_TARGET} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${external_json_SOURCE_DIR}/single_include/
+    ${external_libdedx_SOURCE_DIR}/src/lib
     ${external_qmatplotwidget_SOURCE_DIR}/src
 )
 

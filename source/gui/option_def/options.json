@@ -84,6 +84,27 @@
                     ]
                 },
                 {
+                    "name": "stopping_model",
+                    "label": "Stopping Model",
+                    "type": "enum",
+                    "values": [
+                        "SRIM96",
+                        "SRIM13",
+                        "DPASS22"
+                    ],
+                    "valueLabels": [
+                        "SRIM96",
+                        "SRIM13",
+                        "DPASS22"
+                    ],
+                    "toolTip": "Model/parametrization used for electronic stopping calculations.",
+                    "whatsThis": [
+                        "- SRIM96: SRIM version 1996",
+                        "- SRIM13: SRIM version 2013",
+                        "- DPASS22: DPASS version 21.06"
+                    ]
+                },
+                {
                     "name": "straggling_model",
                     "label": "Straggling Model",
                     "type": "enum",

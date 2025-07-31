@@ -95,10 +95,10 @@ void check_element_def(const ojson &j, element_t &p)
     }
 
     if (p.symbol.empty()) {
-        if (p.atomic_number > dedx_max_Z) {
+        if (p.atomic_number > dedx_interp::Zmax) {
             std::stringstream msg;
             msg << "Element with atomic_number Z=" << p.atomic_number;
-            msg << " beyong the maximum possible Z=" << dedx_max_Z;
+            msg << " beyong the maximum possible Z=" << dedx_interp::Zmax;
             throw ojson::exception(ojson::other_error::create(1001, msg.str(), &j));
         }
         p.symbol = periodic_table::at(p.atomic_number).symbol;
@@ -109,10 +109,10 @@ void check_element_def(const ojson &j, element_t &p)
             msg << "Invalid element symbol=" << p.symbol;
             throw ojson::exception(ojson::other_error::create(1002, msg.str(), &j));
         }
-        if (el.Z > dedx_max_Z) {
+        if (el.Z > dedx_interp::Zmax) {
             std::stringstream msg;
             msg << "Element " << p.symbol << "(Z=" << el.Z << ")";
-            msg << "is beyong the maximum possible Z=" << dedx_max_Z;
+            msg << "is beyong the maximum possible Z=" << dedx_interp::Zmax;
             throw ojson::exception(ojson::other_error::create(1002, msg.str(), &j));
         }
         if (p.atomic_number > 0 && el.Z != p.atomic_number) {
@@ -188,6 +188,12 @@ NLOHMANN_JSON_SERIALIZE_ENUM(StragglingModel,
                                { StragglingModel::Chu, "ChuStraggling" },
                                { StragglingModel::Yang, "YangStraggling" } })
 
+NLOHMANN_JSON_SERIALIZE_ENUM(StoppingModel,
+                             { { StoppingModel::Invalid, nullptr },
+                               { StoppingModel::SRIM96, "SRIM96" },
+                               { StoppingModel::SRIM13, "SRIM13" },
+                               { StoppingModel::DPASS22, "DPASS22" } })
+
 // option struct serialization
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(target::region, id, material_id, origin, size)
@@ -211,9 +217,9 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ion_beam::parameters, ion, energy_dist
                                           spatial_distribution, angular_distribution)
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::parameters, simulation_type, screening_type,
-                                          eloss_calculation, straggling_model, nrt_calculation,
-                                          intra_cascade_recombination, correlated_recombination,
-                                          move_recoil, recoil_sub_ed)
+                                          eloss_calculation, stopping_model, straggling_model,
+                                          nrt_calculation, intra_cascade_recombination,
+                                          correlated_recombination, move_recoil, recoil_sub_ed)
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::transport_options, flight_path_type,
                                           flight_path_const, min_energy, min_recoil_energy,

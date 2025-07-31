@@ -99,7 +99,7 @@ void calcStraggling(const dedx_interp &dedx_ion, const dedx_interp &dedx_H, int 
     double OmegaBohr2 = 4 * M_PI * Z1 * Z1 * Z2 * E2 * E2 * Ns; /* eV^2 */
     ;
 
-    for (dedx_index ie; ie != ie.end(); ie++) {
+    for (dedx_erange ie; ie != ie.end(); ie++) {
         double energy = *ie;
         double stopping_ion = dedx_ion(*ie);
         double stopping_H = dedx_H(*ie / M1);

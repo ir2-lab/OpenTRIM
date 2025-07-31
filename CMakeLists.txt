@@ -71,34 +71,10 @@ message(STATUS "HDF5 libs: ${HDF5_LIBRARIES}")
 
 include_directories(source/include)
 
-file(GLOB gendedx_files CONFIGURE_DEPENDS
-    ${PROJECT_SOURCE_DIR}/source/dedx/*.cpp)
-
-add_library(dedx SHARED
-    source/src/dedx.cpp
-    source/src/straggling.cpp
-    ${gendedx_files}
-)
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
-    target_sources(dedx
-        PUBLIC FILE_SET HEADERS
-            BASE_DIRS source/include
-            FILES 
-                source/include/corteo.h
-                source/include/dedx.h
-    )
-else()
-    set_property(TARGET dedx
-        PROPERTY PUBLIC_HEADER
-            source/include/corteo.h
-            source/include/dedx.h
-    )
-endif()
-
-add_dedx_library(zbl)
-add_dedx_library(lj)
-add_dedx_library(krc)
-add_dedx_library(moliere)
+add_xs_library(zbl)
+add_xs_library(lj)
+add_xs_library(krc)
+add_xs_library(moliere)
 
 set (LIB_TARGET ${PROJECT_NAME_LOWERCASE})
 set (EXE_TARGET ${PROJECT_NAME_LOWERCASE}_exe)
@@ -107,7 +83,7 @@ add_library(${LIB_TARGET} SHARED
     ${PTABLE_DATA_CPP}
     source/src/ion.cpp   
     source/src/target.cpp
-    source/src/flight_path_calc.cpp
+    source/src/flight_path.cpp
     source/src/mccore.cpp   
     source/src/ion_beam.cpp
     source/src/event_stream.cpp
@@ -115,49 +91,40 @@ add_library(${LIB_TARGET} SHARED
     source/src/tally.cpp
     source/src/parse_json.cpp    
     source/src/mcdriver.cpp
-    source/src/dedx_calc.cpp
+    source/src/dedx.cpp
+    source/src/straggling.cpp
 )
+
+set(OPENTRIM_HEADERS 
+    source/include/xs_corteo.h
+    source/include/xs.h
+    source/include/periodic_table.h
+    source/include/ion.h 
+    source/include/cascade_queue.h
+    source/include/random_vars.h
+    source/include/target.h 
+    source/include/flight_path.h
+    source/include/dedx.h
+    source/include/mccore.h 
+    source/include/geometry.h
+    source/include/ion_beam.h 
+    source/include/arrays.h
+    source/include/event_stream.h 
+    source/include/tally.h 
+    source/include/mcdriver.h 
+)
+
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
     target_sources(${LIB_TARGET}
         PUBLIC FILE_SET HEADERS 
             BASE_DIRS source/include
             FILES
-                source/include/xs_corteo.h
-                source/include/xs.h
-                source/include/periodic_table.h
-                source/include/ion.h 
-                source/include/cascade_queue.h
-                source/include/random_vars.h
-                source/include/target.h 
-                source/include/flight_path_calc.h
-                source/include/dedx_calc.h
-                source/include/mccore.h 
-                source/include/geometry.h
-                source/include/ion_beam.h 
-                source/include/arrays.h
-                source/include/event_stream.h 
-                source/include/tally.h 
-                source/include/mcdriver.h 
+                ${OPENTRIM_HEADERS}
     )
 else()
     set_property(TARGET ${LIB_TARGET}
         PROPERTY PUBLIC_HEADER
-            source/include/xs_corteo.h
-            source/include/xs.h
-            source/include/periodic_table.h
-            source/include/ion.h 
-            source/include/cascade_queue.h
-            source/include/random_vars.h
-            source/include/target.h 
-            source/include/flight_path_calc.h
-            source/include/dedx_calc.h
-            source/include/mccore.h 
-            source/include/geometry.h
-            source/include/ion_beam.h 
-            source/include/arrays.h
-            source/include/event_stream.h 
-            source/include/tally.h 
-            source/include/mcdriver.h 
+            ${OPENTRIM_HEADERS} 
     )
 endif()
 target_sources(${LIB_TARGET}
@@ -177,7 +144,9 @@ target_link_libraries(${LIB_TARGET} ${PROJECT_LIBS})
 
 target_include_directories(${LIB_TARGET} PRIVATE
     ${external_json_SOURCE_DIR}/single_include/ 
-    ${external_highfive_SOURCE_DIR}/include)
+    ${external_highfive_SOURCE_DIR}/include
+    ${external_libdedx_SOURCE_DIR}/src/lib
+    ${external_spline_SOURCE_DIR}/src)
 
 add_executable(${EXE_TARGET}
     source/main.cpp
@@ -186,7 +155,9 @@ add_executable(${EXE_TARGET}
 set_property(TARGET ${EXE_TARGET} PROPERTY OUTPUT_NAME ${PROJECT_NAME_LOWERCASE})
 
 target_include_directories(${EXE_TARGET} PRIVATE
-    ${external_cxxopts_SOURCE_DIR}/include)
+    ${external_cxxopts_SOURCE_DIR}/include
+    ${external_libdedx_SOURCE_DIR}/src/lib
+)
 
 target_link_libraries(${EXE_TARGET}
     ${LIB_TARGET}
@@ -197,7 +168,9 @@ add_executable(genoptionsdoc
 )
 
 target_include_directories(genoptionsdoc PRIVATE
-    ${external_json_SOURCE_DIR}/single_include/)
+    ${external_json_SOURCE_DIR}/single_include/
+    ${external_libdedx_SOURCE_DIR}/src/lib
+)
 
 target_link_libraries(genoptionsdoc
     ${LIB_TARGET}

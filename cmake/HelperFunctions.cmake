@@ -1,7 +1,3 @@
-# add_executable(gendedx
-#     src/gendedx.cpp
-#     src/periodic_table.h
-#     ${PTABLE_DATA_CPP})
 
 add_executable(genptable EXCLUDE_FROM_ALL
     source/src/genptable.cpp
@@ -27,7 +23,7 @@ add_executable(gencorteo EXCLUDE_FROM_ALL
 target_include_directories(gencorteo PRIVATE
     ${external_cxxopts_SOURCE_DIR}/include)
 
-function(add_dedx_library screeningName)
+function(add_xs_library screeningName)
     add_custom_command(OUTPUT xs_${screeningName}_data.cpp
         COMMAND gencorteo -s ${screeningName} DEPENDS gencorteo
     )

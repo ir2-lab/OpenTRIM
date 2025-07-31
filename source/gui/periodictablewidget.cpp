@@ -11,8 +11,6 @@
 #include <QAction>
 #include <QDialogButtonBox>
 
-#define ZMAX dedx_max_Z
-
 QString ElementButton::getIsotopeDesc(int z, int i)
 {
     auto &E = periodic_table::at(z);

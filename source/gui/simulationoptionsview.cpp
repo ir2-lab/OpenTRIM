@@ -205,6 +205,10 @@ void SimulationOptionsView::applyRules()
             w->setEnabled(b);
     };
 
+    enable_if("/Simulation/stopping_model",
+              opt->Simulation.eloss_calculation == dedx_calc::EnergyLossAndStraggling
+                      || opt->Simulation.eloss_calculation == dedx_calc::EnergyLoss);
+
     enable_if("/Simulation/straggling_model",
               opt->Simulation.eloss_calculation == dedx_calc::EnergyLossAndStraggling);
 
