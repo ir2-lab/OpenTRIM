@@ -407,11 +407,15 @@ public:
     }
 
     /**
-     * @brief Generate a random azimuthal direction and radius
+     * @brief Generate a random azimuthal direction and a uniform random value
      *
      * The same as random_azimuth_dir() but returning additionally
-     * a random 2d vector squared norm, \f$ r^2 \f$, distributed uniformly in
-     * \f$ (0,1) \f$
+     * a random number r2 distributed uniformly in
+     * \f$ (0,1) \f$.
+     *
+     * The function makes 2 calls to the random number generatore - exactly
+     * as random_azimuth_dir() - but it additionaly returns an extra random
+     * number
      *
      * @param nx sin(phi)
      * @param ny cos(phi)
