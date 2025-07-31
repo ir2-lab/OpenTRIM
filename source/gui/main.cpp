@@ -9,8 +9,8 @@ int main(int argc, char *argv[])
 
     // select fusion style if available
     // for consistent look among different platforms
-    if (QStyleFactory::keys().contains("fusion"))
-        QApplication::setStyle(QStyleFactory::create("fusion"));
+    if (QStyleFactory::keys().contains("Fusion"))
+        QApplication::setStyle(QStyleFactory::create("Fusion"));
 
     MainUI w;
     w.show();
