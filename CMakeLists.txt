@@ -149,7 +149,7 @@ target_include_directories(${LIB_TARGET} PRIVATE
     ${external_spline_SOURCE_DIR}/src)
 
 add_executable(${EXE_TARGET}
-    source/main.cpp
+    source/cli/main.cpp
 )
 # adjust exe name to be the same as the library's
 set_property(TARGET ${EXE_TARGET} PROPERTY OUTPUT_NAME ${PROJECT_NAME_LOWERCASE})
@@ -164,7 +164,7 @@ target_link_libraries(${EXE_TARGET}
 )
 
 add_executable(genoptionsdoc
-    source/src/genoptionsdoc.cpp
+    source/generators/genoptionsdoc.cpp
 )
 
 target_include_directories(genoptionsdoc PRIVATE

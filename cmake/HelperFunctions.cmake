@@ -1,6 +1,6 @@
 
 add_executable(genptable EXCLUDE_FROM_ALL
-    source/src/genptable.cpp
+    source/generators/genptable.cpp
 )
 
 set(ISOTOPE_CSV ${external_isotope_SOURCE_DIR}/isotopes_data.csv)
@@ -17,7 +17,7 @@ else()
 endif()
 
 add_executable(gencorteo EXCLUDE_FROM_ALL
-    source/src/gencorteo.cpp
+    source/generators/gencorteo.cpp
 )
 
 target_include_directories(gencorteo PRIVATE
