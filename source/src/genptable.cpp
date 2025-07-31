@@ -203,10 +203,23 @@ int loadIsotopeTable(const char *fname)
         isotope i;
         i.A = stoi(tokens[4]);
         i.symbol = tokens[2];
-        i.mass = stod(tokens[6]);
-        i.abundance = stod(tokens[5]) / 100.;
-        if (!tokens[11].empty())
-            i.half_life = stod(tokens[11]);
+
+        try {
+            i.mass = stod(tokens[7]);
+            i.abundance = stod(tokens[5]) / 100.;
+            if (tokens[11] == "true" && !tokens[12].empty())
+                i.half_life = stod(tokens[12]);
+        } catch (const std::exception &e) {
+            cerr << "Isotope table, line " << k << endl;
+            cerr << "Z = " << E.Z << endl;
+            cerr << "A = " << i.A << endl;
+            cerr << "mass = " << i.mass << endl;
+            cerr << "abundance = " << i.abundance << endl;
+            cerr << "half_life = " << i.half_life << endl;
+            std::cerr << e.what() << '\n';
+            throw(e);
+        }
+
         E.isotopes.push_back(i);
     }
 
