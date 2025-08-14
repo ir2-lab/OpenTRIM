@@ -12,7 +12,7 @@ public:
     {
         std::string id{ "My tally" };
         Event event{ Event::IonStop };
-        std::vector<float> x, y, z, rho, phi, r, theta;
+        std::vector<float> x, y, z, rho, phi, r, theta, vx, vy, vz, vrho, vphi, vr, vtheta;
         coordinate_t coordinates = xyz;
         vector3 zaxis{0, 0, 1}; // z-axis direction
         vector3 xzvec{1, 1, 0}; // vector in xz plane
@@ -82,7 +82,7 @@ private:
     parameters par_;
     ArrayNDd data_;
     bool get_bin(const ion& i); //const;
-    enum variable_code {cX, cY, cZ, cRho, cPhi, cR, cTheta};
+    enum variable_code {cX, cY, cZ, cRho, cPhi, cR, cTheta, cVX, cVY, cVZ, cVRho, cVPhi, cVR, cVTheta};
     std::vector<variable_code> bin_codes;
     std::vector<std::vector<float>> bins;
     std::vector<size_t> bin_sizes;

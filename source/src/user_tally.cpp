@@ -31,6 +31,21 @@ void user_tally::init()
             bins.push_back(par_.z);
             bin_sizes.push_back(par_.z.size());
         }
+        if (par_.vx.size()){
+            bin_codes.push_back(cVX);
+            bins.push_back(par_.vx);
+            bin_sizes.push_back(par_.vx.size());
+        }
+        if (par_.vy.size()){
+            bin_codes.push_back(cVY);
+            bins.push_back(par_.vy);
+            bin_sizes.push_back(par_.vy.size());
+        }
+        if (par_.vz.size()){
+            bin_codes.push_back(cVZ);
+            bins.push_back(par_.vz);
+            bin_sizes.push_back(par_.vz.size());
+        }
         break;
     case cyl:
         if (par_.rho.size()){
@@ -48,6 +63,21 @@ void user_tally::init()
             bins.push_back(par_.z);
             bin_sizes.push_back(par_.z.size());
         }
+        if (par_.vrho.size()){
+            bin_codes.push_back(cVRho);
+            bins.push_back(par_.vrho);
+            bin_sizes.push_back(par_.vrho.size());
+        }
+        if (par_.vphi.size()){
+            bin_codes.push_back(cVPhi);
+            bins.push_back(par_.vphi);
+            bin_sizes.push_back(par_.vphi.size());
+        }
+        if (par_.vz.size()){
+            bin_codes.push_back(cVZ);
+            bins.push_back(par_.vz);
+            bin_sizes.push_back(par_.vz.size());
+        }
         break;
     case sph:
         if (par_.r.size()){
@@ -64,6 +94,21 @@ void user_tally::init()
             bin_codes.push_back(cPhi);
             bins.push_back(par_.phi);
             bin_sizes.push_back(par_.phi.size());
+        }
+        if (par_.vr.size()){
+            bin_codes.push_back(cVR);
+            bins.push_back(par_.vr);
+            bin_sizes.push_back(par_.vr.size());
+        }
+        if (par_.vtheta.size()){
+            bin_codes.push_back(cVTheta);
+            bins.push_back(par_.vtheta);
+            bin_sizes.push_back(par_.vtheta.size());
+        }
+        if (par_.vphi.size()){
+            bin_codes.push_back(cVPhi);
+            bins.push_back(par_.vphi);
+            bin_sizes.push_back(par_.vphi.size());
         }
         break;
     case Invalid:
@@ -83,6 +128,7 @@ bool user_tally::get_bin(const ion &i)
 
     // get ion position at user tally ref. frame
     vector3 pos = t.transformPoint(i.pos());
+    vector3 dir = t.transformVector(i.dir());
 
     for (int j = 0; j < n; ++j) {
 
@@ -117,6 +163,28 @@ bool user_tally::get_bin(const ion &i)
             // pos = std::atan2( sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)), i.pos()[2] ); // ion_theta = atan(sqrt(x^2+y^2)/z)
             v = std::atan2(std::sqrt(pos.x() * pos.x() + pos.y() * pos.y()),
                            pos.z()); // ion_theta = atan(sqrt(x^2+y^2)/z)
+            break;
+        case cVX:
+            v = dir.x(); // ion x-velocity
+            break;
+        case cVY:
+            v = dir.y(); // ion y-velocity
+            break;
+        case cVZ:
+            v = dir.z(); // ion z-velocity
+            break;
+        case cVRho:
+            v = std::sqrt(dir.x() * dir.x() + dir.y() * dir.y()); // ion_vel_rho = sqrt(x^2+y^2)
+            break;
+        case cVPhi:
+            v = std::atan2(dir.y(), dir.x()); // ion_vel_phi = atan(y/x)
+            break;
+        case cVR:
+            v = dir.norm(); // ion_vel_r = sqrt(x^2+y^2+z^2)
+            break;
+        case cVTheta:
+            v = std::atan2(std::sqrt(dir.x() * dir.x() + dir.y() * dir.y()),
+                           dir.z()); // ion_vel_theta = atan(sqrt(x^2+y^2)/z)
             break;
         default:
             break;
