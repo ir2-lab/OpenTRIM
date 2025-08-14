@@ -1,5 +1,6 @@
 #include "user_tally.h"
 #include "ion.h"
+#include "target.h"
 
 void user_tally::init()
 {
@@ -12,6 +13,12 @@ void user_tally::init()
     bin_codes.clear();
     bins.clear();
     bin_sizes.clear();
+
+    if (par_.atom_id.size()){
+        bin_codes.push_back(cAtom_id);
+        bins.push_back(par_.atom_id);
+        bin_sizes.push_back(par_.atom_id.size());
+    }
 
     // get bins from user options
     switch (par_.coordinates){
@@ -133,6 +140,7 @@ bool user_tally::get_bin(const ion &i)
     for (int j = 0; j < n; ++j) {
 
         float v; // value for tally scoring
+        // int atom_id = i.myAtom()->id();
 
         switch (bin_codes[j]) {
         case cX:
@@ -186,6 +194,11 @@ bool user_tally::get_bin(const ion &i)
             v = std::atan2(std::sqrt(dir.x() * dir.x() + dir.y() * dir.y()),
                            dir.z()); // ion_vel_theta = atan(sqrt(x^2+y^2)/z)
             break;
+        case cAtom_id:{
+            int atom_id = i.myAtom()->id();
+            v = static_cast<float>(atom_id);
+            break;
+        }
         default:
             break;
         }

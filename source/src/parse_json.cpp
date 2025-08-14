@@ -253,7 +253,7 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::output_options, title, outfi
                                           storage_interval, store_exit_events, store_pka_events,
                                           store_dedx)
 
-MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(user_tally::parameters, id, event, coordinates, x, y, z, rho, phi, r, theta, zaxis, xzvec, org, vx, vy, vz, vrho, vphi, vr, vtheta)
+MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(user_tally::parameters, id, event, coordinates, x, y, z, rho, phi, r, theta, zaxis, xzvec, org, vx, vy, vz, vrho, vphi, vr, vtheta, atom_id)
 
 // MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 //     target::target_desc_t,
