@@ -96,6 +96,7 @@ add_library(${LIB_TARGET} SHARED
 )
 
 set(OPENTRIM_HEADERS 
+    source/include/corteo.h
     source/include/xs_corteo.h
     source/include/xs.h
     source/include/periodic_table.h
