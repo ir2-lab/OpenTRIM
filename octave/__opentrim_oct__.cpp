@@ -208,6 +208,7 @@ DEFUN_DLD(__dedx__, args, nargout, "Returns raw corteo tables of electronic ener
     NDArray Z2 = args(1).array_value();
     NDArray X2 = args(2).array_value();
     float N = args(3).double_value();
+    int m = args(4).int_value();
 
     int n2 = Z2.numel();
     std::vector<int> z2(n2);
@@ -216,9 +217,10 @@ DEFUN_DLD(__dedx__, args, nargout, "Returns raw corteo tables of electronic ener
         z2[i] = Z2(i);
         x2[i] = X2(i);
     }
-    dedx_interp interp(Z1, z2, x2, N);
+    StoppingModel model = static_cast<StoppingModel>(m);
+    dedx_interp interp(model, Z1, z2, x2, N);
 
-    dedx_index i;
+    dedx_erange i;
     octave_idx_type n = i.size;
     RowVector e(n), d(n);
     const float *p = interp.data();
