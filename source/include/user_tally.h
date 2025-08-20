@@ -15,8 +15,8 @@ public:
         std::vector<float> x, y, z, rho, phi, r, theta, vx, vy, vz, vrho, vphi, vr, vtheta, atom_id;
         coordinate_t coordinates = xyz;
         vector3 zaxis{0, 0, 1}; // z-axis direction
-        vector3 xzvec{1, 1, 0}; // vector in xz plane
-        vector3 org{0.5, 0.5, 0.5}; // system center
+        vector3 xzvec{ 1, 0, 1 }; // vector in xz plane
+        vector3 org{ 0.0, 0.0, 0.0 }; // system center
     };
 
     user_tally(const parameters &p) : par_(p) { }
@@ -81,13 +81,15 @@ public:
 private:
     parameters par_;
     ArrayNDd data_;
-    bool get_bin(const ion& i); //const;
     enum variable_code {cX, cY, cZ, cRho, cPhi, cR, cTheta, cVX, cVY, cVZ, cVRho, cVPhi, cVR, cVTheta,cAtom_id};
     std::vector<variable_code> bin_codes;
     std::vector<std::vector<float>> bins;
     std::vector<size_t> bin_sizes;
     std::vector<size_t> idx; // will be same size as bin_sizes
     xyz_frame_change t; // trasform to tally reference frame
+
+    bool get_bin(const ion &i); // const;
+    bool push_bins(variable_code c, const std::vector<float> &edges);
 };
 
 #endif // USER_TALLY_H

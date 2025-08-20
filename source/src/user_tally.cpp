@@ -14,109 +14,33 @@ void user_tally::init()
     bins.clear();
     bin_sizes.clear();
 
-    if (par_.atom_id.size()){
-        bin_codes.push_back(cAtom_id);
-        bins.push_back(par_.atom_id);
-        bin_sizes.push_back(par_.atom_id.size());
-    }
+    push_bins(cAtom_id, par_.atom_id);
 
     // get bins from user options
     switch (par_.coordinates){
     case xyz:
-        if (par_.x.size()){
-            bin_codes.push_back(cX);
-            bins.push_back(par_.x);
-            bin_sizes.push_back(par_.x.size());
-        }
-        if (par_.y.size()){
-            bin_codes.push_back(cY);
-            bins.push_back(par_.y);
-            bin_sizes.push_back(par_.y.size());
-        }
-        if (par_.z.size()){
-            bin_codes.push_back(cZ);
-            bins.push_back(par_.z);
-            bin_sizes.push_back(par_.z.size());
-        }
-        if (par_.vx.size()){
-            bin_codes.push_back(cVX);
-            bins.push_back(par_.vx);
-            bin_sizes.push_back(par_.vx.size());
-        }
-        if (par_.vy.size()){
-            bin_codes.push_back(cVY);
-            bins.push_back(par_.vy);
-            bin_sizes.push_back(par_.vy.size());
-        }
-        if (par_.vz.size()){
-            bin_codes.push_back(cVZ);
-            bins.push_back(par_.vz);
-            bin_sizes.push_back(par_.vz.size());
-        }
+        push_bins(cX, par_.x);
+        push_bins(cY, par_.y);
+        push_bins(cZ, par_.z);
+        push_bins(cVX, par_.vx);
+        push_bins(cVY, par_.vy);
+        push_bins(cVZ, par_.vz);
         break;
     case cyl:
-        if (par_.rho.size()){
-            bin_codes.push_back(cRho);
-            bins.push_back(par_.rho);
-            bin_sizes.push_back(par_.rho.size());
-        }
-        if (par_.phi.size()){
-            bin_codes.push_back(cPhi);
-            bins.push_back(par_.phi);
-            bin_sizes.push_back(par_.phi.size());
-        }
-        if (par_.z.size()){
-            bin_codes.push_back(cZ);
-            bins.push_back(par_.z);
-            bin_sizes.push_back(par_.z.size());
-        }
-        if (par_.vrho.size()){
-            bin_codes.push_back(cVRho);
-            bins.push_back(par_.vrho);
-            bin_sizes.push_back(par_.vrho.size());
-        }
-        if (par_.vphi.size()){
-            bin_codes.push_back(cVPhi);
-            bins.push_back(par_.vphi);
-            bin_sizes.push_back(par_.vphi.size());
-        }
-        if (par_.vz.size()){
-            bin_codes.push_back(cVZ);
-            bins.push_back(par_.vz);
-            bin_sizes.push_back(par_.vz.size());
-        }
+        push_bins(cRho, par_.rho);
+        push_bins(cPhi, par_.phi);
+        push_bins(cZ, par_.z);
+        push_bins(cVRho, par_.vrho);
+        push_bins(cVPhi, par_.vphi);
+        push_bins(cVZ, par_.vz);
         break;
     case sph:
-        if (par_.r.size()){
-            bin_codes.push_back(cR);
-            bins.push_back(par_.r);
-            bin_sizes.push_back(par_.r.size());
-        }
-        if (par_.theta.size()){
-            bin_codes.push_back(cTheta);
-            bins.push_back(par_.theta);
-            bin_sizes.push_back(par_.theta.size());
-        }
-        if (par_.phi.size()){
-            bin_codes.push_back(cPhi);
-            bins.push_back(par_.phi);
-            bin_sizes.push_back(par_.phi.size());
-        }
-        if (par_.vr.size()){
-            bin_codes.push_back(cVR);
-            bins.push_back(par_.vr);
-            bin_sizes.push_back(par_.vr.size());
-        }
-        if (par_.vtheta.size()){
-            bin_codes.push_back(cVTheta);
-            bins.push_back(par_.vtheta);
-            bin_sizes.push_back(par_.vtheta.size());
-        }
-        if (par_.vphi.size()){
-            bin_codes.push_back(cVPhi);
-            bins.push_back(par_.vphi);
-            bin_sizes.push_back(par_.vphi.size());
-        }
+        push_bins(cR, par_.r);
+        push_bins(cTheta, par_.theta);
+        push_bins(cPhi, par_.phi);
+        push_bins(cVR, par_.vr);
+        push_bins(cVTheta, par_.vtheta);
+        push_bins(cVPhi, par_.vphi);
         break;
     case Invalid:
         assert(false); // never get here!
@@ -208,6 +132,16 @@ bool user_tally::get_bin(const ion &i)
         if (idx[j] < 0 || idx[j] >= bin_sizes[j]) return false; // invalid index -> reject
     }
 
+    return true;
+}
+
+bool user_tally::push_bins(variable_code c, const std::vector<float> &edges)
+{
+    if (edges.empty())
+        return false;
+    bin_codes.push_back(c);
+    bins.push_back(edges);
+    bin_sizes.push_back(edges.size() - 1);
     return true;
 }
 
