@@ -2,40 +2,52 @@
     "UserTally": {
         "id": "Test tally",
         "event": "IonExit",
-        "coordinates": "sph", // xyz, cyl(rho,phi,z), sph(r,theta,phi)
-        "x": [
+        "coordinates": "cyl", // xyz, cyl(rho,phi,z), sph(r,theta,phi)
+        "org": [
             0,
-            3,
-            4,
-            7,
-            30
+            600,
+            600
+        ],
+        "zaxis": [
+            1,
+            0,
+            0
+        ],
+        "xzvec": [
+            1,
+            0,
+            1
+        ],
+        "rho": [
+            0,
+            1,
+            2,
+            5,
+            10,
+            20,
+            50,
+            100
         ],
         "z": [
             0,
+            50,
+            100,
+            150,
             200,
+            250,
+            300,
+            350,
+            400,
+            450,
             500,
-            600,
-            900,
-            400000
+            550,
+            600
         ],
-        "phi": [
+        "atom_id": [
             0,
             1,
-            400000
-        ],
-        "theta": [
-            0,
-            0.2,
-            0.8,
-            1,
-            400000
-        ],
-        "zaxis": [0, 0, 1],
-        "xzvec": [1, 1, 0],
-        "org": [0.5, 0.5, 0.5],
-        "vx":[0, 2.0, 10000],
-        "vr":[0, 0.2, 0.5, 0.8, 10000],
-        "atom_id":[0,1,2,3,4,5,6,7,8]
+            2
+        ]
     },
     "Run": {
         "max_no_ions": 100,
@@ -114,7 +126,7 @@
     },
     "Output": {
         "title": "500 keV Fe on Fe",
-        "outfilename": "b2",
+        "outfilename": "usertally_test",
         "store_pka_events": true,
         "store_exit_events": true
     }
