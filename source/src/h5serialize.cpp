@@ -541,7 +541,23 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
                 return -1;
         }
 
-        // 5. events
+        // 5. user_tally
+
+        const user_tally *ut = s_->getUserTally();
+        const user_tally *dut = s_->getUserTallyVar();
+        page = "/user_tally/";
+        if (ut) { // only if a user tally has been defined
+
+            page += ut->id();
+            page += '/';
+
+            dump_array(h5f, page + "data", ut->data(), dut->data(), var_list, "Bin data",
+                       getSim()->ion_count());
+
+            /* TODO: add code to store user_tally metadata as described in GSoC2025.md */
+        }
+
+        // 6. events
         page = "/events/";
         if (config_.Output.store_pka_events)
             dump_event_stream(h5f, page + "pka", s_->pka_stream(), var_list);

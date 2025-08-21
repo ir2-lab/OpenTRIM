@@ -209,6 +209,7 @@ public:
     ion_beam &getSource() { return *source_; }
     /// Return a const reference to the source (ion_beam) object
     const ion_beam &getSource() const { return *source_; }
+
     /// Return a const reference to the tally object
     const tally &getTally() const { return tally_; }
     /// Return a const reference to the tally variance object
@@ -224,6 +225,8 @@ public:
     void copyTallyTableVar(int i, ArrayNDd &dA) const;
 
     void addUserTally(const user_tally::parameters &p);
+    const user_tally *getUserTally() const { return utally_; }
+    const user_tally *getUserTallyVar() const { return dutally_; }
 
     /// Open file stream to store \ref pka_event data
     int open_pka_stream() { return pka_stream_.open(pka); }
