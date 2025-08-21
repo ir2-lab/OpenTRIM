@@ -31,6 +31,10 @@ public:
     {
     }
 
+    /// Return the id of the user tally
+    const std::string &id() const { return par_.id; }
+
+    /// @brief Return a constant reference to the tally data
     const ArrayNDd &data() const { return data_; }
 
     /// @brief Initialize tally buffers for given # of atoms and cells
