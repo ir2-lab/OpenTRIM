@@ -83,7 +83,7 @@ FetchContent_Declare(external_libdedx
    GIT_SHALLOW TRUE
 )
 if(PACKAGE_BUILD)
-   set(external_libdedx_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext5)
+   set(external_libdedx_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext6)
 else()
    FetchContent_MakeAvailable(external_libdedx)
 endif()
@@ -97,9 +97,22 @@ FetchContent_Declare(external_spline
    SOURCE_SUBDIR dummy
 )
 if(PACKAGE_BUILD)
-   set(external_spline_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext5)
+   set(external_spline_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext7)
 else()
    FetchContent_MakeAvailable(external_spline)
+endif()
+
+FetchContent_Declare(external_screened_coulomb
+   GIT_REPOSITORY https://github.com/ir2-lab/screened_coulomb.git
+   GIT_TAG main
+   GIT_SUBMODULES_RECURSE FALSE
+   GIT_SHALLOW TRUE
+   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+)
+if(PACKAGE_BUILD)
+   set(external_screened_coulomb_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext8)
+else()
+   FetchContent_MakeAvailable(external_screened_coulomb)
 endif()
 
 if (BUILD_GUI)
@@ -112,7 +125,7 @@ if (BUILD_GUI)
       SOURCE_SUBDIR dummy
    )
    if(PACKAGE_BUILD)
-      set(external_qmatplotwidget_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext6)
+      set(external_qmatplotwidget_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext9)
    else()
          FetchContent_MakeAvailable(external_qmatplotwidget)
    endif()

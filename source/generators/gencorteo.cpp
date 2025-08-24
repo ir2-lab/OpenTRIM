@@ -1,4 +1,3 @@
-#include "xs.h"
 #include "xs_corteo.h"
 
 #include <iostream>
@@ -20,7 +19,7 @@ int main(int argc, char *argv[])
 {
     cxxopts::Options cli_options("gencorteo", "Generate corteo-type screened Coulomb XS table");
 
-    cli_options.add_options()("s,screening", "Screening type: one of ZBL, LJ, KrC, Moliere",
+    cli_options.add_options()("s,screening", "Screening type: one of ZBL, Bohr, KrC, Moliere",
                               cxxopts::value<std::string>())("h,help",
                                                              "Display short help message");
 
@@ -50,8 +49,8 @@ int main(int argc, char *argv[])
         s = Screening::ZBL;
     else if (short_screening_name == "krc")
         s = Screening::KrC;
-    else if (short_screening_name == "lj")
-        s = Screening::LenzJensen;
+    else if (short_screening_name == "bohr")
+        s = Screening::Bohr;
     else if (short_screening_name == "moliere")
         s = Screening::Moliere;
     else {
@@ -66,8 +65,8 @@ int main(int argc, char *argv[])
     case Screening::KrC:
         return gencorteo4bit<Screening::KrC>(short_screening_name);
         break;
-    case Screening::LenzJensen:
-        return gencorteo4bit<Screening::LenzJensen>(short_screening_name);
+    case Screening::Bohr:
+        return gencorteo4bit<Screening::Bohr>(short_screening_name);
         break;
     case Screening::Moliere:
         return gencorteo4bit<Screening::Moliere>(short_screening_name);

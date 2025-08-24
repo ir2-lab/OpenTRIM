@@ -1,6 +1,6 @@
 #include <octave/oct.h>
 
-#include "xs.h"
+#include <screened_coulomb.h>
 #include "dedx.h"
 
 template <class Functor>
@@ -76,8 +76,8 @@ DEFUN_DLD(__screened_coulomb_theta__, args, nargout, "Do not call directly")
         array_functor<theta_functor<Screening::None>> F;
         C = F(X, Y);
     } break;
-    case Screening::LenzJensen: {
-        array_functor<theta_functor<Screening::LenzJensen>> F;
+    case Screening::Bohr: {
+        array_functor<theta_functor<Screening::Bohr>> F;
         C = F(X, Y);
     } break;
     case Screening::KrC: {
@@ -90,10 +90,6 @@ DEFUN_DLD(__screened_coulomb_theta__, args, nargout, "Do not call directly")
     } break;
     case Screening::ZBL: {
         array_functor<theta_functor<Screening::ZBL>> F;
-        C = F(X, Y);
-    } break;
-    case Screening::ZBL_MAGIC: {
-        array_functor<theta_functor<Screening::ZBL_MAGIC>> F;
         C = F(X, Y);
     } break;
     }
@@ -110,8 +106,8 @@ DEFUN_DLD(__screened_coulomb_ip__, args, nargout, "Do not call directly")
         array_functor<ip_functor<Screening::None>> F;
         C = F(X, Y);
     } break;
-    case Screening::LenzJensen: {
-        array_functor<ip_functor<Screening::LenzJensen>> F;
+    case Screening::Bohr: {
+        array_functor<ip_functor<Screening::Bohr>> F;
         C = F(X, Y);
     } break;
     case Screening::KrC: {
@@ -124,10 +120,6 @@ DEFUN_DLD(__screened_coulomb_ip__, args, nargout, "Do not call directly")
     } break;
     case Screening::ZBL: {
         array_functor<ip_functor<Screening::ZBL>> F;
-        C = F(X, Y);
-    } break;
-    case Screening::ZBL_MAGIC: {
-        array_functor<ip_functor<Screening::ZBL_MAGIC>> F;
         C = F(X, Y);
     } break;
     }
@@ -144,8 +136,8 @@ DEFUN_DLD(__screened_coulomb_xs__, args, nargout, "Do not call directly")
         array_functor<xs_functor<Screening::None>> F;
         C = F(X, Y);
     } break;
-    case Screening::LenzJensen: {
-        array_functor<xs_functor<Screening::LenzJensen>> F;
+    case Screening::Bohr: {
+        array_functor<xs_functor<Screening::Bohr>> F;
         C = F(X, Y);
     } break;
     case Screening::KrC: {
@@ -158,10 +150,6 @@ DEFUN_DLD(__screened_coulomb_xs__, args, nargout, "Do not call directly")
     } break;
     case Screening::ZBL: {
         array_functor<xs_functor<Screening::ZBL>> F;
-        C = F(X, Y);
-    } break;
-    case Screening::ZBL_MAGIC: {
-        array_functor<xs_functor<Screening::ZBL_MAGIC>> F;
         C = F(X, Y);
     } break;
     }
@@ -178,8 +166,8 @@ DEFUN_DLD(__screened_coulomb_sn__, args, nargout, "Do not call directly")
         array_functor<sn_functor<Screening::None>> F;
         C = F(X, Y);
     } break;
-    case Screening::LenzJensen: {
-        array_functor<sn_functor<Screening::LenzJensen>> F;
+    case Screening::Bohr: {
+        array_functor<sn_functor<Screening::Bohr>> F;
         C = F(X, Y);
     } break;
     case Screening::KrC: {
@@ -192,10 +180,6 @@ DEFUN_DLD(__screened_coulomb_sn__, args, nargout, "Do not call directly")
     } break;
     case Screening::ZBL: {
         array_functor<sn_functor<Screening::ZBL>> F;
-        C = F(X, Y);
-    } break;
-    case Screening::ZBL_MAGIC: {
-        array_functor<sn_functor<Screening::ZBL_MAGIC>> F;
         C = F(X, Y);
     } break;
     }

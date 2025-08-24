@@ -176,11 +176,10 @@ NLOHMANN_JSON_SERIALIZE_ENUM(flight_path_calc::flight_path_type_t,
 NLOHMANN_JSON_SERIALIZE_ENUM(Screening,
                              { { Screening::Invalid, nullptr },
                                { Screening::None, "None" },
-                               { Screening::LenzJensen, "LenzJensen" },
+                               { Screening::Bohr, "Bohr" },
                                { Screening::KrC, "KrC" },
                                { Screening::Moliere, "Moliere" },
-                               { Screening::ZBL, "ZBL" },
-                               { Screening::ZBL_MAGIC, "ZBL_MAGIC" } })
+                               { Screening::ZBL, "ZBL" } })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(StragglingModel,
                              { { StragglingModel::Invalid, nullptr },
