@@ -1,11 +1,11 @@
 #ifndef _MCCORE_H_
 #define _MCCORE_H_
 
+#include "xs_corteo.h"
 #include "target.h"
 #include "random_vars.h"
 #include "ion_beam.h"
 #include "ion.h"
-#include "xs.h"
 #include "tally.h"
 #include "user_tally.h"
 #include "event_stream.h"

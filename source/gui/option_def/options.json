@@ -35,30 +35,27 @@
                     "type": "enum",
                     "values": [
                         "None",
-                        "LenzJensen",
+                        "Bohr",
                         "KrC",
                         "Moliere",
-                        "ZBL",
-                        "ZBL_MAGIC"
+                        "ZBL"
                     ],
                     "valueLabels": [
                         "None (Unscreened)",
-                        "LenzJensen",
+                        "Bohr",
                         "KrC",
                         "Moliere",
-                        "ZBL",
-                        "ZBL_MAGIC"
+                        "ZBL"
                     ],
                     "toolTip": "Define the type of screening potential.",
                     "whatsThis": [
                         "- None: Unscreened Coulomb potential",
-                        "- LenzJensen: Lenz-Jensen screening",
+                        "- Bohr: Bohr screening",
                         "- KrC: Kr-C screening",
                         "- Moliere - Moliere screening",
                         "- ZBL - Ziegler-Biersack-Littmark universal screening",
-                        "- ZBL_MAGIC - ZBL computed with MAGIC formula",
                         "  ",
-                        "For Unscreened Coulomb and ZBL_MAGIC the scattering is calculated analytically.",
+                        "For Unscreened Coulomb the scattering is calculated analytically.",
                         "In all other cases interpolation tables are used."
                     ]
                 },
@@ -546,9 +543,10 @@
                     "label": "Output file name",
                     "type": "string",
                     "toolTip": "Name of the output file without the extention.",
-                    "whatsThis": ["The extention '.h5' will be added.",
-                                  "The name can contain the relative or absolute path to the file."
-                ]
+                    "whatsThis": [
+                        "The extention '.h5' will be added.",
+                        "The name can contain the relative or absolute path to the file."
+                    ]
                 },
                 {
                     "name": "storage_interval",

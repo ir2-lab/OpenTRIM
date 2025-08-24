@@ -21,7 +21,8 @@ add_executable(gencorteo EXCLUDE_FROM_ALL
 )
 
 target_include_directories(gencorteo PRIVATE
-    ${external_cxxopts_SOURCE_DIR}/include)
+    ${external_cxxopts_SOURCE_DIR}/include
+    ${external_screened_coulomb_SOURCE_DIR}/include)
 
 function(add_xs_library screeningName)
     add_custom_command(OUTPUT xs_${screeningName}_data.cpp

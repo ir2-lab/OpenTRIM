@@ -11,7 +11,7 @@
 #
 # The optional 3rd argument @var{screening} is a string defining the type of screening
 # potential and can take up one of the following values:
-#   "None", "LenzJensen", "KrC", "Moliere", "ZBL", "ZBL_MAGIC"
+#   "None", "Bohr", "KrC", "Moliere", "ZBL"
 #
 # The default is "ZBL"
 #
@@ -37,7 +37,7 @@ if !ischar(screening),
 endif
 
 k=-1;
-screening_types = {"None", "LenzJensen", "KrC", "Moliere", "ZBL", "ZBL_MAGIC"};
+screening_types = {"None", "Bohr", "KrC", "Moliere", "ZBL"};
 
 for i=1:length(screening_types)
   if strcmp(screening_types{i},screening),

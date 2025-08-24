@@ -116,8 +116,8 @@ int mccore::init()
             case Screening::ZBL:
                 scattering_matrix_(z1, z2) = new xs_lab_zbl(Z1, M1, Z2, M2);
                 break;
-            case Screening::LenzJensen:
-                scattering_matrix_(z1, z2) = new xs_lab_lj(Z1, M1, Z2, M2);
+            case Screening::Bohr:
+                scattering_matrix_(z1, z2) = new xs_lab_bohr(Z1, M1, Z2, M2);
                 break;
             case Screening::KrC:
                 scattering_matrix_(z1, z2) = new xs_lab_krc(Z1, M1, Z2, M2);
@@ -125,14 +125,10 @@ int mccore::init()
             case Screening::Moliere:
                 scattering_matrix_(z1, z2) = new xs_lab_moliere(Z1, M1, Z2, M2);
                 break;
-            case Screening::ZBL_MAGIC:
-                scattering_matrix_(z1, z2) = new xs_lab_zbl_magic(Z1, M1, Z2, M2);
-                break;
             default:
                 scattering_matrix_(z1, z2) = new xs_lab_zbl(Z1, M1, Z2, M2);
                 break;
             }
-
         }
     }
 

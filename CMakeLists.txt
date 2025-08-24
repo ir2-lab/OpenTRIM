@@ -69,10 +69,13 @@ include_directories(${HDF5_INCLUDE_DIRS})
 message(STATUS "HDF5 include: ${HDF5_INCLUDE_DIRS}")
 message(STATUS "HDF5 libs: ${HDF5_LIBRARIES}")
 
-include_directories(source/include)
+include_directories(
+    source/include
+    ${external_screened_coulomb_SOURCE_DIR}/include
+    )
 
 add_xs_library(zbl)
-add_xs_library(lj)
+add_xs_library(bohr)
 add_xs_library(krc)
 add_xs_library(moliere)
 
@@ -99,7 +102,6 @@ add_library(${LIB_TARGET} SHARED
 set(OPENTRIM_HEADERS 
     source/include/corteo.h
     source/include/xs_corteo.h
-    source/include/xs.h
     source/include/periodic_table.h
     source/include/ion.h 
     source/include/cascade_queue.h
@@ -140,7 +142,7 @@ set(PROJECT_LIBS
     ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_PTHREAD_LIBS_INIT}
     ${HDF5_LIBRARIES}
     dedx
-    xs_zbl xs_lj xs_krc xs_moliere
+    xs_zbl xs_bohr xs_krc xs_moliere
 )
 
 target_link_libraries(${LIB_TARGET} ${PROJECT_LIBS})
@@ -192,7 +194,7 @@ add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/options.md"
 
 set(installable_libs
     dedx
-    xs_zbl xs_lj xs_krc xs_moliere
+    xs_zbl xs_bohr xs_krc xs_moliere
     ${LIB_TARGET} )
 
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
@@ -208,6 +210,7 @@ else()
         RUNTIME
     )
 endif()
+
 if (BUILD_GUI)
 
 add_subdirectory(source/gui)
