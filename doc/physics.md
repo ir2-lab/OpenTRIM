@@ -1,7 +1,6 @@
 \page physics Short Physics Introduction
 
 - \subpage basic-model-assump "Basic modelling assumptions"
-- \subpage screened-coulomb "Screened Coulomb scattering"
 - \subpage kmc-algorithm "Kinetic Monte-Carlo algorithm"
 - \subpage flightpath "Flight Path Selection"
 - \subpage damage-events "Damage Events"
@@ -23,11 +22,13 @@ The simulation is based on the following models and approximations:
 - **Continuous slowing down approximation**
   
   Between nuclear collisions, the projectile looses energy continuously along its path due to its interaction with the target electrons. This is expressed by the electronic stopping power \f$dE/dx\f$.
+  \sa \ref dedx
 
 - **Screened Coulomb interactions**
 
   The interaction between projectile and target atoms is described by a screened Coulomb potential. 
-  The scattering is considered elastic and it is approximated by classical kinematics. For more information on scattering calculations see the \ref screened-coulomb.
+  The scattering is considered elastic and it is approximated by classical kinematics. 
+  \sa \ref XS, https://ir2-lab.github.io/screened_coulomb/
 
 \page kmc-algorithm Kinetic Monte-Carlo algorithm
 

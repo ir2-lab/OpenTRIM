@@ -87,17 +87,16 @@
 - IonsOnly: Simulate only ions, do not follow recoils<br>
 - CascadesOnly: Simulate recoil cascades<br>
 <tr><th colspan="2">\anchor _Simulation_screening_type /Simulation/screening_type<tr><td>Type <td>Enumerator
-<tr><td>Values<td> None | LenzJensen | KrC | Moliere | ZBL | ZBL_MAGIC
+<tr><td>Values<td> None | Bohr | KrC | Moliere | ZBL
 <tr><td>Default Value<td>"ZBL"<tr><td>Description <td>Define the type of screening potential.
 <br>
 - None: Unscreened Coulomb potential<br>
-- LenzJensen: Lenz-Jensen screening<br>
+- Bohr: Bohr screening<br>
 - KrC: Kr-C screening<br>
 - Moliere - Moliere screening<br>
 - ZBL - Ziegler-Biersack-Littmark universal screening<br>
-- ZBL_MAGIC - ZBL computed with MAGIC formula<br>
   <br>
-For Unscreened Coulomb and ZBL_MAGIC the scattering is calculated analytically.<br>
+For Unscreened Coulomb the scattering is calculated analytically.<br>
 In all other cases interpolation tables are used.<br>
 <tr><th colspan="2">\anchor _Simulation_eloss_calculation /Simulation/eloss_calculation<tr><td>Type <td>Enumerator
 <tr><td>Values<td> EnergyLossOff | EnergyLoss | EnergyLossAndStraggling
