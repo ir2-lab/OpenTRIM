@@ -316,7 +316,8 @@ public:
         float de = __get_de_stopping__(i, fp);
 
         if (type_ == EnergyLossAndStraggling) {
-            dedx_erange ie(i.erg());
+            float E = i.erg();
+            dedx_erange ie(E);
             de += straggling_interp_->data()[ie] * rng.normal() * std::sqrt(fp);
         }
 
@@ -357,7 +358,7 @@ protected:
     // implement ion energy reduction
     static void __impl_de__(ion &i, float de)
     {
-        const float &E = i.erg();
+        float E = i.erg();
 
         // For the rare events that ΔE > E, set ΔΕ slightly below E
         // so that the ion will stop
@@ -374,7 +375,7 @@ protected:
     // get stopping ΔΕ
     float __get_de_stopping__(ion &i, float fp) const
     {
-        const float &E = i.erg();
+        float E = i.erg();
         float de = fp * (*stopping_interp_)(E);
 
         // For E below the interpolation range scale with sqrt(E)
