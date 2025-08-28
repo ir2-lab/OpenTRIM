@@ -181,7 +181,7 @@ enum class StragglingModel {
  * the two different constructors. In polyatomic materials the Bragg
  * mixing rule is applied.
  *
- * Call the base class \ref log_interp::operator() to obtain the straggling coefficient
+ * Call the base class \ref corteo::log_interp::operator() to obtain the straggling coefficient
  * \f$\Omega(E)\f$ in eV/nm^(1/2) at a given
  * projectile energy \f$E\f$ in eV. The value is obtained by log-log interpolation
  * on the tabulated data stored internally.
@@ -199,7 +199,8 @@ class straggling_interp : public corteo::log_interp<dedx_erange>
 public:
     /**
      * @brief Construct an interpolator for monoatomic targets
-     * @param model the \ref StragglingModel to apply
+     * @param mstop the \ref StoppingModel to apply
+     * @param mstrag the \ref StragglingModel to apply
      * @param Z1 projectile atomic number
      * @param M1 projectile atomic mass
      * @param Z2 target atom atomic number
@@ -216,7 +217,8 @@ public:
      * \f]
      * where the sum is over all atomic species in the target.
      *
-     * @param model The \ref StragglingModel to apply
+     * @param mstop the \ref StoppingModel to apply
+     * @param mstrag the \ref StragglingModel to apply
      * @param Z1 projectile atomic number
      * @param M1 projectile atomic mass
      * @param Z2 vector of target atom atomic numbers
@@ -299,94 +301,47 @@ public:
      *
      * The calculation is based on interpolation tables preloaded for a specific
      * ion/material combination by a previous
-     * call ton init(const ion* i, const material* m).
+     * call to preload()
      *
      * @param i pointer to an \ref ion object
      * @param fp the ion's flight path [nm]
      * @param rng random number generator (used for straggling)
-     * @return  the total energy loss [eV]
+     *
      */
-    void operator()(ion *i, float fp, random_vars &rng) const
+    void operator()(ion &i, float fp, random_vars &rng) const
     {
         if (type_ == EnergyLossOff)
             return;
 
-        float E = i->erg();
-        float de_stopping = fp * (*stopping_interp_)(E);
+        float de = __get_de_stopping__(i, fp);
 
         if (type_ == EnergyLossAndStraggling) {
-            dedx_erange ie(E);
-            float de_straggling = straggling_interp_->data()[ie] * rng.normal() * std::sqrt(fp);
-
-            /* IRADINA
-             * Due to gaussian distribution, the straggling can in some cases
-             * get so large that the projectile gains energy or suddenly looses
-             * a huge amount of energy. Is this realistic? This might actually
-             * happen. However, in the simulation, ions may have higher energy
-             * than the initial energy.
-             * We will therefore limit the |straggling| to |stopping|.
-             * Furthermore, with hydrogen, the straggling is often so big,
-             * that ions gain huge amount of energy, and the phononic system
-             * would actually gain energy.
-             */
-            if (std::abs(de_straggling) > de_stopping)
-                de_straggling = (de_straggling < 0) ? -de_stopping : de_stopping;
-
-            de_stopping += de_straggling;
+            dedx_erange ie(i.erg());
+            de += straggling_interp_->data()[ie] * rng.normal() * std::sqrt(fp);
         }
 
-        /* IRADINA
-         * The stopping tables have no values below minVal = 16 eV.
-         * Therefore, we do sqrt downscaling of electronic
-         * stopping below 16 eV.
-         */
-        if (E < dedx_erange::minVal)
-            de_stopping *= std::sqrt(E / dedx_erange::minVal);
-
-        /*
-         * This is due to some rare low-energy events (ion E<100 eV)
-         * with IPP flight selection were
-         * a long flight path + large straggling can cause the
-         * stopping + straggling > E
-         *
-         * The code below changes that to almost stopping the ion,
-         * E - stopping ~ 0
-         */
-        if (de_stopping > E)
-            de_stopping = 0.99 * E;
-
-        i->de_ioniz(de_stopping);
+        __impl_de__(i, de);
     }
 
-    void operator()(ion *i, float fp) const
+    /**
+     * @brief Calculate and subtract electronic energy loss for a moving ion
+     *
+     * The calculation is based on interpolation tables preloaded for a specific
+     * ion/material combination by a previous
+     * call to preload().
+     *
+     * @param i the \ref ion object
+     * @param fp the ion's flight path [nm]
+     *
+     */
+    void operator()(ion &i, float fp) const
     {
         if (type_ == EnergyLossOff)
             return;
 
-        float E = i->erg();
-        float de_stopping = fp * (*stopping_interp_)(E);
+        float de_stopping = __get_de_stopping__(i, fp);
 
-        /* IRADINA
-         * The stopping tables have no values below minVal = 16 eV.
-         * Therefore, we do sqrt downscaling of electronic
-         * stopping below 16 eV.
-         */
-        if (E < dedx_erange::minVal)
-            de_stopping *= std::sqrt(E / dedx_erange::minVal);
-
-        /*
-         * This is due to some rare low-energy events (ion E<100 eV)
-         * with IPP flight selection were
-         * a long flight path + large straggling can cause the
-         * stopping + straggling > E
-         *
-         * The code below changes that to almost stopping the ion,
-         * E - stopping ~ 0
-         */
-        if (de_stopping > E)
-            de_stopping = 0.99 * E;
-
-        i->de_ioniz(de_stopping);
+        __impl_de__(i, de_stopping);
     }
 
 protected:
@@ -398,6 +353,36 @@ protected:
 
     const dedx_interp *stopping_interp_;
     const straggling_interp *straggling_interp_;
+
+    // implement ion energy reduction
+    static void __impl_de__(ion &i, float de)
+    {
+        const float &E = i.erg();
+
+        // For the rare events that ΔE > E, set ΔΕ slightly below E
+        // so that the ion will stop
+        if (de > E) {
+            de = E;
+            // avoid E-ΔE < 0 due to round-off
+            constexpr static const float delta = 1e-3f;
+            de -= (E > 2 * delta) ? delta : 0.5 * E;
+        }
+
+        i.de_ioniz(de);
+    }
+
+    // get stopping ΔΕ
+    float __get_de_stopping__(ion &i, float fp) const
+    {
+        const float &E = i.erg();
+        float de = fp * (*stopping_interp_)(E);
+
+        // For E below the interpolation range scale with sqrt(E)
+        if (E < dedx_erange::minVal)
+            de *= std::sqrt(E / dedx_erange::minVal);
+
+        return de;
+    }
 };
 
 #endif // DEDX_H
