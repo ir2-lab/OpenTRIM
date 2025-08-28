@@ -200,7 +200,7 @@ int mccore::run()
                 if (par_.move_recoil) {
                     i->move(i->myAtom()->Rc());
                     dedx_calc_.preload(i, target_->cell(i->cellid()));
-                    dedx_calc_(i, i->myAtom()->Rc());
+                    dedx_calc_(*i, i->myAtom()->Rc());
                 }
                 q_.push_pka(i);
             } else
@@ -357,7 +357,7 @@ int mccore::transport(ion *i, cascade_queue *q)
         BoundaryCrossing crossing = i->propagate(fp);
 
         // subtract ionization & straggling
-        dedx_calc_(i, fp, rng);
+        dedx_calc_(*i, fp, rng);
 
         // handle boundary
         switch (crossing) {
@@ -454,7 +454,7 @@ int mccore::transport(ion *i, cascade_queue *q)
             // checking also for boundary crossing
             if (par_.move_recoil) {
                 j->move(z2->Rc());
-                dedx_calc_(j, z2->Rc());
+                dedx_calc_(*j, z2->Rc());
                 if (par_.recoil_sub_ed) {
                     double de = j->erg() + z2->Ed() - T;
                     j->de_phonon(de);

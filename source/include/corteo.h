@@ -274,6 +274,22 @@ public:
     }
 
     /**
+     * @brief Reduce the index by one
+     * @return A reference to the index
+     */
+    index &operator--()
+    {
+        i_--;
+        return *this;
+    }
+    index operator--(int)
+    {
+        index retval = *this;
+        --(*this);
+        return retval;
+    }
+
+    /**
      * @brief Returns an index to the start of the range, i.e. 0
      * @return A corteo_index pointing to 0
      */
