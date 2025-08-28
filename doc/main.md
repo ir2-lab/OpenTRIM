@@ -7,8 +7,16 @@ It consists of the following components:
 - \ref opentrim_gui "opentrim-gui" : A GUI tool to configure, run and evaluate simulations
 - The \ref cliapp "`opentrim` command line program"
 - The \ref MC with all the C++ ion transport code, which can be linked to by external applications
-- A \ref XS "library of C++ classes" for screened Coulomb scattering calculations 
-- The \ref dedx containing tables of electronic stopping data
+
+Additionally, the following sub-projects are used internally
+- [screened_coulomb](https://github.com/ir2-lab/screened_coulomb): A header-only C++ library for screened Coulomb scattering calculations with various potentials (ZBL, Moliere, etc) 
+- [libdedx](https://github.com/ir2-lab/libdedx): A compilation of different parametrizations for the electronic stopping of ions in matter 
+
+\section Links
+
+- Source code: https://github.com/ir2-lab/OpenTRIM
+- Documentation: https://ir2-lab.gitlab.io/opentrim
+- Download: https://github.com/ir2-lab/OpenTRIM/releases
 
 The documentation is divided in the following parts
 

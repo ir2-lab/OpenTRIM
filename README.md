@@ -7,12 +7,18 @@ A C++ Monte-Carlo code for simulating ion transport in materials with an emphasi
 - `opentrim-gui`: A GUI tool to configure, run and evaluate simulations 
 - `opentrim`: A command line program for batch mode 
 - `libopentrim`: A C++ library with all the ion transport code, which can be linked to external applications
-- `libxs_*`: A set of C++ libraries for screened Coulomb scattering calculations with various potentials, `* = ZBL, Moliere, ...` 
-- `libdedx`: A C++ library for electronic stopping & straggling calculations 
 
-Documentation can be found here: https://ir2-lab.gitlab.io/opentrim
+Additionally, the following sub-projects are used internally
+- [screened_coulomb](https://github.com/ir2-lab/screened_coulomb): A header-only C++ library for screened Coulomb scattering calculations with various potentials (ZBL, Moliere, etc) 
+- [libdedx](https://github.com/ir2-lab/libdedx): A compilation of different parametrizations for the electronic stopping of ions in matter 
 
 ![OpenTRIM screenshot](./dist/screenshot.png)
+
+## Links
+
+- Source code: https://github.com/ir2-lab/OpenTRIM
+- Documentation: https://ir2-lab.gitlab.io/opentrim
+- Download: https://github.com/ir2-lab/OpenTRIM/releases
 
 ## Installation
 
