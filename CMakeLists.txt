@@ -217,6 +217,20 @@ add_subdirectory(source/gui)
 
 endif () ## BUILD GUI
 
+## Tests
+
+add_executable(test_xs_corteo EXCLUDE_FROM_ALL
+    test/xs_corteo/main.cpp
+)
+
+target_include_directories(test_xs_corteo PRIVATE
+    ${external_libdedx_SOURCE_DIR}/src/lib
+)
+
+target_link_libraries(test_xs_corteo
+    ${LIB_TARGET}
+)
+
 
 
 
