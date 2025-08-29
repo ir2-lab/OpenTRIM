@@ -47,7 +47,7 @@ int flight_path_calc::init(const mccore &s)
      */
     auto &atoms = trgt.atoms();
     int natoms = atoms.size();
-    int nerg = fp_erange::size;
+    int nerg = fp_tbl_iterator::size;
     auto ScMatrix = s.scattering_matrix();
     auto dedx = s.get_dedx_calc().dedx();
     mfp_ = ArrayNDf(natoms, nmat, nerg);
@@ -65,7 +65,7 @@ int flight_path_calc::init(const mccore &s)
             float mfp_lb = tr_opt_.mfp_range[0] * Rat;
             float mfp_ub = tr_opt_.mfp_range[1] * Rat;
 
-            for (fp_erange ie; ie != ie.end(); ie++) {
+            for (fp_tbl_iterator ie; ie != ie.end(); ie++) {
                 float &mfp = mfp_(z1, im, ie);
                 float &ipmax = ipmax_(z1, im, ie);
                 float &fpmax = fp_max_(z1, im, ie);

@@ -30,7 +30,7 @@
  */
 
 /**
- * @brief The xs_corteo_index struct provides corteo indexing for tabulated screened Coulomb
+ * @brief The xs_tbl2d_iterator struct provides corteo indexing for tabulated screened Coulomb
  * cross-sections
  *
  * Quantities are tabulated as a function of reduced energy and impact parameter
@@ -45,16 +45,112 @@
  *
  * @ingroup XS
  */
-struct xs_corteo_index
+struct xs_tbl2d_iterator
 {
-    /// Corteo 4-bit index for the reduced energy
-    typedef corteo::index<float, int, 4, -19, 21> e_index;
-    /// Corteo 4-bit index for the reduced impact parameter
-    typedef corteo::index<float, int, 4, -26, 6> s_index;
+    /// Corteo iterator for the reduced energy
+    typedef corteo::iterator<float, int, 4, -19, 21> e_iterator_t;
+    /// Corteo iterator for the reduced impact parameter
+    typedef corteo::iterator<float, int, 4, -26, 6> s_iterator_t;
     /// number of rows (energy values)
-    constexpr static const int rows = e_index::size;
+    constexpr static const int rows = e_iterator_t::size;
     /// number of columns (impact parameter values)
-    constexpr static const int cols = s_index::size;
+    constexpr static const int cols = s_iterator_t::size;
+    /// total number of elements
+    constexpr static const int size = rows * cols;
+
+    xs_tbl2d_iterator(int ie = 0, int is = 0) : ie_(ie), is_(is) { }
+    xs_tbl2d_iterator(float e, float s) : ie_(e), is_(s) { }
+
+    e_iterator_t &e_iterator() { return ie_; }
+    s_iterator_t &s_iterator() { return is_; }
+    const e_iterator_t &e_iterator() const { return ie_; }
+    const s_iterator_t &s_iterator() const { return is_; }
+
+    float e() const { return ie_.value(); }
+    float s() const { return is_.value(); }
+
+    /**
+     * @brief Advance the iterator by one
+     * @return A reference to the iterator
+     */
+    xs_tbl2d_iterator &operator++()
+    {
+        if (is_ != s_iterator_t::size)
+            is_++;
+        if (is_ == s_iterator_t::size) {
+            if (ie_ != e_iterator_t::size)
+                ie_++;
+            if (ie_ != e_iterator_t::size)
+                is_ = 0;
+        }
+        return *this;
+    }
+    xs_tbl2d_iterator operator++(int)
+    {
+        xs_tbl2d_iterator retval = *this;
+        ++(*this);
+        return retval;
+    }
+
+    /**
+     * @brief Reduce the iterator by one
+     * @return A reference to the iterator
+     */
+    xs_tbl2d_iterator &operator--()
+    {
+        if (is_ != -1)
+            is_--;
+        if (is_ == -1) {
+            if (ie_ != -1)
+                ie_--;
+            if (ie_ != -1)
+                is_ = is_.rbegin();
+        }
+        return *this;
+    }
+    xs_tbl2d_iterator operator--(int)
+    {
+        xs_tbl2d_iterator retval = *this;
+        --(*this);
+        return retval;
+    }
+
+    /**
+     * @brief Returns an iterator to the 1st point of the range
+     */
+    xs_tbl2d_iterator begin() const { return xs_tbl2d_iterator(); }
+
+    /**
+     * @brief Returns an iterator to one past the last point of the range
+     */
+    xs_tbl2d_iterator end() const
+    {
+        return xs_tbl2d_iterator(e_iterator_t::size, s_iterator_t::size);
+    }
+
+    /**
+     * @brief Returns an iterator to the last point of the range
+     */
+    xs_tbl2d_iterator rbegin() const
+    {
+        return xs_tbl2d_iterator(e_iterator_t::size - 1, s_iterator_t::size - 1);
+    }
+
+    /**
+     * @brief Returns an iterator to one before the first point
+     */
+    xs_tbl2d_iterator rend() const { return xs_tbl2d_iterator(-1, -1); }
+
+    /**
+     * @brief Implicit conversion to int
+     */
+    operator int() const { return _tbl_idx_(); }
+
+    /**
+     * @brief Returns the corresponding int
+     */
+    int toInt() const { return _tbl_idx_(); }
+
     /**
      * @brief Calculate the table index for given energy and impact parameter
      *
@@ -69,8 +165,13 @@ struct xs_corteo_index
      */
     static int table_index(const float &e, const float &s)
     {
-        return e_index(e) * cols + s_index(s);
+        return e_iterator_t(e) * cols + s_iterator_t(s);
     }
+
+private:
+    e_iterator_t ie_;
+    s_iterator_t is_;
+    int _tbl_idx_() const { return ie_ * cols + is_; }
 };
 
 // pointers to raw scattering tables
@@ -107,20 +208,20 @@ const float *xs_moliere_data();
  * @ingroup XS
  */
 template <Screening ScreeningType>
-struct xs_corteo4bit
+struct xs_tbl2d
 {
     /// The 2D corteo index type
-    typedef xs_corteo_index corteo_idx_t;
+    typedef xs_tbl2d_iterator iterator_t;
     /// Number of table rows (energy values)
-    constexpr const static int rows = corteo_idx_t::rows;
+    constexpr const static int rows = iterator_t::rows;
     /// Number of table columns (impact parameter values)
-    constexpr const static int cols = corteo_idx_t::cols;
+    constexpr const static int cols = iterator_t::cols;
 
     /// Returns the tabulated value of \f$ \sin^2\theta(\epsilon,s)/2 \f$
-    static double sin2Thetaby2(const double &e, const double &s)
+    static float sin2Thetaby2(float e, float s)
     {
         const float *p = data();
-        int i = corteo_idx_t::table_index(e, s);
+        int i = iterator_t(e, s);
         return p[i];
     }
     /// Returns the tabulated value of \f$ \sin^2\theta(i,j)/2 \f$
@@ -133,164 +234,104 @@ struct xs_corteo4bit
     static const float *data() { return nullptr; }
 };
 template <>
-inline const float *xs_corteo4bit<Screening::ZBL>::data()
+inline const float *xs_tbl2d<Screening::ZBL>::data()
 {
     return xs_zbl_data();
 }
 template <>
-inline const float *xs_corteo4bit<Screening::Bohr>::data()
+inline const float *xs_tbl2d<Screening::Bohr>::data()
 {
     return xs_bohr_data();
 }
 template <>
-inline const float *xs_corteo4bit<Screening::KrC>::data()
+inline const float *xs_tbl2d<Screening::KrC>::data()
 {
     return xs_krc_data();
 }
 template <>
-inline const float *xs_corteo4bit<Screening::Moliere>::data()
+inline const float *xs_tbl2d<Screening::Moliere>::data()
 {
     return xs_moliere_data();
 }
 
 // helper object for doing bilinear interpolation
-// on the 2-d xs_corteo_index grid
-struct xs_corteo_lin_interp
+// on the xs_tbl2d grid
+struct xs_bilinear_interp
 {
 
-    constexpr const static int stride = xs_corteo_index::cols;
-    typedef xs_corteo_index::e_index e_index;
-    typedef xs_corteo_index::s_index s_index;
+    typedef xs_tbl2d_iterator iterator;
+    constexpr const static int stride = iterator::cols;
+    typedef iterator::e_iterator_t e_iterator_t;
+    typedef iterator::s_iterator_t s_iterator_t;
     typedef Eigen::Vector4i idx_vec_t;
     typedef Eigen::Vector4f coef_vec_t;
 
-    /*
-     * For interpolation values e and s get an array of indexes i
-     * and an array of coefficients, c, so that
-     *
-     * F(e,s) = sum_i c_i * F_i
-     *
-     * gives the bilinear interpolation
-     *
-     */
-    static void get_arrays(float e, float s, idx_vec_t &i, coef_vec_t &c)
+    void set(float ae, float as)
     {
-        e_index ie0(e), ie1(ie0);
-        s_index is0(s), is1(is0);
-        if (e >= e_index::maxVal)
-            ie0--;
-        else
-            ie1++;
-        if (s >= s_index::maxVal)
-            is0--;
-        else
-            is1++;
-
-        int k = ie0 * stride + is0;
-        i[0] = k++;
-        i[1] = k;
-        k += stride - 1;
-        i[2] = k++;
-        i[3] = k;
-
-        float t = *ie0, u = *is0;
-        t = (e - t) / (*ie1 - t);
-        u = (s - u) / (*is1 - u);
-        c = { (1 - t) * (1 - u), (1 - t) * u, t * (1 - u), t * u };
-    }
-};
-
-// helper object for biliear & bi-log interpolation
-// on 2-d tabulated data with xs_corteo_index
-struct xs_corteo_log_interp
-{
-
-    constexpr const static int stride = xs_corteo_index::cols;
-    typedef xs_corteo_index::e_index e_index;
-    typedef xs_corteo_index::s_index s_index;
-    typedef Eigen::Vector4i idx_vec_t;
-    typedef Eigen::Vector4f coef_vec_t;
-
-    xs_corteo_log_interp()
-    {
-        for (e_index i; i < i.end(); i++)
-            log_e_[i] = std::log2(*i);
-        for (s_index i; i < i.end(); i++)
-            log_s_[i] = std::log2(*i);
+        e = ae;
+        s = as;
+        i0 = iterator(e, s);
+        i1 = i0;
+        if (e >= e_iterator_t::maxVal) {
+            i0.e_iterator()--;
+            e = e_iterator_t::maxVal;
+        } else {
+            i1.e_iterator()++;
+            if (e < e_iterator_t::minVal)
+                e = e_iterator_t::minVal;
+        }
+        if (s >= s_iterator_t::maxVal) {
+            i0.s_iterator()--;
+            s = s_iterator_t::maxVal;
+        } else {
+            i1.s_iterator()++;
+            if (s < s_iterator_t::minVal)
+                s = s_iterator_t::minVal;
+        }
     }
 
-    void get_arrays(float e, float s, idx_vec_t &i, coef_vec_t &c_lin, coef_vec_t &c_log) const
+    idx_vec_t idx() const
     {
-        e_index ie0(e), ie1(ie0);
-        s_index is0(s), is1(is0);
-        if (e >= e_index::maxVal)
-            ie0--;
-        else
-            ie1++;
-        if (s >= s_index::maxVal)
-            is0--;
-        else
-            is1++;
-
-        int k = ie0 * stride + is0;
-        i[0] = k++;
-        i[1] = k;
-        k += stride - 1;
-        i[2] = k++;
-        i[3] = k;
-
-        float t = *ie0, u = *is0;
-        float t1 = log_e_[ie0], u1 = log_s_[is0];
-        t = (e - t) / (*ie1 - t);
-        u = (s - u) / (*is1 - u);
-        c_lin = { (1 - t) * (1 - u), (1 - t) * u, t * (1 - u), t * u };
-
-        t1 = (std::log2(e) - t1) / (log_e_[ie1] - t1);
-        u1 = (std::log2(s) - u1) / (log_s_[is1] - u1);
-        c_log = { (1 - t1) * (1 - u1), (1 - t1) * u1, t1 * (1 - u1), t1 * u1 };
+        int k0 = i0;
+        int k1 = i1;
+        return { k0, k0 + 1, k1 - 1, k1 };
     }
 
-    void get_arrays(float e, float s, idx_vec_t &i, coef_vec_t &c_log) const
+    xs_bilinear_interp(float ae, float as) { set(ae, as); }
+
+    coef_vec_t lin_coef() const
     {
-        e_index ie0(e), ie1(ie0);
-        s_index is0(s), is1(is0);
-        if (e >= e_index::maxVal)
-            ie0--;
-        else
-            ie1++;
-        if (s >= s_index::maxVal)
-            is0--;
-        else
-            is1++;
+        float t = i0.e(), u = i0.s();
+        t = (e - t) / (i1.e() - t);
+        u = (s - u) / (i1.s() - u);
+        return { (1 - t) * (1 - u), (1 - t) * u, t * (1 - u), t * u };
+    }
 
-        int k = ie0 * stride + is0;
-        i[0] = k++;
-        i[1] = k;
-        k += stride - 1;
-        i[2] = k++;
-        i[3] = k;
-
-        float t1 = log_e_[ie0], u1 = log_s_[is0];
-        t1 = (std::log2(e) - t1) / (log_e_[ie1] - t1);
-        u1 = (std::log2(s) - u1) / (log_s_[is1] - u1);
-        c_log = { (1 - t1) * (1 - u1), (1 - t1) * u1, t1 * (1 - u1), t1 * u1 };
+    coef_vec_t log2_coef() const
+    {
+        float t = i0.e_iterator().log2v();
+        float u = i0.s_iterator().log2v();
+        t = (std::log2(e) - t) / (i1.e_iterator().log2v() - t);
+        u = (std::log2(s) - u) / (i1.s_iterator().log2v() - u);
+        return { (1 - t) * (1 - u), (1 - t) * u, t * (1 - u), t * u };
     }
 
 private:
-    Eigen::Matrix<float, e_index::size, 1> log_e_;
-    Eigen::Matrix<float, s_index::size, 1> log_s_;
+    float e, s;
+    iterator i0;
+    iterator i1;
 };
 
 /**
- * @brief The abstract_xs_lab class defines the interface for lab system cross-section objects
+ * @brief The abstract_xs_lab_tbl2d class defines the interface for lab system cross-section objects
  *
  * @ingroup XS
  */
-class abstract_xs_lab
+class abstract_xs_lab_tbl2d
 {
 public:
-    abstract_xs_lab() { }
-    virtual ~abstract_xs_lab() { }
+    abstract_xs_lab_tbl2d() { }
+    virtual ~abstract_xs_lab_tbl2d() { }
     virtual void scatter(float E, float P, float &recoil_erg, float &sintheta,
                          float &costheta) const = 0;
     virtual void scatter2(float E, float P, float &recoil_erg, float &sintheta,
@@ -306,7 +347,7 @@ public:
 };
 
 /**
- * @brief A lab system cross-section class utilizing corteo tabulated scattering integrals
+ * @brief A lab system cross-section class utilizing tabulated scattering integrals
  *
  * The class stores internally 2-dimensional tables of
  * - \f$ \sin^2(\theta/2), \f$
@@ -355,65 +396,58 @@ public:
  * @ingroup XS
  */
 template <Screening ScreeningType>
-class corteo_xs_lab : public abstract_xs_lab, private xs_lab<ScreeningType>
+class xs_lab_tbl2d : public abstract_xs_lab_tbl2d, private xs_lab<ScreeningType>
 {
 public:
     typedef xs_cms<ScreeningType> _xs_cms_t;
     typedef xs_lab<ScreeningType> _xs_lab_t;
-    typedef xs_corteo4bit<ScreeningType> _xs_corteo_t;
-    typedef typename _xs_corteo_t::corteo_idx_t corteo_idx_t;
-    typedef typename corteo_idx_t::e_index e_index;
-    typedef typename corteo_idx_t::s_index s_index;
-    constexpr const static int stride = corteo_idx_t::cols;
-    constexpr const static int array_size = corteo_idx_t::rows * corteo_idx_t::cols;
+    typedef xs_tbl2d<ScreeningType> _xs_tbl2d_t;
+    typedef xs_tbl2d_iterator::e_iterator_t e_iterator_t;
+    typedef xs_tbl2d_iterator::s_iterator_t s_iterator_t;
+    constexpr const static int stride = xs_tbl2d_iterator::cols;
+    constexpr const static int array_size = xs_tbl2d_iterator::size;
 
     // explicitly shared arrays
     typedef Eigen::VectorXf xs_array_t;
     xs_array_t sinTable;
     xs_array_t log_s2;
-    xs_corteo_log_interp interp;
 
-    corteo_xs_lab(int Z1, float M1, int Z2, float M2)
+    xs_lab_tbl2d(int Z1, float M1, int Z2, float M2)
         : _xs_lab_t(Z1, M1, Z2, M2), sinTable(array_size), log_s2(array_size)
     {
         /* compute scattering angle components */
         double mr = mass_ratio();
-        for (e_index ie; ie != ie.end(); ie++)
-            for (s_index is; is != is.end(); is++) {
-                double s2 = _xs_corteo_t::sin2Thetaby2(ie, is);
+        for (e_iterator_t ie; ie != ie.end(); ie++)
+            for (s_iterator_t is; is != is.end(); is++) {
+                float s2 = _xs_tbl2d_t::sin2Thetaby2(ie, is);
 
                 /* convert CM scattering angle to lab frame of reference: */
                 double costhetaCM = 1.0 - 2.0 * s2;
                 double sinthetaCM = std::sqrt(1.0 - costhetaCM * costhetaCM);
                 double thetaLab = std::atan2(sinthetaCM, (costhetaCM + mr));
-                double costhetaLab = std::cos(thetaLab);
-                double sinthetaLab = std::sin(thetaLab);
 
                 // fill the tables
                 int k = ie * stride + is;
-                sinTable[k] = sinthetaLab;
+                sinTable[k] = std::sin(thetaLab);
                 log_s2[k] = std::log2(s2);
             }
     }
-    corteo_xs_lab(const corteo_xs_lab &x)
-        : _xs_lab_t(x), sinTable(x.sinTable), log_s2(x.log_xs_) { }
+    xs_lab_tbl2d(const xs_lab_tbl2d &x) : _xs_lab_t(x), sinTable(x.sinTable), log_s2(x.log_xs_) { }
 
     virtual void scatter2(float e, float s, float &recoil_erg, float &sintheta,
                           float &costheta) const override
     {
-        const float *p = _xs_corteo_t::data();
         recoil_erg = e * gamma();
         e *= red_E_conv();
         s /= screening_length();
 
-        Eigen::Vector4i i;
-        Eigen::Vector4f log_coeff;
-
         // get coeffs for bilin & bilog interpolation
-        interp.get_arrays(e, s, i, log_coeff);
+        xs_bilinear_interp interp(e, s);
+        Eigen::Vector4i i = interp.idx();
+        Eigen::Vector4f log2_coeff = interp.log2_coef();
 
         // bilog interpolation for sin^2(θ/2)
-        float s2 = std::exp2(log_coeff.dot(log_s2(i)));
+        float s2 = std::exp2(log2_coeff.dot(log_s2(i)));
         recoil_erg *= s2;
 
         /* convert CM scattering angle to lab frame of reference: */
@@ -427,35 +461,33 @@ public:
     virtual void scatter(float e, float s, float &recoil_erg, float &sintheta,
                          float &costheta) const override
     {
-        const float *p = _xs_corteo_t::data();
         recoil_erg = e * gamma();
         e *= red_E_conv();
         s /= screening_length();
 
-        Eigen::Vector4i i;
-        Eigen::Vector4f coeff, log_coeff;
-
         // get coeffs for bilin & bilog interpolation
-        interp.get_arrays(e, s, i, coeff, log_coeff);
+        xs_bilinear_interp interp(e, s);
+        Eigen::Vector4i i = interp.idx();
+        Eigen::Vector4f lin_coeff = interp.lin_coef();
+        Eigen::Vector4f log2_coeff = interp.log2_coef();
 
         // bilinear interpolation for lab sinTh
-        sintheta = coeff.dot(sinTable(i));
+        sintheta = lin_coeff.dot(sinTable(i));
         costheta = std::sqrt(1.f - sintheta * sintheta);
 
         // bilog interpolation for sin^2(θ/2)
-        recoil_erg *= std::exp2(log_coeff.dot(log_s2(i)));
+        recoil_erg *= std::exp2(log2_coeff.dot(log_s2(i)));
     }
 
     virtual float sin2Thetaby2(float e, float s) const override
     {
-        Eigen::Vector4i i;
-        Eigen::Vector4f log_coeff;
-
         // get coeffs for bilin & bilog interpolation
-        interp.get_arrays(e, s, i, log_coeff);
+        xs_bilinear_interp interp(e, s);
+        Eigen::Vector4i i = interp.idx();
+        Eigen::Vector4f log2_coeff = interp.log2_coef();
 
         // bilog interpolation for sin^2(θ/2)
-        return std::exp2(log_coeff.dot(log_s2(i)));
+        return std::exp2(log2_coeff.dot(log_s2(i)));
     }
 
     virtual float find_p(float E, float T) const { return _xs_lab_t::find_p(E, T); }
@@ -472,26 +504,26 @@ public:
  *
  * @ingroup XS
  */
-typedef corteo_xs_lab<Screening::ZBL> xs_lab_zbl;
+typedef xs_lab_tbl2d<Screening::ZBL> xs_lab_zbl;
 /*
  * @brief xs_lab implementation with Bohr potential and 4-bit corteo tabulated scattering
  * integrals
  *
  * @ingroup XS
  */
-typedef corteo_xs_lab<Screening::Bohr> xs_lab_bohr;
+typedef xs_lab_tbl2d<Screening::Bohr> xs_lab_bohr;
 /*
  * @brief xs_lab implementation with Kr-C potential and 4-bit corteo tabulated scattering integrals
  *
  * @ingroup XS
  */
-typedef corteo_xs_lab<Screening::KrC> xs_lab_krc;
+typedef xs_lab_tbl2d<Screening::KrC> xs_lab_krc;
 /*
  * @brief xs_lab implementation with Moliere potential and 4-bit corteo tabulated scattering
  * integrals
  *
  * @ingroup XS
  */
-typedef corteo_xs_lab<Screening::Moliere> xs_lab_moliere;
+typedef xs_lab_tbl2d<Screening::Moliere> xs_lab_moliere;
 
 #endif // CORTEO_XS_H

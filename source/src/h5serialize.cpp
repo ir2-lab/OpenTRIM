@@ -468,23 +468,23 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
 
             page = "/target/dedx/";
 
-            ArrayNDf dEdx(dedx_erange::size);
-            for (dedx_erange i; i < i.end(); i++)
+            ArrayNDf dEdx(dedx_iterator::size);
+            for (dedx_iterator i; i < i.end(); i++)
                 dEdx(i) = *i;
             dump_array(h5f, page + "erg", dEdx, var_list, "dEdx table energy grid [eV]");
 
             ArrayND<dedx_interp *> D = s_->get_dedx_calc().dedx();
-            ArrayNDf A(D.dim()[0], D.dim()[1], dedx_erange::size);
+            ArrayNDf A(D.dim()[0], D.dim()[1], dedx_iterator::size);
             for (int i = 0; i < A.dim()[0]; i++)
                 for (int j = 0; j < A.dim()[1]; j++)
-                    memcpy(&A(i, j, 0), D(i, j)->data(), dedx_erange::size * sizeof(float));
+                    memcpy(&A(i, j, 0), D(i, j)->data(), dedx_iterator::size * sizeof(float));
             dump_array(h5f, page + "eloss", A, var_list,
                        "dEdx values [eV/nm], array [atoms x materials x energy]");
 
             ArrayND<straggling_interp *> Ds = s_->get_dedx_calc().de_strag();
             for (int i = 0; i < A.dim()[0]; i++)
                 for (int j = 0; j < A.dim()[1]; j++)
-                    memcpy(&A(i, j, 0), Ds(i, j)->data(), dedx_erange::size * sizeof(float));
+                    memcpy(&A(i, j, 0), Ds(i, j)->data(), dedx_iterator::size * sizeof(float));
             dump_array(h5f, page + "strag", A, var_list,
                        "straggling values [eV], array [atoms x materials x energy]");
 

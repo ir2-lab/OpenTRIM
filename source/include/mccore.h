@@ -169,7 +169,7 @@ protected:
 
     // Scattering cross-section array for all
     // projectile/target combinations
-    ArrayND<abstract_xs_lab *> scattering_matrix_;
+    ArrayND<abstract_xs_lab_tbl2d *> scattering_matrix_;
 
 public:
     mccore();
@@ -239,7 +239,7 @@ public:
     event_stream &exit_stream() { return exit_stream_; }
 
     // scattering matrix (atoms x materials)
-    ArrayND<abstract_xs_lab *> scattering_matrix() const { return scattering_matrix_; }
+    ArrayND<abstract_xs_lab_tbl2d *> scattering_matrix() const { return scattering_matrix_; }
 
     /// Return a reference to the electronic energy loss calculator object
     const dedx_calc &get_dedx_calc() const { return dedx_calc_; }

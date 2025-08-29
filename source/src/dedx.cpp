@@ -35,7 +35,7 @@ int dedx_interp::init(StoppingModel m, int Z1, float M1, const std::vector<int> 
     assert(Z2.size() == X2.size());
     assert(Z2.size() >= 1);
 
-    std::vector<float> buff(dedx_erange::size, 0.f);
+    std::vector<float> buff(dedx_iterator::size, 0.f);
 
     for (int j = 0; j < Z2.size(); j++) {
         /*
@@ -57,7 +57,7 @@ int dedx_interp::init(StoppingModel m, int Z1, float M1, const std::vector<int> 
         double E0 = 1000.0 * e[0] * M1;
 
         float w = X2[j] * atomicDensity * 0.1;
-        for (dedx_erange i; i < i.end(); i++) {
+        for (dedx_iterator i; i < i.end(); i++) {
             double logEi = std::log(1.0 * (*i));
             if (logEi <= logE.front()) {
                 buff[i] += w * std::sqrt(1.0 * (*i) / E0) * Se[0];
@@ -105,13 +105,13 @@ int straggling_interp::init(StoppingModel mstop, StragglingModel mstrag, int Z1,
     dedx_interp dedx_ion(mstop, Z1, M1, Z2, X2, atomicDensity);
     dedx_interp dedx_H(mstop, 1, periodic_table::at(1).mass, Z2, X2, atomicDensity);
 
-    std::vector<float> buff(dedx_erange::size, 0.f);
+    std::vector<float> buff(dedx_iterator::size, 0.f);
 
     float Rat = std::pow(3.0 / 4.0 / M_PI / atomicDensity, 1.0 / 3);
     float Nl0 = atomicDensity * Rat;
     for (int i = 0; i < Z2.size(); i++)
         calcStraggling(dedx_ion, dedx_H, Z1, M1, Z2[i], Nl0 * X2[i], mstrag, buff.data());
-    for (dedx_erange ie; ie != ie.end(); ie++)
+    for (dedx_iterator ie; ie != ie.end(); ie++)
         buff[ie] = std::sqrt(buff[ie] / Rat);
 
     set(buff);
