@@ -13,7 +13,7 @@ using std::endl;
 using std::ofstream;
 
 template <Screening ScreeningType>
-int gencorteo4bit(const std::string &short_screening_name);
+int gen_xs_tbl2d(const std::string &short_screening_name);
 
 int main(int argc, char *argv[])
 {
@@ -60,16 +60,16 @@ int main(int argc, char *argv[])
 
     switch (s) {
     case Screening::ZBL:
-        return gencorteo4bit<Screening::ZBL>(short_screening_name);
+        return gen_xs_tbl2d<Screening::ZBL>(short_screening_name);
         break;
     case Screening::KrC:
-        return gencorteo4bit<Screening::KrC>(short_screening_name);
+        return gen_xs_tbl2d<Screening::KrC>(short_screening_name);
         break;
     case Screening::Bohr:
-        return gencorteo4bit<Screening::Bohr>(short_screening_name);
+        return gen_xs_tbl2d<Screening::Bohr>(short_screening_name);
         break;
     case Screening::Moliere:
-        return gencorteo4bit<Screening::Moliere>(short_screening_name);
+        return gen_xs_tbl2d<Screening::Moliere>(short_screening_name);
         break;
     default:
         return -1;
@@ -103,9 +103,9 @@ std::ostream &printfloat(std::ostream &os, float x)
 }
 
 template <Screening ScreeningType>
-int gencorteo4bit(const std::string &short_screening_name)
+int gen_xs_tbl2d(const std::string &short_screening_name)
 {
-    typedef xs_corteo_index corteo4bit; // 4bit corteo indexing
+    typedef xs_tbl2d_iterator corteo4bit; // 4bit corteo indexing
 
     xs_cms<ScreeningType> xs;
 
@@ -122,15 +122,15 @@ int gencorteo4bit(const std::string &short_screening_name)
 
     // compute matrix for each reduced energy, reduced impact parameter pair
     int k = 0;
-    int klast = corteo4bit::rows * corteo4bit::cols - 1;
-    for (corteo4bit::e_index ie; ie < ie.end(); ie++) {
+    int klast = xs_tbl2d_iterator::size - 1;
+    for (xs_tbl2d_iterator::e_iterator_t ie; ie < ie.end(); ie++) {
 
-        if (ie % (corteo4bit::rows / 10) == 0) {
+        if (ie % (xs_tbl2d_iterator::rows / 10) == 0) {
             cout << ".";
             cout.flush();
         }
 
-        for (corteo4bit::s_index is; is < is.end(); is++) {
+        for (xs_tbl2d_iterator::s_iterator_t is; is < is.end(); is++) {
             printfloat(ofs, xs.sin2Thetaby2(*ie, *is));
             if (k != klast)
                 ofs << ',';

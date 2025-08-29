@@ -60,7 +60,7 @@ mccore::~mccore()
         delete source_;
         delete target_;
         if (!scattering_matrix_.isNull()) {
-            abstract_xs_lab **xs = scattering_matrix_.data();
+            abstract_xs_lab_tbl2d **xs = scattering_matrix_.data();
             for (int i = 0; i < scattering_matrix_.size(); i++)
                 if (xs[i])
                     delete xs[i];
@@ -86,7 +86,7 @@ int mccore::init()
     int nmat = materials.size();
     auto atoms = target_->atoms();
     int natoms = atoms.size();
-    scattering_matrix_ = ArrayND<abstract_xs_lab *>(natoms, natoms);
+    scattering_matrix_ = ArrayND<abstract_xs_lab_tbl2d *>(natoms, natoms);
     for (int z1 = 0; z1 < natoms; z1++) {
         for (int z2 = 1; z2 < natoms; z2++) {
 

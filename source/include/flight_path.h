@@ -83,16 +83,16 @@ public:
     };
 
     /**
-     * @brief Energy range for flight path selection tables
+     * @brief Iterator for flight path selection tables
      *
-     * The range is implemented as a 4-bit corteo::index, providing a
-     * log-spaced energy table with fast access.
+     * This is a 4-bit corteo::iterator, providing a fast access
+     * log-spaced energy grid.
      *
      * The energy range in [eV], \f$ 2^4 = 16 \leq E \leq 2^{30} \sim 10^9 \f$, is
      * divided in (30-4)*2^4 = 416 approx. log-spaced intervals.
      *
      */
-    typedef corteo::index<float, int, 4, 4, 30> fp_erange;
+    typedef corteo::iterator<float, int, 4, 4, 30> fp_tbl_iterator;
 
     flight_path_calc();
     flight_path_calc(const flight_path_calc &other);
@@ -168,7 +168,7 @@ public:
             ip = ip_ * std::sqrt(u);
             break;
         case MHW:
-            ie = fp_erange(E);
+            ie = fp_tbl_iterator(E);
             ip = ipmax_tbl[ie];
             fp = mfp_tbl[ie];
             if (ip < ip_) { // : ipmax < Rat
@@ -183,7 +183,7 @@ public:
             }
             break;
         case FullMC:
-            ie = fp_erange(E);
+            ie = fp_tbl_iterator(E);
             doCollision = u >= umin_tbl[ie];
             if (doCollision) {
                 fp = mfp_tbl[ie] * (-std::log(u));

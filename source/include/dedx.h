@@ -56,18 +56,18 @@ enum class StoppingModel {
 };
 
 /**
- * @brief Energy range for interpolation tables of electronic ion stopping
+ * @brief Iterator for interpolation tables of electronic ion stopping
  *
- * The range is implemented as a 4-bit corteo::index, providing a
- * log-spaced energy table with fast access.
+ * It is a 4-bit corteo::iterator, providing a fast access
+ * log-spaced energy grid.
  *
  * The energy range in [eV], \f$ 2^4 = 16 \leq E \leq 2^{30} \sim 10^9 \f$, is
- * divided in (30-4)*2^4 = 416 approx. log-spaced intervals.
+ * divided in 416 log-spaced intervals.
  *
  * @ingroup dedx
  *
  */
-typedef corteo::index<float, int, 4, 4, 30> dedx_erange;
+typedef corteo::iterator<float, int, 4, 4, 30> dedx_iterator;
 
 /**
  * @brief Interpolator class for ion electronic stopping calculations
@@ -91,7 +91,7 @@ typedef corteo::index<float, int, 4, 4, 30> dedx_erange;
  *
  * @ingroup dedx
  */
-class dedx_interp : public corteo::log_interp<dedx_erange>
+class dedx_interp : public corteo::log_interp<dedx_iterator>
 {
     int init(StoppingModel m, int Z1, float M1, const std::vector<int> &Z2,
              const std::vector<float> &X2, float atomicDensity);
@@ -191,7 +191,7 @@ enum class StragglingModel {
  *
  * @ingroup dedx
  */
-class straggling_interp : public corteo::log_interp<dedx_erange>
+class straggling_interp : public corteo::log_interp<dedx_iterator>
 {
     int init(StoppingModel mstop, StragglingModel mstrag, int Z1, float M1,
              const std::vector<int> &Z2, const std::vector<float> &X2, float atomicDensity);
@@ -317,7 +317,7 @@ public:
 
         if (type_ == EnergyLossAndStraggling) {
             float E = i.erg();
-            dedx_erange ie(E);
+            dedx_iterator ie(E);
             de += straggling_interp_->data()[ie] * rng.normal() * std::sqrt(fp);
         }
 
@@ -379,8 +379,8 @@ protected:
         float de = fp * (*stopping_interp_)(E);
 
         // For E below the interpolation range scale with sqrt(E)
-        if (E < dedx_erange::minVal)
-            de *= std::sqrt(E / dedx_erange::minVal);
+        if (E < dedx_iterator::minVal)
+            de *= std::sqrt(E / dedx_iterator::minVal);
 
         return de;
     }
