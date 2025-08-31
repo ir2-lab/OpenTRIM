@@ -1,7 +1,7 @@
 #ifndef _MCCORE_H_
 #define _MCCORE_H_
 
-#include "xs_corteo.h"
+#include "xs_tbl2d.h"
 #include "target.h"
 #include "random_vars.h"
 #include "ion_beam.h"
