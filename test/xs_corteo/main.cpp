@@ -1,4 +1,4 @@
-#include "xs_corteo.h"
+#include "scattering_tbl.h"
 
 #include <iomanip>
 #include <iostream>
@@ -114,7 +114,7 @@ template <Screening S_>
 int test2(size_t M)
 {
 
-    xs_lab_tbl2d<S_> XS(1, 1, 1, 1);
+    lab_scattering_tbl<S_> XS(1, 1, 1, 1);
 
     cout << "TEST-2" << endl;
     cout << "Timing benchmark for corteo tabulated XS" << endl;
@@ -183,7 +183,7 @@ int test2(size_t M)
 int test3(size_t M)
 {
 
-    xs_lab_tbl2d<Screening::ZBL> XS(1, 1, 1, 1);
+    lab_scattering_tbl<Screening::ZBL> XS(1, 1, 1, 1);
 
     cout << "TEST-3" << endl;
     cout << "Timing benchmark to compare corteo_xs_lab::scatter/scatter2" << endl;
