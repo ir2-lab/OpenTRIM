@@ -1,7 +1,7 @@
 #ifndef _MCCORE_H_
 #define _MCCORE_H_
 
-#include "xs_tbl2d.h"
+#include "scattering_tbl.h"
 #include "target.h"
 #include "random_vars.h"
 #include "ion_beam.h"
@@ -169,7 +169,7 @@ protected:
 
     // Scattering cross-section array for all
     // projectile/target combinations
-    ArrayND<abstract_xs_lab_tbl2d *> scattering_matrix_;
+    ArrayND<abstract_lab_scattering_tbl *> scattering_matrix_;
 
 public:
     mccore();
@@ -239,7 +239,7 @@ public:
     event_stream &exit_stream() { return exit_stream_; }
 
     // scattering matrix (atoms x materials)
-    ArrayND<abstract_xs_lab_tbl2d *> scattering_matrix() const { return scattering_matrix_; }
+    ArrayND<abstract_lab_scattering_tbl *> scattering_matrix() const { return scattering_matrix_; }
 
     /// Return a reference to the electronic energy loss calculator object
     const dedx_calc &get_dedx_calc() const { return dedx_calc_; }

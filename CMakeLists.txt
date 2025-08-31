@@ -101,7 +101,7 @@ add_library(${LIB_TARGET} SHARED
 )
 
 set(OPENTRIM_HEADERS 
-    source/include/xs_tbl2d.h
+    source/include/scattering_tbl.h
     source/include/periodic_table.h
     source/include/ion.h 
     source/include/cascade_queue.h

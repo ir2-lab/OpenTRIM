@@ -1,5 +1,5 @@
-#ifndef CORTEO_XS_H
-#define CORTEO_XS_H
+#ifndef SCATTERING_TBL_H
+#define SCATTERING_TBL_H
 
 #include <screened_coulomb.h>
 #include <ieee754_seq.h>
@@ -7,7 +7,7 @@
 #include <Eigen/Dense>
 
 /**
- * \defgroup XS Nuclear scattering
+ * \defgroup XS Nuclear scattering tables
  *
  * \brief Scattering of ions by target atoms described by the screened Coulomb interaction.
  *
@@ -45,7 +45,7 @@
  *
  * @ingroup XS
  */
-struct xs_tbl2d_grid
+struct cms_scattering_tbl_grid
 {
     /// Reduced energy range
     typedef ieee754_seq<float, 4, -19, 21> e_range_t;
@@ -203,14 +203,14 @@ const float *xs_moliere_data();
  * @ingroup XS
  */
 template <Screening ScreeningType>
-struct xs_tbl2d
+struct cms_scattering_tbl
 {
     /// The 2D corteo index type
-    typedef xs_tbl2d_grid::iterator iterator_t;
+    typedef cms_scattering_tbl_grid::iterator iterator_t;
     /// Number of table rows (energy values)
-    constexpr const static int rows = xs_tbl2d_grid::rows;
+    constexpr const static int rows = cms_scattering_tbl_grid::rows;
     /// Number of table columns (impact parameter values)
-    constexpr const static int cols = xs_tbl2d_grid::cols;
+    constexpr const static int cols = cms_scattering_tbl_grid::cols;
 
     /// Returns the tabulated value of \f$ \sin^2\theta(\epsilon,s)/2 \f$
     static float sin2Thetaby2(float e, float s)
@@ -229,35 +229,35 @@ struct xs_tbl2d
     static const float *data() { return nullptr; }
 };
 template <>
-inline const float *xs_tbl2d<Screening::ZBL>::data()
+inline const float *cms_scattering_tbl<Screening::ZBL>::data()
 {
     return xs_zbl_data();
 }
 template <>
-inline const float *xs_tbl2d<Screening::Bohr>::data()
+inline const float *cms_scattering_tbl<Screening::Bohr>::data()
 {
     return xs_bohr_data();
 }
 template <>
-inline const float *xs_tbl2d<Screening::KrC>::data()
+inline const float *cms_scattering_tbl<Screening::KrC>::data()
 {
     return xs_krc_data();
 }
 template <>
-inline const float *xs_tbl2d<Screening::Moliere>::data()
+inline const float *cms_scattering_tbl<Screening::Moliere>::data()
 {
     return xs_moliere_data();
 }
 
 // helper object for doing bilinear interpolation
-// on the xs_tbl2d grid
+// on the scattering_tbl grid
 struct xs_bilinear_interp
 {
-    typedef xs_tbl2d_grid::iterator iterator;
-    constexpr const static int stride = xs_tbl2d_grid::cols;
-    typedef typename xs_tbl2d_grid::e_range_t e_range_t;
+    typedef cms_scattering_tbl_grid::iterator iterator;
+    constexpr const static int stride = cms_scattering_tbl_grid::cols;
+    typedef typename cms_scattering_tbl_grid::e_range_t e_range_t;
     typedef typename e_range_t::iterator e_iterator_t;
-    typedef typename xs_tbl2d_grid::s_range_t s_range_t;
+    typedef typename cms_scattering_tbl_grid::s_range_t s_range_t;
     typedef typename s_range_t::iterator s_iterator_t;
     typedef Eigen::Vector4i idx_vec_t;
     typedef Eigen::Vector4f coef_vec_t;
@@ -323,11 +323,11 @@ private:
  *
  * @ingroup XS
  */
-class abstract_xs_lab_tbl2d
+class abstract_lab_scattering_tbl
 {
 public:
-    abstract_xs_lab_tbl2d() { }
-    virtual ~abstract_xs_lab_tbl2d() { }
+    abstract_lab_scattering_tbl() { }
+    virtual ~abstract_lab_scattering_tbl() { }
     virtual void scatter(float E, float P, float &recoil_erg, float &sintheta,
                          float &costheta) const = 0;
     virtual void scatter2(float E, float P, float &recoil_erg, float &sintheta,
@@ -392,30 +392,30 @@ public:
  * @ingroup XS
  */
 template <Screening ScreeningType>
-class xs_lab_tbl2d : public abstract_xs_lab_tbl2d, private xs_lab<ScreeningType>
+class lab_scattering_tbl : public abstract_lab_scattering_tbl, private xs_lab<ScreeningType>
 {
 public:
     typedef xs_cms<ScreeningType> _xs_cms_t;
     typedef xs_lab<ScreeningType> _xs_lab_t;
-    typedef xs_tbl2d<ScreeningType> _xs_tbl2d_t;
-    typedef typename xs_tbl2d_grid::e_iterator_t e_iterator_t;
-    typedef typename xs_tbl2d_grid::s_iterator_t s_iterator_t;
-    constexpr const static int stride = xs_tbl2d_grid::cols;
-    constexpr const static int array_size = xs_tbl2d_grid::size;
+    typedef cms_scattering_tbl<ScreeningType> _cms_tbl_t;
+    typedef typename cms_scattering_tbl_grid::e_iterator_t e_iterator_t;
+    typedef typename cms_scattering_tbl_grid::s_iterator_t s_iterator_t;
+    constexpr const static int stride = cms_scattering_tbl_grid::cols;
+    constexpr const static int array_size = cms_scattering_tbl_grid::size;
 
     // explicitly shared arrays
     typedef Eigen::VectorXf xs_array_t;
     xs_array_t sinTable;
     xs_array_t log_s2;
 
-    xs_lab_tbl2d(int Z1, float M1, int Z2, float M2)
+    lab_scattering_tbl(int Z1, float M1, int Z2, float M2)
         : _xs_lab_t(Z1, M1, Z2, M2), sinTable(array_size), log_s2(array_size)
     {
         /* compute scattering angle components */
         double mr = mass_ratio();
         for (e_iterator_t ie; ie < ie.end(); ie++)
             for (s_iterator_t is; is < is.end(); is++) {
-                float s2 = _xs_tbl2d_t::sin2Thetaby2(ie, is);
+                float s2 = _cms_tbl_t::sin2Thetaby2(ie, is);
 
                 /* convert CM scattering angle to lab frame of reference: */
                 double costhetaCM = 1.0 - 2.0 * s2;
@@ -428,7 +428,10 @@ public:
                 log_s2[k] = std::log2(s2);
             }
     }
-    xs_lab_tbl2d(const xs_lab_tbl2d &x) : _xs_lab_t(x), sinTable(x.sinTable), log_s2(x.log_xs_) { }
+    lab_scattering_tbl(const lab_scattering_tbl &x)
+        : _xs_lab_t(x), sinTable(x.sinTable), log_s2(x.log_xs_)
+    {
+    }
 
     virtual void scatter2(float e, float s, float &recoil_erg, float &sintheta,
                           float &costheta) const override
@@ -486,13 +489,13 @@ public:
         return std::exp2(log2_coeff.dot(log_s2(i)));
     }
 
-    virtual float find_p(float E, float T) const { return _xs_lab_t::find_p(E, T); }
-    virtual float screening_length() const { return _xs_lab_t::screening_length(); }
-    virtual float mass_ratio() const { return _xs_lab_t::mass_ratio(); }
-    virtual float sqrt_mass_ratio() const { return _xs_lab_t::sqrt_mass_ratio(); }
-    virtual float gamma() const { return _xs_lab_t::gamma(); }
-    virtual float red_E_conv() const { return _xs_lab_t::red_E_conv(); }
-    virtual const char *screeningName() const { return _xs_lab_t::screeningName(); }
+    virtual float find_p(float E, float T) const override { return _xs_lab_t::find_p(E, T); }
+    virtual float screening_length() const override { return _xs_lab_t::screening_length(); }
+    virtual float mass_ratio() const override { return _xs_lab_t::mass_ratio(); }
+    virtual float sqrt_mass_ratio() const override { return _xs_lab_t::sqrt_mass_ratio(); }
+    virtual float gamma() const override { return _xs_lab_t::gamma(); }
+    virtual float red_E_conv() const override { return _xs_lab_t::red_E_conv(); }
+    virtual const char *screeningName() const override { return _xs_lab_t::screeningName(); }
 };
 
 /*
@@ -500,26 +503,26 @@ public:
  *
  * @ingroup XS
  */
-typedef xs_lab_tbl2d<Screening::ZBL> xs_lab_zbl;
+typedef lab_scattering_tbl<Screening::ZBL> zbl_scattering_tbl;
 /*
  * @brief xs_lab implementation with Bohr potential and 4-bit corteo tabulated scattering
  * integrals
  *
  * @ingroup XS
  */
-typedef xs_lab_tbl2d<Screening::Bohr> xs_lab_bohr;
+typedef lab_scattering_tbl<Screening::Bohr> bohr_scattering_tbl;
 /*
  * @brief xs_lab implementation with Kr-C potential and 4-bit corteo tabulated scattering integrals
  *
  * @ingroup XS
  */
-typedef xs_lab_tbl2d<Screening::KrC> xs_lab_krc;
+typedef lab_scattering_tbl<Screening::KrC> krc_scattering_tbl;
 /*
  * @brief xs_lab implementation with Moliere potential and 4-bit corteo tabulated scattering
  * integrals
  *
  * @ingroup XS
  */
-typedef xs_lab_tbl2d<Screening::Moliere> xs_lab_moliere;
+typedef lab_scattering_tbl<Screening::Moliere> moliere_scattering_tbl;
 
-#endif // CORTEO_XS_H
+#endif // SC_TBL_H

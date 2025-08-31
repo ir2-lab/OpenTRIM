@@ -1,4 +1,4 @@
-#include "xs_tbl2d.h"
+#include "scattering_tbl.h"
 
 #include <iostream>
 #include <fstream>
@@ -120,15 +120,15 @@ int gen_xs_tbl2d(const std::string &short_screening_name)
 
     // compute matrix for each reduced energy, reduced impact parameter pair
     int k = 0;
-    int klast = xs_tbl2d_grid::size - 1;
-    for (xs_tbl2d_grid::e_iterator_t ie; ie < ie.end(); ie++) {
+    int klast = cms_scattering_tbl_grid::size - 1;
+    for (cms_scattering_tbl_grid::e_iterator_t ie; ie < ie.end(); ie++) {
 
-        if (ie % (xs_tbl2d_grid::rows / 10) == 0) {
+        if (ie % (cms_scattering_tbl_grid::rows / 10) == 0) {
             cout << ".";
             cout.flush();
         }
 
-        for (xs_tbl2d_grid::s_iterator_t is; is < is.end(); is++) {
+        for (cms_scattering_tbl_grid::s_iterator_t is; is < is.end(); is++) {
             printfloat(ofs, xs.sin2Thetaby2(*ie, *is));
             if (k != klast)
                 ofs << ',';
