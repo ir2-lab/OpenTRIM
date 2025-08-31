@@ -1,4 +1,4 @@
-#include "xs_corteo.h"
+#include "xs_tbl2d.h"
 
 #include <iostream>
 #include <fstream>
@@ -105,8 +105,6 @@ std::ostream &printfloat(std::ostream &os, float x)
 template <Screening ScreeningType>
 int gen_xs_tbl2d(const std::string &short_screening_name)
 {
-    typedef xs_tbl2d_iterator corteo4bit; // 4bit corteo indexing
-
     xs_cms<ScreeningType> xs;
 
     cout << "Computing " << xs.screeningName() << " scattering table";
@@ -122,15 +120,15 @@ int gen_xs_tbl2d(const std::string &short_screening_name)
 
     // compute matrix for each reduced energy, reduced impact parameter pair
     int k = 0;
-    int klast = xs_tbl2d_iterator::size - 1;
-    for (xs_tbl2d_iterator::e_iterator_t ie; ie < ie.end(); ie++) {
+    int klast = xs_tbl2d_grid::size - 1;
+    for (xs_tbl2d_grid::e_iterator_t ie; ie < ie.end(); ie++) {
 
-        if (ie % (xs_tbl2d_iterator::rows / 10) == 0) {
+        if (ie % (xs_tbl2d_grid::rows / 10) == 0) {
             cout << ".";
             cout.flush();
         }
 
-        for (xs_tbl2d_iterator::s_iterator_t is; is < is.end(); is++) {
+        for (xs_tbl2d_grid::s_iterator_t is; is < is.end(); is++) {
             printfloat(ofs, xs.sin2Thetaby2(*ie, *is));
             if (k != klast)
                 ofs << ',';

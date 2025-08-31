@@ -72,6 +72,7 @@ message(STATUS "HDF5 libs: ${HDF5_LIBRARIES}")
 include_directories(
     source/include
     ${external_screened_coulomb_SOURCE_DIR}/include
+    ${external_ieee754_seq_SOURCE_DIR}/include
     )
 
 add_xs_library(zbl)
@@ -100,8 +101,7 @@ add_library(${LIB_TARGET} SHARED
 )
 
 set(OPENTRIM_HEADERS 
-    source/include/corteo.h
-    source/include/xs_corteo.h
+    source/include/xs_tbl2d.h
     source/include/periodic_table.h
     source/include/ion.h 
     source/include/cascade_queue.h

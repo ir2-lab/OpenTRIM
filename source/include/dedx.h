@@ -2,8 +2,7 @@
 #define _DEDX_H_
 
 #include <libdedx.h>
-
-#include "corteo.h"
+#include <ieee754_seq.h>
 #include "arrays.h"
 #include "random_vars.h"
 #include "ion.h"
@@ -56,9 +55,9 @@ enum class StoppingModel {
 };
 
 /**
- * @brief Iterator for interpolation tables of electronic ion stopping
+ * @brief Energy range for interpolation tables of electronic ion stopping
  *
- * It is a 4-bit corteo::iterator, providing a fast access
+ * It is a 4-bit ieee754_seq, providing a fast access
  * log-spaced energy grid.
  *
  * The energy range in [eV], \f$ 2^4 = 16 \leq E \leq 2^{30} \sim 10^9 \f$, is
@@ -67,7 +66,8 @@ enum class StoppingModel {
  * @ingroup dedx
  *
  */
-typedef corteo::iterator<float, int, 4, 4, 30> dedx_iterator;
+typedef ieee754_seq<float, 4, 4, 30> dedx_erange;
+typedef dedx_erange::iterator dedx_iterator;
 
 /**
  * @brief Interpolator class for ion electronic stopping calculations
@@ -91,7 +91,7 @@ typedef corteo::iterator<float, int, 4, 4, 30> dedx_iterator;
  *
  * @ingroup dedx
  */
-class dedx_interp : public corteo::log_interp<dedx_iterator>
+class dedx_interp : public dedx_erange::log_log_interp
 {
     int init(StoppingModel m, int Z1, float M1, const std::vector<int> &Z2,
              const std::vector<float> &X2, float atomicDensity);
@@ -191,7 +191,7 @@ enum class StragglingModel {
  *
  * @ingroup dedx
  */
-class straggling_interp : public corteo::log_interp<dedx_iterator>
+class straggling_interp : public dedx_erange::log_log_interp
 {
     int init(StoppingModel mstop, StragglingModel mstrag, int Z1, float M1,
              const std::vector<int> &Z2, const std::vector<float> &X2, float atomicDensity);
@@ -379,8 +379,8 @@ protected:
         float de = fp * (*stopping_interp_)(E);
 
         // For E below the interpolation range scale with sqrt(E)
-        if (E < dedx_iterator::minVal)
-            de *= std::sqrt(E / dedx_iterator::minVal);
+        if (E < dedx_erange::min)
+            de *= std::sqrt(E / dedx_erange::min);
 
         return de;
     }

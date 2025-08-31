@@ -47,7 +47,7 @@ int flight_path_calc::init(const mccore &s)
      */
     auto &atoms = trgt.atoms();
     int natoms = atoms.size();
-    int nerg = fp_tbl_iterator::size;
+    int nerg = fp_tbl_erange::count;
     auto ScMatrix = s.scattering_matrix();
     auto dedx = s.get_dedx_calc().dedx();
     mfp_ = ArrayNDf(natoms, nmat, nerg);

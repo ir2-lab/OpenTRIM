@@ -1,7 +1,7 @@
 ﻿#include "mccore.h"
 #include "random_vars.h"
 #include "event_stream.h"
-#include "xs_corteo.h"
+#include "xs_tbl2d.h"
 #include "cascade_queue.h"
 
 mccore::mccore()

@@ -1,7 +1,7 @@
 #ifndef FLIGHT_PATH_H
 #define FLIGHT_PATH_H
 
-#include <corteo.h>
+#include <ieee754_seq.h>
 #include "arrays.h"
 #include "random_vars.h"
 
@@ -85,14 +85,15 @@ public:
     /**
      * @brief Iterator for flight path selection tables
      *
-     * This is a 4-bit corteo::iterator, providing a fast access
+     * This is a 4-bit ieee754_seq, providing a fast access
      * log-spaced energy grid.
      *
      * The energy range in [eV], \f$ 2^4 = 16 \leq E \leq 2^{30} \sim 10^9 \f$, is
      * divided in (30-4)*2^4 = 416 approx. log-spaced intervals.
      *
      */
-    typedef corteo::iterator<float, int, 4, 4, 30> fp_tbl_iterator;
+    typedef ieee754_seq<float, 4, 4, 30> fp_tbl_erange;
+    typedef fp_tbl_erange::iterator fp_tbl_iterator;
 
     flight_path_calc();
     flight_path_calc(const flight_path_calc &other);

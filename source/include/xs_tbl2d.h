@@ -2,7 +2,7 @@
 #define CORTEO_XS_H
 
 #include <screened_coulomb.h>
-#include "corteo.h"
+#include <ieee754_seq.h>
 
 #include <Eigen/Dense>
 
@@ -14,13 +14,14 @@
  * The scattering is considered elastic and it is approximated by classical kinematics.
  *
  * For fast calculation of scattering in the Monte-Carlo simulation, we employ interpolation
- * on 2-d tables of scattering quantities.
+ * on 2-d tables of scattering quantities as a function of reduced
+ * center-of-mass energy and impact parameter \f$ (\epsilon_i, s_j ) \f$.
  *
- * The Corteo indexing scheme is used to define a 2-dimensional grid of reduced
- * center-of-mass energy and impact parameter values \f$ (\epsilon_i, s_j ) \f$.
+ * Both \f$ \epsilon_i \f$ and \f$ s_j  \f$ are quasi log-spaced sequences based on the IEEE754
+ * floating point number representation as employed in the program Corteo (F. Schiettekatte,
+ * http://www.lps.umontreal.ca/~schiette/index.php?n=Recherche.Corteo).
  *
- * Both \f$ \epsilon_i \f$ and \f$ s_j  \f$ are log-spaced Corteo index ranges. They are
- * defined in the class \ref xs_corteo_index.
+ * They 2-d grid is defined in the class `xs_tbl2d_iterator`.
  *
  * The class \ref corteo_xs_lab can be used
  * for scattering calculations on a specific projectile/target combination. It stores internally
@@ -30,10 +31,9 @@
  */
 
 /**
- * @brief The xs_tbl2d_iterator struct provides corteo indexing for tabulated screened Coulomb
- * cross-sections
+ * @brief The xs_tbl2d_iterator struct facilitates access to tabulated scattering data
  *
- * Quantities are tabulated as a function of reduced energy and impact parameter
+ * Quantities are tabulated as a function of reduced energy and impact parameter.
  *
  * This structure defines two 4-bit corteo indexes:
  *   - e_index for the reduced energy with [21-(-19)]*2^4 + 1=641 points (rows) from \f$ 2^{-19} \f$
@@ -45,133 +45,128 @@
  *
  * @ingroup XS
  */
-struct xs_tbl2d_iterator
+struct xs_tbl2d_grid
 {
-    /// Corteo iterator for the reduced energy
-    typedef corteo::iterator<float, int, 4, -19, 21> e_iterator_t;
-    /// Corteo iterator for the reduced impact parameter
-    typedef corteo::iterator<float, int, 4, -26, 6> s_iterator_t;
+    /// Reduced energy range
+    typedef ieee754_seq<float, 4, -19, 21> e_range_t;
+    typedef typename e_range_t::iterator e_iterator_t;
+    /// Reduced impact parameter range
+    typedef ieee754_seq<float, 4, -26, 6> s_range_t;
+    typedef typename s_range_t::iterator s_iterator_t;
     /// number of rows (energy values)
-    constexpr static const int rows = e_iterator_t::size;
+    constexpr static const int rows = e_range_t::count;
     /// number of columns (impact parameter values)
-    constexpr static const int cols = s_iterator_t::size;
+    constexpr static const int cols = s_range_t::count;
     /// total number of elements
     constexpr static const int size = rows * cols;
 
-    xs_tbl2d_iterator(int ie = 0, int is = 0) : ie_(ie), is_(is) { }
-    xs_tbl2d_iterator(float e, float s) : ie_(e), is_(s) { }
-
-    e_iterator_t &e_iterator() { return ie_; }
-    s_iterator_t &s_iterator() { return is_; }
-    const e_iterator_t &e_iterator() const { return ie_; }
-    const s_iterator_t &s_iterator() const { return is_; }
-
-    float e() const { return ie_.value(); }
-    float s() const { return is_.value(); }
-
-    /**
-     * @brief Advance the iterator by one
-     * @return A reference to the iterator
-     */
-    xs_tbl2d_iterator &operator++()
+    struct iterator
     {
-        if (is_ != s_iterator_t::size)
-            is_++;
-        if (is_ == s_iterator_t::size) {
-            if (ie_ != e_iterator_t::size)
-                ie_++;
-            if (ie_ != e_iterator_t::size)
-                is_ = 0;
+
+        iterator(int ie = 0, int is = 0) : ie_(ie), is_(is) { }
+        iterator(float e, float s) : ie_(e), is_(s) { }
+
+        e_iterator_t &e_iterator() { return ie_; }
+        s_iterator_t &s_iterator() { return is_; }
+        const e_iterator_t &e_iterator() const { return ie_; }
+        const s_iterator_t &s_iterator() const { return is_; }
+
+        float e() const { return ie_.value(); }
+        float s() const { return is_.value(); }
+
+        /**
+         * @brief Advance the iterator by one
+         * @return A reference to the iterator
+         */
+        iterator &operator++()
+        {
+            if (is_ != s_range_t::count)
+                is_++;
+            if (is_ == s_range_t::count) {
+                if (ie_ != e_range_t::count)
+                    ie_++;
+                if (ie_ != e_range_t::count)
+                    is_ = 0;
+            }
+            return *this;
         }
-        return *this;
-    }
-    xs_tbl2d_iterator operator++(int)
-    {
-        xs_tbl2d_iterator retval = *this;
-        ++(*this);
-        return retval;
-    }
-
-    /**
-     * @brief Reduce the iterator by one
-     * @return A reference to the iterator
-     */
-    xs_tbl2d_iterator &operator--()
-    {
-        if (is_ != -1)
-            is_--;
-        if (is_ == -1) {
-            if (ie_ != -1)
-                ie_--;
-            if (ie_ != -1)
-                is_ = is_.rbegin();
+        iterator operator++(int)
+        {
+            iterator retval = *this;
+            ++(*this);
+            return retval;
         }
-        return *this;
-    }
-    xs_tbl2d_iterator operator--(int)
-    {
-        xs_tbl2d_iterator retval = *this;
-        --(*this);
-        return retval;
-    }
 
-    /**
-     * @brief Returns an iterator to the 1st point of the range
-     */
-    xs_tbl2d_iterator begin() const { return xs_tbl2d_iterator(); }
+        /**
+         * @brief Reduce the iterator by one
+         * @return A reference to the iterator
+         */
+        iterator &operator--()
+        {
+            if (is_ != -1)
+                is_--;
+            if (is_ == -1) {
+                if (ie_ != -1)
+                    ie_--;
+                if (ie_ != -1)
+                    is_ = s_range_t::count - 1;
+            }
+            return *this;
+        }
+        iterator operator--(int)
+        {
+            iterator retval = *this;
+            --(*this);
+            return retval;
+        }
 
-    /**
-     * @brief Returns an iterator to one past the last point of the range
-     */
-    xs_tbl2d_iterator end() const
-    {
-        return xs_tbl2d_iterator(e_iterator_t::size, s_iterator_t::size);
-    }
+        /**
+         * @brief Returns an iterator to the 1st point of the range
+         */
+        iterator begin() const { return iterator(); }
 
-    /**
-     * @brief Returns an iterator to the last point of the range
-     */
-    xs_tbl2d_iterator rbegin() const
-    {
-        return xs_tbl2d_iterator(e_iterator_t::size - 1, s_iterator_t::size - 1);
-    }
+        /**
+         * @brief Returns an iterator to one past the last point of the range
+         */
+        iterator end() const { return iterator(e_range_t::count, s_range_t::count); }
 
-    /**
-     * @brief Returns an iterator to one before the first point
-     */
-    xs_tbl2d_iterator rend() const { return xs_tbl2d_iterator(-1, -1); }
+        /**
+         * @brief Returns an iterator to the last point of the range
+         */
+        iterator rbegin() const { return iterator(e_range_t::count - 1, s_range_t::count - 1); }
 
-    /**
-     * @brief Implicit conversion to int
-     */
-    operator int() const { return _tbl_idx_(); }
+        /**
+         * @brief Returns an iterator to one before the first point
+         */
+        iterator rend() const { return iterator(-1, -1); }
 
-    /**
-     * @brief Returns the corresponding int
-     */
-    int toInt() const { return _tbl_idx_(); }
+        /**
+         * @brief Implicit conversion to int
+         */
+        operator int() const { return _tbl_idx_(); }
 
-    /**
-     * @brief Calculate the table index for given energy and impact parameter
-     *
-     * Return the index to the memory location where the value that corresponds
-     * to given energy and impact parameter is stored.
-     *
-     * Tables are stored in C-style row-major order.
-     *
-     * @param e the reduced energy
-     * @param s the reduced impact parameter
-     * @return the table index
-     */
-    static int table_index(const float &e, const float &s)
-    {
-        return e_iterator_t(e) * cols + s_iterator_t(s);
-    }
+        /**
+         * @brief Calculate the table index for given energy and impact parameter
+         *
+         * Return the index to the memory location where the value that corresponds
+         * to given energy and impact parameter is stored.
+         *
+         * Tables are stored in C-style row-major order.
+         *
+         * @param e the reduced energy
+         * @param s the reduced impact parameter
+         * @return the table index
+         */
+        static int table_index(const float &e, const float &s)
+        {
+            return e_range_t::iterator(e) * cols + s_range_t::iterator(s);
+        }
 
-private:
-    e_iterator_t ie_;
-    s_iterator_t is_;
-    int _tbl_idx_() const { return ie_ * cols + is_; }
+    private:
+        e_range_t::iterator ie_;
+        s_range_t::iterator is_;
+        int _tbl_idx_() const { return ie_ * cols + is_; }
+    };
 };
 
 // pointers to raw scattering tables
@@ -211,11 +206,11 @@ template <Screening ScreeningType>
 struct xs_tbl2d
 {
     /// The 2D corteo index type
-    typedef xs_tbl2d_iterator iterator_t;
+    typedef xs_tbl2d_grid::iterator iterator_t;
     /// Number of table rows (energy values)
-    constexpr const static int rows = iterator_t::rows;
+    constexpr const static int rows = xs_tbl2d_grid::rows;
     /// Number of table columns (impact parameter values)
-    constexpr const static int cols = iterator_t::cols;
+    constexpr const static int cols = xs_tbl2d_grid::cols;
 
     /// Returns the tabulated value of \f$ \sin^2\theta(\epsilon,s)/2 \f$
     static float sin2Thetaby2(float e, float s)
@@ -258,11 +253,12 @@ inline const float *xs_tbl2d<Screening::Moliere>::data()
 // on the xs_tbl2d grid
 struct xs_bilinear_interp
 {
-
-    typedef xs_tbl2d_iterator iterator;
-    constexpr const static int stride = iterator::cols;
-    typedef iterator::e_iterator_t e_iterator_t;
-    typedef iterator::s_iterator_t s_iterator_t;
+    typedef xs_tbl2d_grid::iterator iterator;
+    constexpr const static int stride = xs_tbl2d_grid::cols;
+    typedef typename xs_tbl2d_grid::e_range_t e_range_t;
+    typedef typename e_range_t::iterator e_iterator_t;
+    typedef typename xs_tbl2d_grid::s_range_t s_range_t;
+    typedef typename s_range_t::iterator s_iterator_t;
     typedef Eigen::Vector4i idx_vec_t;
     typedef Eigen::Vector4f coef_vec_t;
 
@@ -272,21 +268,21 @@ struct xs_bilinear_interp
         s = as;
         i0 = iterator(e, s);
         i1 = i0;
-        if (e >= e_iterator_t::maxVal) {
+        if (e >= e_range_t::max) {
             i0.e_iterator()--;
-            e = e_iterator_t::maxVal;
+            e = e_range_t::max;
         } else {
             i1.e_iterator()++;
-            if (e < e_iterator_t::minVal)
-                e = e_iterator_t::minVal;
+            if (e < e_range_t::min)
+                e = e_range_t::min;
         }
-        if (s >= s_iterator_t::maxVal) {
+        if (s >= s_range_t::max) {
             i0.s_iterator()--;
-            s = s_iterator_t::maxVal;
+            s = s_range_t::max;
         } else {
             i1.s_iterator()++;
-            if (s < s_iterator_t::minVal)
-                s = s_iterator_t::minVal;
+            if (s < s_range_t::min)
+                s = s_range_t::min;
         }
     }
 
@@ -402,10 +398,10 @@ public:
     typedef xs_cms<ScreeningType> _xs_cms_t;
     typedef xs_lab<ScreeningType> _xs_lab_t;
     typedef xs_tbl2d<ScreeningType> _xs_tbl2d_t;
-    typedef xs_tbl2d_iterator::e_iterator_t e_iterator_t;
-    typedef xs_tbl2d_iterator::s_iterator_t s_iterator_t;
-    constexpr const static int stride = xs_tbl2d_iterator::cols;
-    constexpr const static int array_size = xs_tbl2d_iterator::size;
+    typedef typename xs_tbl2d_grid::e_iterator_t e_iterator_t;
+    typedef typename xs_tbl2d_grid::s_iterator_t s_iterator_t;
+    constexpr const static int stride = xs_tbl2d_grid::cols;
+    constexpr const static int array_size = xs_tbl2d_grid::size;
 
     // explicitly shared arrays
     typedef Eigen::VectorXf xs_array_t;
@@ -417,8 +413,8 @@ public:
     {
         /* compute scattering angle components */
         double mr = mass_ratio();
-        for (e_iterator_t ie; ie != ie.end(); ie++)
-            for (s_iterator_t is; is != is.end(); is++) {
+        for (e_iterator_t ie; ie < ie.end(); ie++)
+            for (s_iterator_t is; is < is.end(); is++) {
                 float s2 = _xs_tbl2d_t::sin2Thetaby2(ie, is);
 
                 /* convert CM scattering angle to lab frame of reference: */

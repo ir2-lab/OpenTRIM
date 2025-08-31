@@ -115,6 +115,19 @@ else()
    FetchContent_MakeAvailable(external_screened_coulomb)
 endif()
 
+FetchContent_Declare(external_ieee754_seq
+   GIT_REPOSITORY https://github.com/ir2-lab/ieee754_seq.git
+   GIT_TAG main
+   GIT_SUBMODULES_RECURSE FALSE
+   GIT_SHALLOW TRUE
+   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+)
+if(PACKAGE_BUILD)
+   set(external_ieee754_seq_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext9)
+else()
+   FetchContent_MakeAvailable(external_ieee754_seq)
+endif()
+
 if (BUILD_GUI)
    FetchContent_Declare(external_qmatplotwidget
       GIT_REPOSITORY https://gitlab.com/qdaq/qmatplotwidget.git
@@ -125,7 +138,7 @@ if (BUILD_GUI)
       SOURCE_SUBDIR dummy
    )
    if(PACKAGE_BUILD)
-      set(external_qmatplotwidget_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext9)
+      set(external_qmatplotwidget_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext10)
    else()
          FetchContent_MakeAvailable(external_qmatplotwidget)
    endif()
