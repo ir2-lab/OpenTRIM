@@ -101,7 +101,7 @@ add_library(${LIB_TARGET} SHARED
 )
 
 set(OPENTRIM_HEADERS 
-    source/include/scattering_tbl.h
+    source/include/scattering.h
     source/include/periodic_table.h
     source/include/ion.h 
     source/include/cascade_queue.h
@@ -219,15 +219,15 @@ endif () ## BUILD GUI
 
 ## Tests
 
-add_executable(test_xs_corteo EXCLUDE_FROM_ALL
-    test/xs_corteo/main.cpp
+add_executable(test_scattering_calc EXCLUDE_FROM_ALL
+    test/scattering_calc/main.cpp
 )
 
-target_include_directories(test_xs_corteo PRIVATE
+target_include_directories(test_scattering_calc PRIVATE
     ${external_libdedx_SOURCE_DIR}/src/lib
 )
 
-target_link_libraries(test_xs_corteo
+target_link_libraries(test_scattering_calc
     ${LIB_TARGET}
 )
 

@@ -1,7 +1,7 @@
 ﻿#include "mccore.h"
 #include "random_vars.h"
 #include "event_stream.h"
-#include "scattering_tbl.h"
+#include "scattering.h"
 #include "cascade_queue.h"
 
 mccore::mccore()
@@ -77,7 +77,7 @@ mccore::~mccore()
         delete source_;
         delete target_;
         if (!scattering_matrix_.isNull()) {
-            abstract_lab_scattering_tbl **xs = scattering_matrix_.data();
+            abstract_scattering_calc **xs = scattering_matrix_.data();
             for (int i = 0; i < scattering_matrix_.size(); i++)
                 if (xs[i])
                     delete xs[i];
@@ -103,7 +103,7 @@ int mccore::init()
     int nmat = materials.size();
     auto atoms = target_->atoms();
     int natoms = atoms.size();
-    scattering_matrix_ = ArrayND<abstract_lab_scattering_tbl *>(natoms, natoms);
+    scattering_matrix_ = ArrayND<abstract_scattering_calc *>(natoms, natoms);
     for (int z1 = 0; z1 < natoms; z1++) {
         for (int z2 = 1; z2 < natoms; z2++) {
 
@@ -114,19 +114,22 @@ int mccore::init()
 
             switch (par_.screening_type) {
             case Screening::ZBL:
-                scattering_matrix_(z1, z2) = new zbl_scattering_tbl(Z1, M1, Z2, M2);
+                scattering_matrix_(z1, z2) = new zbl_scattering_calc(Z1, M1, Z2, M2);
                 break;
             case Screening::Bohr:
-                scattering_matrix_(z1, z2) = new bohr_scattering_tbl(Z1, M1, Z2, M2);
+                scattering_matrix_(z1, z2) = new bohr_scattering_calc(Z1, M1, Z2, M2);
                 break;
             case Screening::KrC:
-                scattering_matrix_(z1, z2) = new krc_scattering_tbl(Z1, M1, Z2, M2);
+                scattering_matrix_(z1, z2) = new krc_scattering_calc(Z1, M1, Z2, M2);
                 break;
             case Screening::Moliere:
-                scattering_matrix_(z1, z2) = new moliere_scattering_tbl(Z1, M1, Z2, M2);
+                scattering_matrix_(z1, z2) = new moliere_scattering_calc(Z1, M1, Z2, M2);
+                break;
+            case Screening::None:
+                scattering_matrix_(z1, z2) = new unscreened_scattering_calc(Z1, M1, Z2, M2);
                 break;
             default:
-                scattering_matrix_(z1, z2) = new zbl_scattering_tbl(Z1, M1, Z2, M2);
+                scattering_matrix_(z1, z2) = new zbl_scattering_calc(Z1, M1, Z2, M2);
                 break;
             }
         }

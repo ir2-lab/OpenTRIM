@@ -1,7 +1,7 @@
 #ifndef _MCCORE_H_
 #define _MCCORE_H_
 
-#include "scattering_tbl.h"
+#include "scattering.h"
 #include "target.h"
 #include "random_vars.h"
 #include "ion_beam.h"
@@ -114,7 +114,7 @@ public:
         /// Free flight path selection algorithm
         flight_path_calc::flight_path_type_t flight_path_type{ flight_path_calc::Constant };
         /// The constant flight path (for algorithm flight_path_type_t=Constant) [nm]
-        float flight_path_const{ 4.0f / 3 };
+        float flight_path_const{ 1.0f };
         /// Minimum energy cutoff for ion transport [eV]
         float min_energy{ 1.f };
         /// Minimum recoil energy [eV]
@@ -124,7 +124,7 @@ public:
         /// Max dE/E per mfp, dE = dEdx*mfp
         float max_rel_eloss{ 0.05f };
         /// Mean free path range
-        std::array<float, 2> mfp_range{ 4.0f / 3, 1e30f };
+        std::array<float, 2> mfp_range{ 1.0f, 1e30f };
     };
 
 protected:
@@ -169,7 +169,7 @@ protected:
 
     // Scattering cross-section array for all
     // projectile/target combinations
-    ArrayND<abstract_lab_scattering_tbl *> scattering_matrix_;
+    ArrayND<abstract_scattering_calc *> scattering_matrix_;
 
 public:
     mccore();
@@ -239,7 +239,7 @@ public:
     event_stream &exit_stream() { return exit_stream_; }
 
     // scattering matrix (atoms x materials)
-    ArrayND<abstract_lab_scattering_tbl *> scattering_matrix() const { return scattering_matrix_; }
+    ArrayND<abstract_scattering_calc *> scattering_matrix() const { return scattering_matrix_; }
 
     /// Return a reference to the electronic energy loss calculator object
     const dedx_calc &get_dedx_calc() const { return dedx_calc_; }

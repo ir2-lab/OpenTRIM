@@ -16,17 +16,17 @@ else()
     message(FATAL_ERROR "Periodic table and/or isotope data not Found!!!")
 endif()
 
-add_executable(gencorteo EXCLUDE_FROM_ALL
-    source/generators/gencorteo.cpp
+add_executable(gen_scattering_tbl EXCLUDE_FROM_ALL
+    source/generators/gen_scattering_tbl.cpp
 )
 
-target_include_directories(gencorteo PRIVATE
+target_include_directories(gen_scattering_tbl PRIVATE
     ${external_cxxopts_SOURCE_DIR}/include
     ${external_screened_coulomb_SOURCE_DIR}/include)
 
 function(add_xs_library screeningName)
     add_custom_command(OUTPUT xs_${screeningName}_data.cpp
-        COMMAND gencorteo -s ${screeningName} DEPENDS gencorteo
+        COMMAND gen_scattering_tbl -s ${screeningName} DEPENDS gen_scattering_tbl
     )
     add_library(xs_${screeningName} SHARED
         ${CMAKE_CURRENT_BINARY_DIR}/xs_${screeningName}_data.cpp

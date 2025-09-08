@@ -1,4 +1,4 @@
-#include "scattering_tbl.h"
+#include "scattering.h"
 
 #include <iomanip>
 #include <iostream>
@@ -13,27 +13,28 @@ using namespace std;
 #define NITER 1000000
 
 template <Screening S_, Quadrature Q_, int N>
-void test1(size_t M);
+double test1(size_t M, double *d = nullptr);
 
 template <Screening S_>
-int test2(size_t M);
+int test2(size_t M, double *d = nullptr);
 
 int test3(size_t M);
 
 int main()
 {
     const char *sep = "\n==========================================================\n\n";
+    double vref;
 
-    test1<Screening::ZBL, Quadrature::GaussChebyshev, 16>(NITER);
-
-    cout << sep;
-    test1<Screening::ZBL, Quadrature::Lobatto4, 4>(NITER);
+    vref = test1<Screening::ZBL, Quadrature::GaussChebyshev, 16>(NITER);
 
     cout << sep;
-    test1<Screening::ZBL, Quadrature::Magic, 0>(NITER);
+    test1<Screening::ZBL, Quadrature::Lobatto4, 4>(NITER, &vref);
 
     cout << sep;
-    test2<Screening::ZBL>(NITER);
+    test1<Screening::ZBL, Quadrature::Magic, 0>(NITER, &vref);
+
+    cout << sep;
+    test2<Screening::ZBL>(NITER, &vref);
 
     cout << sep;
     test3(NITER);
@@ -42,17 +43,17 @@ int main()
 }
 
 template <Screening S_, Quadrature Q_, int N>
-void test1(size_t M)
+double test1(size_t M, double *vref)
 {
 
     typedef xs_cms<S_, Q_, N> XS;
 
     cout << "TEST-1" << endl;
-    cout << "Timing benchmark" << endl;
+    cout << "Screened Coulomb Scattering Timing benchmark" << endl;
     cout << "Screening:   " << XS::screeningName() << endl;
     cout << "Quadrature:  " << XS::quadratureName() << endl;
     cout << "Order:  " << XS::quadratureOrder() << endl;
-    cout << "Iterations:  " << M << endl;
+    cout << "Timing Iterations:  " << M << endl;
     cout << endl;
 
     // random_device rd; // Will be used to obtain a seed for the random number engine
@@ -107,19 +108,24 @@ void test1(size_t M)
 
     cout << "<mu> = " << setprecision(9) << mu / M << endl;
     cout << setprecision(3);
+    if (vref)
+        cout << "rel. accuracy (%)= " << 100 * ((mu / M / (*vref)) - 1) << endl;
     cout << "time per call (ns): " << (dt1.count() - dt2.count()) / M << " ns" << std::endl;
+
+    return mu / M;
 }
 
 template <Screening S_>
-int test2(size_t M)
+int test2(size_t M, double *vref)
 {
 
-    lab_scattering_tbl<S_> XS(1, 1, 1, 1);
+    scattering_calc<S_> XS(1, 1, 1, 1);
 
     cout << "TEST-2" << endl;
-    cout << "Timing benchmark for corteo tabulated XS" << endl;
+    cout << "Screened Coulomb Scattering Timing benchmark" << endl;
+    cout << "Tabulated scattering quantities" << endl;
     cout << "Screening:   " << XS.screeningName() << endl;
-    cout << "Iterations:  " << M << endl;
+    cout << "Timing Iterations:  " << M << endl;
     cout << endl;
 
     // random_device rd; // Will be used to obtain a seed for the random number engine
@@ -175,6 +181,8 @@ int test2(size_t M)
 
     cout << "<mu> = " << setprecision(9) << mu / M << endl;
     cout << setprecision(3);
+    if (vref)
+        cout << "rel. accuracy (%)= " << 100 * ((mu / M / (*vref)) - 1) << endl;
     cout << "time per call (ns): " << (dt1.count() - dt2.count()) / M << " ns" << std::endl;
 
     return 0;
@@ -183,10 +191,12 @@ int test2(size_t M)
 int test3(size_t M)
 {
 
-    lab_scattering_tbl<Screening::ZBL> XS(1, 1, 1, 1);
+    scattering_calc<Screening::ZBL> XS(1, 1, 1, 1);
 
     cout << "TEST-3" << endl;
-    cout << "Timing benchmark to compare corteo_xs_lab::scatter/scatter2" << endl;
+    cout << "Screened Coulomb Scattering Timing benchmark" << endl;
+    cout << "Tabulated scattering quantities" << endl;
+    cout << "Compare between tabulated/calculated sinThetaLab" << endl;
     cout << "Screening:   " << XS.screeningName() << endl;
     cout << "Iterations:  " << M << endl;
     cout << endl;
