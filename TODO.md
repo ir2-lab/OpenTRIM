@@ -7,6 +7,16 @@
 
 ## Functionality that needs to be completed
 
+### Screened Coulomb scattering
+
+- [ ] Fix high s (impulse approx) region in Bohr, Moliere, KrC
+- [ ] gen_scattering_tbl:  generate log2(sin2thetaby2). Currently not possible due to errors in high s region for Bohr, Moliere, KrC 
+
+### Flight path
+
+- [ ] Write critique for SRIM & MHW in doc
+- [ ] Remove MHW option ?
+
 ### Tests
 
 - [ ] Run SRIM-FC & Iradina benchmark #2 for 20000 histories 
