@@ -9,14 +9,6 @@
  * \defgroup RNG Random numbers
  * @brief Classes for generating random quantities needed in the Monte-Carlo simulation.
  *
- * @{
- *
- * @ingroup MC
- *
- * @}
- *
- *
- *
  */
 
 /**

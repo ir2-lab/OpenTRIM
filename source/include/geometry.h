@@ -25,7 +25,7 @@
  * A grid3D comprises of three objects of class grid1D representing
  * the grid in each of the axes.
  *
- * @ingroup MC
+ *
  *
  * @}
  */
@@ -412,7 +412,7 @@ public:
      * @param i   cell index vector
      * @param pos particle position
      * @param dir particle direction
-     * @param idx_max if not null, the function returns here the axis along which the boundary is
+     * @param idx if not null, the function returns here the axis along which the boundary is
      * hit
      * @return float distance to the boundary
      *

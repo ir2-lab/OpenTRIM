@@ -9,8 +9,6 @@
  *
  * \brief The results of the Monte-Carlo simulation
  *
- * @ingroup MC
- *
  */
 
 /**
@@ -204,7 +202,6 @@ public:
     }
 
     /// @brief Copy contents to another tally
-    /// @param t another tally object
     tally clone() const
     {
         tally t;

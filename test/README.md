@@ -59,7 +59,7 @@ Compare to the data of Mendenhall-Weller 2005 for 270 keV He and H ions passing 
 We run the same test cases with MW2005 with the following OpenTRIM settings:
 ```javascript
 "Transport": {
-        "flight_path_type": "FullMC",
+        "flight_path_type": "Variable",
         "min_scattering_angle": 0.1
     }
 ```
@@ -74,7 +74,7 @@ In our case we set a minimum scattering angle $\theta_{min}$. This ensures that 
 We run the same test cases as MW2005 with the following OpenTRIM settings:
 ```javascript
 "Transport": {
-        "flight_path_type": "FullMC",
+        "flight_path_type": "Variable",
         "min_scattering_angle": 0.1
     }
 ``` 

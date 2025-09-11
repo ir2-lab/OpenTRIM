@@ -12,7 +12,7 @@
         "simulation_type": "IonsOnly"
     },
     "Transport": {
-        "flight_path_type": "FullMC",
+        "flight_path_type": "Variable",
         "min_scattering_angle": 0.1
     },
     "IonBeam": {

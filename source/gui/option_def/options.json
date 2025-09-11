@@ -169,19 +169,16 @@
                     "type": "enum",
                     "values": [
                         "Constant",
-                        "MHW",
-                        "FullMC"
+                        "Variable"
                     ],
                     "valueLabels": [
                         "Constant",
-                        "Mendenhall-Weller (MHW)",
-                        "FullMC"
+                        "Variable"
                     ],
-                    "toolTip": "Flight path selection algorithm.",
+                    "toolTip": "Flight path sampling algorithm.",
                     "whatsThis": [
                         "- Constant: User defined constant flight path",
-                        "- MendenhallWeller: SRIM-like path selection algorithm",
-                        "- FullMC: Full Monte-Carlo flight path algorithm"
+                        "- Variable: Sampled flight path, energy dependent mean free path"
                     ]
                 },
                 {
@@ -205,7 +202,7 @@
                     "digits": 3,
                     "toolTip": "Maximum allowed relative energy loss per flight path.",
                     "whatsThis": [
-                        "Applicable only when flight_path_type=MendenhallWeller or FullMC"
+                        "Applicable only when flight_path_type=Variable"
                     ]
                 },
                 {
@@ -218,7 +215,7 @@
                     "toolTip": "Minimum recoil energy in eV.",
                     "whatsThis": [
                         "Events with recoil energy below this value will be ignoredif the scattering angle is also below min_scattering_angle.",
-                        "Applicable only when flight_path_type=MendenhallWeller or FullMC"
+                        "Applicable only when flight_path_type=Variable"
                     ]
                 },
                 {
@@ -232,7 +229,7 @@
                     "whatsThis": [
                         "Refers to the projectile scattering angle in the lab reference frame.",
                         "Events with scattering angle lower that this value will be ignotred if the recoil energy is also below min_recoil_energy.",
-                        "Applicable only when flight_path_type=MendenhallWeller or FullMC"
+                        "Applicable only when flight_path_type=Variable"
                     ]
                 },
                 {
@@ -245,7 +242,7 @@
                     "digits": 3,
                     "toolTip": "Range of ion mean free path in units of atomic radius.",
                     "whatsThis": [
-                        "Applicable only when flight_path_type=FullMC"
+                        "Applicable only when flight_path_type=Variable"
                     ]
                 }
             ]

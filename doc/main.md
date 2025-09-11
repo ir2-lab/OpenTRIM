@@ -5,8 +5,8 @@ A C++ Monte-Carlo code for simulating ion transport in materials with an emphasi
 It consists of the following components:
 
 - \ref opentrim_gui "opentrim-gui" : A GUI tool to configure, run and evaluate simulations
-- The \ref cliapp "`opentrim` command line program"
-- The \ref MC with all the C++ ion transport code, which can be linked to by external applications
+- \ref cliapp "opentrim" : A command line program
+- \ref MC "libopentrim" : A shared library with all the C++ ion transport code, which can be linked to by external applications
 
 Additionally, the following sub-projects are used internally
 - [screened_coulomb](https://github.com/ir2-lab/screened_coulomb): A header-only C++ library for screened Coulomb scattering calculations with various potentials (ZBL, Moliere, etc) 
@@ -16,7 +16,8 @@ Additionally, the following sub-projects are used internally
 
 - Source code: https://github.com/ir2-lab/OpenTRIM
 - Documentation: https://ir2-lab.gitlab.io/opentrim
-- Download: https://github.com/ir2-lab/OpenTRIM/releases
+- Linux binaries: [openSUSE Build Service](https://software.opensuse.org//download.html?project=home%3Amaxiotis%3Agapost&package=opentrim)
+- Windows binaries: https://github.com/ir2-lab/OpenTRIM/releases
 
 The documentation is divided in the following parts
 

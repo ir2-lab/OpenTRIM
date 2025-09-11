@@ -3,23 +3,34 @@ clear
 % The phase space of (e,s) used in iradina
 % e : reduced energy
 % s : reduced impact parameter
-e = logspace(-6,6,51);
-s = logspace(-8,2,31);
+e = logspace(-6,6,13);
+s = logspace(-8,2,46);
 [E,S] = meshgrid(e,s);
 
+load_opentrim_funcs
+
 % calc scattering angle
-Th = screened_coulomb_theta(E,S);
+Th = screened_coulomb_theta(E,S,'ZBL');
+
+i = find(Th<0);
+
+num2str([E(i) S(i) Th(i)])
+
+
 
 % Plot scattering angle
 figure 1
 clf
-loglog(e,Th,'.-')
-xlabel('\epsilon')
+semilogy(s,Th,'.-')
+xlabel('s')
 ylabel('\theta')
 title('Scattering angle \theta(\epsilon,s)')
 
+return
+
+
 % get back S from (E,Th)
-S1 = screened_coulomb_ip(E,Th);
+S1 = screened_coulomb_ip(E,Th,'Bohr');
 figure 2
 clf
 % 100/e^(1/6) is the limit where impulse approx is used
@@ -36,7 +47,7 @@ ylabel("\delta")
 title("Error \delta = (s'- s)/s")
 
 % calc cross-section
-XS = screened_coulomb_xs(E,Th);
+XS = screened_coulomb_xs(E,Th,'Bohr');
 figure 4
 clf
 loglog(e,XS,'.-')

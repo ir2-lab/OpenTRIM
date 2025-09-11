@@ -9,7 +9,7 @@
         "eloss_calculation": "EnergyLoss"
     },
     "Transport": {
-        "flight_path_type": "FullMC",
+        "flight_path_type": "Variable",
         "min_energy": 1.0,
         "min_recoil_energy": 1.0
     },

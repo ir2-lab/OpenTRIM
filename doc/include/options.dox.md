@@ -14,11 +14,11 @@
 &emsp;&emsp;\ref _Transport "\"Transport\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Transport_min_energy "\"min_energy\"": 1.0,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Transport_flight_path_type "\"flight_path_type\"": "Constant",<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Transport_flight_path_const "\"flight_path_const\"": 1.3333334,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Transport_flight_path_const "\"flight_path_const\"": 1.0,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Transport_max_rel_eloss "\"max_rel_eloss\"": 0.05,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Transport_min_recoil_energy "\"min_recoil_energy\"": 1.0,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Transport_min_scattering_angle "\"min_scattering_angle\"": 2.0,<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Transport_mfp_range "\"mfp_range\"": [1.3333334,1e+30]<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Transport_mfp_range "\"mfp_range\"": [1.0,1e+30]<br>
 &emsp;&emsp;},<br>
 &emsp;&emsp;\ref _IonBeam "\"IonBeam\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _IonBeam_ion "\"ion\"": {<br>
@@ -132,41 +132,40 @@ In all other cases interpolation tables are used.<br>
 When the energy of an ion goes below this cutoff,<br>
 the ion history is terminated.<br>
 <tr><th colspan="2">\anchor _Transport_flight_path_type /Transport/flight_path_type<tr><td>Type <td>Enumerator
-<tr><td>Values<td> Constant | MHW | FullMC
-<tr><td>Default Value<td>"Constant"<tr><td>Description <td>Flight path selection algorithm.
+<tr><td>Values<td> Constant | Variable
+<tr><td>Default Value<td>"Constant"<tr><td>Description <td>Flight path sampling algorithm.
 <br>
 - Constant: User defined constant flight path<br>
-- MendenhallWeller: SRIM-like path selection algorithm<br>
-- FullMC: Full Monte-Carlo flight path algorithm<br>
+- Variable: Sampled flight path, energy dependent mean free path<br>
 <tr><th colspan="2">\anchor _Transport_flight_path_const /Transport/flight_path_const<tr><td>Type <td>Floating point number
 <tr><td>Range<td>0.001...1e+06
-<tr><td>Default Value<td>1.3333334<tr><td>Description <td>Constant Flight Path in units of the atomic radius.
+<tr><td>Default Value<td>1.0<tr><td>Description <td>Constant Flight Path in units of the atomic radius.
 <br>
 Used when flight_path_type=Constant<br>
 <tr><th colspan="2">\anchor _Transport_max_rel_eloss /Transport/max_rel_eloss<tr><td>Type <td>Floating point number
 <tr><td>Range<td>0.001...1
 <tr><td>Default Value<td>0.05<tr><td>Description <td>Maximum allowed relative energy loss per flight path.
 <br>
-Applicable only when flight_path_type=MendenhallWeller or FullMC<br>
+Applicable only when flight_path_type=Variable<br>
 <tr><th colspan="2">\anchor _Transport_min_recoil_energy /Transport/min_recoil_energy<tr><td>Type <td>Floating point number
 <tr><td>Range<td>0.001...1e+06
 <tr><td>Default Value<td>1.0<tr><td>Description <td>Minimum recoil energy in eV.
 <br>
 Events with recoil energy below this value will be ignoredif the scattering angle is also below min_scattering_angle.<br>
-Applicable only when flight_path_type=MendenhallWeller or FullMC<br>
+Applicable only when flight_path_type=Variable<br>
 <tr><th colspan="2">\anchor _Transport_min_scattering_angle /Transport/min_scattering_angle<tr><td>Type <td>Floating point number
 <tr><td>Range<td>0.001...90
 <tr><td>Default Value<td>2.0<tr><td>Description <td>Minimum scattering angle in degrees.
 <br>
 Refers to the projectile scattering angle in the lab reference frame.<br>
 Events with scattering angle lower that this value will be ignotred if the recoil energy is also below min_recoil_energy.<br>
-Applicable only when flight_path_type=MendenhallWeller or FullMC<br>
+Applicable only when flight_path_type=Variable<br>
 <tr><th colspan="2">\anchor _Transport_mfp_range /Transport/mfp_range<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>2
 <tr><td>Element range<td>0.001...1e+30
-<tr><td>Default Value<td>[1.3333334,1e+30]<tr><td>Description <td>Range of ion mean free path in units of atomic radius.
+<tr><td>Default Value<td>[1.0,1e+30]<tr><td>Description <td>Range of ion mean free path in units of atomic radius.
 <br>
-Applicable only when flight_path_type=FullMC<br>
+Applicable only when flight_path_type=Variable<br>
 <tr><th colspan="2">\anchor _IonBeam /IonBeam<tr><td>Type <td>Option group
 <tr><td>Description <td>Ion Source
 <tr><th colspan="2">\anchor _IonBeam_ion /IonBeam/ion<tr><td>Type <td>Option group

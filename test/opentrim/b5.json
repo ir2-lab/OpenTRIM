@@ -8,7 +8,7 @@
         "nrt_calculation": "NRT_average"
     },
     "Transport": {
-        "flight_path_type": "FullMC"
+        "flight_path_type": "Variable"
     },
     "IonBeam": {
         "ion": {

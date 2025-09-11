@@ -16,7 +16,7 @@ class mccore;
  *
  * @brief Classes for calculating ion electronic stopping and straggling
  *
- * @{
+ *
  *
  * Electronic stopping cross-section data are taken from the `libdedx` project
  * (https://github.com/ir2-lab/libdedx), which is a compilation of the following parametrizations:
@@ -38,7 +38,7 @@ class mccore;
  * \ref straggling_interp is a similar interpolator class for calculating
  * energy straggling.
  *
- * @}
+ *
  *
  */
 
@@ -57,7 +57,7 @@ enum class StoppingModel {
 /**
  * @brief Energy range for interpolation tables of electronic ion stopping
  *
- * It is a 4-bit ieee754_seq, providing a fast access
+ * It is a 4-bit `ieee754_seq`, providing a fast access
  * log-spaced energy grid.
  *
  * The energy range in [eV], \f$ 2^4 = 16 \leq E \leq 2^{30} \sim 10^9 \f$, is
@@ -65,8 +65,11 @@ enum class StoppingModel {
  *
  * @ingroup dedx
  *
+ * @sa https://github.com/ir2-lab/ieee754_seq
+ *
  */
 typedef ieee754_seq<float, 4, 4, 30> dedx_erange;
+
 typedef dedx_erange::iterator dedx_iterator;
 
 /**
@@ -104,6 +107,7 @@ public:
      *
      * The average atomic mass is used for both projectile and target.
      *
+     * @param m Electronic stopping model
      * @param Z1 projectile atomic number
      * @param Z2 target atom atomic number
      * @param N target atomic density in [at/nm3]
@@ -114,6 +118,7 @@ public:
      *
      * The average atomic mass is used for the target atom.
      *
+     * @param m Electronic stopping model
      * @param Z1 projectile atomic number
      * @param M1 projectile atomic mass
      * @param Z2 target atom atomic number
@@ -131,6 +136,7 @@ public:
      *
      * The average atomic mass is used for both projectile and target.
      *
+     * @param m Electronic stopping model
      * @param Z1 projectile atomic number
      * @param Z2 vector of target atom atomic numbers
      * @param X2 vector of target atomic fractions (sum of X2 assumed equal to 1.0)
@@ -147,6 +153,7 @@ public:
      * \f]
      * where the sum is over all atomic species in the target.
      *
+     * @param m Electronic stopping model
      * @param Z1 projectile atomic number
      * @param M1 projectile atomic mass
      * @param Z2 vector of target atom atomic numbers
@@ -181,7 +188,7 @@ enum class StragglingModel {
  * the two different constructors. In polyatomic materials the Bragg
  * mixing rule is applied.
  *
- * Call the base class \ref corteo::log_interp::operator() to obtain the straggling coefficient
+ * Call the base class \ref log_interp::operator() to obtain the straggling coefficient
  * \f$\Omega(E)\f$ in eV/nm^(1/2) at a given
  * projectile energy \f$E\f$ in eV. The value is obtained by log-log interpolation
  * on the tabulated data stored internally.

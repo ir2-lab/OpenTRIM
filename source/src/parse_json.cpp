@@ -170,8 +170,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(mccore::nrt_calculation_t,
 NLOHMANN_JSON_SERIALIZE_ENUM(flight_path_calc::flight_path_type_t,
                              { { flight_path_calc::InvalidPath, nullptr },
                                { flight_path_calc::Constant, "Constant" },
-                               { flight_path_calc::MHW, "MHW" },
-                               { flight_path_calc::FullMC, "FullMC" } })
+                               { flight_path_calc::Variable, "Variable" } })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(Screening,
                              { { Screening::Invalid, nullptr },

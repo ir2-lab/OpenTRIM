@@ -28,12 +28,6 @@ struct element_t
  *
  * @brief Classes for performing ion transport and injecting new ions into the simulation.
  *
- * @{
- *
- * @ingroup MC
- *
- * @}
- *
  *
  *
  */
