@@ -61,6 +61,10 @@ void ion::init_recoil(const atom *a, double T)
     recoil_id_++;
 }
 
+// // For debuging though issues in propagate
+// #pragma GCC push_options
+// #pragma GCC optimize("O0")
+
 /**
  * @brief Propagate the ion for a distance s [nm] taking care of boundary crossings
  *
@@ -83,14 +87,9 @@ void ion::init_recoil(const atom *a, double T)
  * overcome the boundary.
  *
  * @param fp the distance to propagate the ion [nm]
- * @param sqrtfp the sqrt of the distance
  * @return the type of boundary crossing (none, internal (cell change), external (ion left
  * simulation))
  */
-
-// #pragma GCC push_options
-// #pragma GCC optimize("O0")
-
 BoundaryCrossing ion::propagate(float &fp)
 {
     vector3 x = pos_ + fp * dir_; // calc new ion position

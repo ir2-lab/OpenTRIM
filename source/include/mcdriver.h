@@ -9,29 +9,6 @@
 
 
 /**
- * \defgroup Driver Driver
- *
- * \brief Classes for setting up and running a simulation
- *
- * The \ref mcdriver and its sub-classes can be used to perform
- * the following tasks:
- *
- * - Parse the configuration options from JSON
- * - Validate the configuration
- * - Create the \ref mccore object, generate the geometry and load all options
- * - Run the simulation
- * - Save the results
- *
- * @{
- *
- * @ingroup MC
- *
- * @}
- *
- *
- */
-
-/**
  * @brief mcconfig contains all configuration options for seting up and running simulation.
  *
  * The various options are organized in groups
@@ -61,7 +38,7 @@
  * Finally, createSimulation() uses the info stored in the \a mcconfig struct to create a
  * \ref mccore object ready to run.
  *
- * @ingroup Driver
+ * @ingroup Core
  */
 struct mcconfig
 {
@@ -112,14 +89,19 @@ struct mcconfig
 
     /**
      * @brief Parse simulation mcconfig from JSON formatted input
-     *      * For a full list of available mcconfig and details on JSON
+     *
+     * For a full list of available mcconfig and details on JSON
      * formatting see \ref json_config.
-     *      * The function first parses the whole JSON string. On formatting errors
+     *
+     * The function first parses the whole JSON string. On formatting errors
      * the function stops and prints an error message to stderr.
-     *      * After that validate() is called to check the given mcconfig. Errors
+     *
+     * After that validate() is called to check the given mcconfig. Errors
      * are again reported to stderr.
-     *      * @param js a JSON formatted input stream
+     *
+     * @param js a JSON formatted input stream
      * @param doValidation if true the function calls validate()
+     * @param os optional pointer to an output stream to recieve error messages
      * @return 0 if succesfull, negative value otherwise
      */
     int parseJSON(std::istream &js, bool doValidation = true, std::ostream *os = nullptr);
@@ -174,14 +156,16 @@ struct mcconfig
 
     /**
      * @brief Validate the simulation mcconfig
-     *      * A number of checks are performed
-     * including
+     *
+     * A number of checks are performed including
      * - correct parameter range
      * - allowed parameter combinations
      * - target definition (geometry, materials, regions)
-     *      * On error, a std::invalid_argument exception is thrown.
+     *
+     * On error, a std::invalid_argument exception is thrown.
      * exception::what() returns a relevant error message.
-     *      * @param AcceptIncomplete if true, empty values are accepted
+     *
+     * @param AcceptIncomplete if true, empty values are accepted
      * @return
      */
     int validate(bool AcceptIncomplete = false);
@@ -200,6 +184,15 @@ private:
 /**
  * @brief The mcdriver class facilitates the setup and running of a simulation.
  *
+ * \ref mcdriver and its sub-classes can be used to perform
+ * the following tasks:
+ *
+ * - Parse the configuration options from JSON
+ * - Validate the configuration
+ * - Create the \ref mccore object, generate the geometry and load all options
+ * - Run the simulation
+ * - Save the results
+ *
  * A typical usage scenario would be:
  *
  * @code{.cpp}
@@ -214,7 +207,7 @@ private:
  * d.save();
  * @endcode
  *
- * @ingroup Driver
+ * @ingroup Core
  */
 class mcdriver
 {

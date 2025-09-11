@@ -33,36 +33,27 @@ class mccore;
  * $$
  * where \f$u\f$ is a random number sampled uniformly in \f$(0,1)\f$.
  *
- * For the other algorithms there are precomputed tables as a function of energy
- * of the mean free path \f$\ell_0\f$ , the maximum impact parameter \f$p_{max}\f$ and
- * the maximum fligth path \f$\ell_{max}\f$. For more information see \ref flightpath.
+ * For the Variable sampling algorithm there are precomputed tables as a function of energy
+ * of the mean free path \f$\ell\f$ , the maximum impact parameter \f$p_{max}\f$ and
+ * the maximum fligth path \f$\Delta x_{max}\f$. For more information see \ref flightpath.
  *
- * In the \ref MHW algorithm, \f$\ell\f$ and \f$p\f$
- * are computed  as follows:
- * - If \f$p_{max}(E)< R_{at} \f$ set
- * $$
- * p = p_{max}\sqrt{-\log{u}} \quad \mbox{and} \quad \ell=\ell_0(E).
- * $$
- * Reject collision if \f$p>p_{max}\f$.
- * - otherwise:
- * $$
- * \ell = (4/3)R_{at} \quad \mbox{and} \quad p = R_{at} \sqrt{u}.
- * $$
- *
- * Finally, the \ref FullMC algorithm does the following:
- * - \f$\ell = -\ell_0(E) \log{u_1}\f$
+ * Sampling is performed as follows:
+ * - \f$\Delta x = -\ell(E) \log{u_1}\f$
  * - \f$p = p_{max}(E)\sqrt{u_2}\f$
- * - Reject collision if \f$\ell > \ell_{max}(E)\f$
+ * - Reject collision if \f$\Delta x > \Delta x_{max}(E)\f$
  *
  * The flight_path_calc class is first initialized for a given simulation by calling
- * flight_path_calc::init(). This pre-computes a number of data tables that will be used
+ * flight_path_calc::init(). This pre-computes the data tables that will be used
  * during the Monte-Carlo simulation.
  *
- * During the simulation, preload() is called to select pre-computed tables for a specific
- * ion/material combination. Then, multiple calls to operator() can be made to sample the ion's
+ * During the simulation, preload() is called to select the pre-computed tables for a specific
+ * ion/material combination.
+ *
+ * Multiple calls to operator() can then be made to sample the ion's
  * flight path and impact parameter.
  *
  * \ingroup Core
+ *
  * \sa \ref flightpath
  *
  */
@@ -70,20 +61,19 @@ class flight_path_calc
 {
 public:
     /**
-     * @brief Flight path selection algorithm
+     * @brief Flight path sampling algorithm
      *
      * Determines the algorithm to select the
-     * free flight path \f$\ell\f$ between collisions.
+     * free flight path between collisions.
      */
     enum flight_path_type_t {
-        Constant = 0, /**< Constant flight path */
-        MHW = 1, /**< Algorithm from Mendenhall-Weller NIMB2005, SRIM-like*/
-        FullMC = 2, /**< Full Monte-Carlo flight path selection */
+        Constant = 0, /**< Constant flight path (no sampling)*/
+        Variable = 1, /**< Variable flight path (sampling with an energy dependent mean free path)*/
         InvalidPath = -1
     };
 
     /**
-     * @brief Iterator for flight path selection tables
+     * @brief Energy grid for flight path selection tables
      *
      * This is a 4-bit ieee754_seq, providing a fast access
      * log-spaced energy grid.
@@ -93,16 +83,31 @@ public:
      *
      */
     typedef ieee754_seq<float, 4, 4, 30> fp_tbl_erange;
+    /// @brief An iterator for accesing the energy grid
     typedef fp_tbl_erange::iterator fp_tbl_iterator;
 
+    /**
+     * @brief Default constructor
+     *
+     */
     flight_path_calc();
+
+    /**
+     * @brief Copy constructor
+     *
+     * Internal data tables are explicitly shared
+     *
+     */
     flight_path_calc(const flight_path_calc &other);
 
+    /// @brief Return the type of flight path sampling
     flight_path_type_t type() const { return type_; }
 
-    // Tables of flight path selection parameters
+    /// @brief Return the table of mfp values vs energy
     ArrayNDf mfp() const { return mfp_; }
+    /// @brief Return the table of p_max values vs energy
     ArrayNDf ipmax() const { return ipmax_; }
+    /// @brief Return the table of max flight path values vs energy
     ArrayNDf fpmax() const { return fp_max_; }
 
     /**
@@ -118,14 +123,14 @@ public:
      *
      * The above quantities are calculated for all ion/material combinations
      * in the given simulation and as a function of ion energy on an energy grid defined by @ref
-     * dedx_index.
+     * dedx_erange.
      *
      * @param s The parent simulation object
      * @return
      */
     int init(const mccore &s);
 
-    /// Preload internal data tables for the given ion/material combination
+    /// @brief Preload internal data tables for the given ion/material combination
     int preload(const ion *i, const material *m);
 
     /**
@@ -138,7 +143,6 @@ public:
      * @param[in] rng a random number generator object
      * @param[in] E the ion's energy [eV]
      * @param[out] fp the ion flight path [nm]
-     * @param[out] sqrtfp square root of ratio (flight path)/(atomic radius)
      * @param[out] ip impact parameter [nm]
 
      * @return true if the ion should collide at the end of its flight path
@@ -147,8 +151,6 @@ public:
      */
     bool operator()(random_vars &rng, float E, float &fp, float &ip)
     {
-        constexpr const float mhw_umin = 1. / M_E;
-
         bool doCollision = true;
         int ie;
         float u;
@@ -168,22 +170,7 @@ public:
             fp = fp_;
             ip = ip_ * std::sqrt(u);
             break;
-        case MHW:
-            ie = fp_tbl_iterator(E);
-            ip = ipmax_tbl[ie];
-            fp = mfp_tbl[ie];
-            if (ip < ip_) { // : ipmax < Rat
-                doCollision = u >= mhw_umin;
-                if (doCollision) {
-                    ip *= std::sqrt(-std::log(u));
-                    fp *= rng.u01s();
-                }
-            } else { // ipmax = Rat
-                fp = fp_;
-                ip = ip_ * std::sqrt(u);
-            }
-            break;
-        case FullMC:
+        case Variable:
             ie = fp_tbl_iterator(E);
             doCollision = u >= umin_tbl[ie];
             if (doCollision) {
@@ -201,7 +188,9 @@ public:
         return doCollision;
     }
 
+    /// @brief Return nx = cos of azimuthal scattering angle
     float nx() const { return nx_; }
+    /// @brief Return ny = sin of azimuthal scattering angle
     float ny() const { return ny_; }
 
 protected:

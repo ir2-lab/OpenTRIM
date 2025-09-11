@@ -2,76 +2,109 @@
 
 Here we discuss briefly the techniques of flight path selection in Monte-Carlo ion transport simulations. For a more detailed discussion of the specific implementation in OpenTRIM see \subpage flightpathdetails.
 
-In MC particle transport simulations, the distance to the next collision is typically sampled from the exponential distribution, \f$p(x) = N\sigma_0 e^{-N\sigma_0 x}=\ell^{-1}e^{-x/\ell}\f$, where \f$N\f$ is the atomic density of scattering centers, \f$\sigma_0\f$ the total cross-section and \f$\ell = (N\sigma_0)^{-1}\f$ denotes the mean free path (mfp).
+In particle transport simulations, the distance to the next collision is typically sampled from the exponential distribution, \f$p(x) = N\sigma_0 e^{-N\sigma_0 x}=\ell^{-1}e^{-x/\ell}\f$, where \f$N\f$ is the volume density of scattering centers, \f$\sigma_0\f$ the total cross-section and \f$\ell = (N\sigma_0)^{-1}\f$ denotes the mean free path (mfp). It is assumed that the scattering centers are randomly distributed inside the simulation volume.
 
 There is a difficulty in employing this type of flight path selection for charged particles interacting via the Coulomb and screened Coulomb interactions, because the total cross-section diverges due to the long range of the potentials. Thus, a particle can in-principle have infinitely many interactions along its trajectory and this is a problem for computer simulation. There are mainly two ways to circumvent this problem:
-- Set a fixed flight path, typically of the order of the interatomic distance 
-- Set a cutoff to the interaction, either w.r.t. the scattering angle or the recoil energy or both. Scattering events below the cutoff will be ignored. 
+- Set a fixed flight path, small enough so that the particle has a sufficiently high number of collisions   
+- Set a cutoff to the interaction, either w.r.t. the scattering angle or the recoil energy or both. Scattering events below the cutoff are ignored. The mean free path is variable, i.e., it depends on the projectile energy. 
 
 In both cases the conditions are selected so that the results of the calculation are not affected significantly.
 
-Mendenhall & Weller (2005) set a lower cutoff for the recoil energy, \f$T_c\f$, which corresponds to the lowest energy transfer of interest in the problem under study. They suggest a value in the range of 1 - 10 eV for ion penetration in solids. 
+## Fixed flight path
+
+In this case, the flight path between collisions is a constant, \f$\ell_0\f$, typically of the order of the interatomic distance, e.g., \f$\ell_0 \sim R_{at}\f$, where \f$R_{at} = (4\pi N/3)^{-1/3}\f$ is the atomic radius. Thus, a simulated particle has numerous collisions as it traverses though matter - of the order of \f$10^8\f$ per cm of flight path - which is representative of charged particle transport. The corresponding effective total cross-section is \f$\sigma_0 = (N\ell_0)^{-1} = (N R_{at})^{-1} \sim 1.33 \pi R_{at}^2 \f$, i.e., approximately equal to a circular area of radius \f$R_{at}\f$. Thus, the interaction potential is effectively truncated at a distance \f$r\sim R_{at}\f$. This is considered an adequate approximation, as the ion will at any time interact with the target atom closest to its vicinity, which is within \f$r<R_{at}\f$, and not with more distant atoms with \f$r>R_{at}\f$. 
+
+The simulation proceeds as follows:
+
+>
+> **Fixed Flight Path algorithm**
+> - Propagate the projectile by a distance \f$\ell_0\sim R_{at}\f$ along its trajectory. 
+> - Sample the impact parameter \f$p\f$ uniformly on a circle of radius \f$p_{max} =  (N\pi\ell_0)^{-1/2}\f$. \n
+>   This can be achieved by setting \f$p=p_{max}\sqrt{u}\f$, where \f$u\f$ is a random value distributed uniformly in \f$[0,1)\f$.
+> - Calculate the scattering angle \f$\theta=\theta(E,p)\f$ and recoil energy \f$T=T(E,\theta)\f$
+> - Adjust the projectile energy and direction
+> - Repeat
+>
+
+The fixed flight path method achieves a rather accurate description of the ion trajectory if a sufficiently small \f$\ell_0\f$ is employed. The SRIM user manuals propose the use of this method for most accurate results - it is called "monolayer mode" in the terminology of this program. However, the efficiency of the method is rather low, as a high number of low energy scattering events are included, which do not contribute significantly to the final outcome. 
+
+## Variable flight path
+
+To improve the efficiency of the simulation, one can reject the scattering events of lower importance. This can be achieved by setting a lower cutoff, \f$T_c\f$, to the recoil energy,  corresponding to the lowest energy transfer of interest in the problem under study. Mendenhall & Weller (2005) suggest a value in the range of 1 - 10 eV for ion penetration in solids. 
 
 \f$T_c\f$ corresponds to a lower bound \f$\theta_c\f$ for the center-of-mass scattering angle, which can be obtained from 
 \f[
-T_c = T_m \sin^2(\theta_c/2)
+T_c = \gamma E \sin^2(\theta_c/2)\quad \Rightarrow \quad \theta_c = 2 \arcsin\sqrt{T_c/\gamma E},
 \f]
-For a given reduced energy \f$\epsilon\f$ of the particle, we can find the maximum impact parameter, \f$p_{max}\f$, corresponding to \f$\theta_c\f$ and thus define the effective total cross-section
+where \f$\gamma = 4m_1 m_2 /(m_1+m_2)^2\f$. The corresponding upper bound to the impact parameter, \f$p_{max}\f$, can be found by solving 
 \f[
-\sigma_0 = \pi\, p_{max}^2(\epsilon, \theta_c) = 
-\int_0^{p_{max}}{2\pi\, p\, dp} =
-\int_{\theta_c}^{\pi}{d\sigma(\epsilon,\theta)}
+\theta_c = \theta(E,p_{max}) 
 \f]
+where \f$\theta(E,p)\f$ is the scattering integral of the potential. Having obtained \f$p_{max}\f$, we can now define the effective total cross-section \f$\sigma_0=\pi p_{max}^2\f$ and the mean free path \f$\ell=(N\sigma_0)^{-1}\f$.
 
-As the particle slows down, the cross-section increases and eventually \f$p_{max}\f$ becomes larger than the interatomic distance. To avoid this, a hard upper bound is set on \f$p_{max}\f$ at about half the nearest-neighbour distance in the solid. This effectively truncates the potential at this distance.    
+This procedure can be extended to include a lower cut-off for the lab system scattering angle \f$\Theta\f$. Noting that for small scattering angles 
+\f[
+  \Theta \approx \theta / (1 + m_1/m_2)\quad \Rightarrow \quad  T=\gamma E \sin^2(\theta/2) \approx (m_1/m_2) E \Theta^2,
+\f]
+we can define a combined recoil energy cut-off, \f$T'_c\f$ 
+\f[
+T'_c = \min \left\{ T_c, \; (m_1/m_2) E \, \Theta_c^2 \right\}.
+\f]
+Thus, we reject scattering events where the recoil energy and scattering angle satisfy both \f$T<T_c\f$ and \f$\Theta<\Theta_c\f$
 
-The main steps of the Mendenhall-Weller algorithm are as follows
+Having defined an effective total cross-section, we can now employ the standard algorithm for sampling the flight path and impact parameter:
+>
+> **Variable Flight Path algorithm**
+> - For given projectile energy \f$E\f$ and recoil cut-off \f$T'_c\f$ calculate the maximum impact parameter \f$p_{max}=p_{max}(E,T'_c)\f$ and the mean free path \f$\ell = (N\pi p_{max}^2)^{-1/2}\f$
+> - Sample the flight path \f$x\f$ to the next collision from \f$\ell^{-1}e^{-x / \ell}\f$. \n
+  This is achieved by setting \f$x=-\ell \log u_1\f$, where \f$u_1\f$ is a random number uniformly distributed in \f$(0,1)\f$.
+> - Sample the impact parameter uniformly on a circle of radius \f$p_{max}\f$:     
+  \f$p = p_{max}\sqrt{u_2}\f$, where \f$u_2\in(0,1)\f$ is again a uniform random number.
+> - Calculate the scattering angle \f$\theta=\theta(E,p)\f$ and recoil energy \f$T=T(E,\theta)\f$
+> - Adjust the projectile energy and direction
+> - Repeat
+>
 
-> **Mendenhall-Weller (MHW) Algorithm:**
-> - For a given incoming ion energy \f$E\f$ find the values of \f$p_{max}\f$, \f$\sigma_0\f$ and \f$\ell\f$ corresponding to the recoil energy cutoff \f$T_c\f$
-> - Generate a random number sample \f$u \in (0,1)\f$
-> - If \f$p_{max} < L/2\f$, where \f$L\f$ is the interatomic distance, 
+This procedure may seem more complicated than the fixed flight path algorithm, however it brings a huge gain in efficiency, since many low importance events are rejected. This is most evident at high projectile energy and light ions. 
+
+The values of the energy dependent \f$p_{max}\f$ and \f$\ell\f$ are not needed
+with high accuracy. Thus, they can be precomputed on a coarse energy grid.
+
+As the particle slows down, the cross-section increases and eventually \f$\ell\f$ becomes comparable to the interatomic distance. In this limit, one can assume that the random nature of the flight path is unimportant and the trajectory of the ion can be simulated to sufficient accuracy by the constant flight path algorithm. 
+
+## Other algorithms
+
+A variation of the variable flight path algorithm is the following, which is suggested by many authors (Biersack1980, SRIM book, MHW2005):
+
+> **Modified Variable Flight Path algorithm**
+> - Calculate \f$p_{max}=p_{max}(E,T'_c)\f$ and \f$\ell = (N\pi p_{max}^2)^{-1/2}\f$ as above
+> - Take a uniform random sample \f$u\in [0,1)\f$
+> - If \f$p_{max} < L\f$,  where \f$L\sim R_{at}\f$
 >    - Set \f$p = p_{max} \sqrt{-\log u}\f$
 >    - Propagate the particle by \f$\ell\f$
 >    - If \f$p<p_{max}\f$ generate a scattering event  
-> - If \f$p_{max} \geq L/2\f$ then 
->    - Set \f$p = (L/2)\sqrt{u}\f$
->    - Propagate particle by \f$\sim L\f$ 
+> - If \f$p_{max} \geq L\f$ then 
+>    - Set \f$p = L\sqrt{u}\f$
+>    - Propagate particle by \f$(N\pi L^2)^{-1/2}\f$ 
 >    - Generate a scattering event
 
-This is essentially very similar to the algorithm employed by the popular SRIM code.
-
-To save computation time, the values of \f$p_{max}\f$, \f$\sigma_0\f$ and \f$\ell\f$ can be pre-calculated on a coarse energy grid.
-
 The main characteristics of this algorithm are:
-1. For \f$p_{max} < L/2\f$, the path length is fixed and the impact parameter is sampled from \f$e^{-N\ell\pi p^2}p\, dp\f$. This is more efficient than the standard procedure, which requires random sampling of both the path and the impact parameter. 
+- For small \f$p_{max} < L\f$, the path length is \f$\ell\f$ and the impact parameter is sampled from \f$e^{-N\ell\pi p^2}p\, dp\f$. This is more efficient than the standard algorithm, which requires random sampling of both the path and the impact parameter. 
 
-2. For \f$p_{max} \geq L/2\f$, there is an absolute upper bound to \f$p_{max}\f$ at half the interatomic distance and \f$p\f$ is sampled from \f$p\, dp\f$. This is implemented in both SRIM and MHW2005. MHW justify it as follows:
+- For \f$p_{max} \geq L\f$, the algorithm reverts to the constant flight path mode
 
-> ... impact parameters larger than half the lattice spacing do not occur, since then one is closer to the adjacent atom.
+Despite the higher efficiency, there are also some drawbacks:
+- There is a discontinuous change in behaviour at \f$p_{max}=L\f$, as also noted in the SRIM book.
+- for \f$p_{max}>L\f$ the resulting average distance between collisions, \f$\langle x\rangle\f$, is larger than the mean free path \f$\ell\f$ because some scattering events are rejected. It can be seen that \f$\langle x\rangle = (1-e^{-1})^{-1}\ell \approx 1.6 \ell\f$. Thus, the simulated projectile trajectory is not consistent with the anticipated mean free path.
 
-while Biersack1980 and the SRIM manual (Ch.7) write:
+For these reasons, the above algorithm has not been included in OpenTRIM.
 
-> This procedure maintains the atomic density in the target without correlating the lateral positions of successive target atoms (neglection of lattice structure).
+Another point that has been discussed by several authors is the treatment of the low energy region.
 
-We believe that these comments are not entirely correct. The ion can in principle have collisions with \f$p_{max} > L/2\f$. There is nothing in the employed binary-collision physics that prevent it. And we do not see how this would change the atomic density or introduce correlations.
+It is generally accepted that, as the projectile energy drops below about 1 keV, the simple picture of binary collisions breaks down since the ion interacts collectively with the solid. To describe this process we would have to use a completely different simulation technique called molecular dynamics (MD). From this viewpoint, the truncation of the potential at \f$r \leq R_{at}\f$ in the constant flight path mode means essentially that, as the physics that we employ to simulate the process becomes out of context, for the sake of computing efficiency, we dispense with the details and make a crude approximation to quickly finish the ion track.
 
-The point is that, as the ion's energy drops below about 1 keV, the simple picture of binary collisions breaks down since the ion interacts collectively with the solid. To describe this process we would have to use a completely different simulation technique called molecular dynamics (MD). From this viewpoint, the truncation \f$p_{max}<L/2\f$ means essentially that, as the physics that we employ to simulate the process becomes out of context, for the sake of computing efficiency, we dispense with the details and make a crude approximation to quickly finish the ion track.
+On the other hand, some of the effects we are interested in, e.g., the generation of defects by atomic displacements, occur in this low energy region. Some authors have included the effect of low energy collisions by extending to \f$p>R_{at}\f$, as, e.g., described in Eckstein1991.
 
-On the other hand, some of the effects we are interested in, e.g., the generation of defects by atomic displacements, occur in this low energy region. Thus, maybe it is beneficial to make a more detailed simulation, albeit within the physics that we employ.
+In OpenTRIM this is possible within the variable flight path mode simply by lowering the recoil cut-off \f$T_c\f$ and lifting the lower bound to \f$\ell\f$. 
 
-Thus, OpenTRIM employs also a more "standard" algorithm for path and impact parameter selection, termed "FullMC", that is less focused on computing efficiency. It turns out the penalty is not so severe. The main steps are shown below:
-
-> **FullMC path selection algorithm**
-> - For a given incoming ion of energy \f$E\f$ find the values of \f$p_{max}\f$, \f$\sigma_0\f$ and \f$\ell\f$ 
-> - Additionally, compute a maximum path-length \f$\Delta x_{max}\f$, such that the relative electronic energy loss \f$\Delta E_e/E = (1/E)\int_0^{\Delta x_{max}} {(dE/dx)_e dx}\f$ is below a small value \f$\delta \sim 0.01-0.05\f$. 
-> - Take a random sample \f$u_{1} \in (0,1)\f$
-> - If \f$u_1 < e^{-\Delta x_{max}/\ell}\f$, reject the scattering event and propagate the particle by \f$\Delta x_{max}\f$
-> - Otherwise:
->   - compute the path to the next collision \f$\Delta x = -\ell\,\log u_1\f$ 
->   - compute the impact parameter as \f$p = p_{max}\sqrt{u_2}\f$, where \f$u_{2} \in (0,1)\f$ is a 2nd random sample 
->   - Propagate the particle by \f$\Delta x\f$ and make a collision
-
-See \ref flightpathdetails for a more detailed description of the employed algorithms.
-
-
+See \ref flightpathdetails for a more detailed description of the fligh path algorithms as employed in OpenTRIM.

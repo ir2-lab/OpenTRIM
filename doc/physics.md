@@ -45,7 +45,7 @@ The simulation of ion transport typically proceeds in the following manner:
 4. Select collision partner. \n
    An atom is selected randomly, taking into account the target composition.
 5. Calculate scattering angle and recoil energy. \n
-   This is implemented in \ref xs_lab::scatter().
+   This is implemented in \ref scattering_calc::scatter().
 6. If the energy transfer is above the displacement threshold, generate a recoil ion and store in the \ref ion_queue "ion queue" to be processed later.
 7. Repeat the sequence from step 2 until either
   - the ion exits the simulation volume, or,

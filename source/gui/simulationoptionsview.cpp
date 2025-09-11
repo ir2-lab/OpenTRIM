@@ -222,12 +222,7 @@ void SimulationOptionsView::applyRules()
     case flight_path_calc::Constant:
         enable_if("/Transport/flight_path_const", true);
         break;
-    case flight_path_calc::MHW:
-        enable_if("/Transport/max_rel_eloss", true);
-        enable_if("/Transport/min_recoil_energy", true);
-        enable_if("/Transport/min_scattering_angle", true);
-        break;
-    case flight_path_calc::FullMC:
+    case flight_path_calc::Variable:
         enable_if("/Transport/max_rel_eloss", true);
         enable_if("/Transport/min_recoil_energy", true);
         enable_if("/Transport/min_scattering_angle", true);

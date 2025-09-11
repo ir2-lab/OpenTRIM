@@ -67,7 +67,7 @@ public:
 };
 
 /**
- * @brief A class representing a stream of MC events
+ * @brief A class representing a stream of simulation events
  *
  * An event_stream can store \ref event objects of a given type.
  *
@@ -94,7 +94,7 @@ public:
     event_stream() : rows_(0), cols_(0), fs_(NULL) { }
     /// Close the file, remove data and destroy the event_stream object
     virtual ~event_stream() { close_(); }
-    /// Open the event_stream using @ref ev as prototype event
+    /// Open the event_stream using ev as prototype @ref event
     int open(const event &ev);
     /// Count of events stored in the stream (rows)
     size_t rows() const { return rows_; }

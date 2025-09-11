@@ -47,6 +47,10 @@ public:
         float a, b;
     };
 
+    /**
+     * @brief Type of ion beam source geometry
+     *
+     */
     enum geometry_t {
         Surface = 0, /**< Surface source */
         Volume = 1, /**< Volume source */

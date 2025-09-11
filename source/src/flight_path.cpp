@@ -34,8 +34,8 @@ int flight_path_calc::init(const mccore &s)
                     * materials[i]->atomicRadius();
             fp_const[i] = tr_opt_.flight_path_const * materials[i]->atomicRadius();
         } else {
-            fp_const[i] = (4.0f / 3) * materials[i]->atomicRadius();
-            ip0[i] = materials[i]->atomicRadius();
+            fp_const[i] = materials[i]->atomicRadius();
+            ip0[i] = SQRT_4over3 * materials[i]->atomicRadius();
         }
     }
 
@@ -71,38 +71,46 @@ int flight_path_calc::init(const mccore &s)
                 float &fpmax = fp_max_(z1, im, ie);
                 float &umin = umin_(z1, im, ie);
 
-                float E = *ie;
-                float T0 = Tmin;
+                if (type_ == Constant) {
 
-                // find the lowest T0 so that T0 < Tmin & Theta < Theta_min
-                for (const atom *a : m->atoms()) {
-                    int z2 = a->id();
-                    float Tm = E * ScMatrix(z1, z2)->gamma();
-                    float theta_min = tr_opt_.min_scattering_angle / 180.f * M_PI;
-                    theta_min *= (1 + ScMatrix(z1, z2)->mass_ratio());
-                    float ss = std::sin(0.5 * theta_min);
-                    float T0_ = Tm * ss * ss;
-                    if (T0 > T0_)
-                        T0 = T0_;
-                }
+                    // set const mfp
+                    mfp = tr_opt_.flight_path_const * Rat;
+                    ipmax = std::sqrt(1.f / M_PI / mfp / N);
+                    fpmax = mfp;
+                    umin = 0;
 
-                // Calc mfp corresponding to T0, mfp = 1/(N*sig0), sig0 = pi*sum_i{ X_i *
-                // [P_i(E,T0)]^2 }
-                ipmax = 0.f;
-                for (const atom *a : m->atoms()) {
-                    int z2 = a->id();
-                    float d = ScMatrix(z1, z2)->find_p(E, T0);
-                    ipmax += a->X() * d * d;
-                }
-                ipmax = std::sqrt(ipmax);
+                } else {
 
-                // calc fpmax : fpmax*dEdx/E < max_rel_eloss
-                fpmax = 1e30f;
-                if (s.getSimulationParameters().eloss_calculation != dedx_calc::EnergyLossOff) {
-                    fpmax = delta_dedx * E / dedx(z1, im)->data()[ie];
-                }
+                    float E = *ie;
+                    float T0 = Tmin;
 
-                if (type_ == FullMC) {
+                    // find the lowest T0 so that T0 < Tmin & Theta < Theta_min
+                    for (const atom *a : m->atoms()) {
+                        int z2 = a->id();
+                        float Tm = E * ScMatrix(z1, z2)->gamma();
+                        float theta_min = tr_opt_.min_scattering_angle / 180.f * M_PI;
+                        theta_min *= (1 + ScMatrix(z1, z2)->mass_ratio());
+                        float ss = std::sin(0.5 * theta_min);
+                        float T0_ = Tm * ss * ss;
+                        if (T0 > T0_)
+                            T0 = T0_;
+                    }
+
+                    // Calc mfp corresponding to T0, mfp = 1/(N*sig0), sig0 = pi*sum_i{ X_i *
+                    // [P_i(E,T0)]^2 }
+                    ipmax = 0.f;
+                    for (const atom *a : m->atoms()) {
+                        int z2 = a->id();
+                        float d = ScMatrix(z1, z2)->find_p(E, T0);
+                        ipmax += a->X() * d * d;
+                    }
+                    ipmax = std::sqrt(ipmax);
+
+                    // calc fpmax : fpmax*dEdx/E < max_rel_eloss
+                    fpmax = 1e30f;
+                    if (s.getSimulationParameters().eloss_calculation != dedx_calc::EnergyLossOff) {
+                        fpmax = delta_dedx * E / dedx(z1, im)->data()[ie];
+                    }
 
                     // calc mfp
                     mfp = 1.f / M_PI / N / ipmax / ipmax;
@@ -119,32 +127,15 @@ int flight_path_calc::init(const mccore &s)
                         ipmax = std::sqrt(1.f / M_PI / mfp / N);
                     }
 
-                    // FullMC: u<umin -> reject collision
+                    // Variable: u<umin -> reject collision
                     umin = std::exp(-fpmax / mfp);
-
-                } else if (type_ == MHW) {
-
-                    // calc mfp
-                    mfp = 1.f / M_PI / N / ipmax / ipmax;
-
-                    // ensure mfp not larger than fpmax
-                    if (mfp > fpmax) {
-                        mfp = fpmax;
-                        ipmax = std::sqrt(1.f / M_PI / mfp / N);
-                    }
-
-                    // ensure ipmax not larger than Rat
-                    if (ipmax > Rat) {
-                        ipmax = Rat;
-                        mfp = 1.f / M_PI / N / ipmax / ipmax;
-                    }
                 }
 
                 // Calc dedxn for  T<T0 = N*sum_i { X_i * Sn(E,T0) }
                 // Add this to dedx
-                /// @TODO: this is very slow. dedxn is very small, can be ignored
+                /// @todo: this is very slow. dedxn is very small, can be ignored
                 // We need to re-calc T0 from mfp
-                /// @TODO: solve ipmax^2 = sum_i { X_i * ipmax_i(e,T0) } for T0
+                /// @todo: solve ipmax^2 = sum_i { X_i * ipmax_i(e,T0) } for T0
                 //                int z2 = m->atoms().front()->id();
                 //                float s1,c1;
                 //                scattering_matrix_(z1,z2)->scatter(E,ipmax,T0,s1,c1);
@@ -177,8 +168,7 @@ int flight_path_calc::preload(const ion *i, const material *m)
     ip_ = ip0[mid];
 
     switch (type_) {
-    case MHW:
-    case FullMC:
+    case Variable:
         ipmax_tbl = &(ipmax_(iid, mid, 0));
         mfp_tbl = &(mfp_(iid, mid, 0));
         fpmax_tbl = &(fp_max_(iid, mid, 0));

@@ -7,7 +7,7 @@
         "simulation_type": "FullCascade"
     },
     "Transport": {
-        "flight_path_type": "FullMC",
+        "flight_path_type": "Variable",
         "mfp_range": [
             1.3333334,
             80

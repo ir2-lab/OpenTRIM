@@ -39,8 +39,6 @@ class random_vars;
  * The \ref target class keeps a track of all regions, materials and atoms in the
  * simulation target.
  *
- * @ingroup MC
- *
  * @}
  *
  */
@@ -197,10 +195,23 @@ class material : public target_item
     float nrt_L_;
 
 public:
+    /**
+     * @brief Target material descriptor
+     */
     struct material_desc_t
     {
+        /**
+         * @brief User defined material id
+         */
         std::string id;
+        /**
+         * @brief Density in g/cm3
+         */
         float density{ 1.f };
+        /**
+         * @brief Array of \ref atom::parameters
+         *
+         */
         std::vector<atom::parameters> composition;
     };
 
@@ -245,7 +256,6 @@ public:
     /**
      * @brief addAtom adds an atom to the material
      * @param p atomic species parameters
-     * @param x concentration
      * @return a pointer to the created atom object
      */
     atom *addAtom(const atom::parameters &p);

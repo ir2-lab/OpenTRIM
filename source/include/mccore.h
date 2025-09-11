@@ -21,7 +21,7 @@ class cascade_queue;
 /**
  * \defgroup MC libopentrim shared library
  *
- * \brief A library containing the main ion transport simulation code.
+ * A library containing the main ion transport simulation code.
  *
  * The building blocks for the Monte-Carlo ion transport simulation are: \ref Geometry,
  * \ref Ions "Ion transport", \ref RNG and \ref target "Target definition".
@@ -35,7 +35,7 @@ class cascade_queue;
  */
 
 /**
- * \defgroup Core Core
+ * \defgroup Core Core simulation code
  *
  * \brief The core of the Monte-Carlo ion transport simulation
  *
@@ -44,7 +44,7 @@ class cascade_queue;
  * It comprises of 3 classes
  *
  *
- * @ingroup MC
+ *
  *
  * @}
  *
@@ -254,7 +254,7 @@ public:
      *  - calls the init() function of the underlying target and ion_beam objects
      *  - creates electronic stopping and straggling interpolation tables for all atom/material
      * combinations
-     *  - creates an array of lab frame scattering cross-section objects (\ref xs_lab) for all ion
+     *  - creates an array of scattering calculator objects (\ref scattering_calc) for all ion
      * combinations
      *  - creates tables of mean free path and max impact parameter for flight path selection
      *  - allocates tally memory
@@ -330,7 +330,7 @@ protected:
      *   - Call ion::propagate() to advance the ion position
      *   - Call dedx_calc::operator() to calculate stopping and straggling and subtract it from the
      * ion energy
-     *   - Select collision partner, select the cross-section object @ref xs_lab for
+     *   - Select collision partner, select the object of type @ref scattering_calc for
      *   the projectile/target pair and call xs_lab::scatter() to obtain scattering angle and recoil
      * energy \f$T\f$
      *   - If \f$T>E_d\f$, where \f$E_d\f$ is the \ref atom::parameters::Ed "displacement energy",
@@ -347,6 +347,7 @@ protected:
      *
      * @param i pointer to the ion object
      * @param t reference to the tally object
+     * @param q a pointer to a cascade_queue
      * @return 0 if succesfull
      */
     int transport(ion *i, cascade_queue *q = nullptr);

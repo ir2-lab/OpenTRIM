@@ -14,8 +14,8 @@
 
 ### Flight path
 
-- [ ] Write critique for SRIM & MHW in doc
-- [ ] Remove MHW option ?
+- [X] Write critique for SRIM & MHW in doc
+- [X] Remove MHW option ?
 
 ### Tests
 
@@ -36,6 +36,7 @@
   to set the limit either on the # of ions or in time
 
 Tally:
+- [ ] Make std. tally tables 4D by expanding the cells axis to Nx x Ny x Nz, where Nx, Ny, Nz are the # of cells along each axis
 - [X] Remove counting of recoil energy (tally::eRecoil). It is not a well-defined sum
 - [X] Add a counter of Displacements (tally::cD)
   Every recoil should add +1 to this, regardless of fate (implantation = I, exit = L, replacement = R)
@@ -50,7 +51,7 @@ Tally:
   - This will aid in checking if a .json file is valid OpenTRIM options
   - With the possibility to relax the rule in the future to allow extra/new options
 
-- [x] Improve the FullMC flight path algorithm
+- [x] Improve the Variable flight path algorithm
   - Implement the steps described in the docs, i.e., pre-compute the probability that a collision is rejected
 
 - [ ] Make user-defined tallies for various events. E.g.
