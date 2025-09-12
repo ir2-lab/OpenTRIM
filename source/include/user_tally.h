@@ -40,7 +40,9 @@ public:
     /// @brief Return coordinate system values
     const vector3& zaxis() const { return par_.zaxis; }
     const vector3& xzvec() const { return par_.xzvec; }
-    const vector3& org()   const { return par_.org;   }
+    const vector3& org() const { return par_.org; }
+
+    const coordinate_t &coordinates() const { return par_.coordinates; }
 
     /// @brief Initialize tally buffers for given # of atoms and cells
     void init();
