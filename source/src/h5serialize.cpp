@@ -555,6 +555,13 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
                        getSim()->ion_count());
 
             /* TODO: add code to store user_tally metadata as described in GSoC2025.md */
+            // Save 3D vectors that define the coordinate system of the user_tally
+            dump_vector(h5f, page + "zaxis", ut->zaxis(), var_list, "Z axis");
+            dump_vector(h5f, page + "xzvec", ut->xzvec(), var_list, "XZ vector");
+            dump_vector(h5f, page + "org", ut->org(), var_list, "Origin");
+
+
+
         }
 
         // 6. events
