@@ -3,7 +3,7 @@
 #include "ion.h"
 #include "target.h"
 #include "tally.h"
-#include "cascade_queue.h"
+#include "cascade.h"
 
 #include <filesystem>
 #include <cstdio>
@@ -52,7 +52,7 @@ void pka_event::cascade_start(const ion &i)
     }
 }
 
-void pka_event::cascade_end(const ion &i, const cascade_queue *cq)
+void pka_event::cascade_end(const ion &i, const abstract_cascade *cscd)
 {
     // get the damage energy =
     buff_[ofTdam] = mark_T_ - buff_[ofTdam]; // + i.myAtom()->El();
@@ -65,10 +65,10 @@ void pka_event::cascade_end(const ion &i, const cascade_queue *cq)
         b++;
     }
     // get the recombinations
-    if (cq) {
+    if (cscd) {
         float *s = buff_.data() + ofVac + 3 * natoms_;
-        // cq returns the count of recombined FPs and correlated recombinations
-        cq->count_riv(s, s + natoms_);
+        // cascade object returns the count of recombined FPs and correlated recombinations
+        cscd->count_riv(s, s + natoms_);
     }
 }
 
@@ -283,4 +283,36 @@ void exit_event::set(const ion *i) //, int cellid)
     buff_[ofDir] = i->dir().x();
     buff_[ofDir + 1] = i->dir().y();
     buff_[ofDir + 2] = i->dir().z();
+}
+
+damage_event::damage_event()
+    : event(ofEnd, { "hid", "iid", "cid", "did", "x", "y", "z" },
+            { "history id", "ion species id", "ion's cell id before exiting",
+              "defect type id 0: vacancy, 1: interstitial", "x position [nm]", "y position [nm]",
+              "z position [nm]" })
+{
+}
+
+void damage_event::set(defect_type_t t, const ion &i)
+{
+    buff_[ofHid] = i.ion_id();
+    buff_[ofRid] = i.recoil_id();
+    buff_[ofIid] = i.myAtom()->id();
+    buff_[ofCid] = i.cellid();
+    buff_[ofDid] = t;
+    buff_[ofPos] = i.pos().x();
+    buff_[ofPos + 1] = i.pos().y();
+    buff_[ofPos + 2] = i.pos().z();
+}
+
+void damage_event::set(defect_type_t t, int hid, int rid, int iid, int cid, const vector3 pos)
+{
+    buff_[ofHid] = hid;
+    buff_[ofRid] = rid;
+    buff_[ofIid] = iid;
+    buff_[ofCid] = cid;
+    buff_[ofDid] = t;
+    buff_[ofPos] = pos.x();
+    buff_[ofPos + 1] = pos.y();
+    buff_[ofPos + 2] = pos.z();
 }

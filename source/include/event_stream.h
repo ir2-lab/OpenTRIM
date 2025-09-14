@@ -1,6 +1,7 @@
 #ifndef EVENT_STREAM_H
 #define EVENT_STREAM_H
 
+#include "geometry.h"
 #include <cassert>
 #include <cstring>
 #include <string>
@@ -10,7 +11,7 @@ class event_stream;
 class ion;
 class tally;
 class material;
-class cascade_queue;
+class abstract_cascade;
 
 /**
  * @brief The event class stores data for a given Monte-Carlo event.
@@ -174,7 +175,7 @@ public:
     // prepare internal buffers before cascade starts
     void cascade_start(const ion &i);
     // make calculations after cascade finishes
-    void cascade_end(const ion &i, const cascade_queue *cq = nullptr);
+    void cascade_end(const ion &i, const abstract_cascade *cscd = nullptr);
     // calc NRT values and send CascadeComplete event to tally
     void cascade_complete(const ion &i, tally &t, const material *m);
 
@@ -245,4 +246,48 @@ public:
     void set(const ion *i);
 };
 
+/**
+ * @brief A class for storing damage generation events
+ *
+ * Damage events are 2 kinds:
+ * - creation of a vacancy (defect id: 0)
+ * - creation of an interstitial (defect id: 1)
+ *
+ * The following data is stored:
+ * - history id
+ * - recoil id
+ * - id of the interstitial or the atom that occupied the vacant site
+ * - cell id where the defect is created
+ * - Defect type id: vacancy (0) or interstitial (1)
+ * - position vector
+ *
+ * @ingroup Tallies
+ *
+ */
+class damage_event : public event
+{
+public:
+    enum defect_type_t { Vacancy = 0, Interstitial = 1 };
+
+private:
+    enum offset_t { ofHid = 0, ofRid = 1, ofIid = 2, ofCid = 3, ofDid = 4, ofPos = 5, ofEnd = 8 };
+
+public:
+    damage_event();
+    /// Set the event buffer to the data of the given \ref ion
+    void vacancy(const ion &i) { set(Vacancy, i); }
+    void vacancy(int hid, int rid, int iid, int cid, const vector3 pos)
+    {
+        set(Vacancy, hid, rid, iid, cid, pos);
+    }
+    void interstitial(const ion &i) { set(Interstitial, i); }
+    void interstitial(int hid, int rid, int iid, int cid, const vector3 pos)
+    {
+        set(Interstitial, hid, rid, iid, cid, pos);
+    }
+
+private:
+    void set(defect_type_t, const ion &i);
+    void set(defect_type_t t, int hid, int rid, int iid, int cid, const vector3 pos);
+};
 #endif // EVENT_STREAM_H

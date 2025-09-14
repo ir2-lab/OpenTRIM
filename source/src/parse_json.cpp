@@ -238,7 +238,8 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ion_beam::parameters, ion, energy_dist
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::parameters, simulation_type, screening_type,
                                           eloss_calculation, stopping_model, straggling_model,
                                           nrt_calculation, intra_cascade_recombination,
-                                          correlated_recombination, move_recoil, recoil_sub_ed)
+                                          time_ordered_cascades, correlated_recombination,
+                                          move_recoil, recoil_sub_ed)
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::transport_options, flight_path_type,
                                           flight_path_const, min_energy, min_recoil_energy,
@@ -249,7 +250,7 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::run_options, max_no_ions, ma
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::output_options, title, outfilename,
                                           storage_interval, store_exit_events, store_pka_events,
-                                          store_dedx)
+                                          store_damage_events, store_dedx)
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(user_tally::parameters, id, event, coordinates, x, y, z, rho, phi, r, theta, zaxis, xzvec, org, vx, vy, vz, vrho, vphi, vr, vtheta, atom_id)
 

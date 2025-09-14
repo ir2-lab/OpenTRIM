@@ -7,6 +7,10 @@
 
 ## Functionality that needs to be completed
 
+### JSON I/O
+
+- [ ] Input validation. Check all input variables that they are within their valid range
+
 ### Screened Coulomb scattering
 
 - [ ] Fix high s (impulse approx) region in Bohr, Moliere, KrC

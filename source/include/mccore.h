@@ -16,8 +16,6 @@
 #include <atomic>
 #include <mutex>
 
-class cascade_queue;
-
 /**
  * \defgroup MC libopentrim shared library
  *
@@ -98,6 +96,7 @@ public:
         /// Allow intra cascade Frenkel pair recombination
         bool intra_cascade_recombination{ false };
         /****  Experimental stuff ****/
+        bool time_ordered_cascades{ true };
         // Allow same Frenkel pair recombination
         bool correlated_recombination{ true };
         // Move recoil atom to Rc
@@ -138,12 +137,16 @@ protected:
     // components
     ion_beam *source_;
     target *target_;
-    tally tally_, dtally_, tion_;
-    user_tally *utally_, *dutally_, *ution_;
     random_vars rng;
-    event_stream pka_stream_, exit_stream_;
+
+    // tallies
+    tally tally_, dtally_, tion_;
+
+    // events
+    event_stream pka_stream_, exit_stream_, damage_stream_;
     pka_event pka;
     exit_event exit_ev;
+    damage_event damage_ev;
 
     // ref counter
     std::shared_ptr<int> ref_count_;
@@ -237,6 +240,10 @@ public:
     int open_exit_stream() { return exit_stream_.open(exit_ev); }
     /// Return reference to the exit stream
     event_stream &exit_stream() { return exit_stream_; }
+    /// Open file stream to store \ref damage_event data
+    int open_damage_stream() { return damage_stream_.open(damage_ev); }
+    /// Return reference to the exit stream
+    event_stream &damage_stream() { return damage_stream_; }
 
     // scattering matrix (atoms x materials)
     ArrayND<abstract_scattering_calc *> scattering_matrix() const { return scattering_matrix_; }
@@ -347,10 +354,10 @@ protected:
      *
      * @param i pointer to the ion object
      * @param t reference to the tally object
-     * @param q a pointer to a cascade_queue
+     * @param cscd a pointer to a cascade object
      * @return 0 if succesfull
      */
-    int transport(ion *i, cascade_queue *q = nullptr);
+    int transport(ion *i, tally &t, abstract_cascade *cscd = nullptr);
 
     /**
      * @brief Generate a new recoil ion

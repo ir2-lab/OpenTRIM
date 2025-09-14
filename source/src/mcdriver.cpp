@@ -143,6 +143,8 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     for (int i = 0; i < nthreads; i++) {
         if (config_.Output.store_pka_events)
             sim_clones_[i]->open_pka_stream();
+        if (config_.Output.store_damage_events)
+            sim_clones_[i]->open_damage_stream();
         if (config_.Output.store_exit_events)
             sim_clones_[i]->open_exit_stream();
     }
@@ -152,6 +154,8 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     if (s_->ion_count() == 0) {
         if (config_.Output.store_pka_events)
             s_->open_pka_stream();
+        if (config_.Output.store_damage_events)
+            s_->open_damage_stream();
         if (config_.Output.store_exit_events)
             s_->open_exit_stream();
     }

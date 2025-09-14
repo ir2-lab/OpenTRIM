@@ -2,7 +2,7 @@
 #include "random_vars.h"
 #include "event_stream.h"
 #include "scattering.h"
-#include "cascade_queue.h"
+#include "cascade.h"
 
 mccore::mccore()
     : source_(new ion_beam),
@@ -171,9 +171,12 @@ int mccore::reset()
 
 int mccore::run()
 {
-    cascade_queue *cq = par_.intra_cascade_recombination
-            ? new cascade_queue(par_.correlated_recombination)
-            : nullptr;
+    abstract_cascade *cscd = nullptr;
+    if (par_.intra_cascade_recombination) {
+        cscd = par_.time_ordered_cascades
+                ? (abstract_cascade *)(new time_ordered_cascade(target_->grid()))
+                : (abstract_cascade *)(new unordered_cascade(target_->grid()));
+    }
 
     bool cascadesOnly = par_.simulation_type == CascadesOnly;
 
@@ -199,11 +202,16 @@ int mccore::run()
          */
         if (cascadesOnly) {
             if (i->erg() >= i->myAtom()->Ed()) {
+                double T = i->erg();
                 i->setErg(i->erg() - i->myAtom()->El());
                 if (par_.move_recoil) {
                     i->move(i->myAtom()->Rc());
                     dedx_calc_.preload(i, target_->cell(i->cellid()));
                     dedx_calc_(*i, i->myAtom()->Rc());
+                }
+                if (par_.recoil_sub_ed) {
+                    double de = i->erg() + i->myAtom()->Ed() - T;
+                    i->de_phonon(de);
                 }
                 q_.push_pka(i);
             } else
@@ -226,25 +234,31 @@ int mccore::run()
 
                 pka.cascade_start(*j);
 
-                if (cq)
-                    cq->init(j);
+                if (cscd) {
+                    cscd->init(*j);
+                } else if (damage_stream_.is_open()) {
+                    damage_ev.vacancy(*j);
+                    damage_stream_.write(&damage_ev);
+                }
 
-                transport(j, cq);
+                transport(j, tion_, cscd);
 
                 // transport all secondary recoils
                 while (ion *k = q_.pop_recoil()) {
-                    transport(k, cq);
+                    transport(k, tion_, cscd);
                     // free the ion buffer
                     q_.free_ion(k);
                 }
 
-                if (cq) {
-                    cq->intra_cascade_recombination(target_->grid());
-                    cq->tally_update(tion_);
+                if (cscd) {
+                    cscd->intra_cascade_recombination();
+                    cscd->tally_update(tion_);
+                    if (damage_stream_.is_open())
+                        cscd->stream_update(damage_stream_);
                 }
 
                 pka.mark(tion_);
-                pka.cascade_end(*j, cq);
+                pka.cascade_end(*j, cscd);
             }
 
             // free the ion buffer
@@ -285,13 +299,13 @@ int mccore::run()
 
     } // ion loop
 
-    if (cq)
-        delete cq;
+    if (cscd)
+        delete cscd;
 
     return 0;
 }
 
-int mccore::transport(ion *i, cascade_queue *q)
+int mccore::transport(ion *i, tally &t, abstract_cascade *cscd)
 {
     // collision flag
     bool doCollision;
@@ -313,9 +327,13 @@ int mccore::transport(ion *i, cascade_queue *q)
         // Check if ion has enough energy to continue
         if (i->erg() < tr_opt_.min_energy) {
             /* projectile has to stop. Store as implanted/interstitial atom*/
-            ionEvent(Event::IonStop, *i);
-            if (q) // q->push(Event::IonStop,*i);
-                q->push_i(i);
+            t(Event::IonStop, *i);
+            if (cscd) {
+                cscd->push_interstitial(*i);
+            } else if (damage_stream_.is_open()) {
+                damage_ev.interstitial(*i);
+                damage_stream_.write(&damage_ev);
+            }
             return 0; // history ends
         }
 
@@ -480,8 +498,13 @@ int mccore::transport(ion *i, cascade_queue *q)
                 return 0; // end of ion history
             }
 
-            if (q)
-                q->push_v(&j1);
+            // a vacancy has been created
+            if (cscd) {
+                cscd->push_vacancy(j1);
+            } else if (damage_stream_.is_open()) {
+                damage_ev.vacancy(j1);
+                damage_stream_.write(&damage_ev);
+            }
 
         } else { // T<E_d, recoil cannot be displaced
             // energy goes to phonons
@@ -514,6 +537,8 @@ void mccore::mergeEvents(mccore &other)
     other.pka_stream_.clear();
     exit_stream_.merge(other.exit_stream_);
     other.exit_stream_.clear();
+    damage_stream_.merge(other.damage_stream_);
+    other.damage_stream_.clear();
 }
 
 ArrayNDd mccore::getTallyTable(int i) const

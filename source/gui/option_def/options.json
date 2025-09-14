@@ -569,6 +569,13 @@
                     "whatsThis": ""
                 },
                 {
+                    "name": "store_damage_events",
+                    "label": "Store generated vacancies & interstitials",
+                    "type": "bool",
+                    "toolTip": "Store a table of damage events.",
+                    "whatsThis": ""
+                },
+                {
                     "name": "store_dedx",
                     "label": "Store dE/dx",
                     "type": "bool",

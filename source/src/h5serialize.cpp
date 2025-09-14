@@ -594,6 +594,8 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
             dump_event_stream(h5f, page + "pka", s_->pka_stream(), var_list);
         if (config_.Output.store_exit_events)
             dump_event_stream(h5f, page + "exit", s_->exit_stream(), var_list);
+        if (config_.Output.store_damage_events)
+            dump_event_stream(h5f, page + "damage", s_->damage_stream(), var_list);
 
         // dump the variable list
         page = "/run_info/variable_list";

@@ -104,7 +104,7 @@ set(OPENTRIM_HEADERS
     source/include/scattering.h
     source/include/periodic_table.h
     source/include/ion.h 
-    source/include/cascade_queue.h
+    source/include/cascade.h
     source/include/random_vars.h
     source/include/target.h 
     source/include/flight_path.h
