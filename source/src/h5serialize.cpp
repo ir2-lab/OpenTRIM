@@ -565,20 +565,78 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
             std::string coord;
             switch (ut->coordinates()){
             case user_tally::xyz:
-                coord="Cartesian";
+                coord = "Cartesian";
                 break;
             case user_tally::cyl:
-                coord="Cylindrical";
+                coord = "Cylindrical";
                 break;
             case user_tally::sph:
-                coord="Spherical";
+                coord = "Spherical";
                 break;
+            case user_tally::Invalid:
+                coord = "Invalid";
+                break;
+            default: coord = "Unknown";
             }
             dump(h5f, page + "coordinates", coord, var_list, "Coordinate system");
 
-
-
-
+            // Save Event
+            std::string ev;
+            std::string ev_desc;
+            switch (ut->event()){
+            case Event::NewSourceIon:
+                ev = "NewSourceIon";
+                ev_desc = "A new ion track is started.";
+                break;
+            case Event::NewRecoil:
+                ev = "NewRecoil";
+                ev_desc = "A new recoil track is started.";
+                break;
+            case Event::Scattering:
+                ev = "Scattering";
+                ev_desc = "An ion scattering occured.";
+                break;
+            case Event::IonExit:
+                ev = "IonExit";
+                ev_desc = "An ion exits the simulation volume.";
+                break;
+            case Event::IonStop:
+                ev = "IonStop";
+                ev_desc = "An ion stops inside the simulation volume.";
+                break;
+            case Event::BoundaryCrossing:
+                ev = "BoundaryCrossing";
+                ev_desc = "An ion crosses an internal boundary.";
+                break;
+            case Event::Replacement:
+                ev = "Replacement";
+                ev_desc = "A replacement event occurs.";
+                break;
+            case Event::Vacancy:
+                ev = "Vacancy";
+                ev_desc = "A vacancy is created.";
+                break;
+            case Event::CascadeComplete:
+                ev = "CascadeComplete";
+                ev_desc = "A PKA cascade is complete.";
+                break;
+            case Event::NewFlightPath:
+                ev = "NewFlightPath";
+                ev_desc = "";
+                break;
+            case Event::NEvent:
+                ev = "NEvent";
+                ev_desc = "";
+                break;
+            case Event::Invalid:
+                ev = "Invalid";
+                ev_desc = "Invalid";
+                break;
+            default:
+                ev = "Unknown";
+                ev_desc = "Unknown";
+            }
+            dump(h5f, page + "Event", ev, var_list, ev_desc);
 
         }
 

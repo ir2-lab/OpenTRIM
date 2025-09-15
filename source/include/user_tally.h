@@ -44,6 +44,9 @@ public:
 
     const coordinate_t &coordinates() const { return par_.coordinates; }
 
+    /// @brief Return Event
+    const Event &event() const { return par_.event; }
+
     /// @brief Initialize tally buffers for given # of atoms and cells
     void init();
 
