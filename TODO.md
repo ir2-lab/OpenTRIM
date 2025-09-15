@@ -20,6 +20,7 @@
 
 ### Flight path
 
+- [ ] Write tables of effective lowest recoil energy and scattering angle in output file
 - [X] Write critique for SRIM & MHW in doc
 - [X] Remove MHW option ?
 

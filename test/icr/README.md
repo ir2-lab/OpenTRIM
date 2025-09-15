@@ -1,8 +1,19 @@
 # OpenTRIM + Intra-cascade recombination (ICR)
 
-4/2/2025
+## 2025.09.15 - Update
 
-## Implementation
+Cascade code review. The code has been updated and documented.
+
+Added option for non-time ordered recombination. Does not have a large effect.
+Decided to keep time ordering as default.
+
+The question of reconciling low energy ($E\sim E_d$) and high energy range remains.
+
+Compiled a comparison to the BCA/MD data of Cristophe from (2019, "Binary Collision Approximation").
+
+![](ortiz_2019_fig9.png)
+
+## 4/2/2025 - Implementation
 
 - A Frenkel pair is unstable and thus recombines if the I-V distance is below a capture radius $R_c$
 - The I-V capture radius $R_c$ is introduced as a parameter/property of each atomic species in a target material
