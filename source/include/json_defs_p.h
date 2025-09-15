@@ -4,6 +4,8 @@
 #define JSON_DIAGNOSTICS 1
 #include <nlohmann/json.hpp>
 
+#include "mcdriver.h"
+
 // Define a special json type for:
 //   - keeping the order of elements
 //   - use float for real numbers (to avoid e.g. 0.100001, etc)
@@ -21,5 +23,16 @@ using ojson = nlohmann::basic_json<nlohmann::ordered_map, std::vector, std::stri
         const Type nlohmann_json_default_obj{};                                                 \
         NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, __VA_ARGS__)) \
     }
+
+NLOHMANN_JSON_SERIALIZE_ENUM(mcconfig::option_type_t,
+                             { { mcconfig::tInvalid, nullptr },
+                               { mcconfig::tEnum, "enum" },
+                               { mcconfig::tFloat, "float" },
+                               { mcconfig::tInt, "int" },
+                               { mcconfig::tBool, "bool" },
+                               { mcconfig::tString, "string" },
+                               { mcconfig::tVector, "vector" },
+                               { mcconfig::tIntVector, "ivector" },
+                               { mcconfig::tStruct, "struct" } })
 
 #endif // JSON_DEFS_P_H

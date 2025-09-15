@@ -95,27 +95,7 @@ void OptionsItem::prepareWidget(QWidget *w) const
     // w->setObjectName(key_);
     w->setObjectName(QString::fromStdString(jpath_));
 }
-OptionsItem::type_t OptionsItem::toType(const QString &typeName)
-{
-    if (typeName == "enum")
-        return tEnum;
-    else if (typeName == "float")
-        return tFloat;
-    else if (typeName == "int")
-        return tInt;
-    else if (typeName == "bool")
-        return tBool;
-    else if (typeName == "string")
-        return tString;
-    else if (typeName == "vector")
-        return tVector;
-    else if (typeName == "ivector")
-        return tIntVector;
-    else if (typeName == "struct")
-        return tStruct;
-    else
-        return tInvalid;
-}
+
 bool OptionsItem::get_(QString &qs) const
 {
     std::string s;
@@ -467,49 +447,49 @@ QStringList toStringList(const ojson &j)
     return S;
 }
 template <>
-OptionsItem *OptionsItem::jsonHelper(OptionsItem::type_t type, const ojson &j,
-                                     OptionsItem *parentItem)
+OptionsItem *OptionsItem::jsonHelper(const ojson &j, OptionsItem *parentItem)
 {
+    mcconfig::option_type_t type = j["type"].template get<mcconfig::option_type_t>();
     OptionsItem *item;
     switch (type) {
-    case tStruct:
+    case mcconfig::tStruct:
         item = parentItem ? new OptionsItem(toString(j["name"]), toString(j["label"]), parentItem)
                           : new OptionsItem;
         for (auto it = j["fields"].begin(); it != j["fields"].end(); ++it) {
             const ojson &obj = *it;
             QString typeName = toString(obj["type"]);
-            jsonHelper(OptionsItem::toType(typeName), obj, item);
+            jsonHelper(obj, item);
         }
         break;
-    case tEnum:
+    case mcconfig::tEnum:
         item = new EnumOptionsItem(toStringList(j["values"]), toStringList(j["valueLabels"]),
                                    toString(j["name"]), toString(j["label"]), parentItem);
         break;
-    case tFloat:
+    case mcconfig::tFloat:
         item = new FloatOptionsItem(j["min"].template get<double>(),
                                     j["max"].template get<double>(),
                                     j["digits"].template get<int>(), toString(j["name"]),
                                     toString(j["label"]), parentItem);
         break;
-    case tVector:
+    case mcconfig::tVector:
         item = new VectorOptionsItem(j["size"].template get<int>(), j["min"].template get<double>(),
                                      j["max"].template get<double>(),
                                      j["digits"].template get<int>(), toString(j["name"]),
                                      toString(j["label"]), parentItem);
         break;
-    case tIntVector:
+    case mcconfig::tIntVector:
         item = new IVectorOptionsItem(j["size"].template get<int>(), j["min"].template get<int>(),
                                       j["max"].template get<int>(), toString(j["name"]),
                                       toString(j["label"]), parentItem);
         break;
-    case tInt:
+    case mcconfig::tInt:
         item = new IntOptionsItem(j["min"].template get<int>(), j["max"].template get<int>(),
                                   toString(j["name"]), toString(j["label"]), parentItem);
         break;
-    case tBool:
+    case mcconfig::tBool:
         item = new BoolOptionsItem(toString(j["name"]), toString(j["label"]), parentItem);
         break;
-    case tString:
+    case mcconfig::tString:
         item = new StringOptionsItem(toString(j["name"]), toString(j["label"]), parentItem);
         break;
     default:
@@ -541,18 +521,9 @@ OptionsItem *OptionsItem::jsonHelper(OptionsItem::type_t type, const ojson &j,
 OptionsModel::OptionsModel(QObject *parent)
     : QAbstractItemModel{ parent }, rootItem(new OptionsItem)
 {
-    QFile loadFile(QStringLiteral(":/option_def/options.json"));
-    loadFile.open(QIODevice::ReadOnly);
-    QByteArray ba = loadFile.readAll();
-    std::istringstream is(ba.constData());
-    try {
-        ojson opt_spec = ojson::parse(is, nullptr, true, true);
-        rootItem = OptionsItem::jsonHelper(OptionsItem::tStruct, opt_spec, nullptr);
-    } catch (const ojson::exception &e) {
-        qDebug() << "Error reading json input:";
-        qDebug() << e.what();
-        assert(0);
-    }
+    std::istringstream is(mcconfig::options_spec());
+    ojson opt_spec = ojson::parse(is, nullptr, true, true);
+    rootItem = OptionsItem::jsonHelper(opt_spec, nullptr);
 }
 OptionsModel::~OptionsModel()
 {

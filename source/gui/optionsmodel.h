@@ -14,8 +14,6 @@
 
 class OptionsItem
 {
-    enum type_t { tEnum, tFloat, tInt, tBool, tString, tVector, tIntVector, tStruct, tInvalid };
-
 public:
     virtual ~OptionsItem();
     OptionsItem *child(int number);
@@ -43,11 +41,10 @@ public:
 
 private:
     explicit OptionsItem(OptionsItem *parent = nullptr);
-    static type_t toType(const QString &typeName);
     friend class OptionsModel;
 
     template <class J>
-    static OptionsItem *jsonHelper(OptionsItem::type_t type, const J &j, OptionsItem *parentItem);
+    static OptionsItem *jsonHelper(const J &j, OptionsItem *parentItem);
 
 protected:
     OptionsItem(const QString &key, OptionsItem *parent);

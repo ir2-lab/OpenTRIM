@@ -3,6 +3,7 @@
 #include "periodic_table.h"
 #include "user_tally.h"
 #include <iostream>
+#include <sstream>
 
 using std::cerr;
 using std::cout;
@@ -32,11 +33,15 @@ struct adl_serializer<Eigen::AlignedVector3<T>>
 void to_json(ojson &j, const mcconfig &p);
 void from_json(const ojson &j, mcconfig &p);
 
+// validate json config agains option specs
+int validate_json_config(const std::string &specs, const ojson &j);
+
 int mcconfig::parseJSON(std::istream &js, bool doValidation, std::ostream *os)
 {
     if (os) {
         try {
             ojson j = ojson::parse(js, nullptr, true, true);
+            validate_json_config(options_spec(), j);
             *this = j.template get<mcconfig>();
             if (doValidation)
                 validate();
@@ -51,6 +56,7 @@ int mcconfig::parseJSON(std::istream &js, bool doValidation, std::ostream *os)
         }
     } else {
         ojson j = ojson::parse(js, nullptr, true, true);
+        validate_json_config(options_spec(), j);
         *this = j.template get<mcconfig>();
         if (doValidation)
             validate();
@@ -432,4 +438,135 @@ void mcconfig::get_impl_(const std::string &path, std::string &json_str) const
     std::ostringstream ss;
     ss << vref.dump();
     json_str = ss.str();
+}
+
+ojson get_option_spec();
+
+int validate_helper(const ojson &spec, const ojson &opt, const std::string &path = std::string())
+{
+    mcconfig::option_type_t type;
+    spec["type"].get_to(type);
+    std::string name;
+    spec["name"].get_to(name);
+
+    if (type == mcconfig::tStruct) {
+        std::string next_path = path.empty() ? "/" : path + name + "/";
+        for (auto it = spec["fields"].begin(); it != spec["fields"].end(); ++it) {
+            const ojson &opt_spec = *it;
+            // std::string next_path(path);
+            // next_path += opt_spec["name"].template get<std::string>();
+            // std::string typeName = opt_spec["type"].template get<std::string>();
+
+            validate_helper(opt_spec, opt, next_path);
+        }
+        return 0;
+    }
+
+    // try if json key exists
+    std::string jpath(path + name);
+    ojson::json_pointer ptr(jpath);
+    try {
+        ojson::const_reference vref = opt.at(ptr);
+    } catch (const ojson::out_of_range &e) {
+        return 0;
+    }
+
+    // check the vale
+    ojson::const_reference vref = opt.at(ptr);
+    switch (type) {
+    case mcconfig::tEnum: {
+        std::vector<std::string> values;
+        std::string v;
+        vref.get_to(v);
+        spec["values"].get_to(values);
+        if (std::find(values.begin(), values.end(), v) == values.end()) {
+            std::ostringstream msg;
+            msg << "(" << jpath << ") ";
+            msg << "Invalid enum value " << std::quoted(v) << std::endl;
+            msg << "Valid options: ";
+            auto i = values.begin();
+            msg << std::quoted(*i++);
+            for (; i != values.end(); ++i)
+                msg << '|' << std::quoted(*i);
+            msg << endl;
+            throw std::invalid_argument(msg.str());
+        }
+    } break;
+    case mcconfig::tFloat: {
+        float v, vmin, vmax;
+        vref.get_to(v);
+        spec["min"].get_to(vmin);
+        spec["max"].get_to(vmax);
+        if (v > vmax || v < vmin) {
+            std::ostringstream msg;
+            msg << "(" << jpath << ") ";
+            msg << "Out of bounds value " << v << endl;
+            msg << "Valid range: [" << vmin << ", " << vmax << "]" << endl;
+            throw std::invalid_argument(msg.str());
+        }
+    } break;
+    case mcconfig::tVector: {
+        std::vector<float> v;
+        float vmin, vmax;
+        vref.get_to(v);
+        spec["min"].get_to(vmin);
+        spec["max"].get_to(vmax);
+        for (int i = 0; i < v.size(); ++i)
+            if (v[i] > vmax || v[i] < vmin) {
+                std::ostringstream msg;
+                msg << "(" << jpath << "/" << i << ") ";
+                msg << "Out of bounds value " << v[i] << endl;
+                msg << "Valid range: [" << vmin << ", " << vmax << "]" << endl;
+                throw std::invalid_argument(msg.str());
+            }
+    } break;
+    case mcconfig::tIntVector: {
+        std::vector<int> v;
+        int vmin, vmax;
+        vref.get_to(v);
+        spec["min"].get_to(vmin);
+        spec["max"].get_to(vmax);
+        for (int i = 0; i < v.size(); ++i)
+            if (v[i] > vmax || v[i] < vmin) {
+                std::ostringstream msg;
+                msg << "(" << jpath << "/" << i << ") ";
+                msg << "Out of bounds value " << v[i] << endl;
+                msg << "Valid range: [" << vmin << ", " << vmax << "]" << endl;
+                throw std::invalid_argument(msg.str());
+            }
+    } break;
+    case mcconfig::tInt: {
+        int v, vmin, vmax;
+        vref.get_to(v);
+        spec["min"].get_to(vmin);
+        spec["max"].get_to(vmax);
+        if (v > vmax || v < vmin) {
+            std::ostringstream msg;
+            msg << "(" << jpath << ") ";
+            msg << "Out of bounds value " << v << endl;
+            msg << "Valid range: [" << vmin << ", " << vmax << "]" << endl;
+            throw std::invalid_argument(msg.str());
+        }
+    } break;
+    case mcconfig::tBool: {
+        bool v;
+        vref.get_to(v); // throws json exception if not bool
+    } break;
+    case mcconfig::tString: {
+        std::string v;
+        vref.get_to(v); // throws json exception if not string
+    } break;
+    default:
+        assert(0);
+        break;
+    }
+    return 0;
+}
+
+int validate_json_config(const std::string &specs, const ojson &j)
+{
+    std::istringstream is(specs);
+    ojson json_specs = ojson::parse(is, nullptr, true, true);
+    validate_helper(json_specs, j);
+    return 0;
 }

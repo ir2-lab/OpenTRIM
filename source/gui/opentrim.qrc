@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>option_def/options.json</file>
         <file>styles/default.qss</file>
         <file>examples/1MeV_H_on_Fe.json</file>
         <file>examples/2MeV_Fe_on_Fe.json</file>

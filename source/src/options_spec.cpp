@@ -1,3 +1,9 @@
+#include "mcdriver.h"
+
+// clang-format off
+
+static const char* option_spec_str_ =
+R"-(
 {
     "name": "options",
     "label": "Simulation Options",
@@ -619,4 +625,12 @@
             ]
         }
     ]
+}
+)-";
+
+// clang-format on
+
+std::string mcconfig::options_spec()
+{
+    return std::string(option_spec_str_);
 }

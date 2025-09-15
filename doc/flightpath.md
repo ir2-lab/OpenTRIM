@@ -12,7 +12,9 @@ In both cases the conditions are selected so that the results of the calculation
 
 ## Fixed flight path
 
-In this case, the flight path between collisions is a constant, \f$\ell_0\f$, typically of the order of the interatomic distance, e.g., \f$\ell_0 \sim R_{at}\f$, where \f$R_{at} = (4\pi N/3)^{-1/3}\f$ is the atomic radius. Thus, a simulated particle has numerous collisions as it traverses though matter - of the order of \f$10^8\f$ per cm of flight path - which is representative of charged particle transport. The corresponding effective total cross-section is \f$\sigma_0 = (N\ell_0)^{-1} = (N R_{at})^{-1} \sim 1.33 \pi R_{at}^2 \f$, i.e., approximately equal to a circular area of radius \f$R_{at}\f$. Thus, the interaction potential is effectively truncated at a distance \f$r\sim R_{at}\f$. This is considered an adequate approximation, as the ion will at any time interact with the target atom closest to its vicinity, which is within \f$r<R_{at}\f$, and not with more distant atoms with \f$r>R_{at}\f$. 
+In this case, the flight path between collisions is a constant, \f$\ell_0\f$, typically of the order of the interatomic distance, e.g., \f$\ell_0 \sim R_{at}\f$, where \f$R_{at} = (4\pi N/3)^{-1/3}\f$ is the atomic radius. Thus, a simulated particle has numerous collisions as it traverses though matter - of the order of \f$10^8\f$ per cm of flight path. 
+
+The corresponding effective total cross-section is \f$\sigma_0 = (N\ell_0)^{-1} = (N R_{at})^{-1} \sim 1.33 \pi R_{at}^2 \f$, i.e., approximately equal to a circular area of radius \f$R_{at}\f$. Thus, the interaction potential is effectively truncated at a distance \f$r\sim R_{at}\f$. This is considered an adequate approximation, as the ion will at any time interact with the target atom closest to its vicinity, which is within \f$r<R_{at}\f$, and not with more distant atoms with \f$r>R_{at}\f$. 
 
 The simulation proceeds as follows:
 
@@ -26,11 +28,17 @@ The simulation proceeds as follows:
 > - Repeat
 >
 
-The fixed flight path method achieves a rather accurate description of the ion trajectory if a sufficiently small \f$\ell_0\f$ is employed. The SRIM user manuals propose the use of this method for most accurate results - it is called "monolayer mode" in the terminology of this program. However, the efficiency of the method is rather low, as a high number of low energy scattering events are included, which do not contribute significantly to the final outcome. 
+The fixed flight path method achieves a rather accurate description of the ion trajectory if a sufficiently small \f$\ell_0\f$ is employed. 
+
+The SRIM user manual suggests the use of this method for most accurate results. This is called "monolayer mode" in the terminology of this program. 
+
+However, the efficiency of the method is rather low, as a high number of low energy scattering events are included, which do not contribute significantly to the final outcome. 
 
 ## Variable flight path
 
-To improve the efficiency of the simulation, one can reject the scattering events of lower importance. This can be achieved by setting a lower cutoff, \f$T_c\f$, to the recoil energy,  corresponding to the lowest energy transfer of interest in the problem under study. Mendenhall & Weller (2005) suggest a value in the range of 1 - 10 eV for ion penetration in solids. 
+To improve the efficiency of the simulation without sacrificing accuracy, one can selectively reject scattering events of low importance. 
+
+This can be achieved by setting, e.g., a recoil energy cutoff, \f$T_c\f$, corresponding to the lowest energy transfer of interest in the problem under study. Mendenhall & Weller (2005) suggest a value in the range of 1 - 10 eV for ion penetration in solids. 
 
 \f$T_c\f$ corresponds to a lower bound \f$\theta_c\f$ for the center-of-mass scattering angle, which can be obtained from 
 \f[
@@ -50,7 +58,10 @@ we can define a combined recoil energy cut-off, \f$T'_c\f$
 \f[
 T'_c = \min \left\{ T_c, \; (m_1/m_2) E \, \Theta_c^2 \right\}.
 \f]
-Thus, we reject scattering events where the recoil energy and scattering angle satisfy both \f$T<T_c\f$ and \f$\Theta<\Theta_c\f$
+Thus, we reject scattering events only when both the recoil energy and the scattering angle are below their respective cut-offs: 
+\f[
+  T<T_c \; \land \; \Theta<\Theta_c
+\f]
 
 Having defined an effective total cross-section, we can now employ the standard algorithm for sampling the flight path and impact parameter:
 >

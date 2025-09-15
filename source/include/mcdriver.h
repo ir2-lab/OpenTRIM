@@ -42,6 +42,18 @@
  */
 struct mcconfig
 {
+    enum option_type_t {
+        tEnum,
+        tFloat,
+        tInt,
+        tBool,
+        tString,
+        tVector,
+        tIntVector,
+        tStruct,
+        tInvalid
+    };
+
     /// parameters for running the simulation
     struct run_options
     {
@@ -110,6 +122,20 @@ struct mcconfig
 
     /// Pretty print JSON formattet mcconfig to a stream
     void printJSON(std::ostream &os) const;
+
+    /**
+     * @brief Returns a json string with specifications for all mcconfig options
+     *
+     * The returned json structure includes, for every mcconfig option
+     * - mnemonic
+     * - path in OpenTRIM json config
+     * - type (string, number, enum, etc)
+     * - valid range
+     * - short description
+     *
+     * @return The json code as a std::string
+     */
+    static std::string options_spec();
 
     /// Return mcconfig as a JSON string
     std::string toJSON() const;

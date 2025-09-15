@@ -61,6 +61,7 @@
 &emsp;&emsp;&emsp;&emsp;\ref _Output_storage_interval "\"storage_interval\"": 1000,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_store_exit_events "\"store_exit_events\"": false,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_store_pka_events "\"store_pka_events\"": false,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Output_store_damage_events "\"store_damage_events\"": false,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_store_dedx "\"store_dedx\"": true<br>
 &emsp;&emsp;},<br>
 &emsp;&emsp;\ref _Run "\"Run\"": {<br>
@@ -279,6 +280,8 @@ The name can contain the relative or absolute path to the file.<br>
 <tr><td>Default Value<td>false<tr><td>Description <td>Store a table of ion exit events.
 <tr><th colspan="2">\anchor _Output_store_pka_events /Output/store_pka_events<tr><td>Type <td>Boolean
 <tr><td>Default Value<td>false<tr><td>Description <td>Store a table of PKA events.
+<tr><th colspan="2">\anchor _Output_store_damage_events /Output/store_damage_events<tr><td>Type <td>Boolean
+<tr><td>Default Value<td>false<tr><td>Description <td>Store a table of damage events.
 <tr><th colspan="2">\anchor _Output_store_dedx /Output/store_dedx<tr><td>Type <td>Boolean
 <tr><td>Default Value<td>true<tr><td>Description <td>Store electronic stopping tables for each ion/material combination.
 <tr><th colspan="2">\anchor _Run /Run<tr><td>Type <td>Option group

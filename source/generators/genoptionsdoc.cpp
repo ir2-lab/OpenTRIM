@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 
 using std::cerr;
@@ -12,12 +13,8 @@ using std::endl;
 using std::string;
 using std::vector;
 
-enum type_t { tEnum, tFloat, tInt, tBool, tString, tVector, tIntVector, tStruct, tInvalid };
-
-type_t toType(const string &typeName);
-void jsonPrint(std::ostream &os, const ojson &j, type_t type = tStruct, int level = 0,
-               string path = "");
-void jsonPrintTable(std::ostream &os, const ojson &j, type_t type = tStruct, string path = "");
+void jsonPrint(std::ostream &os, const ojson &j, int level = 0, string path = "");
+void jsonPrintTable(std::ostream &os, const ojson &j, string path = "");
 
 int linkID;
 
@@ -28,11 +25,12 @@ const char *tableEnd = "</table>\n";
 
 void printH5table(std::ostream &os);
 
-int main(int argc, char *argv[])
+int main()
 {
     {
-        cout << "[genoptionsdoc] input file: " << argv[1] << endl;
-        std::ifstream is(argv[1]);
+        cout << "[genoptionsdoc] Generating \"options.dox.md\" ... ";
+
+        std::istringstream is(mcconfig::options_spec());
         ojson j = ojson::parse(is, nullptr, true, true);
 
         std::ofstream os("options.dox.md");
@@ -51,9 +49,13 @@ int main(int argc, char *argv[])
         linkID = 0;
         jsonPrintTable(os, j);
         os << tableEnd;
+
+        cout << " done." << endl;
     }
 
     {
+        cout << "[genoptionsdoc] Generating \"h5file.dox.md\" ... ";
+
         std::ofstream os("h5file.dox.md");
 
         os << "## Archive structure" << endl << endl;
@@ -61,31 +63,11 @@ int main(int argc, char *argv[])
         printH5table(os);
 
         os << endl << endl;
+
+        cout << " done." << endl;
     }
 
     return 0;
-}
-
-type_t toType(const string &typeName)
-{
-    if (typeName == "enum")
-        return tEnum;
-    else if (typeName == "float")
-        return tFloat;
-    else if (typeName == "int")
-        return tInt;
-    else if (typeName == "bool")
-        return tBool;
-    else if (typeName == "string")
-        return tString;
-    else if (typeName == "vector")
-        return tVector;
-    else if (typeName == "ivector")
-        return tIntVector;
-    else if (typeName == "struct")
-        return tStruct;
-    else
-        return tInvalid;
 }
 
 #define TAB_WIDTH 2
@@ -108,10 +90,12 @@ void linkCode(std::ostream &os, const string &path, bool ref)
     os << " ";
 }
 
-void jsonPrint(std::ostream &os, const ojson &j, type_t type, int level, string path)
+void jsonPrint(std::ostream &os, const ojson &j, int level, string path)
 {
     string val;
     mcconfig opt;
+
+    mcconfig::option_type_t type = j["type"].template get<mcconfig::option_type_t>();
 
     if (level) {
         path += '/';
@@ -120,7 +104,7 @@ void jsonPrint(std::ostream &os, const ojson &j, type_t type, int level, string 
     };
 
     switch (type) {
-    case tStruct:
+    case mcconfig::tStruct:
         if (level) {
             indent(os, level);
             linkCode(os, path, true);
@@ -130,11 +114,11 @@ void jsonPrint(std::ostream &os, const ojson &j, type_t type, int level, string 
         if (!j["fields"].empty()) {
             auto it = j["fields"].begin();
             const ojson &obj = *it++;
-            jsonPrint(os, obj, toType(obj["type"]), level + 1, path);
+            jsonPrint(os, obj, level + 1, path);
             for (; it != j["fields"].end(); ++it) {
                 os << ',' << "<br>" << endl;
                 const ojson &obj = *it;
-                jsonPrint(os, obj, toType(obj["type"]), level + 1, path);
+                jsonPrint(os, obj, level + 1, path);
             }
         }
         os << "<br>" << endl;
@@ -143,13 +127,13 @@ void jsonPrint(std::ostream &os, const ojson &j, type_t type, int level, string 
         if (!level)
             os << "<br>" << endl;
         break;
-    case tEnum:
-    case tFloat:
-    case tVector:
-    case tIntVector:
-    case tInt:
-    case tBool:
-    case tString:
+    case mcconfig::tEnum:
+    case mcconfig::tFloat:
+    case mcconfig::tVector:
+    case mcconfig::tIntVector:
+    case mcconfig::tInt:
+    case mcconfig::tBool:
+    case mcconfig::tString:
         indent(os, level);
         linkCode(os, path, true);
         os << R"("\")" << j["name"].template get<string>() << R"(\"")" << ": ";
@@ -161,31 +145,31 @@ void jsonPrint(std::ostream &os, const ojson &j, type_t type, int level, string 
     }
 }
 
-std::ostream &operator<<(std::ostream &os, type_t type)
+std::ostream &operator<<(std::ostream &os, mcconfig::option_type_t type)
 {
     switch (type) {
-    case tStruct:
+    case mcconfig::tStruct:
         os << "Option group";
         break;
-    case tEnum:
+    case mcconfig::tEnum:
         os << "Enumerator";
         break;
-    case tFloat:
+    case mcconfig::tFloat:
         os << "Floating point number";
         break;
-    case tVector:
+    case mcconfig::tVector:
         os << "Vector of floating point values";
         break;
-    case tIntVector:
+    case mcconfig::tIntVector:
         os << "Vector of integer values";
         break;
-    case tInt:
+    case mcconfig::tInt:
         os << "Integer";
         break;
-    case tBool:
+    case mcconfig::tBool:
         os << "Boolean";
         break;
-    case tString:
+    case mcconfig::tString:
         os << "String";
         break;
     default:
@@ -206,11 +190,13 @@ void printPath(std::ostream &os, const string &path)
     // }
 }
 
-void jsonPrintTable(std::ostream &os, const ojson &j, type_t type, string path)
+void jsonPrintTable(std::ostream &os, const ojson &j, string path)
 {
     bool is_root = path.empty();
     string name, val;
     mcconfig opt;
+
+    mcconfig::option_type_t type = j["type"].template get<mcconfig::option_type_t>();
 
     if (!is_root) {
         name = j["name"].template get<std::string>();
@@ -219,7 +205,7 @@ void jsonPrintTable(std::ostream &os, const ojson &j, type_t type, string path)
         linkCode(os, path, false);
         printPath(os, path); // os << path << endl;
         os << "<tr><td>" << "Type ";
-        os << "<td>" << toType(j["type"]) << endl;        
+        os << "<td>" << type << endl;
         opt.get(path, val);
         path += '/';
     } else
@@ -227,7 +213,7 @@ void jsonPrintTable(std::ostream &os, const ojson &j, type_t type, string path)
 
     switch (type) {
 
-    case tStruct:
+    case mcconfig::tStruct:
         if (!is_root) {
             os << "<tr><td>" << "Description ";
             os << "<td>" << j["label"].template get<std::string>() << endl;
@@ -235,12 +221,12 @@ void jsonPrintTable(std::ostream &os, const ojson &j, type_t type, string path)
 
         for (auto it = j["fields"].begin(); it != j["fields"].end(); ++it) {
             const ojson &obj = *it;
-            jsonPrintTable(os, obj, toType(obj["type"]), path);
+            jsonPrintTable(os, obj, path);
         }
 
         return;
 
-    case tEnum:
+    case mcconfig::tEnum:
 
         os << "<tr><td>Values<td> ";
         {
@@ -255,8 +241,8 @@ void jsonPrintTable(std::ostream &os, const ojson &j, type_t type, string path)
         os << "<tr><td>Default Value<td>" << val;
         break;
 
-    case tVector:
-    case tIntVector:
+    case mcconfig::tVector:
+    case mcconfig::tIntVector:
 
         os << "<tr><td>Size<td>" << j["size"].template get<int>() << endl;
         os << "<tr><td>Element range<td>";
@@ -264,16 +250,16 @@ void jsonPrintTable(std::ostream &os, const ojson &j, type_t type, string path)
         os << "<tr><td>Default Value<td>" << val;
         break;
 
-    case tInt:
-    case tFloat:
+    case mcconfig::tInt:
+    case mcconfig::tFloat:
 
         os << "<tr><td>Range<td>";
         os << j["min"].template get<float>() << "..." << j["max"].template get<float>() << endl;
         os << "<tr><td>Default Value<td>" << val;
         break;
 
-    case tBool:
-    case tString:
+    case mcconfig::tBool:
+    case mcconfig::tString:
 
         os << "<tr><td>Default Value<td>" << val;
         break;

@@ -97,6 +97,7 @@ add_library(${LIB_TARGET} SHARED
     source/src/mcdriver.cpp
     source/src/dedx.cpp
     source/src/straggling.cpp
+    source/src/options_spec.cpp
     source/src/user_tally.cpp
 )
 
@@ -182,11 +183,11 @@ target_link_libraries(genoptionsdoc
 )
 
 add_custom_target(options_doc ALL
-    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/options.md"
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/options.dox.md"
 )
 
-add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/options.md"
-        COMMAND genoptionsdoc "${CMAKE_SOURCE_DIR}/source/gui/option_def/options.json"
+add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/options.dox.md"
+        COMMAND genoptionsdoc 
         DEPENDS genoptionsdoc
     )
 
