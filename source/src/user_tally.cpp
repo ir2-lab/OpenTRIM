@@ -282,10 +282,26 @@ void user_tally::event_name(Event ev, std::string& name, std::string& desc) cons
         desc = "Unknown";
         break;
     }
-
 }
 
 
+void user_tally::coordinate_name(coordinate_t c, std::string& name) const
+{
+    switch (c) {
+    case xyz:
+        name = "cartesian";
+        break;
+    case cyl:
+        name = "cylindrical";
+        break;
+    case sph:
+        name = "spherical";
+        break;
+    default:
+        name = "unknown";
+        break;
+    }
+}
 
 
 

@@ -43,6 +43,7 @@ public:
     const vector3& org() const { return par_.org; }
 
     const coordinate_t &coordinates() const { return par_.coordinates; }
+    void coordinate_name(coordinate_t c, std::string& name) const;
 
     /// @brief Return Event
     const Event &event() const { return par_.event; }

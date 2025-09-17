@@ -563,21 +563,7 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
 
             // Save Coordinate System
             std::string coord;
-            switch (ut->coordinates()){
-            case user_tally::xyz:
-                coord = "cartesian";
-                break;
-            case user_tally::cyl:
-                coord = "cylindrical";
-                break;
-            case user_tally::sph:
-                coord = "spherical";
-                break;
-            case user_tally::Invalid:
-                coord = "invalid";
-                break;
-            default: coord = "unknown";
-            }
+            ut->coordinate_name(ut->coordinates(), coord);
             dump(h5f, page + "coordinates", coord, var_list, "coordinate_system");
 
 
