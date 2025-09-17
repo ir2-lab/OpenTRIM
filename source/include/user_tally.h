@@ -92,7 +92,8 @@ public:
     /// @param pv pointer to additional data, if available
     void operator()(Event ev, const ion &i, const void *pv = 0);
 
-    std::vector<std::string> bin_names() const;
+    // std::vector<std::string> bin_names() const;
+    void bin_names(std::vector<std::string> &names, std::vector<std::string> &description) const;
 
 private:
     parameters par_;

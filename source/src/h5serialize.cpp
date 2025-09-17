@@ -551,34 +551,34 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
             page += ut->id();
             page += '/';
 
-            dump_array(h5f, page + "data", ut->data(), dut->data(), var_list, "Bin data",
+            dump_array(h5f, page + "data", ut->data(), dut->data(), var_list, "bin_data",
                        getSim()->ion_count());
 
             /* TODO: add code to store user_tally metadata as described in GSoC2025.md */
 
             // Save 3D vectors that define the coordinate system of the user_tally
-            dump_vector(h5f, page + "zaxis", ut->zaxis(), var_list, "Z axis");
-            dump_vector(h5f, page + "xzvec", ut->xzvec(), var_list, "XZ vector");
-            dump_vector(h5f, page + "org", ut->org(), var_list, "Origin");
+            dump_vector(h5f, page + "zaxis", ut->zaxis(), var_list, "z_axis");
+            dump_vector(h5f, page + "xzvec", ut->xzvec(), var_list, "xz_vector");
+            dump_vector(h5f, page + "org", ut->org(), var_list, "origin");
 
             // Save Coordinate System
             std::string coord;
             switch (ut->coordinates()){
             case user_tally::xyz:
-                coord = "Cartesian";
+                coord = "cartesian";
                 break;
             case user_tally::cyl:
-                coord = "Cylindrical";
+                coord = "cylindrical";
                 break;
             case user_tally::sph:
-                coord = "Spherical";
+                coord = "spherical";
                 break;
             case user_tally::Invalid:
-                coord = "Invalid";
+                coord = "invalid";
                 break;
-            default: coord = "Unknown";
+            default: coord = "unknown";
             }
-            dump(h5f, page + "coordinates", coord, var_list, "Coordinate system");
+            dump(h5f, page + "coordinates", coord, var_list, "coordinate_system");
 
             // Save Event
             std::string ev;
@@ -636,11 +636,15 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
                 ev = "Unknown";
                 ev_desc = "Unknown";
             }
-            dump(h5f, page + "Event", ev, var_list, ev_desc);
+            dump(h5f, page + "event", ev, var_list, ev_desc);
 
 
             // Save bin_names
-            dump(h5f, page + "Bin_Names", ut->bin_names(), var_list, "Bin names");
+            std::vector<std::string> names;
+            std::vector<std::string> desc;
+            ut->bin_names(names, desc);
+            dump(h5f, page + "bin_names", names, var_list, "bin_names");
+            dump(h5f, page + "bin_decriptions", desc, var_list, "bin_descriptions");
 
 
         }

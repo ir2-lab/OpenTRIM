@@ -51,63 +51,79 @@ void user_tally::init()
     data_ = ArrayNDd(bin_sizes);    
 }
 
-std::vector<std::string> user_tally::bin_names() const
+// std::vector<std::string> user_tally::bin_names() const
+void user_tally::bin_names(std::vector<std::string>& names, std::vector<std::string>& descriptions) const
 {
-    std::vector<std::string> S;
+    names.clear();
+    descriptions.clear();
     for (int j = 0; j < bin_codes.size(); ++j){
         switch (bin_codes[j]) {
         case cX:
-            S.push_back("x");
+            names.push_back("x");
+            descriptions.push_back("position vector x component [nm]");
             break;
         case cY:
-            S.push_back("y");
+            names.push_back("y");
+            descriptions.push_back("position vector y component [nm]");
             break;
         case cZ:
-            S.push_back("z");
+            names.push_back("z");
+            descriptions.push_back("position vector z component [nm]");
             break;
         case cRho:
-            S.push_back("rho");
+            names.push_back("rho");
+            descriptions.push_back("position vector rho component [nm???]");
             break;
         case cPhi:
-            S.push_back("phi");
+            names.push_back("phi");
+            descriptions.push_back("position vector phi component [rad???]");
             break;
         case cR:
-            S.push_back("r");
+            names.push_back("r");
+            descriptions.push_back("position vector r component [nm???]");
             break;
         case cTheta:
-            S.push_back("theta");
+            names.push_back("theta");
+            descriptions.push_back("position vector theta component [rad???]");
             break;
         case cVX:
-            S.push_back("velocity x");
+            names.push_back("vx");
+            descriptions.push_back("direction vector x component");
             break;
         case cVY:
-            S.push_back("velocity y");
+            names.push_back("vy");
+            descriptions.push_back("direction vector y component");
             break;
         case cVZ:
-            S.push_back("velocity z");
+            names.push_back("vz");
+            descriptions.push_back("direction vector z component");
             break;
         case cVRho:
-            S.push_back("velocity rho");
+            names.push_back("vrho");
+            descriptions.push_back("direction vector rho component");
             break;
         case cVPhi:
-            S.push_back("velocity phi");
+            names.push_back("vphi");
+            descriptions.push_back("direction vector phi component");
             break;
         case cVR:
-            S.push_back("velocity r");
+            names.push_back("vr");
+            descriptions.push_back("direction vector r component");
             break;
         case cVTheta:
-            S.push_back("velocity theta");
+            names.push_back("vtheta");
+            descriptions.push_back("direction vector theta component");
             break;
         case cAtom_id:
-            S.push_back("atom_id");
+            names.push_back("atom_id");
+            descriptions.push_back("atom_id");
             break;
         default:
             break;
         }
     }
-
-    return S;
 }
+
 
 
 // std::vector<size_t> user_tally::get_bin(const ion &i) //const
