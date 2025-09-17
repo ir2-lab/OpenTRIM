@@ -48,9 +48,67 @@ void user_tally::init()
     }
 
     idx.resize(bin_codes.size()); // same size as bin_sizes
-    data_ = ArrayNDd(bin_sizes);
-
+    data_ = ArrayNDd(bin_sizes);    
 }
+
+std::vector<std::string> user_tally::bin_names() const
+{
+    std::vector<std::string> S;
+    for (int j = 0; j < bin_codes.size(); ++j){
+        switch (bin_codes[j]) {
+        case cX:
+            S.push_back("x");
+            break;
+        case cY:
+            S.push_back("y");
+            break;
+        case cZ:
+            S.push_back("z");
+            break;
+        case cRho:
+            S.push_back("rho");
+            break;
+        case cPhi:
+            S.push_back("phi");
+            break;
+        case cR:
+            S.push_back("r");
+            break;
+        case cTheta:
+            S.push_back("theta");
+            break;
+        case cVX:
+            S.push_back("velocity x");
+            break;
+        case cVY:
+            S.push_back("velocity y");
+            break;
+        case cVZ:
+            S.push_back("velocity z");
+            break;
+        case cVRho:
+            S.push_back("velocity rho");
+            break;
+        case cVPhi:
+            S.push_back("velocity phi");
+            break;
+        case cVR:
+            S.push_back("velocity r");
+            break;
+        case cVTheta:
+            S.push_back("velocity theta");
+            break;
+        case cAtom_id:
+            S.push_back("atom_id");
+            break;
+        default:
+            break;
+        }
+    }
+
+    return S;
+}
+
 
 // std::vector<size_t> user_tally::get_bin(const ion &i) //const
 bool user_tally::get_bin(const ion &i)

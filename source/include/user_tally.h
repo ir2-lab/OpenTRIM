@@ -92,10 +92,12 @@ public:
     /// @param pv pointer to additional data, if available
     void operator()(Event ev, const ion &i, const void *pv = 0);
 
+    std::vector<std::string> bin_names() const;
+
 private:
     parameters par_;
     ArrayNDd data_;
-    enum variable_code {cX, cY, cZ, cRho, cPhi, cR, cTheta, cVX, cVY, cVZ, cVRho, cVPhi, cVR, cVTheta,cAtom_id};
+    enum variable_code {cX, cY, cZ, cRho, cPhi, cR, cTheta, cVX, cVY, cVZ, cVRho, cVPhi, cVR, cVTheta, cAtom_id};
     std::vector<variable_code> bin_codes;
     std::vector<std::vector<float>> bins;
     std::vector<size_t> bin_sizes;

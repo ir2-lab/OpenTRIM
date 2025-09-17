@@ -638,6 +638,11 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
             }
             dump(h5f, page + "Event", ev, var_list, ev_desc);
 
+
+            // Save bin_names
+            dump(h5f, page + "Bin_Names", ut->bin_names(), var_list, "Bin names");
+
+
         }
 
         // 6. events
