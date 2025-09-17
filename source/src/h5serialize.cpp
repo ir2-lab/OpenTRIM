@@ -580,63 +580,11 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
             }
             dump(h5f, page + "coordinates", coord, var_list, "coordinate_system");
 
+
             // Save Event
-            std::string ev;
-            std::string ev_desc;
-            switch (ut->event()){
-            case Event::NewSourceIon:
-                ev = "NewSourceIon";
-                ev_desc = "A new ion track is started.";
-                break;
-            case Event::NewRecoil:
-                ev = "NewRecoil";
-                ev_desc = "A new recoil track is started.";
-                break;
-            case Event::Scattering:
-                ev = "Scattering";
-                ev_desc = "An ion scattering occured.";
-                break;
-            case Event::IonExit:
-                ev = "IonExit";
-                ev_desc = "An ion exits the simulation volume.";
-                break;
-            case Event::IonStop:
-                ev = "IonStop";
-                ev_desc = "An ion stops inside the simulation volume.";
-                break;
-            case Event::BoundaryCrossing:
-                ev = "BoundaryCrossing";
-                ev_desc = "An ion crosses an internal boundary.";
-                break;
-            case Event::Replacement:
-                ev = "Replacement";
-                ev_desc = "A replacement event occurs.";
-                break;
-            case Event::Vacancy:
-                ev = "Vacancy";
-                ev_desc = "A vacancy is created.";
-                break;
-            case Event::CascadeComplete:
-                ev = "CascadeComplete";
-                ev_desc = "A PKA cascade is complete.";
-                break;
-            case Event::NewFlightPath:
-                ev = "NewFlightPath";
-                ev_desc = "";
-                break;
-            case Event::NEvent:
-                ev = "NEvent";
-                ev_desc = "";
-                break;
-            case Event::Invalid:
-                ev = "Invalid";
-                ev_desc = "Invalid";
-                break;
-            default:
-                ev = "Unknown";
-                ev_desc = "Unknown";
-            }
-            dump(h5f, page + "event", ev, var_list, ev_desc);
+            std::string ev_name, ev_desc;
+            ut->event_name(ut->event(), ev_name, ev_desc);
+            dump(h5f, page + "event", ev_name, var_list, ev_desc);
 
 
             // Save bin_names

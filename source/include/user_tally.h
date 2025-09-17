@@ -46,6 +46,7 @@ public:
 
     /// @brief Return Event
     const Event &event() const { return par_.event; }
+    void event_name(Event ev, std::string& name, std::string& desc) const;
 
     /// @brief Initialize tally buffers for given # of atoms and cells
     void init();

@@ -226,6 +226,65 @@ void user_tally::operator()(Event ev, const ion &i, const void *pv)
     if (get_bin(i)) data_(idx)++;
 }
 
+void user_tally::event_name(Event ev, std::string& name, std::string& desc) const
+{
+    switch (ev) {
+    case Event::NewSourceIon:
+        name = "NewSourceIon";
+        desc = "A new ion track is started.";
+        break;
+    case Event::NewRecoil:
+        name = "NewRecoil";
+        desc = "A new recoil track is started.";
+        break;
+    case Event::Scattering:
+        name = "Scattering";
+        desc = "An ion scattering occured.";
+        break;
+    case Event::IonExit:
+        name = "IonExit";
+        desc = "An ion exits the simulation volume.";
+        break;
+    case Event::IonStop:
+        name = "IonStop";
+        desc = "An ion stops inside the simulation volume.";
+        break;
+    case Event::BoundaryCrossing:
+        name = "BoundaryCrossing";
+        desc = "An ion crosses an internal boundary.";
+        break;
+    case Event::Replacement:
+        name = "Replacement";
+        desc = "A replacement event occurs.";
+        break;
+    case Event::Vacancy:
+        name = "Vacancy";
+        desc = "A vacancy is created.";
+        break;
+    case Event::CascadeComplete:
+        name = "CascadeComplete";
+        desc = "A PKA cascade is complete.";
+        break;
+    case Event::NewFlightPath:
+        name = "NewFlightPath";
+        desc = "";
+        break;
+    case Event::NEvent:
+        name = "NEvent";
+        desc = "";
+        break;
+    case Event::Invalid:
+        name = "Invalid";
+        desc = "Invalid";
+        break;
+    default:
+        name = "Unknown";
+        desc = "Unknown";
+        break;
+    }
+
+}
+
 
 
 
