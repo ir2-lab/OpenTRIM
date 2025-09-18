@@ -96,6 +96,7 @@ public:
 
     // std::vector<std::string> bin_names() const;
     void bin_names(std::vector<std::string> &names, std::vector<std::string> &description) const;
+    const std::vector<float>& bin_edges(int bin_id) const;
 
 private:
     parameters par_;

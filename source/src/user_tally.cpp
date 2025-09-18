@@ -303,7 +303,13 @@ void user_tally::coordinate_name(coordinate_t c, std::string& name) const
     }
 }
 
-
+const std::vector<float>& user_tally::bin_edges(int bin_id) const
+{
+    if (bin_id < 0 || bin_id >= static_cast<int>(bins.size())) {
+        throw std::out_of_range("Invalid bin_id in user_tally::bin_edges");
+    }
+    return bins[bin_id];
+}
 
 
 
