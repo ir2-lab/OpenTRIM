@@ -169,7 +169,7 @@ target_link_libraries(${EXE_TARGET}
     ${LIB_TARGET}
 )
 
-add_executable(genoptionsdoc
+add_executable(genoptionsdoc EXCLUDE_FROM_ALL
     source/generators/genoptionsdoc.cpp
 )
 
@@ -182,13 +182,12 @@ target_link_libraries(genoptionsdoc
     ${LIB_TARGET}
 )
 
-add_custom_target(options_doc ALL
+add_custom_target(options_doc EXCLUDE_FROM_ALL
     DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/options.dox.md"
 )
 
-add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/options.dox.md"
-        COMMAND genoptionsdoc 
-        DEPENDS genoptionsdoc
+add_custom_command(OUTPUT options.dox.md
+        COMMAND genoptionsdoc DEPENDS genoptionsdoc
     )
 
 # add_subdirectory(doc)
