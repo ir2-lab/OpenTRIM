@@ -135,11 +135,6 @@ int dump_vector(h5::File &file, const std::string &path, const vector3 &data, ds
     return dump(file, path, x, var_list, desc);
 }
 
-int dump_vector(h5::File &file, const std::string &path, const std::vector<float> &data, dset_list_t &var_list,
-                const std::string &desc)
-{
-    return dump(file, path, data, var_list, desc);
-}
 
 // dump data using H5Easy, create attribute with the description and write description to var_list
 template <class T>
@@ -589,7 +584,7 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
 
             // Save bins
             for (int j = 0; j < names.size(); ++j){
-                dump_vector(h5f, page+"bins/bin_"+std::to_string(j), ut->bin_edges(j), var_list, "bin edges of" + names[j]);
+                dump(h5f, page+"bins/bin_"+std::to_string(j), ut->bin_edges(j), var_list, "bin edges of" + names[j]);
             }
 
 
