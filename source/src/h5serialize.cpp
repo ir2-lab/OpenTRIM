@@ -135,7 +135,6 @@ int dump_vector(h5::File &file, const std::string &path, const vector3 &data, ds
     return dump(file, path, x, var_list, desc);
 }
 
-
 // dump data using H5Easy, create attribute with the description and write description to var_list
 template <class T>
 int dump(h5::File &file, const std::string &path, const T &data, const T &sem,
@@ -558,36 +557,34 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
             /* TODO: add code to store user_tally metadata as described in GSoC2025.md */
 
             // Save 3D vectors that define the coordinate system of the user_tally
-            dump_vector(h5f, page + "zaxis", ut->zaxis(), var_list, "z_axis");
-            dump_vector(h5f, page + "xzvec", ut->xzvec(), var_list, "xz_vector");
-            dump_vector(h5f, page + "org", ut->org(), var_list, "origin");
+            dump_vector(h5f, page + "zaxis", ut->zaxis(), var_list,
+                        "Vector parallel to the z-axis direction");
+            dump_vector(h5f, page + "xzvec", ut->xzvec(), var_list, "Vector on the xz-plane");
+            dump_vector(h5f, page + "org", ut->org(), var_list, "Coordinate system origin");
 
             // Save Coordinate System
             std::string coord;
-            ut->coordinate_name(ut->coordinates(), coord);
-            dump(h5f, page + "coordinates", coord, var_list, "coordinate_system");
-
+            user_tally::coordinate_name(ut->coordinates(), coord);
+            dump(h5f, page + "coordinates", coord, var_list, "Coordinate system");
 
             // Save Event
             std::string ev_name, ev_desc;
-            ut->event_name(ut->event(), ev_name, ev_desc);
+            user_tally::event_name(ut->event(), ev_name, ev_desc);
             dump(h5f, page + "event", ev_name, var_list, ev_desc);
-
 
             // Save bin_names
             std::vector<std::string> names;
             std::vector<std::string> desc;
             ut->bin_names(names, desc);
-            dump(h5f, page + "bin_names", names, var_list, "bin_names");
-            dump(h5f, page + "bin_decriptions", desc, var_list, "bin_descriptions");
-
+            dump(h5f, page + "bin_names", names, var_list, "Bin names");
+            dump(h5f, page + "bin_decriptions", desc, var_list, "Bin descriptions");
 
             // Save bins
-            for (int j = 0; j < names.size(); ++j){
-                dump(h5f, page+"bins/bin_"+std::to_string(j), ut->bin_edges(j), var_list, "bin edges of" + names[j]);
+            for (int j = 0; j < names.size(); ++j) {
+                std::ostringstream os;
+                os << "Bin edges of dim " << j << " : [" << names[j] << "]";
+                dump(h5f, page + "bins/" + std::to_string(j), ut->bin_edges(j), var_list, os.str());
             }
-
-
         }
 
         // 6. events

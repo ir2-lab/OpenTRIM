@@ -14,7 +14,7 @@ public:
         Event event{ Event::IonStop };
         std::vector<float> x, y, z, rho, phi, r, theta, vx, vy, vz, vrho, vphi, vr, vtheta, atom_id;
         coordinate_t coordinates = xyz;
-        vector3 zaxis{0, 0, 1}; // z-axis direction
+        vector3 zaxis{ 0, 0, 1 }; // z-axis direction
         vector3 xzvec{ 1, 0, 1 }; // vector in xz plane
         vector3 org{ 0.0, 0.0, 0.0 }; // system center
     };
@@ -31,32 +31,29 @@ public:
     {
     }
 
-    /// Return the id of the user tally
+    /// @brief Return the id of the user tally
     const std::string &id() const { return par_.id; }
 
     /// @brief Return a constant reference to the tally data
     const ArrayNDd &data() const { return data_; }
 
     /// @brief Return coordinate system values
-    const vector3& zaxis() const { return par_.zaxis; }
-    const vector3& xzvec() const { return par_.xzvec; }
-    const vector3& org() const { return par_.org; }
+    const vector3 &zaxis() const { return par_.zaxis; }
+    const vector3 &xzvec() const { return par_.xzvec; }
+    const vector3 &org() const { return par_.org; }
 
     const coordinate_t &coordinates() const { return par_.coordinates; }
-    void coordinate_name(coordinate_t c, std::string& name) const;
+    static void coordinate_name(coordinate_t c, std::string &name);
 
     /// @brief Return Event
     const Event &event() const { return par_.event; }
-    void event_name(Event ev, std::string& name, std::string& desc) const;
+    static void event_name(Event ev, std::string &name, std::string &desc);
 
     /// @brief Initialize tally buffers for given # of atoms and cells
     void init();
 
     /// @brief Zero-out all tally scores
-    void clear()
-    {
-        data_.clear();
-    }
+    void clear() { data_.clear(); }
 
     /// @brief Add the scores from another tally
     /// @param t another tally object
@@ -96,12 +93,36 @@ public:
 
     // std::vector<std::string> bin_names() const;
     void bin_names(std::vector<std::string> &names, std::vector<std::string> &description) const;
-    const std::vector<float>& bin_edges(int bin_id) const;
+
+    /// @brief Return the vector of bin edges for the given bin index
+    /// @param bin_id zero-based bin index
+    /// @return
+    const std::vector<float> &bin_edges(int bin_id) const
+    {
+        assert(bin_id >= 0 && bin_id < bins.size());
+        return bins[bin_id];
+    }
 
 private:
     parameters par_;
     ArrayNDd data_;
-    enum variable_code {cX, cY, cZ, cRho, cPhi, cR, cTheta, cVX, cVY, cVZ, cVRho, cVPhi, cVR, cVTheta, cAtom_id};
+    enum variable_code {
+        cX,
+        cY,
+        cZ,
+        cRho,
+        cPhi,
+        cR,
+        cTheta,
+        cVX,
+        cVY,
+        cVZ,
+        cVRho,
+        cVPhi,
+        cVR,
+        cVTheta,
+        cAtom_id
+    };
     std::vector<variable_code> bin_codes;
     std::vector<std::vector<float>> bins;
     std::vector<size_t> bin_sizes;
