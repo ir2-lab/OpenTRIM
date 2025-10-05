@@ -241,11 +241,11 @@ int mccore::run()
                     damage_stream_.write(&damage_ev);
                 }
 
-                transport(j, tion_, cscd);
+                transport(j, cscd);
 
                 // transport all secondary recoils
                 while (ion *k = q_.pop_recoil()) {
-                    transport(k, tion_, cscd);
+                    transport(k, cscd);
                     // free the ion buffer
                     q_.free_ion(k);
                 }
@@ -305,7 +305,7 @@ int mccore::run()
     return 0;
 }
 
-int mccore::transport(ion *i, tally &t, abstract_cascade *cscd)
+int mccore::transport(ion *i, abstract_cascade *cscd)
 {
     // collision flag
     bool doCollision;
@@ -327,7 +327,7 @@ int mccore::transport(ion *i, tally &t, abstract_cascade *cscd)
         // Check if ion has enough energy to continue
         if (i->erg() < tr_opt_.min_energy) {
             /* projectile has to stop. Store as implanted/interstitial atom*/
-            t(Event::IonStop, *i);
+            ionEvent(Event::IonStop, *i);
             if (cscd) {
                 cscd->push_interstitial(*i);
             } else if (damage_stream_.is_open()) {

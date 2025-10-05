@@ -141,6 +141,7 @@ protected:
 
     // tallies
     tally tally_, dtally_, tion_;
+    user_tally *utally_, *dutally_, *ution_;
 
     // events
     event_stream pka_stream_, exit_stream_, damage_stream_;
@@ -353,11 +354,10 @@ protected:
      * using the \ref tally object \p t.
      *
      * @param i pointer to the ion object
-     * @param t reference to the tally object
      * @param cscd a pointer to a cascade object
      * @return 0 if succesfull
      */
-    int transport(ion *i, tally &t, abstract_cascade *cscd = nullptr);
+    int transport(ion *i, abstract_cascade *cscd = nullptr);
 
     /**
      * @brief Generate a new recoil ion

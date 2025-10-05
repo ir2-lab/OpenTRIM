@@ -213,11 +213,12 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Event,
                                { Event::NEvent, "NEvent" } })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(user_tally::coordinate_t,
-                             { { user_tally::Invalid, nullptr },
-                               { user_tally::xyz, "xyz" },
-                               { user_tally::cyl, "cyl" },
-                               { user_tally::sph, "sph" },
-                               })
+                             {
+                                     { user_tally::Invalid, nullptr },
+                                     { user_tally::xyz, "xyz" },
+                                     { user_tally::cyl, "cyl" },
+                                     { user_tally::sph, "sph" },
+                             })
 
 // option struct serialization
 
@@ -258,7 +259,9 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::output_options, title, outfi
                                           storage_interval, store_exit_events, store_pka_events,
                                           store_damage_events, store_dedx)
 
-MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(user_tally::parameters, id, event, coordinates, x, y, z, rho, phi, r, theta, zaxis, xzvec, org, vx, vy, vz, vrho, vphi, vr, vtheta, atom_id)
+MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(user_tally::parameters, id, event, coordinates, x, y, z,
+                                          rho, phi, r, theta, zaxis, xzvec, org, vx, vy, vz, vrho,
+                                          vphi, vr, vtheta, atom_id)
 
 // MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 //     target::target_desc_t,
@@ -275,6 +278,7 @@ void to_json(ojson &j, const material::material_desc_t &md)
     j["id"] = md.id;
     j["density"] = md.density;
     j["composition"] = md.composition;
+    j["color"] = md.color;
 }
 
 void from_json(const ojson &nlohmann_json_j, material::material_desc_t &nlohmann_json_t)
@@ -282,6 +286,7 @@ void from_json(const ojson &nlohmann_json_j, material::material_desc_t &nlohmann
     const material::material_desc_t nlohmann_json_default_obj{};
     NLOHMANN_JSON_FROM_WITH_DEFAULT(id);
     NLOHMANN_JSON_FROM_WITH_DEFAULT(density);
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(color);
 
     if (nlohmann_json_j["composition"].is_array())
         nlohmann_json_t.composition =
@@ -369,7 +374,6 @@ void from_json(const ojson &j, mcconfig &p)
 
 //     NLOHMANN_JSON_FROM_WITH_DEFAULT(coordinates);
 // }
-
 
 void mcconfig::printJSON(std::ostream &os) const
 {
