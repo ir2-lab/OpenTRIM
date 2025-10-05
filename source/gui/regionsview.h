@@ -82,6 +82,11 @@ class RegionsView : public QWidget
 public:
     RegionsView(OptionsModel *m, QObject *parent = nullptr);
 
+    RegionsModel *model() const { return model_; }
+
+signals:
+    void regionsChanged();
+
 public slots:
     void revert();
     void addRegion();
@@ -89,6 +94,18 @@ public slots:
     void moveRegionUp();
     void moveRegionDown();
     void onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+
+private slots:
+    void onDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
+    {
+        emit regionsChanged();
+    }
+    void onRowsInserted(const QModelIndex &, int, int) { emit regionsChanged(); }
+    void onRowsMoved(const QModelIndex &, int, int, const QModelIndex &, int)
+    {
+        emit regionsChanged();
+    }
+    void onRowsRemoved(const QModelIndex &, int, int) { emit regionsChanged(); }
 };
 
 #endif // REGIONSVIEW_H

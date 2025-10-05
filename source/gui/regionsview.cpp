@@ -36,17 +36,39 @@ int RegionsModel::columnCount(const QModelIndex & /* parent */) const
 }
 QVariant RegionsModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid() || (role != Qt::DisplayRole && role != Qt::EditRole))
+    if (!index.isValid())
         return QVariant();
 
-    int i = index.row(), j = index.column();
-    if (j < 0 || j >= columnCount())
+    if (role != Qt::DisplayRole && role != Qt::EditRole && role != Qt::DecorationRole)
         return QVariant();
+
+    int i = index.row();
     if (i < 0 || i >= rowCount())
         return QVariant();
 
-    const mcconfig *opt = model_->options();
-    const target::region &reg = opt->Target.regions[i];
+    int j = index.column();
+    if (j < 0 || j >= columnCount())
+        return QVariant();
+
+    const target::region &reg = model_->options()->Target.regions[i];
+
+    // return material's color pixmap
+    if (role == Qt::DecorationRole) {
+        if (j == 1) {
+            const char *clr = nullptr;
+            for (const auto &m : model_->options()->Target.materials) {
+                if (m.id == reg.material_id)
+                    clr = m.color.c_str();
+            }
+            if (clr) {
+                QPixmap pxmap(16, 16);
+                pxmap.fill(QColor(clr));
+                return pxmap;
+            } else
+                return QVariant();
+        } else
+            return QVariant();
+    }
 
     QVariant V;
 
@@ -118,6 +140,8 @@ bool RegionsModel::setData(const QModelIndex &index, const QVariant &value, int 
     // fake setData just to let model_ know that
     // underlying data changed
     model_->setData(regionsIndex_, QVariant());
+
+    emit dataChanged(index, index);
 
     return true;
 }
@@ -231,6 +255,9 @@ QWidget *RegionDelegate::createEditor(QWidget *parent, const QStyleOptionViewIte
         auto &materials = opt->Target.materials;
         for (int i = 0; i < materials.size(); ++i) {
             cb->addItem(QString::fromStdString(materials[i].id));
+            QPixmap pxmap(cb->iconSize());
+            pxmap.fill(QColor(materials[i].color.c_str()));
+            cb->setItemIcon(i, pxmap);
         }
         w = cb;
     } break;
@@ -326,6 +353,12 @@ RegionsView::RegionsView(OptionsModel *m, QObject *parent)
     connect(btRemove, &QToolButton::clicked, this, &RegionsView::removeRegion);
     connect(btUp, &QToolButton::clicked, this, &RegionsView::moveRegionUp);
     connect(btDown, &QToolButton::clicked, this, &RegionsView::moveRegionDown);
+
+    connect(model_, &RegionsModel::dataChanged, this, &RegionsView::onDataChanged);
+    connect(model_, &RegionsModel::rowsInserted, this, &RegionsView::onRowsInserted);
+    connect(model_, &RegionsModel::rowsMoved, this, &RegionsView::onRowsMoved);
+    connect(model_, &RegionsModel::rowsRemoved, this, &RegionsView::onRowsRemoved);
+
     // btAdd->setEnabled(false);
     btRemove->setEnabled(false);
     btUp->setEnabled(false);
@@ -336,7 +369,7 @@ RegionsView::RegionsView(OptionsModel *m, QObject *parent)
     tableView->setItemDelegate(delegate_);
     QFontMetrics fm = tableView->fontMetrics();
     int char_w = fm.averageCharWidth();
-    const int field_w[] = { 10, 10, 20, 20 };
+    const int field_w[] = { 10, 10, 15, 15 };
     for (int col = 0; col < 4; ++col)
         tableView->setColumnWidth(col, char_w * field_w[col]);
 
@@ -345,7 +378,6 @@ RegionsView::RegionsView(OptionsModel *m, QObject *parent)
             &RegionsView::onSelectionChanged);
 
     QHBoxLayout *hbox = new QHBoxLayout;
-    // hbox->addWidget(new QLabel("Regions "));
     QGridLayout *grid = new QGridLayout;
     grid->setSizeConstraint(QLayout::SetFixedSize);
     grid->addWidget(btAdd, 0, 0);
@@ -354,12 +386,6 @@ RegionsView::RegionsView(OptionsModel *m, QObject *parent)
     grid->addWidget(btDown, 0, 3);
     hbox->addLayout(grid);
     hbox->addStretch();
-
-    //    QSize fsz(24,24);
-    //    btAdd->setFixedSize(fsz);
-    //    btRemove->setFixedSize(fsz);
-    //    btUp->setFixedSize(fsz);
-    //    btDown->setFixedSize(fsz);
 
     QVBoxLayout *vbox = new QVBoxLayout;
     vbox->addLayout(hbox);
@@ -370,9 +396,6 @@ RegionsView::RegionsView(OptionsModel *m, QObject *parent)
 
 void RegionsView::revert()
 {
-    // tableView->setModel(0);
-    // tableView->setModel(model_);
-    // tableView->update(QModelIndex());
     model_->resetModel();
     disconnect(selectionModel, &QItemSelectionModel::selectionChanged, this,
                &RegionsView::onSelectionChanged);

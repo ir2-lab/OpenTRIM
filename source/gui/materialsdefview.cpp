@@ -12,12 +12,23 @@
 
 #include <QLabel>
 #include <QToolButton>
+#include <QPushButton>
 #include <QDoubleSpinBox>
 #include <QTableView>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QFontMetrics>
 #include <QItemSelectionModel>
+#include <QColorDialog>
+
+void MaterialsDefView::setBtMatColor(const QColor &clr)
+{
+    if (!btMatColor)
+        return;
+    QPixmap px(btMatColor->iconSize());
+    px.fill(clr);
+    btMatColor->setIcon(px);
+}
 
 MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ parent }, model_(m)
 {
@@ -48,8 +59,15 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     btDelMaterial->setIcon(QIcon(":/assets/ionicons/remove-outline.svg"));
     btDelMaterial->setToolTip("Remove Material");
     btDelMaterial->setEnabled(false);
+
+    btEdtMaterial = new QToolButton;
+    btEdtMaterial->setIcon(QIcon(":/assets/ionicons/create-outline.svg"));
+    btEdtMaterial->setToolTip("Edit Material's Name");
+    btEdtMaterial->setEnabled(false);
+
     connect(btAddMaterial, &QToolButton::clicked, this, &MaterialsDefView::addMaterial);
     connect(btDelMaterial, &QToolButton::clicked, this, &MaterialsDefView::removeMaterial);
+    connect(btEdtMaterial, &QToolButton::clicked, this, &MaterialsDefView::editMaterialName);
 
     sbDensity = new QDoubleSpinBox;
     sbDensity->setMinimum(0.001);
@@ -57,20 +75,29 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     sbDensity->setDecimals(4);
     connect(sbDensity, SIGNAL(valueChanged(double)), this, SLOT(setDensity(double)));
 
+    btMatColor = new QToolButton;
+    btMatColor->setText(" Select Display Color ");
+    btMatColor->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    setBtMatColor(Qt::darkBlue);
+    btMatColor->setToolTip("Select display color for this material");
+    connect(btMatColor, &QToolButton::pressed, this, &MaterialsDefView::selectColor);
+
     hbox->addWidget(cbMaterialID);
     hbox->addWidget(btAddMaterial);
     hbox->addWidget(btDelMaterial);
+    hbox->addWidget(btEdtMaterial);
     hbox->setSpacing(0);
 
     flayout->addRow("Material", hbox);
     flayout->addRow("Density (g/cm³)", sbDensity);
+    flayout->addRow("Color", btMatColor);
 
     hbox = new QHBoxLayout;
     hbox->addLayout(flayout);
     hbox->addStretch();
 
     vbox->addLayout(hbox);
-    vbox->addSpacing(20);
+    vbox->addSpacing(12);
 
     materialsView = new MaterialCompositionView(model_);
 
@@ -88,22 +115,14 @@ void MaterialsDefView::addMaterial()
         auto &materials = model_->options()->Target.materials;
         material::material_desc_t newMaterial;
         newMaterial.id = id.toStdString();
-        newMaterial.density = 1.0f;
-        QStringList keys;
-        keys << "Z"
-             << "M"
-             << "X"
-             << "Ed"
-             << "El"
-             << "Es"
-             << "Er"
-             << "Rc";
         materials.push_back(newMaterial);
         setWidgetData(); // widgets updated
         cbMaterialID->setCurrentText(id);
         // fake setData just to let model_ know that
         // underlying data changed
         model_->setData(materialsIndex_, QVariant());
+
+        emit materialsChanged();
     }
 }
 
@@ -144,6 +163,8 @@ void MaterialsDefView::removeMaterial()
         // fake setData just to let model_ know that
         // underlying data changed
         model_->setData(materialsIndex_, QVariant());
+
+        emit materialsChanged();
     }
 }
 // from options to widgets
@@ -170,16 +191,22 @@ void MaterialsDefView::setWidgetData()
     }
 
     // update selection if out of bounds
-    if (i < 0)
-        i = 0;
-    else if (i >= n)
-        i = n - 1;
+    if (n) {
+        if (i < 0)
+            i = 0;
+        else if (i >= n)
+            i = n - 1;
+    } else
+        i = -1;
 
     // set data to selected material
     cbMaterialID->setCurrentIndex(i);
+    btDelMaterial->setEnabled(i >= 0);
+    btEdtMaterial->setEnabled(i >= 0);
     sbDensity->blockSignals(true);
     sbDensity->setValue(materials[i].density);
     sbDensity->blockSignals(false);
+    setBtMatColor(QColor(materials[i].color.c_str()));
     materialsView->setMaterialIdx(i);
 
     cbMaterialID->blockSignals(false);
@@ -197,9 +224,11 @@ void MaterialsDefView::updateSelectedMaterial()
         sbDensity->blockSignals(true);
         sbDensity->setValue(mat.density);
         sbDensity->blockSignals(false);
+        setBtMatColor(QColor(mat.color.c_str()));
         materialsView->setMaterialIdx(i);
     }
     btDelMaterial->setEnabled(i >= 0);
+    btEdtMaterial->setEnabled(i >= 0);
     return;
 }
 void MaterialsDefView::setDensity(double v)
@@ -220,6 +249,34 @@ void MaterialsDefView::setDensity(double v)
     // underlying data changed
     model_->setData(materialsIndex_, QVariant());
 }
+
+void MaterialsDefView::selectColor()
+{
+    auto &materials = model_->options()->Target.materials;
+
+    if (materials.empty())
+        return;
+
+    int i = cbMaterialID->currentIndex();
+    if (i < 0)
+        return;
+
+    material::material_desc_t &mat = materials[i];
+
+    QColor clr = QColorDialog::getColor(QColor(mat.color.c_str()), this,
+                                        QString("Select display color for %1").arg(mat.id.c_str()),
+                                        QColorDialog::ShowAlphaChannel);
+    if (clr.isValid()) {
+        mat.color = clr.name(QColor::HexArgb).toStdString();
+        setBtMatColor(clr);
+        // fake setData just to let model_ know that
+        // underlying data changed
+        model_->setData(materialsIndex_, QVariant());
+
+        emit materialsChanged();
+    }
+}
+
 /*****************************************************/
 MaterialCompositionModel::MaterialCompositionModel(OptionsModel *m, QObject *parent)
     : QAbstractTableModel(parent), model_(m)
@@ -475,7 +532,7 @@ MaterialCompositionView::MaterialCompositionView(OptionsModel *m, QObject *paren
     view->setItemDelegate(delegate_);
     QFontMetrics fm = view->fontMetrics();
     int sz = fm.averageCharWidth();
-    const int W[] = { 2, 8, 6, 6, 6, 6, 6, 6 };
+    const int W[] = { 10, 8, 6, 6, 6, 6, 6, 6 };
     for (int col = 0; col < 8; ++col)
         view->setColumnWidth(col, sz * W[col]);
 
@@ -492,6 +549,8 @@ MaterialCompositionView::MaterialCompositionView(OptionsModel *m, QObject *paren
     QVBoxLayout *vbox = new QVBoxLayout;
     vbox->addLayout(hbox);
     vbox->addWidget(view);
+
+    vbox->setContentsMargins(0, 0, 0, 0);
 
     setLayout(vbox);
 }

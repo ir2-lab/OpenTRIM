@@ -84,13 +84,6 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     layout->setSpacing(0);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    setWindowTitle(tr(PROJECT_NAME));
-    QPoint x0 = geometry().center();
-    QScreen *scr = QGuiApplication::screenAt(x0);
-    resize(1024, 768);
-    move(scr->geometry().center() - geometry().center());
-    // setGeometry(0,0, 1024, 768);
-
     /* Create pages */
     welcomeView = new WelcomeView(this);
     push(tr("Welcome"), welcomeView);
@@ -116,6 +109,16 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     connect(driverObj_, &McDriverObj::modificationChanged, this, &MainUI::updateWindowTitle);
 
     driverObj_->loadJsonTemplate();
+
+    setWindowTitle(tr(PROJECT_NAME));
+    QPoint x0 = geometry().center();
+    QScreen *scr = QGuiApplication::screenAt(x0);
+    // resize(1024, 768);
+    resize(600, 600);
+
+    show();
+
+    move(scr->geometry().center() - geometry().center());
 }
 
 MainUI::~MainUI()

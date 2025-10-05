@@ -2,8 +2,8 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(QT NAMES Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt5 REQUIRED COMPONENTS Widgets DataVisualization)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets DataVisualization)
 message(STATUS "Found Qt${QT_VERSION_MAJOR}")
 
 find_package(Qwt REQUIRED)
@@ -26,6 +26,7 @@ set(GUI_HEADERS
     error_fmt.h
     jsedit/jsedit.h 
     ${external_qmatplotwidget_SOURCE_DIR}/src/QMatPlotWidget.h
+    simboxview.h
 )
 
 set(GUI_SOURCES
@@ -46,6 +47,7 @@ set(GUI_SOURCES
     tabularview.cpp
     jsedit/jsedit.cpp
     ${external_qmatplotwidget_SOURCE_DIR}/src/QMatPlotWidget.cpp
+    simboxview.cpp
 )
 
 set (GUI_TARGET ${PROJECT_NAME_LOWERCASE}-gui)
@@ -70,6 +72,7 @@ target_include_directories(${GUI_TARGET} PRIVATE
 
 target_link_libraries(${GUI_TARGET} PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::DataVisualization
     Qwt::Qwt
     ${LIB_TARGET}
 )

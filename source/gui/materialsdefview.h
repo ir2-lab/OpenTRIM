@@ -12,6 +12,7 @@ class QTableWidget;
 class QDoubleSpinBox;
 class QLineEdit;
 class QToolButton;
+class QPushButton;
 class QItemSelection;
 class QItemSelectionModel;
 class MaterialCompositionView;
@@ -24,14 +25,21 @@ class MaterialsDefView : public QWidget
     MyComboBox *cbMaterialID;
     QToolButton *btAddMaterial;
     QToolButton *btDelMaterial;
+    QToolButton *btEdtMaterial;
     QDoubleSpinBox *sbDensity;
+    QToolButton *btMatColor;
     MaterialCompositionView *materialsView;
     OptionsModel *model_;
 
     QPersistentModelIndex materialsIndex_;
 
+    void setBtMatColor(const QColor &clr);
+
 public:
     MaterialsDefView(OptionsModel *m, QWidget *parent = nullptr);
+
+signals:
+    void materialsChanged();
 
 public slots:
     void addMaterial();
@@ -41,6 +49,7 @@ public slots:
     void setValueData();
     void updateSelectedMaterial();
     void setDensity(double v);
+    void selectColor();
 };
 
 class MyComboBox : public QComboBox
@@ -133,6 +142,7 @@ public:
     MaterialCompositionView(OptionsModel *m, QObject *parent = nullptr);
 
     void setMaterialIdx(int i = -1);
+    MaterialCompositionModel *model() const { return model_; }
 
 public slots:
     void addElement();

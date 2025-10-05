@@ -4,6 +4,7 @@ build/
 .winbuild/
 playground/
 doc/html/*
+CMakeLists.txt.user.*
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles

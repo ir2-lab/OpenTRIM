@@ -213,6 +213,10 @@ public:
          *
          */
         std::vector<atom::parameters> composition;
+        /**
+         * @brief Color specification for display purposes
+         */
+        std::string color{ "#55aaff" };
     };
 
     explicit material(const char *name);

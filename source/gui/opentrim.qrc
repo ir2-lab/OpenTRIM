@@ -35,5 +35,7 @@
         <file>md/images/sum1.png</file>
         <file>md/about.md</file>
         <file>assets/ionicons/open-outline.svg</file>
+        <file>assets/3d/cubeFlat.obj</file>
+        <file>assets/ionicons/create-outline.svg</file>
     </qresource>
 </RCC>

@@ -1,4 +1,5 @@
 #include "simulationoptionsview.h"
+#include "floatlineedit.h"
 #include "periodic_table.h"
 #include "periodictablewidget.h"
 #include "materialsdefview.h"
@@ -7,6 +8,7 @@
 #include "mydatawidgetmapper.h"
 #include "mainui.h"
 #include "mcdriverobj.h"
+#include "simboxview.h"
 
 #include <QJsonObject>
 #include <QVBoxLayout>
@@ -152,6 +154,14 @@ SimulationOptionsView::SimulationOptionsView(MainUI *iui, QWidget *parent)
 
     connect(model, &OptionsModel::dataChanged, this, &SimulationOptionsView::setModified2);
 
+    connect(materialsView, &MaterialsDefView::materialsChanged, this,
+            &SimulationOptionsView::drawSimBox);
+    connect(regionsView, &RegionsView::regionsChanged, this, &SimulationOptionsView::drawSimBox);
+    {
+        VectorLineEdit *w = findChild<VectorLineEdit *>("/Target/size");
+        if (w)
+            connect(w, &VectorLineEdit::editingFinished, this, &SimulationOptionsView::drawSimBox);
+    }
     connect(ionsui->driverObj(), &McDriverObj::configChanged, this, &SimulationOptionsView::revert);
 
     bool ret = connect(ionsui->driverObj(), &McDriverObj::statusChanged, this,
@@ -188,6 +198,8 @@ void SimulationOptionsView::revert()
             closestIsotopeSymbol(opt.IonBeam.ion.atomic_number, opt.IonBeam.ion.atomic_mass));
 
     applyRules();
+    drawSimBox();
+
     setModified(false);
 }
 
@@ -239,6 +251,35 @@ void SimulationOptionsView::applyRules()
               opt->IonBeam.angular_distribution.type != ion_beam::SingleValue);
     enable_if("/IonBeam/spatial_distribution/fwhm",
               opt->IonBeam.spatial_distribution.type != ion_beam::SingleValue);
+}
+
+inline QVector3D qV3(vector3 v)
+{
+    return QVector3D(v.x(), v.y(), v.z());
+}
+
+void SimulationOptionsView::drawSimBox()
+{
+    // current unsaved mcconfig
+    const mcconfig *opt = mapper->model()->options();
+    const auto &t = opt->Target;
+
+    std::unordered_map<std::string, int> mmap; // map material_id->index
+
+    for (int i = 0; i < t.materials.size(); ++i) {
+        auto md = t.materials[i];
+        mmap[md.id] = i;
+    }
+
+    simBoxView->clearVolume();
+    simBoxView->setScale(qV3(t.size));
+    for (const auto &r : t.regions) {
+        auto it = mmap.find(r.material_id);
+        QColor clr = (it == mmap.end()) ? Qt::transparent
+                                        : QColor(t.materials[it->second].color.c_str());
+        QVector3D O = qV3(r.origin - t.origin);
+        simBoxView->fill(O, O + qV3(r.size), clr);
+    }
 }
 
 QWidget *SimulationOptionsView::createIonBeamTab(const QModelIndex &parent)
@@ -294,15 +335,33 @@ QWidget *SimulationOptionsView::createTargetTab(const QModelIndex &idx)
     regionsView = new RegionsView(model);
     innerTab->addTab(regionsView, "Regions");
 
+    simBoxView = new SimBoxView;
+    simBoxView->setBackgroundColor(Qt::white);
+
     QWidget *widget = new QWidget;
+
+    // layout widgets
     QHBoxLayout *hbox = new QHBoxLayout;
-    hbox->addLayout(createForm(idx, widget));
-    hbox->addStretch();
-    QVBoxLayout *vbox = new QVBoxLayout;
-    vbox->addLayout(hbox);
-    vbox->addSpacing(20);
-    vbox->addWidget(innerTab);
-    widget->setLayout(vbox);
+    widget->setLayout(hbox);
+    // left pane
+    {
+        QHBoxLayout *hbox1 = new QHBoxLayout;
+        hbox1->addLayout(createForm(idx, widget), 3);
+        hbox1->addStretch(1);
+        QVBoxLayout *vbox = new QVBoxLayout;
+        vbox->addLayout(hbox1);
+        vbox->addSpacing(12);
+        vbox->addWidget(innerTab);
+        hbox->addLayout(vbox, 3);
+    }
+    hbox->addSpacing(12);
+    {
+        QVBoxLayout *vbox = new QVBoxLayout;
+        vbox->addSpacing(40);
+        vbox->addWidget(simBoxView);
+        hbox->addLayout(vbox, 2);
+    }
+
     return widget;
 }
 

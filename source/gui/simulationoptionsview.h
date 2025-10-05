@@ -14,6 +14,7 @@ class QLineEdit;
 class MyDataWidgetMapper;
 class MaterialsDefView;
 class RegionsView;
+class SimBoxView;
 class OptionsModel;
 class MainUI;
 
@@ -55,6 +56,7 @@ public slots:
 private:
     bool modified_{ false };
     void applyRules();
+    void drawSimBox();
 
     QWidget *createIonBeamTab(const QModelIndex &idx);
     QWidget *createTargetTab(const QModelIndex &idx);
@@ -73,6 +75,7 @@ private:
     MyDataWidgetMapper *mapper;
     MaterialsDefView *materialsView;
     RegionsView *regionsView;
+    SimBoxView *simBoxView;
     QDialogButtonBox *buttonBox;
     QPushButton *btValidate;
 };
