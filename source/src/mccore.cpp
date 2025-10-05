@@ -11,10 +11,7 @@ mccore::mccore()
       ion_counter_(new std::atomic_size_t(0)),
       thread_ion_counter_(0),
       abort_flag_(new std::atomic_bool()),
-      tally_mutex_(new std::mutex),
-      utally_(nullptr),
-      dutally_(nullptr),
-      ution_(nullptr)
+      tally_mutex_(new std::mutex)
 {
 }
 
@@ -27,10 +24,7 @@ mccore::mccore(const parameters &p, const transport_options &t)
       ion_counter_(new std::atomic_size_t(0)),
       thread_ion_counter_(0),
       abort_flag_(new std::atomic_bool()),
-      tally_mutex_(new std::mutex),
-      utally_(nullptr),
-      dutally_(nullptr),
-      ution_(nullptr)
+      tally_mutex_(new std::mutex)
 {
 }
 
@@ -48,10 +42,7 @@ mccore::mccore(const mccore &s)
       flight_path_calc_(s.flight_path_calc_),
       scattering_matrix_(s.scattering_matrix_),
       rng(s.rng),
-      pka(s.pka),
-      utally_(nullptr),
-      dutally_(nullptr),
-      ution_(nullptr)
+      pka(s.pka)
 {
     tally_.copy(s.tally_);
     dtally_.copy(s.dtally_);
@@ -60,13 +51,16 @@ mccore::mccore(const mccore &s)
     dtally_.clear();
     tion_.clear();
 
-    if (s.utally_) {
-        utally_ = new user_tally(*s.utally_);
-        dutally_ = new user_tally(*s.utally_);
-        ution_ = new user_tally(*s.utally_);
-        utally_->clear();
-        dutally_->clear();
-        ution_->clear();
+    if (s.utally_.size()) {
+        for (int i = 0; i < s.utally_.size(); ++i) {
+            auto u = s.utally_[i];
+            utally_.push_back(new user_tally(*u));
+            dutally_.push_back(new user_tally(*u));
+            ution_.push_back(new user_tally(*u));
+            utally_.back()->clear();
+            dutally_.back()->clear();
+            ution_.back()->clear();
+        }
     }
 }
 
@@ -149,10 +143,12 @@ int mccore::init()
     /*
      * Init user tally(ies)
      */
-    if (utally_) {
-        utally_->init();
-        dutally_->init();
-        ution_->init();
+    if (utally_.size()) {
+        for (int i = 0; i < utally_.size(); ++i) {
+            utally_[i]->init();
+            dutally_[i]->init();
+            ution_[i]->init();
+        }
     }
 
     // prepare event buffers
@@ -283,16 +279,16 @@ int mccore::run()
             std::lock_guard<std::mutex> lock(*tally_mutex_);
             tally_ += tion_;
             dtally_.addSquared(tion_);
-            if (utally_) {
-                *utally_ += *ution_;
-                dutally_->addSquared(*ution_);
+            for (int i = 0; i < utally_.size(); ++i) {
+                *(utally_[i]) += *(ution_[i]);
+                dutally_[i]->addSquared(*(ution_[i]));
             }
         }
 
         // clear the tally scores
         tion_.clear();
-        if (utally_)
-            ution_->clear();
+        for (int i = 0; i < utally_.size(); ++i)
+            ution_[i]->clear();
 
         // update thread counter
         thread_ion_counter_++;
@@ -523,11 +519,13 @@ void mccore::mergeTallies(mccore &other)
     other.tally_.clear();
     dtally_ += other.dtally_;
     other.dtally_.clear();
-    if (utally_) {
-        *utally_ += *(other.utally_);
-        other.utally_->clear();
-        *dutally_ += *(other.dutally_);
-        other.dutally_->clear();
+    if (utally_.size()) {
+        for (int i = 0; i < utally_.size(); ++i) {
+            *(utally_[i]) += *(other.utally_[i]);
+            other.utally_[i]->clear();
+            *(dutally_[i]) += *(other.dutally_[i]);
+            other.dutally_[i]->clear();
+        }
     }
 }
 
@@ -584,7 +582,7 @@ void mccore::copyTallyTableVar(int i, ArrayNDd &dA) const
 
 void mccore::addUserTally(const user_tally::parameters &p)
 {
-    utally_ = new user_tally(p);
-    dutally_ = new user_tally(p);
-    ution_ = new user_tally(p);
+    utally_.push_back(new user_tally(p));
+    dutally_.push_back(new user_tally(p));
+    ution_.push_back(new user_tally(p));
 }

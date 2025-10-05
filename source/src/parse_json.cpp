@@ -364,8 +364,15 @@ void from_json(const ojson &j, mcconfig &p)
     }
     p.Target = j["Target"];
 
-    if (j.contains(("UserTally")))
-        p.UserTally = j["UserTally"];
+    if (j.contains(("UserTally"))) {
+        if (j["UserTally"].is_array())
+            p.UserTally = j.value("UserTally", p.UserTally);
+        else if (j["UserTally"].is_object()) {
+            user_tally::parameters utp;
+            from_json(j["UserTally"], utp);
+            p.UserTally.push_back(utp);
+        }
+    }
 }
 
 // void from_json(const ojson &nlohmann_json_j, user_tally::parameters &nlohmann_json_t)

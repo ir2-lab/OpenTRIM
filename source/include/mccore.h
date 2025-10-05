@@ -141,7 +141,7 @@ protected:
 
     // tallies
     tally tally_, dtally_, tion_;
-    user_tally *utally_, *dutally_, *ution_;
+    std::vector<user_tally *> utally_, dutally_, ution_;
 
     // events
     event_stream pka_stream_, exit_stream_, damage_stream_;
@@ -230,8 +230,8 @@ public:
     void copyTallyTableVar(int i, ArrayNDd &dA) const;
 
     void addUserTally(const user_tally::parameters &p);
-    const user_tally *getUserTally() const { return utally_; }
-    const user_tally *getUserTallyVar() const { return dutally_; }
+    const std::vector<user_tally *> &getUserTally() const { return utally_; }
+    const std::vector<user_tally *> &getUserTallyVar() const { return dutally_; }
 
     /// Open file stream to store \ref pka_event data
     int open_pka_stream() { return pka_stream_.open(pka); }
@@ -403,8 +403,8 @@ protected:
     void ionEvent(Event ev, const ion &i, const void *pv = 0)
     {
         tion_(ev, i, pv);
-        if (ution_)
-            (*ution_)(ev, i, pv);
+        for (int k = 0; k < ution_.size(); ++k)
+            (*(ution_[k]))(ev, i, pv);
     }
 };
 

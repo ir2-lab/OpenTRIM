@@ -544,39 +544,39 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
 
         // 5. user_tally
 
-        const user_tally *ut = s_->getUserTally();
-        const user_tally *dut = s_->getUserTallyVar();
+        auto ut = s_->getUserTally();
+        auto dut = s_->getUserTallyVar();
         page = "/user_tally/";
-        if (ut) { // only if a user tally has been defined
+        for (int i = 0; i < ut.size(); ++i) { // only if a user tally has been defined
 
-            page += ut->id();
+            page += ut[i]->id();
             page += '/';
 
-            dump_array(h5f, page + "data", ut->data(), dut->data(), var_list, "bin_data",
+            dump_array(h5f, page + "data", ut[i]->data(), dut[i]->data(), var_list, "bin_data",
                        getSim()->ion_count());
 
             /* TODO: add code to store user_tally metadata as described in GSoC2025.md */
 
             // Save 3D vectors that define the coordinate system of the user_tally
-            dump_vector(h5f, page + "zaxis", ut->zaxis(), var_list,
+            dump_vector(h5f, page + "zaxis", ut[i]->zaxis(), var_list,
                         "Vector parallel to the z-axis direction");
-            dump_vector(h5f, page + "xzvec", ut->xzvec(), var_list, "Vector on the xz-plane");
-            dump_vector(h5f, page + "org", ut->org(), var_list, "Coordinate system origin");
+            dump_vector(h5f, page + "xzvec", ut[i]->xzvec(), var_list, "Vector on the xz-plane");
+            dump_vector(h5f, page + "org", ut[i]->org(), var_list, "Coordinate system origin");
 
             // Save Coordinate System
             std::string coord;
-            user_tally::coordinate_name(ut->coordinates(), coord);
+            user_tally::coordinate_name(ut[i]->coordinates(), coord);
             dump(h5f, page + "coordinates", coord, var_list, "Coordinate system");
 
             // Save Event
             std::string ev_name, ev_desc;
-            user_tally::event_name(ut->event(), ev_name, ev_desc);
+            user_tally::event_name(ut[i]->event(), ev_name, ev_desc);
             dump(h5f, page + "event", ev_name, var_list, ev_desc);
 
             // Save bin_names
             std::vector<std::string> names;
             std::vector<std::string> desc;
-            ut->bin_names(names, desc);
+            ut[i]->bin_names(names, desc);
             dump(h5f, page + "bin_names", names, var_list, "Bin names");
             dump(h5f, page + "bin_decriptions", desc, var_list, "Bin descriptions");
 
@@ -584,7 +584,8 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
             for (int j = 0; j < names.size(); ++j) {
                 std::ostringstream os;
                 os << "Bin edges of dim " << j << " : [" << names[j] << "]";
-                dump(h5f, page + "bins/" + std::to_string(j), ut->bin_edges(j), var_list, os.str());
+                dump(h5f, page + "bins/" + std::to_string(j), ut[i]->bin_edges(j), var_list,
+                     os.str());
             }
         }
 

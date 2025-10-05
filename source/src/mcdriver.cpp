@@ -447,7 +447,8 @@ mccore *mcconfig::createSimulation() const
     for (auto rd : Target.regions)
         T.addRegion(rd);
 
-    S->addUserTally(UserTally);
+    for (int i = 0; i < UserTally.size(); ++i)
+        S->addUserTally(UserTally[i]);
 
     return S;
 }

@@ -99,7 +99,7 @@ struct mcconfig
     /// Output options
     output_options Output;
     /// UserTally options
-    user_tally::parameters UserTally;
+    std::vector<user_tally::parameters> UserTally;
 
     /**
      * @brief Parse simulation mcconfig from JSON formatted input
