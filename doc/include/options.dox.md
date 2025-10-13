@@ -5,9 +5,8 @@
 &emsp;&emsp;\ref _Simulation "\"Simulation\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_simulation_type "\"simulation_type\"": "FullCascade",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_screening_type "\"screening_type\"": "ZBL",<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Simulation_eloss_calculation "\"eloss_calculation\"": "EnergyLoss",<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Simulation_stopping_model "\"stopping_model\"": "SRIM13",<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Simulation_straggling_model "\"straggling_model\"": "BohrStraggling",<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Simulation_electronic_stopping "\"electronic_stopping\"": "SRIM13",<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Simulation_electronic_straggling "\"electronic_straggling\"": "Off",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_nrt_calculation "\"nrt_calculation\"": "NRT_element",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_intra_cascade_recombination "\"intra_cascade_recombination\"": false<br>
 &emsp;&emsp;},<br>
@@ -99,23 +98,22 @@
   <br>
 For Unscreened Coulomb the scattering is calculated analytically.<br>
 In all other cases interpolation tables are used.<br>
-<tr><th colspan="2">\anchor _Simulation_eloss_calculation /Simulation/eloss_calculation<tr><td>Type <td>Enumerator
-<tr><td>Values<td> EnergyLossOff | EnergyLoss | EnergyLossAndStraggling
-<tr><td>Default Value<td>"EnergyLoss"<tr><td>Description <td>Setting for electronic energy loss calculation.
+<tr><th colspan="2">\anchor _Simulation_electronic_stopping /Simulation/electronic_stopping<tr><td>Type <td>Enumerator
+<tr><td>Values<td> Off | SRIM96 | SRIM13 | DPASS22
+<tr><td>Default Value<td>"SRIM13"<tr><td>Description <td>Calculation of electronic stopping.
 <br>
-- EnergyLossOff: No energy loss calculation<br>
-- EnergyLoss: Only energy loss is calculated<br>
-- EnergyLossAndStraggling: Both energy loss and straggling are calculated<br>
-<tr><th colspan="2">\anchor _Simulation_stopping_model /Simulation/stopping_model<tr><td>Type <td>Enumerator
-<tr><td>Values<td> SRIM96 | SRIM13 | DPASS22
-<tr><td>Default Value<td>"SRIM13"<tr><td>Description <td>Model/parametrization used for electronic stopping calculations.
+- Off: No electronic stopping<br>
+- SRIM96: Using the SRIM parametrization, v. 1996<br>
+- SRIM13: Using the SRIM parametrization, v. 2013<br>
+- DPASS22: Using the DPASS parametrization, v. 21.06<br>
+<tr><th colspan="2">\anchor _Simulation_electronic_straggling /Simulation/electronic_straggling<tr><td>Type <td>Enumerator
+<tr><td>Values<td> Off | Bohr | Chu | Yang
+<tr><td>Default Value<td>"Off"<tr><td>Description <td>Calculation of electronic straggling.
 <br>
-- SRIM96: SRIM version 1996<br>
-- SRIM13: SRIM version 2013<br>
-- DPASS22: DPASS version 21.06<br>
-<tr><th colspan="2">\anchor _Simulation_straggling_model /Simulation/straggling_model<tr><td>Type <td>Enumerator
-<tr><td>Values<td> BohrStraggling | ChuStraggling | YangStraggling
-<tr><td>Default Value<td>"BohrStraggling"<tr><td>Description <td>Model used for electronic straggling calculations.
+- Off: No electronic straggling.<br>
+- Bohr: According to the Bohr model<br>
+- Chu: According to the model of Chu et al.<br>
+- Yang: According to the model of Yang et al.<br>
 <tr><th colspan="2">\anchor _Simulation_nrt_calculation /Simulation/nrt_calculation<tr><td>Type <td>Enumerator
 <tr><td>Values<td> NRT_element | NRT_average
 <tr><td>Default Value<td>"NRT_element"<tr><td>Description <td>Define how to implement NRT in multielemental targets.

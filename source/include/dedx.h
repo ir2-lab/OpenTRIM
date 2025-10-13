@@ -255,21 +255,28 @@ public:
 class dedx_calc
 {
 public:
-    /**
-     * @brief Determines electronic energy loss calculation mode
-     */
-    enum eloss_calculation_t {
-        EnergyLossOff = 0, /**< Electronic effects disabled */
-        EnergyLoss = 1, /**< Only electronic energy loss is calculated */
-        EnergyLossAndStraggling = 2, /**< Both energy loss & straggling are calculated */
-        InvalidEnergyLoss = -1
+    enum class electronic_stopping_t {
+        Off = 3,
+        SRIM96 = int(StoppingModel::SRIM96),
+        SRIM13 = int(StoppingModel::SRIM13),
+        DPASS = int(StoppingModel::DPASS22),
+        Invalid = -1
+    };
+
+    enum class electronic_straggling_t {
+        Off = 3,
+        Bohr = int(StragglingModel::Bohr),
+        Chu = int(StragglingModel::Chu),
+        Yang = int(StragglingModel::Yang),
+        Invalid = -1
     };
 
     dedx_calc();
     dedx_calc(const dedx_calc &other);
     ~dedx_calc();
 
-    eloss_calculation_t type() const { return type_; }
+    electronic_stopping_t stopping() const { return stopping_; }
+    electronic_straggling_t straggling() const { return straggling_; }
 
     // dedx interpolators
     ArrayND<dedx_interp *> dedx() const { return dedx_; }
@@ -317,12 +324,12 @@ public:
      */
     void operator()(ion &i, float fp, random_vars &rng) const
     {
-        if (type_ == EnergyLossOff)
+        if (stopping_ == electronic_stopping_t::Off)
             return;
 
         float de = __get_de_stopping__(i, fp);
 
-        if (type_ == EnergyLossAndStraggling) {
+        if (straggling_ != electronic_straggling_t::Off) {
             float E = i.erg();
             dedx_iterator ie(E);
             de += straggling_interp_->data()[ie] * rng.normal() * std::sqrt(fp);
@@ -344,7 +351,7 @@ public:
      */
     void operator()(ion &i, float fp) const
     {
-        if (type_ == EnergyLossOff)
+        if (stopping_ == electronic_stopping_t::Off)
             return;
 
         float de_stopping = __get_de_stopping__(i, fp);
@@ -353,7 +360,8 @@ public:
     }
 
 protected:
-    eloss_calculation_t type_;
+    electronic_stopping_t stopping_;
+    electronic_straggling_t straggling_;
 
     // Electronic Stopping & Straggling Tables
     ArrayND<dedx_interp *> dedx_; // stopping data (atoms x materials)

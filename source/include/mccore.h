@@ -85,12 +85,14 @@ public:
         simulation_type_t simulation_type{ FullCascade };
         /// screeninig
         Screening screening_type{ Screening::ZBL };
-        /// Electronic energy loss calculation option
-        dedx_calc::eloss_calculation_t eloss_calculation{ dedx_calc::EnergyLoss };
-        /// Model to use for calculating electronic straggling (if calculated)
-        StoppingModel stopping_model{ StoppingModel::SRIM13 };
-        /// Model to use for calculating electronic straggling (if calculated)
-        StragglingModel straggling_model{ StragglingModel::Bohr };
+        /// Electronic stopping calculation option
+        dedx_calc::electronic_stopping_t electronic_stopping{
+            dedx_calc::electronic_stopping_t::SRIM13
+        };
+        /// Electronic stopping calculation option
+        dedx_calc::electronic_straggling_t electronic_straggling{
+            dedx_calc::electronic_straggling_t::Off
+        };
         /// Way to calculate NRT vacancies in multielement materials
         nrt_calculation_t nrt_calculation{ NRT_element };
         /// Allow intra cascade Frenkel pair recombination

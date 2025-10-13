@@ -217,12 +217,8 @@ void SimulationOptionsView::applyRules()
             w->setEnabled(b);
     };
 
-    enable_if("/Simulation/stopping_model",
-              opt->Simulation.eloss_calculation == dedx_calc::EnergyLossAndStraggling
-                      || opt->Simulation.eloss_calculation == dedx_calc::EnergyLoss);
-
-    enable_if("/Simulation/straggling_model",
-              opt->Simulation.eloss_calculation == dedx_calc::EnergyLossAndStraggling);
+    enable_if("/Simulation/electronic_straggling",
+              opt->Simulation.electronic_stopping != dedx_calc::electronic_stopping_t::Off);
 
     enable_if("/Transport/flight_path_const", false);
     enable_if("/Transport/mfp_range", false);

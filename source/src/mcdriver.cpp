@@ -261,8 +261,8 @@ int mcconfig::validate(bool AcceptIncomplete)
     // Simulation & Transport
     CHECK_INVALID_ENUM(Simulation, simulation_type)
     CHECK_INVALID_ENUM(Simulation, screening_type)
-    CHECK_INVALID_ENUM(Simulation, eloss_calculation)
-    CHECK_INVALID_ENUM(Simulation, straggling_model)
+    CHECK_INVALID_ENUM(Simulation, electronic_stopping)
+    CHECK_INVALID_ENUM(Simulation, electronic_straggling)
     CHECK_INVALID_ENUM(Simulation, nrt_calculation)
 
     CHECK_INVALID_ENUM(Transport, flight_path_type)

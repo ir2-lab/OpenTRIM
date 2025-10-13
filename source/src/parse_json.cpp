@@ -162,11 +162,27 @@ NLOHMANN_JSON_SERIALIZE_ENUM(mccore::simulation_type_t,
                                { mccore::IonsOnly, "IonsOnly" },
                                { mccore::CascadesOnly, "CascadesOnly" } })
 
-NLOHMANN_JSON_SERIALIZE_ENUM(dedx_calc::eloss_calculation_t,
-                             { { dedx_calc::InvalidEnergyLoss, nullptr },
-                               { dedx_calc::EnergyLossOff, "EnergyLossOff" },
-                               { dedx_calc::EnergyLoss, "EnergyLoss" },
-                               { dedx_calc::EnergyLossAndStraggling, "EnergyLossAndStraggling" } })
+NLOHMANN_JSON_SERIALIZE_ENUM(Screening,
+                             { { Screening::Invalid, nullptr },
+                               { Screening::None, "None" },
+                               { Screening::Bohr, "Bohr" },
+                               { Screening::KrC, "KrC" },
+                               { Screening::Moliere, "Moliere" },
+                               { Screening::ZBL, "ZBL" } })
+
+NLOHMANN_JSON_SERIALIZE_ENUM(dedx_calc::electronic_stopping_t,
+                             { { dedx_calc::electronic_stopping_t::Invalid, nullptr },
+                               { dedx_calc::electronic_stopping_t::Off, "Off" },
+                               { dedx_calc::electronic_stopping_t::SRIM96, "SRIM96" },
+                               { dedx_calc::electronic_stopping_t::SRIM13, "SRIM13" },
+                               { dedx_calc::electronic_stopping_t::DPASS, "DPASS" } })
+
+NLOHMANN_JSON_SERIALIZE_ENUM(dedx_calc::electronic_straggling_t,
+                             { { dedx_calc::electronic_straggling_t::Invalid, nullptr },
+                               { dedx_calc::electronic_straggling_t::Off, "Off" },
+                               { dedx_calc::electronic_straggling_t::Bohr, "Bohr" },
+                               { dedx_calc::electronic_straggling_t::Chu, "Chu" },
+                               { dedx_calc::electronic_straggling_t::Yang, "Yang" } })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(mccore::nrt_calculation_t,
                              { { mccore::NRT_InvalidOption, nullptr },
@@ -177,26 +193,6 @@ NLOHMANN_JSON_SERIALIZE_ENUM(flight_path_calc::flight_path_type_t,
                              { { flight_path_calc::InvalidPath, nullptr },
                                { flight_path_calc::Constant, "Constant" },
                                { flight_path_calc::Variable, "Variable" } })
-
-NLOHMANN_JSON_SERIALIZE_ENUM(Screening,
-                             { { Screening::Invalid, nullptr },
-                               { Screening::None, "None" },
-                               { Screening::Bohr, "Bohr" },
-                               { Screening::KrC, "KrC" },
-                               { Screening::Moliere, "Moliere" },
-                               { Screening::ZBL, "ZBL" } })
-
-NLOHMANN_JSON_SERIALIZE_ENUM(StragglingModel,
-                             { { StragglingModel::Invalid, nullptr },
-                               { StragglingModel::Bohr, "BohrStraggling" },
-                               { StragglingModel::Chu, "ChuStraggling" },
-                               { StragglingModel::Yang, "YangStraggling" } })
-
-NLOHMANN_JSON_SERIALIZE_ENUM(StoppingModel,
-                             { { StoppingModel::Invalid, nullptr },
-                               { StoppingModel::SRIM96, "SRIM96" },
-                               { StoppingModel::SRIM13, "SRIM13" },
-                               { StoppingModel::DPASS22, "DPASS22" } })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(Event,
                              { { Event::Invalid, nullptr },
@@ -243,7 +239,7 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ion_beam::parameters, ion, energy_dist
                                           spatial_distribution, angular_distribution)
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::parameters, simulation_type, screening_type,
-                                          eloss_calculation, stopping_model, straggling_model,
+                                          electronic_stopping, electronic_straggling,
                                           nrt_calculation, intra_cascade_recombination,
                                           time_ordered_cascades, correlated_recombination,
                                           move_recoil, recoil_sub_ed)

@@ -66,63 +66,52 @@ R"-(
                     ]
                 },
                 {
-                    "name": "eloss_calculation",
-                    "label": "Energy Loss",
+                    "name": "electronic_stopping",
+                    "label": "Electronic Stopping",
                     "type": "enum",
                     "values": [
-                        "EnergyLossOff",
-                        "EnergyLoss",
-                        "EnergyLossAndStraggling"
-                    ],
-                    "valueLabels": [
-                        "EnergyLossOff",
-                        "EnergyLoss",
-                        "EnergyLossAndStraggling"
-                    ],
-                    "toolTip": "Setting for electronic energy loss calculation.",
-                    "whatsThis": [
-                        "- EnergyLossOff: No energy loss calculation",
-                        "- EnergyLoss: Only energy loss is calculated",
-                        "- EnergyLossAndStraggling: Both energy loss and straggling are calculated"
-                    ]
-                },
-                {
-                    "name": "stopping_model",
-                    "label": "Stopping Model",
-                    "type": "enum",
-                    "values": [
+                        "Off",
                         "SRIM96",
                         "SRIM13",
                         "DPASS22"
                     ],
                     "valueLabels": [
+                        "Off",
                         "SRIM96",
                         "SRIM13",
                         "DPASS22"
                     ],
-                    "toolTip": "Model/parametrization used for electronic stopping calculations.",
+                    "toolTip": "Calculation of electronic stopping.",
                     "whatsThis": [
-                        "- SRIM96: SRIM version 1996",
-                        "- SRIM13: SRIM version 2013",
-                        "- DPASS22: DPASS version 21.06"
+                        "- Off: No electronic stopping",
+                        "- SRIM96: Using the SRIM parametrization, v. 1996",
+                        "- SRIM13: Using the SRIM parametrization, v. 2013",
+                        "- DPASS22: Using the DPASS parametrization, v. 21.06"
                     ]
                 },
                 {
-                    "name": "straggling_model",
-                    "label": "Straggling Model",
+                    "name": "electronic_straggling",
+                    "label": "Electronic Straggling",
                     "type": "enum",
                     "values": [
-                        "BohrStraggling",
-                        "ChuStraggling",
-                        "YangStraggling"
+                        "Off",
+                        "Bohr",
+                        "Chu",
+                        "Yang"
                     ],
                     "valueLabels": [
-                        "BohrStraggling",
-                        "ChuStraggling",
-                        "YangStraggling"
+                        "Off",
+                        "Bohr",
+                        "Chu",
+                        "Yang"
                     ],
-                    "toolTip": "Model used for electronic straggling calculations.",
-                    "whatsThis": ""
+                    "toolTip": "Calculation of electronic straggling.",
+                    "whatsThis": [
+                        "- Off: No electronic straggling.",
+                        "- Bohr: According to the Bohr model",
+                        "- Chu: According to the model of Chu et al.",
+                        "- Yang: According to the model of Yang et al."
+                    ]
                 },
                 {
                     "name": "nrt_calculation",

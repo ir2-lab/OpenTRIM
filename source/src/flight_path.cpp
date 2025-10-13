@@ -108,7 +108,8 @@ int flight_path_calc::init(const mccore &s)
 
                     // calc fpmax : fpmax*dEdx/E < max_rel_eloss
                     fpmax = 1e30f;
-                    if (s.getSimulationParameters().eloss_calculation != dedx_calc::EnergyLossOff) {
+                    if (s.getSimulationParameters().electronic_stopping
+                        != dedx_calc::electronic_stopping_t::Off) {
                         fpmax = delta_dedx * E / dedx(z1, im)->data()[ie];
                     }
 

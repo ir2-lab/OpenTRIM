@@ -2,9 +2,7 @@
     "Simulation": {
         "simulation_type": "CascadesOnly",
         "screening_type": "ZBL",
-        "eloss_calculation": "EnergyLossOff",
-        "stopping_model": "SRIM13",
-        "straggling_model": "BohrStraggling",
+        "electronic_stopping": "Off",
         "nrt_calculation": "NRT_element",
         "intra_cascade_recombination": true,
         "correlated_recombination": true,

@@ -124,7 +124,10 @@ int straggling_interp::init(StoppingModel mstop, StragglingModel mstrag, int Z1,
 dedx_calc::dedx_calc() { }
 
 dedx_calc::dedx_calc(const dedx_calc &other)
-    : type_(other.type_), dedx_(other.dedx_), de_strag_(other.de_strag_)
+    : stopping_(other.stopping_),
+      straggling_(other.straggling_),
+      dedx_(other.dedx_),
+      de_strag_(other.de_strag_)
 {
 }
 
@@ -152,7 +155,8 @@ int dedx_calc::init(const mccore &s)
      */
     auto &materials = s.getTarget().materials();
     auto &par = s.getSimulationParameters();
-    type_ = par.eloss_calculation;
+    stopping_ = par.electronic_stopping;
+    straggling_ = par.electronic_straggling;
     int nmat = materials.size();
     auto &atoms = s.getTarget().atoms();
     int natoms = atoms.size();
@@ -163,11 +167,18 @@ int dedx_calc::init(const mccore &s)
         for (const material *mat : materials) {
             int im = mat->id();
             auto desc = mat->getDescription();
-            dedx_(iat1, im) = new dedx_interp(par.stopping_model, at1->Z(), at1->M(), mat->Z(),
-                                              mat->X(), mat->atomicDensity());
-            de_strag_(iat1, im) =
-                    new straggling_interp(par.stopping_model, par.straggling_model, at1->Z(),
-                                          at1->M(), mat->Z(), mat->X(), mat->atomicDensity());
+            if (stopping_ != electronic_stopping_t::Off) {
+                dedx_(iat1, im) =
+                        new dedx_interp(static_cast<StoppingModel>(stopping_), at1->Z(), at1->M(),
+                                        mat->Z(), mat->X(), mat->atomicDensity());
+
+                if (straggling_ != electronic_straggling_t::Off) {
+                    de_strag_(iat1, im) = new straggling_interp(
+                            static_cast<StoppingModel>(stopping_),
+                            static_cast<StragglingModel>(straggling_), at1->Z(), at1->M(), mat->Z(),
+                            mat->X(), mat->atomicDensity());
+                }
+            }
         }
     }
 
@@ -180,7 +191,7 @@ int dedx_calc::preload(const ion *i, const material *m)
     assert(m);
     int ia = i->myAtom()->id();
     int im = m->id();
-    stopping_interp_ = dedx_(ia, im);
-    straggling_interp_ = type_ == EnergyLossAndStraggling ? de_strag_(ia, im) : nullptr;
+    stopping_interp_ = stopping_ != electronic_stopping_t::Off ? dedx_(ia, im) : nullptr;
+    straggling_interp_ = straggling_ != electronic_straggling_t::Off ? de_strag_(ia, im) : nullptr;
     return 0;
 }
