@@ -74,17 +74,17 @@ public:
         /// Element specification
         element_t element;
         /// Atomic fraction
-        float X;
+        float X{ 1.0f };
         /// Displacement threshold energy (eV) of target atoms
-        float Ed;
+        float Ed{ 40.0f };
         /// Lattice energy (eV) of target atoms
-        float El;
+        float El{ 3.0f };
         /// Surface binding energy (eV) of target atoms
-        float Es;
+        float Es{ 10.0f };
         /// Replacement threshold energy (eV) of target atoms
-        float Er;
-        /// Frenkel pair recombination radius
-        float Rc{ 0.946 };
+        float Er{ 40.0f };
+        /// Frenkel pair recombination radius (nm)
+        float Rc{ 0.946f };
     };
 
 private:
