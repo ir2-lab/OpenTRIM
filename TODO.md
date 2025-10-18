@@ -16,7 +16,9 @@
 ### Screened Coulomb scattering
 
 - [ ] Fix high s (impulse approx) region in Bohr, Moliere, KrC
-- [ ] gen_scattering_tbl:  generate log2(sin2thetaby2). Currently not possible due to errors in high s region for Bohr, Moliere, KrC 
+- [ ] gen_scattering_tbl:  
+      generate directly log2(sin2thetaby2) which is used in the simulation. This will eliminate a log2() call from the simulation loop.
+      Currently this is not possible due to errors in high s region for Bohr, Moliere, KrC. The log2 tables conatin NaNs 
 
 ### Flight path
 
@@ -24,10 +26,13 @@
 - [X] Write critique for SRIM & MHW in doc
 - [X] Remove MHW option ?
 
-### Simulation Data
+### Simulation Output Data handling
 
 - [ ] Create mcinfo or mcdata object/adaptor that provides data in a unified manner.
-      E.g. multidim data Y vs X, name, description 
+      E.g. multidim data Y vs X, name, description
+- [ ] Create a multi-dim array viewer widget, in the spirit of h5web. 
+      Shows either table, 2D graph or 2D map (i.e. "spectrograph", "heatmap"). Has controls for data selection
+- [ ] Implement "slice selector" popup widget/dialog 
 
 ### Tests
 
