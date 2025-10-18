@@ -175,8 +175,8 @@ mcinfo::mcinfo(const mcdriver &d) : driver_(&d), type_(mcinfo::group)
             {
                 mcinfo *p2 = p1->add("erg", mcinfo::real32, "dEdx table energy grid [eV]");
                 p2->real32_getter_.get_ = [](mcinfo &i, std::vector<float> &s, dim_t &d) {
-                    s.resize(dedx_index::size);
-                    for (dedx_index k; k < k.end(); k++)
+                    s.resize(dedx_erange::size);
+                    for (dedx_erange k; k < k.end(); k++)
                         s[k] = *k;
                     d = { s.size() };
                 };
@@ -189,13 +189,13 @@ mcinfo::mcinfo(const mcdriver &d) : driver_(&d), type_(mcinfo::group)
                     d.resize(3);
                     d[0] = D.dim()[0];
                     d[1] = D.dim()[1];
-                    d[2] = dedx_index::size;
+                    d[2] = dedx_erange::size;
                     size_t n = d[0] * d[1] * d[2];
                     s.resize(n);
                     for (int i = 0; i < d[0]; ++i)
                         for (int j = 0; j < d[1]; ++j)
                             memcpy(s.data() + (i * d[1] + j) * d[2], D(i, j)->data(),
-                                   dedx_index::size * sizeof(float));
+                                   dedx_erange::size * sizeof(float));
                 };
 
                 p2 = p1->add("strag", mcinfo::real32,
@@ -207,13 +207,13 @@ mcinfo::mcinfo(const mcdriver &d) : driver_(&d), type_(mcinfo::group)
                     d.resize(3);
                     d[0] = D.dim()[0];
                     d[1] = D.dim()[1];
-                    d[2] = dedx_index::size;
+                    d[2] = dedx_erange::size;
                     size_t n = d[0] * d[1] * d[2];
                     s.resize(n);
                     for (int i = 0; i < d[0]; ++i)
                         for (int j = 0; j < d[1]; ++j)
                             memcpy(s.data() + (i * d[1] + j) * d[2], D(i, j)->data(),
-                                   dedx_index::size * sizeof(float));
+                                   dedx_erange::size * sizeof(float));
                 };
             }
 
@@ -222,8 +222,8 @@ mcinfo::mcinfo(const mcdriver &d) : driver_(&d), type_(mcinfo::group)
             {
                 mcinfo *p2 = p1->add("erg", mcinfo::real32, "flight path table energy grid [eV]");
                 p2->real32_getter_.get_ = [](mcinfo &i, std::vector<float> &s, dim_t &d) {
-                    s.resize(dedx_index::size);
-                    for (dedx_index k; k < k.end(); k++)
+                    s.resize(flight_path_calc::fp_erange::size);
+                    for (flight_path_calc::fp_erange k; k < k.end(); k++)
                         s[k] = *k;
                     d = { s.size() };
                 };
@@ -335,14 +335,127 @@ mcinfo::mcinfo(const mcdriver &d) : driver_(&d), type_(mcinfo::group)
             };
         }
     }
+
+    // 5. user_tally
+    p = add("user_tally", mcinfo::group);
+    {
+        const user_tally *ut = driver_->getSim()->getUserTally();
+
+        if (ut) {
+            mcinfo *p1 = p->add("data", mcinfo::tally_score, "bin data per atom");
+            p1->tally_idx_ = -1; // this signals that it is a user_tally
+
+            // 3 x 3D vectors that define the coordinate system of the user_tally
+            p1 = p->add("zaxis", mcinfo::real32, "Vector parallel to the z-axis direction");
+            p1->real32_getter_.get_ = [](mcinfo &i, std::vector<float> &s, dim_t &d) {
+                s.resize(3);
+                s[0] = i.driver_->getSim()->getUserTally()->zaxis().x();
+                s[1] = i.driver_->getSim()->getUserTally()->zaxis().y();
+                s[2] = i.driver_->getSim()->getUserTally()->zaxis().z();
+                d = { 3 };
+            };
+
+            p1 = p->add("xzvec", mcinfo::real32, "Vector on the xz-plane");
+            p1->real32_getter_.get_ = [](mcinfo &i, std::vector<float> &s, dim_t &d) {
+                s.resize(3);
+                s[0] = i.driver_->getSim()->getUserTally()->xzvec().x();
+                s[1] = i.driver_->getSim()->getUserTally()->xzvec().y();
+                s[2] = i.driver_->getSim()->getUserTally()->xzvec().z();
+                d = { 3 };
+            };
+
+            p1 = p->add("org", mcinfo::real32, "Coordinate system origin");
+            p1->real32_getter_.get_ = [](mcinfo &i, std::vector<float> &s, dim_t &d) {
+                s.resize(3);
+                s[0] = i.driver_->getSim()->getUserTally()->org().x();
+                s[1] = i.driver_->getSim()->getUserTally()->org().y();
+                s[2] = i.driver_->getSim()->getUserTally()->org().z();
+                d = { 3 };
+            };
+
+            // Coordinate System
+            p1 = p->add("coordinates", mcinfo::string, "Coordinate system");
+            p1->string_getter_.get_ = [](mcinfo &i, std::vector<std::string> &s, dim_t &d) {
+                const user_tally *ut = i.driver_->getSim()->getUserTally();
+                s.resize(1);
+                user_tally::coordinate_name(ut->coordinates(), s[0]);
+                d = { 1 };
+            };
+
+            // Event
+            p1 = p->add("event", mcinfo::string, "Tally event");
+            p1->string_getter_.get_ = [](mcinfo &i, std::vector<std::string> &s, dim_t &d) {
+                const user_tally *ut = i.driver_->getSim()->getUserTally();
+                s.resize(1);
+                std::string dummy;
+                user_tally::event_name(ut->event(), s[0], dummy);
+                d = { 1 };
+            };
+            p1 = p->add("event_decription", mcinfo::string, "Tally event description");
+            p1->string_getter_.get_ = [](mcinfo &i, std::vector<std::string> &s, dim_t &d) {
+                const user_tally *ut = i.driver_->getSim()->getUserTally();
+                s.resize(1);
+                std::string dummy;
+                user_tally::event_name(ut->event(), dummy, s[0]);
+                d = { 1 };
+            };
+
+            // Bin names
+            p1 = p->add("bin_names", mcinfo::string, "Bin names");
+            p1->string_getter_.get_ = [](mcinfo &i, std::vector<std::string> &s, dim_t &d) {
+                const user_tally *ut = i.driver_->getSim()->getUserTally();
+                s.resize(1);
+                std::vector<std::string> dummy;
+                ut->bin_names(s, dummy);
+                d = { s.size() };
+            };
+            p1 = p->add("bin_decriptions", mcinfo::string, "Bin descriptions");
+            p1->string_getter_.get_ = [](mcinfo &i, std::vector<std::string> &s, dim_t &d) {
+                const user_tally *ut = i.driver_->getSim()->getUserTally();
+                s.resize(1);
+                std::vector<std::string> dummy;
+                ut->bin_names(dummy, s);
+                d = { s.size() };
+            };
+            // Save bins
+            p1 = p->add("bins", mcinfo::group, "Bin edges");
+            std::vector<std::string> names;
+            std::vector<std::string> desc;
+            ut->bin_names(names, desc);
+            for (int j = 0; j < names.size(); ++j) {
+                std::ostringstream os;
+                os << "Bin edges of dim " << j << " : [" << names[j] << "]";
+                mcinfo *p2 = p1->add(std::to_string(j), mcinfo::real32, os.str());
+                p2->real32_getter_.get_ = [](mcinfo &i, std::vector<float> &s, dim_t &d) {
+                    const user_tally *ut = i.driver_->getSim()->getUserTally();
+                    s = ut->bin_edges(i.tally_idx_);
+                    d = { s.size() };
+                };
+                p2->tally_idx_ = j;
+            }
+        }
+    }
 }
 
 bool mcinfo::get(std::vector<double> &s, std::vector<double> &ds)
 {
     if (driver_->getSim() == nullptr)
         return false;
-    ArrayNDd A = driver_->getSim()->getTally().at(tally_idx_);
-    ArrayNDd dA = driver_->getSim()->getTallyVar().at(tally_idx_);
+
+    ArrayNDd A;
+    ArrayNDd dA;
+    if (tally_idx_ >= 0) {
+        A = driver_->getSim()->getTally().at(tally_idx_);
+        dA = driver_->getSim()->getTallyVar().at(tally_idx_);
+    } else {
+        const user_tally *ut = driver_->getSim()->getUserTally();
+        const user_tally *dut = driver_->getSim()->getUserTallyVar();
+        if (!ut)
+            return false;
+        A = ut->data();
+        dA = dut->data();
+    }
+
     const size_t &N = driver_->getSim()->ion_count();
     s.resize(A.size(), 0.0);
     ds.resize(A.size(), 0.0);

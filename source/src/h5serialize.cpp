@@ -279,6 +279,7 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
         mcinfo mci(*this);
         dump(h5f, "", &mci);
 
+        // events
         std::string page = "/events/";
         if (config_.Output.store_pka_events)
             dump_event_stream(h5f, page + "pka", s_->pka_stream());
