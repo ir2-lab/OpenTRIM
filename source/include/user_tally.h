@@ -37,6 +37,9 @@ public:
     /// @brief Return a constant reference to the tally data
     const ArrayNDd &data() const { return data_; }
 
+    /// @brief Return a reference to the tally data
+    ArrayNDd &data() { return data_; }
+
     /// @brief Return coordinate system values
     const vector3 &zaxis() const { return par_.zaxis; }
     const vector3 &xzvec() const { return par_.xzvec; }

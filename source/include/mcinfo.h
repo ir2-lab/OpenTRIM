@@ -245,7 +245,8 @@ private:
     std::string description_;
     mcinfo_map_t children_;
     dim_t dim_{ 1 };
-    int tally_idx_;
+    int extra_idx0_;
+    int extra_idx1_;
 
     template <class T>
     struct getter_func

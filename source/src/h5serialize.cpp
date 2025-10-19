@@ -348,29 +348,45 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
         }
 
         // load the tally data
-        {
-            size_t Nh = h5e::load<size_t>(h5f, "/run_info/total_ion_count");
+        size_t Nh = h5e::load<size_t>(h5f, "/run_info/total_ion_count");
+        if (Nh) {
 
-            bool ret = true;
-            int k = 1;
+            // std tallies
+            {
+                bool ret = true;
+                int k = 1;
 
-            tally &t = s_->getTally();
-            tally &dt = s_->getTallyVar();
+                tally &t = s_->getTally();
+                tally &dt = s_->getTallyVar();
 
-            while (ret && k < tally::std_tallies) {
-                std::string name("/tally/");
-                name += tally::arrayGroup(k);
-                name += "/";
-                name += tally::arrayName(k);
-                ret = load_array(h5f, name, t.at(k), dt.at(k), Nh) == 0;
-                k++;
+                while (ret && k < tally::std_tallies) {
+                    std::string name("/tally/");
+                    name += tally::arrayGroup(k);
+                    name += "/";
+                    name += tally::arrayName(k);
+                    ret = load_array(h5f, name, t.at(k), dt.at(k), Nh) == 0;
+                    k++;
+                }
+
+                ret = ret && load_array(h5f, "/tally/totals/data", t.at(0), dt.at(0), Nh) == 0;
+
+                if (!ret)
+                    return -1;
             }
 
-            ret = ret && load_array(h5f, "/tally/totals/data", t.at(0), dt.at(0), Nh) == 0;
+            // user tallies
+            {
+                bool ret = true;
+                auto &t = s_->getUserTally();
+                auto &dt = s_->getUserTallyVar();
+                for (int i = 0; i < t.size(); ++i) {
+                    std::string name("/user_tally/");
+                    name += t[i]->id();
+                    ret = load_array(h5f, name, t[i]->data(), dt[i]->data(), Nh) == 0;
+                }
+            }
 
-            if (!ret)
-                return -1;
-
+            // set the ion count
             s_->setIonCount(Nh);
         }
 
@@ -380,10 +396,16 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
             load_event_stream(h5f, "/events/pka", s_->pka_stream());
         }
 
-        // load pka events
+        // load exit events
         if (config_.Output.store_exit_events) {
             s_->open_exit_stream();
             load_event_stream(h5f, "/events/exit", s_->exit_stream());
+        }
+
+        // load damage events
+        if (config_.Output.store_damage_events) {
+            s_->open_damage_stream();
+            load_event_stream(h5f, "/events/damage", s_->damage_stream());
         }
 
     } catch (h5::Exception &e) {

@@ -234,6 +234,8 @@ public:
     void addUserTally(const user_tally::parameters &p);
     const std::vector<user_tally *> &getUserTally() const { return utally_; }
     const std::vector<user_tally *> &getUserTallyVar() const { return dutally_; }
+    std::vector<user_tally *> &getUserTally() { return utally_; }
+    std::vector<user_tally *> &getUserTallyVar() { return dutally_; }
 
     /// Open file stream to store \ref pka_event data
     int open_pka_stream() { return pka_stream_.open(pka); }
