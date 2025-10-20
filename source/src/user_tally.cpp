@@ -221,14 +221,6 @@ bool user_tally::push_bins(variable_code c, const std::vector<float> &edges)
     return true;
 }
 
-void user_tally::operator()(Event ev, const ion &i, const void *pv)
-{
-    if (ev != Event::IonStop)
-        return;
-    if (get_bin(i))
-        data_(idx)++;
-}
-
 void user_tally::event_name(Event ev, std::string &name, std::string &desc)
 {
     switch (ev) {

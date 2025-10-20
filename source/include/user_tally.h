@@ -92,7 +92,11 @@ public:
     /// @param ev the event type
     /// @param i the ion causing the event
     /// @param pv pointer to additional data, if available
-    void operator()(Event ev, const ion &i, const void *pv = 0);
+    void operator()(Event ev, const ion &i, const void *pv = 0)
+    {
+        if (ev == par_.event && get_bin(i))
+            data_(idx)++;
+    }
 
     // std::vector<std::string> bin_names() const;
     void bin_names(std::vector<std::string> &names, std::vector<std::string> &description) const;
