@@ -19,8 +19,6 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
-#include <qwt_plot_renderer.h>
-
 #include <fstream>
 
 #include "QMatPlotWidget.h"

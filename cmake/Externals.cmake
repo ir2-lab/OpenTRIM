@@ -130,12 +130,10 @@ endif()
 
 if (BUILD_GUI)
    FetchContent_Declare(external_qmatplotwidget
-      GIT_REPOSITORY https://gitlab.com/qdaq/qmatplotwidget.git
-      GIT_TAG master
+      GIT_REPOSITORY https://github.com/gapost/qmatplotwidget.git
+      GIT_TAG dev
       GIT_SUBMODULES_RECURSE FALSE
       GIT_SHALLOW TRUE
-      EXCLUDE_FROM_ALL
-      SOURCE_SUBDIR dummy
    )
    if(PACKAGE_BUILD)
       set(external_qmatplotwidget_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext10)
