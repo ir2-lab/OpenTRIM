@@ -220,46 +220,47 @@ int load_event_stream(h5::File &h5f, const std::string &grp_name, event_stream &
 }
 
 // save data from mcinfo, called recursively
-int dump(h5::File &h5f, const std::string &path, mcinfo *i)
+int dump(h5::File &h5f, const std::string &path, const mcinfo &i)
 {
 
     std::vector<std::string> s;
     std::vector<double> x, dx;
     std::vector<float> f;
     std::vector<uint64_t> u;
+    std::vector<size_t> dim;
 
     std::string child_path;
 
-    switch (i->type()) {
+    switch (i.type()) {
     case mcinfo::group:
-        for (auto &ch : i->children()) {
+        for (auto &ch : i.children()) {
             dump(h5f, path + '/' + ch.first, ch.second);
         }
         break;
     case mcinfo::string:
-        i->get(s);
-        dump(h5f, path, s, i->dim(), i->description());
+        i.get(s, dim);
+        dump(h5f, path, s, dim, i.description());
         break;
     case mcinfo::json:
-        i->get(s);
-        dump(h5f, path, s, i->dim(), i->description());
+        i.get(s, dim);
+        dump(h5f, path, s, dim, i.description());
         break;
     case mcinfo::real64:
-        i->get(x);
-        dump(h5f, path, x, i->dim(), i->description());
+        i.get(x, dim);
+        dump(h5f, path, x, dim, i.description());
         break;
     case mcinfo::real32:
-        i->get(f);
-        dump(h5f, path, f, i->dim(), i->description());
+        i.get(f, dim);
+        dump(h5f, path, f, dim, i.description());
         break;
     case mcinfo::uint64:
-        i->get(u);
-        dump(h5f, path, u, i->dim(), i->description());
+        i.get(u, dim);
+        dump(h5f, path, u, dim, i.description());
         break;
     case mcinfo::tally_score:
-        i->get(x, dx);
-        dump(h5f, path, x, i->dim(), i->description());
-        dump(h5f, path + "_sem", dx, i->dim(), i->description() + " (SEM)");
+        i.get(x, dx, dim);
+        dump(h5f, path, x, dim, i.description());
+        dump(h5f, path + "_sem", dx, dim, i.description() + " (SEM)");
         break;
     default:
         break;
@@ -276,8 +277,8 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
         if (writeFileHeader(h5f, os) != 0)
             return -1;
 
-        mcinfo mci(*this);
-        dump(h5f, "", &mci);
+        mcinfo mci(this);
+        dump(h5f, "", mci);
 
         // events
         std::string page = "/events/";
@@ -382,6 +383,7 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
                 for (int i = 0; i < t.size(); ++i) {
                     std::string name("/user_tally/");
                     name += t[i]->id();
+                    name += "/data";
                     ret = load_array(h5f, name, t[i]->data(), dt[i]->data(), Nh) == 0;
                 }
             }

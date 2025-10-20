@@ -3,6 +3,7 @@
 
 #define JSON_DIAGNOSTICS 1
 #include <nlohmann/json.hpp>
+#include <nlohmann/ordered_map.hpp>
 
 #include "mcdriver.h"
 

@@ -151,7 +151,7 @@ set(PROJECT_LIBS
 target_link_libraries(${LIB_TARGET} ${PROJECT_LIBS})
 
 target_include_directories(${LIB_TARGET} PRIVATE
-    ${external_json_SOURCE_DIR}/single_include/ 
+    ${external_json_SOURCE_DIR}/include/ 
     ${external_highfive_SOURCE_DIR}/include
     ${external_libdedx_SOURCE_DIR}/src/lib
     ${external_spline_SOURCE_DIR}/src)
@@ -176,7 +176,7 @@ add_executable(genoptionsdoc EXCLUDE_FROM_ALL
 )
 
 target_include_directories(genoptionsdoc PRIVATE
-    ${external_json_SOURCE_DIR}/single_include/
+    ${external_json_SOURCE_DIR}/include/
     ${external_libdedx_SOURCE_DIR}/src/lib
 )
 
