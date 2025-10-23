@@ -217,7 +217,7 @@ bool user_tally::push_bins(variable_code c, const std::vector<float> &edges)
         return false;
     bin_codes.push_back(c);
     bins.push_back(edges);
-    bin_sizes.push_back(edges.size() - 1);
+    bin_sizes.push_back(edges.size());
     return true;
 }
 

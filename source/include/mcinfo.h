@@ -34,6 +34,7 @@ struct mcinfo
     }
 
     mcinfo() = default;
+    mcinfo(const mcinfo &o) = default;
     mcinfo(const mcdriver *d);
 
     mcinfo &operator[](const std::string &key) { return children_[key]; }
