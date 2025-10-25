@@ -129,15 +129,15 @@ else()
 endif()
 
 if (BUILD_GUI)
-   FetchContent_Declare(external_qmatplotwidget
-      GIT_REPOSITORY https://github.com/gapost/qmatplotwidget.git
-      GIT_TAG dev
+   FetchContent_Declare(external_qtdatabrowser
+      GIT_REPOSITORY https://github.com/ir2-lab/QtDataBrowser.git
+      GIT_TAG main
       GIT_SUBMODULES_RECURSE FALSE
       GIT_SHALLOW TRUE
    )
    if(PACKAGE_BUILD)
       set(external_qmatplotwidget_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext10)
    else()
-         FetchContent_MakeAvailable(external_qmatplotwidget)
+         FetchContent_MakeAvailable(external_qtdatabrowser)
    endif()
 endif()

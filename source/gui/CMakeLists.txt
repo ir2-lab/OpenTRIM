@@ -48,19 +48,19 @@ set (GUI_TARGET ${PROJECT_NAME_LOWERCASE}-gui)
 
 add_executable(${GUI_TARGET}
   ${GUI_SOURCES} ${GUI_HEADERS}
+  mcplotinfo.h mcplotinfo.cpp
 )
 
 target_include_directories(${GUI_TARGET} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${external_json_SOURCE_DIR}/include/
     ${external_libdedx_SOURCE_DIR}/src/lib
-    ${external_qmatplotwidget_SOURCE_DIR}/src
 )
 
 target_link_libraries(${GUI_TARGET} PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::DataVisualization
-    QMatPlotWidget
+    QtDataBrowser
     ${LIB_TARGET}
 )
 
