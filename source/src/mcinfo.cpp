@@ -178,6 +178,82 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
                                     } };
         }
 
+        // target/atoms
+        p["atoms"] = { driver_, mcinfo::group };
+        {
+            mcinfo &p1 = p.children_.find("atoms")->second;
+            p1["label"] = { driver_, mcinfo::string,
+                            "label = [Atom (Chemical symbol)] in [Material]",
+                            [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
+                                s = i.driver()->getSim()->getTarget().atom_labels();
+                                d = { s.size() };
+                            } };
+            p1["symbol"] = { driver_, mcinfo::string, "Chemical symbol",
+                             [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
+                                 const auto &atoms = i.driver()->getSim()->getTarget().atoms();
+                                 s.resize(atoms.size());
+                                 for (int k = 0; k < atoms.size(); ++k)
+                                     s[k] = atoms[k]->symbol();
+                                 d = { s.size() };
+                             } };
+            p1["Z"] = { driver_, "Atomic number",
+                        [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                            const auto &atoms = i.driver()->getSim()->getTarget().atoms();
+                            s.resize(atoms.size());
+                            for (int k = 0; k < atoms.size(); ++k)
+                                s[k] = atoms[k]->Z();
+                            d = { s.size() };
+                        } };
+            p1["M"] = { driver_, "Atomic mass",
+                        [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                            const auto &atoms = i.driver()->getSim()->getTarget().atoms();
+                            s.resize(atoms.size());
+                            for (int k = 0; k < atoms.size(); ++k)
+                                s[k] = atoms[k]->M();
+                            d = { s.size() };
+                        } };
+            p1["Ed"] = { driver_, "Displacement energy [eV]",
+                         [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                             const auto &atoms = i.driver()->getSim()->getTarget().atoms();
+                             s.resize(atoms.size());
+                             for (int k = 0; k < atoms.size(); ++k)
+                                 s[k] = atoms[k]->Ed();
+                             d = { s.size() };
+                         } };
+            p1["El"] = { driver_, "Lattice Binding energy [eV]",
+                         [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                             const auto &atoms = i.driver()->getSim()->getTarget().atoms();
+                             s.resize(atoms.size());
+                             for (int k = 0; k < atoms.size(); ++k)
+                                 s[k] = atoms[k]->El();
+                             d = { s.size() };
+                         } };
+            p1["Es"] = { driver_, "Surface binding energy [eV]",
+                         [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                             const auto &atoms = i.driver()->getSim()->getTarget().atoms();
+                             s.resize(atoms.size());
+                             for (int k = 0; k < atoms.size(); ++k)
+                                 s[k] = atoms[k]->Es();
+                             d = { s.size() };
+                         } };
+            p1["Er"] = { driver_, "Replacement energy [eV]",
+                         [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                             const auto &atoms = i.driver()->getSim()->getTarget().atoms();
+                             s.resize(atoms.size());
+                             for (int k = 0; k < atoms.size(); ++k)
+                                 s[k] = atoms[k]->Er();
+                             d = { s.size() };
+                         } };
+            p1["Rc"] = { driver_, "Recombination radius [nm]",
+                         [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                             const auto &atoms = i.driver()->getSim()->getTarget().atoms();
+                             s.resize(atoms.size());
+                             for (int k = 0; k < atoms.size(); ++k)
+                                 s[k] = atoms[k]->Rc();
+                             d = { s.size() };
+                         } };
+        }
+
         if (driver()->config().Output.store_dedx) {
             // target/dedx
 
