@@ -27,7 +27,7 @@
 ResultsView::ResultsView(MainUI *iui, QWidget *parent) : QDataBrowser{ parent }, ionsui(iui)
 {
     setTreeTitle("Simulation Data");
-    // setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     /* connect signals */
     connect(ionsui->driverObj(), &McDriverObj::simulationCreated, this,
@@ -74,6 +74,8 @@ void ResultsView::onSimulationCreated()
     for (auto &ch : info.children()) {
         addPlotItem(ch.first.c_str(), ch.second);
     }
+
+    selectItem("/tally/damage_events/Vacancies");
 }
 
 void ResultsView::onSimulationDestroyed()
