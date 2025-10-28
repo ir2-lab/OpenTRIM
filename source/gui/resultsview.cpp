@@ -26,7 +26,7 @@
 
 ResultsView::ResultsView(MainUI *iui, QWidget *parent) : QDataBrowser{ parent }, ionsui(iui)
 {
-    setTreeTitle("Simulation Data");
+    setTreeTitle("Data Tables");
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     /* connect signals */
@@ -50,10 +50,8 @@ void ResultsView::addPlotItem(const QString &name, mcplotinfo *i, const QString 
             addPlotItem(ch.first.c_str(), ch.second, loc + "/" + name);
         }
         break;
-    case mcplotinfo::tally_score:
-        addData(i->takeData(), loc);
-        break;
     default:
+        addData(i->takeData(), loc);
         break;
     }
 }
@@ -62,12 +60,6 @@ void ResultsView::onSimulationCreated()
 {
     McDriverObj *D = ionsui->driverObj();
 
-    // if (info_) {
-    //     clear();
-    //     delete info_;
-    //     info_ = nullptr;
-    // }
-
     mcplotinfo info(D);
 
     QString loc = "/";
@@ -75,15 +67,14 @@ void ResultsView::onSimulationCreated()
         addPlotItem(ch.first.c_str(), ch.second);
     }
 
-    selectItem("/tally/damage_events/Vacancies");
+    // selectItem("/tally/damage_events/Vacancies");
+    setActiveView(QDataBrowser::Plot);
+    setPlotType(QDataBrowser::ErrorBar);
 }
 
 void ResultsView::onSimulationDestroyed()
 {
     clear();
-    // if (info_)
-    //     delete info_;
-    // info_ = nullptr;
 }
 
 void ResultsView::onTallyUpdate()

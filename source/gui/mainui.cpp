@@ -52,7 +52,7 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     QStringList icons{ "grid-outline.png", "settings-outline.png", "list-outline.png",
                        "bar-chart-outline.png" };
 
-    QStringList titles{ "Welcome", "Config", "Summary", "Plots" };
+    QStringList titles{ "Welcome", "Config", "Summary", "Data" };
     for (int i = 0; i < titles.count(); ++i) {
         pageButtonGrp->addButton(createSidebarButton(iconFolder + icons.at(i), titles.at(i)), i);
         sidebarLayout->addWidget(pageButtonGrp->button(i));
@@ -97,7 +97,7 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     push(tr("Summary Tables"), tblView);
 
     resultsView = new ResultsView(this);
-    push(tr("Result Plots"), resultsView);
+    push(tr("Simulation Data"), resultsView);
 
     optionsView->revert();
 

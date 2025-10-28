@@ -70,6 +70,8 @@ public:
     // return options as json
     std::string json() const;
 
+    const mcdriver *get_mcdriver() const { return driver_; }
+
     // get/set modified flag
     // modified = sim options or data have changed
     bool isModified() const { return modified_; }
