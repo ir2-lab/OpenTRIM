@@ -14,17 +14,18 @@ namespace fs = std::filesystem;
 void pka_event::mark(const tally &t)
 {
     mark_T_ = 0.0f;
-    int ncells = t.at(1).dim()[1];
+    size_t ncells = t.at(1).dim()[1] * t.at(1).dim()[2] * t.at(1).dim()[3];
     float *bv = mark_buff_.data();
     float *br = mark_buff_.data() + natoms_;
     float *bi = mark_buff_.data() + 2 * natoms_;
     for (int i = 0; i < natoms_; i++) {
         *bv = *br = *bi = 0.0f;
-        const double *ps = &t.at(tally::eStored)(i + 1, 0);
-        const double *pl = &t.at(tally::eLattice)(i + 1, 0);
-        const double *pv = &t.at(tally::cV)(i + 1, 0);
-        const double *pr = &t.at(tally::cR)(i + 1, 0);
-        const double *pi = &t.at(tally::cI)(i + 1, 0);
+        size_t k0 = (i + 1) * ncells; // index of the first element of the i-th atom cells matrix
+        const double *ps = &t.at(tally::eStored)(k0);
+        const double *pl = &t.at(tally::eLattice)(k0);
+        const double *pv = &t.at(tally::cV)(k0);
+        const double *pr = &t.at(tally::cR)(k0);
+        const double *pi = &t.at(tally::cI)(k0);
 
         for (int j = 0; j < ncells; j++) {
             mark_T_ += *ps++ + *pl++;

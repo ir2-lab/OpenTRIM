@@ -33,6 +33,9 @@ mccore::mccore(const mccore &s)
       tr_opt_(s.tr_opt_),
       source_(s.source_),
       target_(s.target_),
+      tally_(s.tally_),
+      dtally_(s.dtally_),
+      tion_(s.tion_),
       ref_count_(s.ref_count_),
       ion_counter_(s.ion_counter_),
       thread_ion_counter_(0),
@@ -44,9 +47,6 @@ mccore::mccore(const mccore &s)
       rng(s.rng),
       pka(s.pka)
 {
-    tally_.copy(s.tally_);
-    dtally_.copy(s.dtally_);
-    tion_.copy(s.tion_);
     tally_.clear();
     dtally_.clear();
     tion_.clear();
@@ -136,9 +136,10 @@ int mccore::init()
      * Allocate Tally Memory
      */
     int ncells = target_->grid().ncells();
-    tally_.init(natoms, ncells);
-    dtally_.init(natoms, ncells);
-    tion_.init(natoms, ncells);
+    auto dim = target_->grid().dim();
+    tally_.init(natoms, dim[0], dim[1], dim[2]);
+    dtally_.init(natoms, dim[0], dim[1], dim[2]);
+    tion_.init(natoms, dim[0], dim[1], dim[2]);
 
     /*
      * Init user tally(ies)

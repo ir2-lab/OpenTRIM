@@ -204,7 +204,10 @@ bool user_tally::get_bin(const ion &i)
 
         idx[j] = std::upper_bound(bins[j].begin(), bins[j].end(), v) - bins[j].begin()
                 - 1; // id of bin starting from 0
-        if (idx[j] < 0 || idx[j] >= bin_sizes[j])
+
+        // valid bin index is  0 <= idx < size-1
+        // (the last bin is not included by default)
+        if (idx[j] < 0 || idx[j] >= bin_sizes[j] - 1)
             return false; // invalid index -> reject
     }
 

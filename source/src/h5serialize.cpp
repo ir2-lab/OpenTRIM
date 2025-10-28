@@ -21,9 +21,6 @@ namespace h5 = HighFive;
 using std::cerr;
 using std::endl;
 
-MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcdriver::run_data, start_time, end_time, ips, cpu_time,
-                                          nthreads, run_ion_count, total_ion_count)
-
 int writeFileHeader(h5::File &file, std::ostream *os)
 {
     try {

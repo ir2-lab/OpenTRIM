@@ -1,8 +1,5 @@
 #include "mcinfo.h"
 
-MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcdriver::run_data, start_time, end_time, ips, cpu_time,
-                                          nthreads, run_ion_count, total_ion_count)
-
 mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
 {
     // 1. run_info
@@ -523,7 +520,7 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
                                         d = { s.size() };
                                     },
                                     iut };
-                p1["bin_decriptions"] = {
+                p1["bin_descriptions"] = {
                     driver_, mcinfo::string, "Bin descriptions",
                     [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                         const user_tally *ut = i.driver_->getSim()->getUserTally()[i.extra_idx1_];

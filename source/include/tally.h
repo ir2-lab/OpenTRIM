@@ -129,7 +129,18 @@ protected:
 
     uint32_t EventMask_{ static_cast<uint32_t>(Event::NEvent) - 1 };
 
+    size_t ncells_{ 0 };
+
 public:
+    tally() = default;
+
+    // copy constructor, creates new copies of all arrays
+    tally(const tally &other) : EventMask_(other.EventMask_), ncells_(other.ncells_)
+    {
+        for (int i = 0; i < A.size(); i++)
+            A[i] = other.A[i].copy();
+    }
+
     std::vector<std::string> arrayNames() const;
 
     /// Return a const reference to the i-th tally score table
@@ -138,11 +149,12 @@ public:
     ArrayNDd &at(int i) { return A[i]; }
 
     /// @brief Initialize tally buffers for given # of atoms and cells
-    void init(int natoms, int ncells)
+    void init(size_t natoms, size_t nx, size_t ny, size_t nz)
     {
         A[0] = ArrayNDd(std_tallies, natoms); // the "total sums" for all tallies
+        ncells_ = nx * ny * nz;
         for (int i = 1; i < std_tallies; i++)
-            A[i] = ArrayNDd(natoms, ncells);
+            A[i] = ArrayNDd({ natoms, nx, ny, nz });
     }
 
     /// @brief Zero-out all tally scores
@@ -157,11 +169,11 @@ public:
     {
         A[0][0] = 1; // 1 history
         size_t natom = A[1].dim()[0];
-        size_t ncell = A[1].dim()[1];
+        size_t ncell = A[1].dim()[1] * A[1].dim()[2] * A[1].dim()[3];
         for (size_t tid = 1; tid < std_tallies; ++tid)
             for (size_t iid = 0; iid < natom; ++iid) {
                 double *q = &(A[0](tid, iid));
-                const double *p = &(A[tid](iid, 0));
+                const double *p = &(A[tid]({ iid, 0, 0, 0 }));
                 const double *pend = p + ncell;
                 while (p < pend)
                     *q += *p++;

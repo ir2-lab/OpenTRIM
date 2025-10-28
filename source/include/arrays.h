@@ -81,6 +81,15 @@ class ArrayND
             buffer.resize(calc_size(d));
         }
 
+        bool reshape(const std::vector<size_t> &d)
+        {
+            if (calc_size(d) != buffer.size())
+                return false;
+            dim = d;
+            stride = calc_stride(d, storage_order);
+            return true;
+        }
+
         size_t idx(int i, int j)
         {
             assert(dim.size() == 2);
@@ -199,6 +208,9 @@ public:
     int ndim() const { return P_->dim.size(); }
     /// Returns the storage order
     StorageOrder storage_order() const { return P_->storage_order; }
+
+    /// Reshape the array
+    bool reshape(const std::vector<size_t> &d) { return P_->reshape(d); }
 
     /// Returns the i-th element in C-style operator
     Scalar &operator[](int i) { return P_->buffer[i]; }

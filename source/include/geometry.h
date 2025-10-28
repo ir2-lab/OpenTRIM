@@ -358,6 +358,8 @@ public:
     const grid1D &z() const { return z_; }
     /// Return the rectangular box containing the whole 3D grid
     const box3D &box() const { return box_; }
+    /// Return the gird dimensions {Nx, Ny, Nz}
+    std::vector<size_t> dim() const { return { x_.size(), y_.size(), z_.size() }; }
 
     /// Return the i-th cell rectangular box
     box3D box(const ivector3 &i) const
@@ -524,10 +526,7 @@ public:
     }
 
     /// Return the id of the i-th cell
-    int cellid(const ivector3 &i) const
-    {
-        return (i.x() * (y_.size() - 1) + i.y()) * (z_.size() - 1) + i.z();
-    }
+    int cellid(const ivector3 &i) const { return (i.x() * y_.size() + i.y()) * z_.size() + i.z(); }
 
     static bool isNull(const ivector3 &i) { return (i.x() < 0) || (i.y() < 0) || (i.z() < 0); }
 
@@ -651,7 +650,7 @@ public:
         vector3 nz = z_axis.normalized();
         vector3 xzn = xz_vec.normalized();
 
-               // check if z_axis is nearly parallel to xz_vec
+        // check if z_axis is nearly parallel to xz_vec
         if (std::abs(nz.dot(xzn) - 1) < 10 * std::numeric_limits<float>::epsilon())
             return false;
 
@@ -723,6 +722,5 @@ private:
     Eigen::Matrix3f rotation_;
     vector3 origin_;
 };
-
 
 #endif // GEOMETRY_H
