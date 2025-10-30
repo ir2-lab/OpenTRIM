@@ -24,6 +24,9 @@ target_include_directories(gen_scattering_tbl PRIVATE
     ${external_cxxopts_SOURCE_DIR}/include
     ${external_screened_coulomb_SOURCE_DIR}/include)
 
+target_link_libraries(gen_scattering_tbl 
+    Eigen3::Eigen)
+
 function(add_xs_library screeningName)
     add_custom_command(OUTPUT xs_${screeningName}_data.cpp
         COMMAND gen_scattering_tbl -s ${screeningName} DEPENDS gen_scattering_tbl

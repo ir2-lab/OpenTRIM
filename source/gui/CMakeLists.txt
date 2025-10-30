@@ -22,6 +22,7 @@ set(GUI_HEADERS
     error_fmt.h
     jsedit/jsedit.h 
     simboxview.h
+    mcplotinfo.h
 )
 
 set(GUI_SOURCES
@@ -42,18 +43,18 @@ set(GUI_SOURCES
     tabularview.cpp
     jsedit/jsedit.cpp
     simboxview.cpp
+    mcplotinfo.cpp
 )
 
 set (GUI_TARGET ${PROJECT_NAME_LOWERCASE}-gui)
 
 add_executable(${GUI_TARGET}
-  ${GUI_SOURCES} ${GUI_HEADERS}
-  mcplotinfo.h mcplotinfo.cpp
+  ${GUI_SOURCES} 
+  ${GUI_HEADERS}
 )
 
 target_include_directories(${GUI_TARGET} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${external_json_SOURCE_DIR}/include/
     ${external_libdedx_SOURCE_DIR}/src/lib
 )
 

@@ -61,8 +61,6 @@ message (STATUS "Install rpath =  ${CMAKE_INSTALL_RPATH}")
 find_package(Threads REQUIRED)
 
 find_package(Eigen3 3.4 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
-message(STATUS "Eigen3 include ${EIGEN3_INCLUDE_DIR}")
 
 find_package(HDF5 REQUIRED COMPONENTS C)
 include_directories(${HDF5_INCLUDE_DIRS})
@@ -140,19 +138,20 @@ target_sources(${LIB_TARGET}
         source/include/json_defs_p.h
 )
 
-set(PROJECT_LIBS
-    "-lm"
-    ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_PTHREAD_LIBS_INIT}
-    ${HDF5_LIBRARIES}
-    dedx
-    xs_zbl xs_bohr xs_krc xs_moliere
+target_link_libraries(${LIB_TARGET} 
+    PUBLIC 
+        Eigen3::Eigen
+        nlohmann_json::nlohmann_json
+    PRIVATE
+        "-lm"
+        ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_PTHREAD_LIBS_INIT}
+        ${HDF5_LIBRARIES}
+        HighFive
+        dedx
+        xs_zbl xs_bohr xs_krc xs_moliere
 )
 
-target_link_libraries(${LIB_TARGET} ${PROJECT_LIBS})
-
 target_include_directories(${LIB_TARGET} PRIVATE
-    ${external_json_SOURCE_DIR}/include/ 
-    ${external_highfive_SOURCE_DIR}/include
     ${external_libdedx_SOURCE_DIR}/src/lib
     ${external_spline_SOURCE_DIR}/src)
 
@@ -176,7 +175,6 @@ add_executable(genoptionsdoc EXCLUDE_FROM_ALL
 )
 
 target_include_directories(genoptionsdoc PRIVATE
-    ${external_json_SOURCE_DIR}/include/
     ${external_libdedx_SOURCE_DIR}/src/lib
 )
 

@@ -20,13 +20,16 @@ else()
    FetchContent_MakeAvailable(external_cxxopts)
 endif()
 
+# set build flags for HighFive 
+set(HIGHFIVE_USE_BOOST OFF) 
+set(HIGHFIVE_EXAMPLES OFF)
+set(HIGHFIVE_BUILD_DOCS OFF)
+
 FetchContent_Declare(external_highfive
    GIT_REPOSITORY https://github.com/BlueBrain/HighFive.git
    GIT_TAG v2.9.0
    GIT_SUBMODULES_RECURSE FALSE
    GIT_SHALLOW TRUE
-   EXCLUDE_FROM_ALL
-   SOURCE_SUBDIR dummy
 )
 if(PACKAGE_BUILD)
    set(external_highfive_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext2)
@@ -53,8 +56,8 @@ FetchContent_Declare(external_json
    GIT_TAG v3.11.3
    GIT_SUBMODULES_RECURSE FALSE
    GIT_SHALLOW TRUE
-   EXCLUDE_FROM_ALL
-   SOURCE_SUBDIR dummy
+#   EXCLUDE_FROM_ALL
+#   SOURCE_SUBDIR dummy
 )
 if(PACKAGE_BUILD)
    set(external_json_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext4)
