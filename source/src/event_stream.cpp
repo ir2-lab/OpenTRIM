@@ -73,32 +73,23 @@ void pka_event::cascade_end(const ion &i, const abstract_cascade *cscd)
     }
 }
 
-void pka_event::cascade_complete(const ion &i, tally &t, const material *m)
+void pka_event::cascade_complete(const ion &i, const material *m)
 {
     // Make NRT damage estimations
-    const atom *z2;
-    std::array<float, 5> dp;
-    dp.fill(0.f);
-    dp[0] = recoilE();
-
     if (m) { // case NRT_average
         // NRT/LSS damage based on material / average Ed, Z, M
-        dp[1] = m->LSS_Tdam(recoilE());
-        dp[2] = m->NRT(dp[1]);
+        Tdam_LSS_ = m->LSS_Tdam(recoilE());
+        NRT_LSS_ = m->NRT(Tdam_LSS_);
         // NRT damage based on material with true Tdam
-        dp[3] = Tdam();
-        dp[4] = m->NRT(dp[3]);
+        NRT_ = m->NRT(Tdam());
     } else { // case NRT_element
         // NRT/LSS damage based on element
-        z2 = i.myAtom();
-        dp[1] = z2->LSS_Tdam(recoilE());
-        dp[2] = z2->NRT(dp[1]);
+        const atom *z2 = i.myAtom();
+        Tdam_LSS_ = z2->LSS_Tdam(recoilE());
+        NRT_LSS_ = z2->NRT(Tdam_LSS_);
         // NRT damage based on element with true Tdam
-        dp[3] = Tdam();
-        dp[4] = z2->NRT(dp[3]);
+        NRT_ = z2->NRT(Tdam());
     }
-
-    t(Event::CascadeComplete, i, dp.data());
 }
 
 void pka_event::setNatoms(int n, const std::vector<std::string> &labels)

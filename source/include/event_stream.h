@@ -166,6 +166,8 @@ class pka_event : public event
      */
     constexpr static int atom_cols_ = 5;
 
+    float Tdam_LSS_, NRT_LSS_, NRT_;
+
 public:
     pka_event() : event(), natoms_(0) { }
 
@@ -177,7 +179,7 @@ public:
     // make calculations after cascade finishes
     void cascade_end(const ion &i, const abstract_cascade *cscd = nullptr);
     // calc NRT values and send CascadeComplete event to tally
-    void cascade_complete(const ion &i, tally &t, const material *m);
+    void cascade_complete(const ion &i, const material *m);
 
     /**
      * @brief Set the number of atoms in the target
@@ -209,6 +211,10 @@ public:
     const float &Icr(int atom_id) const { return buff_[ofVac + 3 * natoms_ + atom_id]; }
     float &Icr_corr(int atom_id) { return buff_[ofVac + 4 * natoms_ + atom_id]; }
     const float &Icr_corr(int atom_id) const { return buff_[ofVac + 4 * natoms_ + atom_id]; }
+
+    const float &Tdam_LSS() const { return Tdam_LSS_; }
+    const float &NRT_LSS() const { return NRT_LSS_; }
+    const float &NRT() const { return NRT_; }
 };
 
 /**

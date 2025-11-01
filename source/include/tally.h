@@ -32,6 +32,9 @@ enum class Event : int32_t {
     Invalid = -1
 };
 
+const char *event_name(Event ev);
+const char *event_description(Event ev);
+
 /**
  * @brief The tally class obtains and organizes Monte-Carlo scores in tables
  *
@@ -127,7 +130,11 @@ protected:
 
     enum counter_t { H = 0, V = 1, I = 2, R = 3, Rec = 4, P = 5, L = 6 };
 
-    uint32_t EventMask_{ static_cast<uint32_t>(Event::NEvent) - 1 };
+    uint32_t EventMask_{ static_cast<uint32_t>(Event::BoundaryCrossing)
+                         | static_cast<uint32_t>(Event::Replacement)
+                         | static_cast<uint32_t>(Event::IonStop)
+                         | static_cast<uint32_t>(Event::IonExit)
+                         | static_cast<uint32_t>(Event::CascadeComplete) };
 
     size_t ncells_{ 0 };
 
@@ -140,6 +147,8 @@ public:
         for (int i = 0; i < A.size(); i++)
             A[i] = other.A[i].copy();
     }
+
+    uint32_t eventMask() const { return EventMask_; }
 
     std::vector<std::string> arrayNames() const;
 

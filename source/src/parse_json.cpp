@@ -208,14 +208,6 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Event,
                                { Event::NewFlightPath, "NewFlightPath" },
                                { Event::NEvent, "NEvent" } })
 
-NLOHMANN_JSON_SERIALIZE_ENUM(user_tally::coordinate_t,
-                             {
-                                     { user_tally::Invalid, nullptr },
-                                     { user_tally::xyz, "xyz" },
-                                     { user_tally::cyl, "cyl" },
-                                     { user_tally::sph, "sph" },
-                             })
-
 // option struct serialization
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(target::region, id, material_id, origin, size)
@@ -255,9 +247,11 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::output_options, title, outfi
                                           storage_interval, store_exit_events, store_pka_events,
                                           store_damage_events, store_dedx)
 
-MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(user_tally::parameters, id, event, coordinates, x, y, z,
-                                          rho, phi, r, theta, zaxis, xzvec, org, vx, vy, vz, vrho,
-                                          vphi, vr, vtheta, atom_id)
+MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(coord_sys, origin, zaxis, xzvector)
+
+MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(user_tally::parameters, id, description, event,
+                                          coordinate_system, x, y, z, r, rho, cosTheta, nx, ny, nz,
+                                          E, Tdam, V, atom_id, recoil_id)
 
 // MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 //     target::target_desc_t,

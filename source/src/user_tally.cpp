@@ -1,138 +1,104 @@
 #include "user_tally.h"
 #include "ion.h"
 #include "target.h"
+#include "event_stream.h"
 
-void user_tally::init()
+void user_tally::init(size_t natoms)
 {
     // Init coord transformation (if needed)
-    t.reset();
-    if (par_.zaxis.size() || par_.xzvec.size() || par_.org.size())
-        t.init(par_.zaxis, par_.xzvec, par_.org);
+    par_.coordinate_system.init();
 
     // clear bins
     bin_codes.clear();
     bins.clear();
     bin_sizes.clear();
 
+    // push all bins defined by user
+    push_bins(cX, par_.x);
+    push_bins(cY, par_.y);
+    push_bins(cZ, par_.z);
+    push_bins(cR, par_.r);
+    push_bins(cRho, par_.rho);
+    push_bins(cCosTheta, par_.cosTheta);
+    push_bins(cNx, par_.nx);
+    push_bins(cNy, par_.ny);
+    push_bins(cNz, par_.nz);
+    push_bins(cE, par_.E);
+    push_bins(cTdam, par_.Tdam);
+    push_bins(cV, par_.V, natoms);
     push_bins(cAtom_id, par_.atom_id);
+    push_bins(cAtom_id, par_.recoil_id);
 
-    // get bins from user options
-    switch (par_.coordinates) {
-    case xyz:
-        push_bins(cX, par_.x);
-        push_bins(cY, par_.y);
-        push_bins(cZ, par_.z);
-        push_bins(cVX, par_.vx);
-        push_bins(cVY, par_.vy);
-        push_bins(cVZ, par_.vz);
-        break;
-    case cyl:
-        push_bins(cRho, par_.rho);
-        push_bins(cPhi, par_.phi);
-        push_bins(cZ, par_.z);
-        push_bins(cVRho, par_.vrho);
-        push_bins(cVPhi, par_.vphi);
-        push_bins(cVZ, par_.vz);
-        break;
-    case sph:
-        push_bins(cR, par_.r);
-        push_bins(cTheta, par_.theta);
-        push_bins(cPhi, par_.phi);
-        push_bins(cVR, par_.vr);
-        push_bins(cVTheta, par_.vtheta);
-        push_bins(cVPhi, par_.vphi);
-        break;
-    case Invalid:
-        assert(false); // never get here!
-        break;
-    }
-
+    // prepare buffers to store data
     idx.resize(bin_codes.size()); // same size as bin_sizes
     data_ = ArrayNDd(bin_sizes);
 }
 
-// std::vector<std::string> user_tally::bin_names() const
-void user_tally::bin_names(std::vector<std::string> &names,
-                           std::vector<std::string> &descriptions) const
+// clang-format off
+static const char *bin_name_[] = {
+    "x", "y", "z",
+    "r", "rho", "costheta",
+    "nx", "ny", "nz",
+    "E", "Tdam", "V",
+    "atom_id", "recoil_id",
+    "invalid_bin_name"    
+};
+static const char *bin_desc_[] = {
+    "Position vector x component [nm]",
+    "Position vector y component [nm]",
+    "Position vector z component [nm]",
+    "Radial distance r=sqrt(x^2+y^2+z^2) [nm]",
+    "Cylindrical radial distance rho=sqrt(x^2+y^2) [nm]",
+    "Cosine of polar angle cosTheta = z/r",
+    "x-axis direction cosine",
+    "y-axis direction cosine",
+    "z-axis direction cosine",
+    "Energy [eV]",
+    "Damage energy [eV]",
+    "Number of vacancies generated",
+    "Atom id",
+    "Recoil generation id",
+    "invalid_bin_desc"    
+};
+// clang-format on
+
+const char *user_tally::bin_name(int i) const
 {
-    names.clear();
-    descriptions.clear();
-    for (int j = 0; j < bin_codes.size(); ++j) {
-        switch (bin_codes[j]) {
-        case cX:
-            names.push_back("x");
-            descriptions.push_back("Position vector x component [nm]");
-            break;
-        case cY:
-            names.push_back("y");
-            descriptions.push_back("Position vector y component [nm]");
-            break;
-        case cZ:
-            names.push_back("z");
-            descriptions.push_back("Position vector z component [nm]");
-            break;
-        case cRho:
-            names.push_back("rho");
-            descriptions.push_back("Position vector rho component [nm]");
-            break;
-        case cPhi:
-            names.push_back("phi");
-            descriptions.push_back("Position vector phi component [rad]");
-            break;
-        case cR:
-            names.push_back("r");
-            descriptions.push_back("position vector r component [nm]");
-            break;
-        case cTheta:
-            names.push_back("theta");
-            descriptions.push_back("Position vector theta component [rad]");
-            break;
-        case cVX:
-            names.push_back("vx");
-            descriptions.push_back("Direction vector x component");
-            break;
-        case cVY:
-            names.push_back("vy");
-            descriptions.push_back("Direction vector y component");
-            break;
-        case cVZ:
-            names.push_back("vz");
-            descriptions.push_back("Direction vector z component");
-            break;
-        case cVRho:
-            names.push_back("vrho");
-            descriptions.push_back("Direction vector rho component");
-            break;
-        case cVPhi:
-            names.push_back("vphi");
-            descriptions.push_back("Direction vector phi component");
-            break;
-        case cVR:
-            names.push_back("vr");
-            descriptions.push_back("Direction vector r component");
-            break;
-        case cVTheta:
-            names.push_back("vtheta");
-            descriptions.push_back("Direction vector theta component");
-            break;
-        case cAtom_id:
-            names.push_back("atom_id");
-            descriptions.push_back("Atomic species id");
-            break;
-        default:
-            break;
-        }
-    }
+    size_t k = (i >= 0 && i < (int)bin_codes.size()) ? bin_codes[i] : cNumCodes;
+    return bin_name_[k];
 }
 
-// std::vector<size_t> user_tally::get_bin(const ion &i) //const
-bool user_tally::get_bin(const ion &i)
+const char *user_tally::bin_desc(int i) const
+{
+    size_t k = (i >= 0 && i < (int)bin_codes.size()) ? bin_codes[i] : cNumCodes;
+    return bin_desc_[k];
+}
+
+std::vector<std::string> user_tally::bin_names() const
+{
+    size_t m = bin_codes.size();
+    std::vector<std::string> names(m);
+    for (size_t i = 0; i < m; ++i)
+        names[i] = bin_name_[bin_codes[i]];
+    return names;
+}
+
+std::vector<std::string> user_tally::bin_descriptions() const
+{
+    size_t m = bin_codes.size();
+    std::vector<std::string> d(m);
+    for (size_t i = 0; i < m; ++i)
+        d[i] = bin_desc_[bin_codes[i]];
+    return d;
+}
+
+bool user_tally::get_bin(const ion &i, const void *pv)
 {
     int n = bin_codes.size();
 
     // get ion position at user tally ref. frame
-    vector3 pos = t.transformPoint(i.pos());
-    vector3 dir = t.transformVector(i.dir());
+    vector3 pos = par_.coordinate_system.transformPoint(i.pos());
+    vector3 dir = par_.coordinate_system.transformVector(i.dir());
 
     for (int j = 0; j < n; ++j) {
 
@@ -152,52 +118,45 @@ bool user_tally::get_bin(const ion &i)
             // pos = i.pos()[2]; // ion z-position
             v = pos.z(); // ion z-position
             break;
-        case cRho:
-            // pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)); // ion_rho = sqrt(x^2+y^2)
-            v = std::sqrt(pos.x() * pos.x() + pos.y() * pos.y()); // ion_rho = sqrt(x^2+y^2)
-            break;
-        case cPhi:
-            // pos = std::atan2(i.pos()[1], i.pos()[0]); // ion_phi = atan(y/x)
-            v = std::atan2(pos.y(), pos.x()); // ion_phi = atan(y/x)
-            break;
         case cR:
-            // pos = sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)+pow(i.pos()[2],2)); // ion_r =
-            // sqrt(x^2+y^2+z^2)
-            v = pos.norm(); // ion_r = sqrt(x^2+y^2+z^2)
+            v = pos.norm(); // r = sqrt(x^2+y^2+z^2)
             break;
-        case cTheta:
-            // pos = std::atan2( sqrt(pow(i.pos()[0],2)+pow(i.pos()[1],2)), i.pos()[2] ); //
-            // ion_theta = atan(sqrt(x^2+y^2)/z)
-            v = std::atan2(std::sqrt(pos.x() * pos.x() + pos.y() * pos.y()),
-                           pos.z()); // ion_theta = atan(sqrt(x^2+y^2)/z)
+        case cRho:
+            v = std::sqrt(pos.x() * pos.x() + pos.y() * pos.y()); // rho = sqrt(x^2+y^2)
             break;
-        case cVX:
-            v = dir.x(); // ion x-velocity
+        case cCosTheta:
+            v = pos.z() / pos.norm(); // cosTheta = z/r
             break;
-        case cVY:
-            v = dir.y(); // ion y-velocity
+        case cNx:
+            v = dir.x(); // x-axis direction cosine
             break;
-        case cVZ:
-            v = dir.z(); // ion z-velocity
+        case cNy:
+            v = dir.y(); // y-axis direction cosine
             break;
-        case cVRho:
-            v = std::sqrt(dir.x() * dir.x() + dir.y() * dir.y()); // ion_vel_rho = sqrt(x^2+y^2)
+        case cNz:
+            v = dir.z(); // z-axis direction cosine
             break;
-        case cVPhi:
-            v = std::atan2(dir.y(), dir.x()); // ion_vel_phi = atan(y/x)
+        case cE:
+            v = (event() == Event::CascadeComplete)
+                    ? reinterpret_cast<const pka_event *>(pv)->recoilE()
+                    : i.erg();
             break;
-        case cVR:
-            v = dir.norm(); // ion_vel_r = sqrt(x^2+y^2+z^2)
+        case cTdam:
+            v = (event() == Event::CascadeComplete)
+                    ? reinterpret_cast<const pka_event *>(pv)->Tdam()
+                    : 0;
             break;
-        case cVTheta:
-            v = std::atan2(std::sqrt(dir.x() * dir.x() + dir.y() * dir.y()),
-                           dir.z()); // ion_vel_theta = atan(sqrt(x^2+y^2)/z)
+        case cV:
+            v = (event() == Event::CascadeComplete)
+                    ? reinterpret_cast<const pka_event *>(pv)->Vac(vac_id[j])
+                    : 0;
             break;
-        case cAtom_id: {
-            int atom_id = i.myAtom()->id();
-            v = static_cast<float>(atom_id);
+        case cAtom_id:
+            v = static_cast<float>(i.myAtom()->id());
             break;
-        }
+        case cRecoil_id:
+            v = static_cast<float>(i.recoil_id());
+            break;
         default:
             break;
         }
@@ -214,88 +173,23 @@ bool user_tally::get_bin(const ion &i)
     return true;
 }
 
-bool user_tally::push_bins(variable_code c, const std::vector<float> &edges)
+bool user_tally::push_bins(variable_code c, const std::vector<float> &edges, size_t natoms)
 {
     if (edges.empty())
         return false;
-    bin_codes.push_back(c);
-    bins.push_back(edges);
-    bin_sizes.push_back(edges.size());
+    if (c == cV) {
+        // one bin for each target atom id=1,2,...natoms-1
+        for (size_t i = 1; i < natoms; ++i) {
+            bin_codes.push_back(c);
+            bins.push_back(edges);
+            bin_sizes.push_back(edges.size());
+            vac_id.push_back(i - 1);
+        }
+    } else {
+        bin_codes.push_back(c);
+        bins.push_back(edges);
+        bin_sizes.push_back(edges.size());
+        vac_id.push_back(0);
+    }
     return true;
-}
-
-void user_tally::event_name(Event ev, std::string &name, std::string &desc)
-{
-    switch (ev) {
-    case Event::NewSourceIon:
-        name = "NewSourceIon";
-        desc = "A new ion track is started.";
-        break;
-    case Event::NewRecoil:
-        name = "NewRecoil";
-        desc = "A new recoil track is started.";
-        break;
-    case Event::Scattering:
-        name = "Scattering";
-        desc = "An ion scattering occured.";
-        break;
-    case Event::IonExit:
-        name = "IonExit";
-        desc = "An ion exits the simulation volume.";
-        break;
-    case Event::IonStop:
-        name = "IonStop";
-        desc = "An ion stops inside the simulation volume.";
-        break;
-    case Event::BoundaryCrossing:
-        name = "BoundaryCrossing";
-        desc = "An ion crosses an internal boundary.";
-        break;
-    case Event::Replacement:
-        name = "Replacement";
-        desc = "A replacement event occurs.";
-        break;
-    case Event::Vacancy:
-        name = "Vacancy";
-        desc = "A vacancy is created.";
-        break;
-    case Event::CascadeComplete:
-        name = "CascadeComplete";
-        desc = "A PKA cascade is complete.";
-        break;
-    case Event::NewFlightPath:
-        name = "NewFlightPath";
-        desc = "";
-        break;
-    case Event::NEvent:
-        name = "NEvent";
-        desc = "";
-        break;
-    case Event::Invalid:
-        name = "Invalid";
-        desc = "Invalid";
-        break;
-    default:
-        name = "Unknown";
-        desc = "Unknown";
-        break;
-    }
-}
-
-void user_tally::coordinate_name(coordinate_t c, std::string &name)
-{
-    switch (c) {
-    case xyz:
-        name = "cartesian";
-        break;
-    case cyl:
-        name = "cylindrical";
-        break;
-    case sph:
-        name = "spherical";
-        break;
-    default:
-        name = "unknown";
-        break;
-    }
 }

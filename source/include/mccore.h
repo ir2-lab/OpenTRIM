@@ -129,7 +129,7 @@ public:
     };
 
 protected:
-    ion_queue q_;
+    ion_queue ion_queue_;
 
     // simulation paramenters
     parameters par_;
@@ -144,6 +144,7 @@ protected:
     // tallies
     tally tally_, dtally_, tion_;
     std::vector<user_tally *> utally_, dutally_, ution_;
+    uint32_t utallyMask_{ 0 };
 
     // events
     event_stream pka_stream_, exit_stream_, damage_stream_;
@@ -382,7 +383,7 @@ protected:
     {
         // init the recoil by cloning the projectile ion
         // this gets the correct position and cell id
-        ion *j = q_.new_ion(proj);
+        ion *j = ion_queue_.new_ion(proj);
 
         // set atomic species,
         // recoil kinetic energy & direction
@@ -397,18 +398,21 @@ protected:
 
         // store recoil in respective queue
         if (j->recoil_id() == 1)
-            q_.push_pka(j);
+            ion_queue_.push_pka(j);
         else
-            q_.push_recoil(j);
+            ion_queue_.push_recoil(j);
 
         return j;
     }
 
     void ionEvent(Event ev, const ion &i, const void *pv = 0)
     {
-        tion_(ev, i, pv);
-        for (int k = 0; k < ution_.size(); ++k)
-            (*(ution_[k]))(ev, i, pv);
+        if (static_cast<uint32_t>(ev) & tion_.eventMask())
+            tion_(ev, i, pv);
+        if (static_cast<uint32_t>(ev) & utallyMask_) {
+            for (int k = 0; k < ution_.size(); ++k)
+                (*(ution_[k]))(ev, i, pv);
+        }
     }
 };
 

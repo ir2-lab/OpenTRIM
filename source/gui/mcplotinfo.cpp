@@ -443,14 +443,13 @@ UTallyDataStore::UTallyDataStore(const McDriverObj *d, const user_tally *t, cons
         dim_[i]--;
     name_ = t_->id();
     {
-        std::string name, desc, s;
-        user_tally::event_name(t_->event(), name, desc);
         desc_ = "Event: ";
-        desc_ += name;
+        desc_ += event_name(t_->event());
         desc_ += ": ";
-        desc_ += desc;
+        desc_ += event_description(t_->event());
     }
-    t_->bin_names(dim_name_, dim_desc_);
+    dim_name_ = t_->bin_names();
+    dim_desc_ = t_->bin_descriptions();
 
     atomLabels_ = d->getSim()->getTarget().atom_labels();
 }

@@ -444,48 +444,53 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
 
                 p1["data"] = { driver_, "bin data per ion", -1, iut };
 
-                // 3 x 3D vectors that define the coordinate system of the user_tally
-                p1["zaxis"] = { driver_, "Vector parallel to the z-axis direction",
-                                [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                    const user_tally *ut =
-                                            i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                                    const vector3 &v = ut->zaxis();
-                                    s = { v.x(), v.y(), v.z() };
-                                    d = { 3 };
-                                },
-                                iut };
+                p1["decription"] = { driver_, mcinfo::string, "Tally description",
+                                     [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
+                                         const user_tally *ut =
+                                                 i.driver_->getSim()->getUserTally()[i.extra_idx1_];
+                                         s.resize(1);
+                                         s[0] = ut->description();
+                                         d = { 1 };
+                                     },
+                                     iut };
 
-                p1["xzvec"] = { driver_, "Vector on the xz-plane",
-                                [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                    const user_tally *ut =
-                                            i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                                    const vector3 &v = ut->xzvec();
-                                    s = { v.x(), v.y(), v.z() };
-                                    d = { 3 };
-                                },
-                                iut };
+                p1["coordinate_system"] = { driver_, mcinfo::group };
+                {
+                    mcinfo &p2 = p1.children_.find("coordinate_system")->second;
 
-                p1["org"] = { driver_, "Coordinate system origin",
-                              [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                  const user_tally *ut =
-                                          i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                                  const vector3 &v = ut->org();
-                                  s = { v.x(), v.y(), v.z() };
-                                  d = { 3 };
-                              },
-                              iut };
+                    // 3 x 3D vectors that define the coordinate system of the user_tally
+                    p2["zaxis"] = { driver_, "Vector parallel to the z-axis direction",
+                                    [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                                        const user_tally *ut =
+                                                i.driver_->getSim()->getUserTally()[i.extra_idx1_];
+                                        const vector3 &v = ut->cs().zaxis;
+                                        s = { v.x(), v.y(), v.z() };
+                                        d = { 3 };
+                                    },
+                                    iut };
 
-                // Coordinate System
-                p1["coordinates"] = {
-                    driver_, mcinfo::string, "Coordinate system",
-                    [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                        const user_tally *ut = i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                        s.resize(1);
-                        user_tally::coordinate_name(ut->coordinates(), s[0]);
-                        d = { 1 };
-                    },
-                    iut
-                };
+                    p2["xzvector"] = {
+                        driver_, "Vector on the xz-plane",
+                        [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                            const user_tally *ut =
+                                    i.driver_->getSim()->getUserTally()[i.extra_idx1_];
+                            const vector3 &v = ut->cs().xzvector;
+                            s = { v.x(), v.y(), v.z() };
+                            d = { 3 };
+                        },
+                        iut
+                    };
+
+                    p2["origin"] = { driver_, "Coordinate system origin",
+                                     [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                                         const user_tally *ut =
+                                                 i.driver_->getSim()->getUserTally()[i.extra_idx1_];
+                                         const vector3 &v = ut->cs().origin;
+                                         s = { v.x(), v.y(), v.z() };
+                                         d = { 3 };
+                                     },
+                                     iut };
+                }
 
                 // Event
                 p1["event"] = { driver_, mcinfo::string, "Tally event",
@@ -493,18 +498,17 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
                                     const user_tally *ut =
                                             i.driver_->getSim()->getUserTally()[i.extra_idx1_];
                                     s.resize(1);
-                                    std::string dummy;
-                                    user_tally::event_name(ut->event(), s[0], dummy);
+                                    s[0] = event_name(ut->event());
                                     d = { 1 };
                                 },
                                 iut };
+
                 p1["event_decription"] = {
                     driver_, mcinfo::string, "Tally event description",
                     [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                         const user_tally *ut = i.driver_->getSim()->getUserTally()[i.extra_idx1_];
                         s.resize(1);
-                        std::string dummy;
-                        user_tally::event_name(ut->event(), dummy, s[0]);
+                        s[0] = event_description(ut->event());
                         d = { 1 };
                     },
                     iut
@@ -515,8 +519,7 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
                                     [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                                         const user_tally *ut =
                                                 i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                                        std::vector<std::string> dummy;
-                                        ut->bin_names(s, dummy);
+                                        s = ut->bin_names();
                                         d = { s.size() };
                                     },
                                     iut };
@@ -524,8 +527,7 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
                     driver_, mcinfo::string, "Bin descriptions",
                     [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                         const user_tally *ut = i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                        std::vector<std::string> dummy;
-                        ut->bin_names(dummy, s);
+                        s = ut->bin_descriptions();
                         d = { s.size() };
                     },
                     iut
@@ -533,9 +535,8 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
 
                 // Save bins
                 p1["bins"] = { driver_, mcinfo::group, "Bin edges" };
-                std::vector<std::string> names;
-                std::vector<std::string> desc;
-                ut->bin_names(names, desc);
+                std::vector<std::string> names = ut->bin_names();
+                std::vector<std::string> desc = ut->bin_descriptions();
                 mcinfo &p2 = p1.children_.find("bins")->second;
                 for (int j = 0; j < names.size(); ++j) {
                     std::ostringstream os;

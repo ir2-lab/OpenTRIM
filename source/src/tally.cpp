@@ -1,5 +1,96 @@
 #include "tally.h"
+#include "event_stream.h"
 #include "target.h"
+
+const char *event_name(Event ev)
+{
+    switch (ev) {
+    case Event::NewSourceIon:
+        return "NewSourceIon";
+        break;
+    case Event::NewRecoil:
+        return "NewRecoil";
+        break;
+    case Event::Scattering:
+        return "Scattering";
+        break;
+    case Event::IonExit:
+        return "IonExit";
+        break;
+    case Event::IonStop:
+        return "IonStop";
+        break;
+    case Event::BoundaryCrossing:
+        return "BoundaryCrossing";
+        break;
+    case Event::Replacement:
+        return "Replacement";
+        break;
+    case Event::Vacancy:
+        return "Vacancy";
+        break;
+    case Event::CascadeComplete:
+        return "CascadeComplete";
+        break;
+    case Event::NewFlightPath:
+        return "NewFlightPath";
+        break;
+    case Event::NEvent:
+        return "NEvent";
+        break;
+    case Event::Invalid:
+        return "Invalid";
+        break;
+    default:
+        return "Unknown";
+        break;
+    }
+}
+
+const char *event_description(Event ev)
+{
+    switch (ev) {
+    case Event::NewSourceIon:
+        return "A new ion track is started.";
+        break;
+    case Event::NewRecoil:
+        return "A new recoil track is started.";
+        break;
+    case Event::Scattering:
+        return "An ion scattering occured.";
+        break;
+    case Event::IonExit:
+        return "An ion exits the simulation volume.";
+        break;
+    case Event::IonStop:
+        return "An ion stops inside the simulation volume.";
+        break;
+    case Event::BoundaryCrossing:
+        return "An ion crosses an internal boundary.";
+        break;
+    case Event::Replacement:
+        return "A replacement event occurs.";
+        break;
+    case Event::Vacancy:
+        return "A vacancy is created.";
+        break;
+    case Event::CascadeComplete:
+        return "A PKA cascade is complete.";
+        break;
+    case Event::NewFlightPath:
+        return "";
+        break;
+    case Event::NEvent:
+        return "";
+        break;
+    case Event::Invalid:
+        return "Invalid";
+        break;
+    default:
+        return "Unknown";
+        break;
+    }
+}
 
 const char *tally::arrayName(int i)
 {
@@ -82,7 +173,7 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
     int iid = i.myAtom()->id(), cid = i.cellid(), pid = i.prev_cellid();
     size_t k = iid * ncells_ + cid;
     size_t kp = iid * ncells_ + pid;
-    const float *p;
+    const pka_event *p;
     const atom *a;
     size_t ka, kb;
     switch (ev) {
@@ -156,12 +247,13 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         break;
     case Event::CascadeComplete:
         A[cPKA](k)++;
-        p = reinterpret_cast<const float *>(pv);
-        A[ePKA](k) += p[0];
-        A[dpTdam_LSS](k) += p[1];
-        A[dpVnrt_LSS](k) += p[2];
-        A[dpTdam](k) += p[3];
-        A[dpVnrt](k) += p[4];
+        // pv = pointer to pka_event struct
+        p = reinterpret_cast<const pka_event *>(pv);
+        A[ePKA](k) += p->recoilE();
+        A[dpTdam_LSS](k) += p->Tdam_LSS();
+        A[dpVnrt_LSS](k) += p->NRT_LSS();
+        A[dpTdam](k) += p->Tdam();
+        A[dpVnrt](k) += p->NRT();
         break;
     default:
         break;

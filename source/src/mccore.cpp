@@ -61,12 +61,22 @@ mccore::mccore(const mccore &s)
             dutally_.back()->clear();
             ution_.back()->clear();
         }
+        utallyMask_ = s.utallyMask_;
     }
 }
 
 mccore::~mccore()
 {
-    q_.clear();
+    ion_queue_.clear();
+
+    if (!utally_.empty()) {
+        for (int i = 0; i < (int)utally_.size(); ++i) {
+            delete utally_[i];
+            delete dutally_[i];
+            delete ution_[i];
+        }
+    }
+
     if (ref_count_.use_count() == 1) {
         delete source_;
         delete target_;
@@ -146,9 +156,10 @@ int mccore::init()
      */
     if (utally_.size()) {
         for (int i = 0; i < utally_.size(); ++i) {
-            utally_[i]->init();
-            dutally_[i]->init();
-            ution_[i]->init();
+            utally_[i]->init(natoms);
+            dutally_[i]->init(natoms);
+            ution_[i]->init(natoms);
+            utallyMask_ |= static_cast<uint32_t>(ution_[i]->event());
         }
     }
 
@@ -186,7 +197,7 @@ int mccore::run()
         }
 
         // generate ion
-        ion *i = q_.new_ion();
+        ion *i = ion_queue_.new_ion();
         i->setId(ion_id);
         i->setRecoilId(cascadesOnly ? 1 : 0);
         i->reset_counters();
@@ -210,18 +221,18 @@ int mccore::run()
                     double de = i->erg() + i->myAtom()->Ed() - T;
                     i->de_phonon(de);
                 }
-                q_.push_pka(i);
+                ion_queue_.push_pka(i);
             } else
-                q_.free_ion(i);
+                ion_queue_.free_ion(i);
         } else {
             transport(i);
             // free the ion buffer
-            q_.free_ion(i);
+            ion_queue_.free_ion(i);
         }
 
         // transport all PKAs
         pka.mark(tion_);
-        while (ion *j = q_.pop_pka()) {
+        while (ion *j = ion_queue_.pop_pka()) {
             // transport PKA
             pka.init(j);
             ion j1(*j); // keep a clone ion to have initial position
@@ -241,10 +252,10 @@ int mccore::run()
                 transport(j, cscd);
 
                 // transport all secondary recoils
-                while (ion *k = q_.pop_recoil()) {
+                while (ion *k = ion_queue_.pop_recoil()) {
                     transport(k, cscd);
                     // free the ion buffer
-                    q_.free_ion(k);
+                    ion_queue_.free_ion(k);
                 }
 
                 if (cscd) {
@@ -259,12 +270,13 @@ int mccore::run()
             }
 
             // free the ion buffer
-            q_.free_ion(j);
+            ion_queue_.free_ion(j);
 
-            // register NRT values (using j1 - at initial pos!)
-            pka.cascade_complete(j1, tion_,
-                                 par_.nrt_calculation == NRT_average ? target_->cell(j1.cellid())
-                                                                     : nullptr);
+            // CascadeComplete event
+            // Calc NRT values (using j1 - at initial pos!)
+            pka.cascade_complete(
+                    j1, par_.nrt_calculation == NRT_average ? target_->cell(j1.cellid()) : nullptr);
+            ionEvent(Event::CascadeComplete, j1, &pka);
 
             // send pka to the stream
             pka_stream_.write(&pka);
