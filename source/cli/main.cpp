@@ -1,10 +1,10 @@
 #include "mcdriver.h"
 
-#include <cxxopts.hpp>
+#include <CLI/CLI.hpp>
 
 #include <iostream>
 #include <fstream>
-#include <iomanip>
+#include <sstream>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #  define WINDOWS_BUILD
@@ -79,55 +79,35 @@ int main(int argc, char *argv[])
     std::string program_name(PROJECT_NAME);
     std::transform(program_name.begin(), program_name.end(), program_name.begin(),
                    [](unsigned char c) { return std::tolower(c); });
-    cxxopts::Options cli_options(program_name, PROJECT_DESCRIPTION);
 
-    cli_options.add_options()("n", "Number of histories to run (overrides config input)",
-                              cxxopts::value<int>())(
-            "j", "Number of threads (overrides config input)", cxxopts::value<int>())(
-            "s,seed", "random generator seed (overrides config input)", cxxopts::value<int>())(
-            "i,input", "input HDF5 file name",
-            cxxopts::value<std::string>())("f", "JSON config file", cxxopts::value<std::string>())(
-            "o,output", "output HDF5 file name (overrides config input)",
-            cxxopts::value<std::string>())("t,template", "print a template JSON config to stdout")(
-            "v,version", "Display version information")("h,help", "Display short help message");
+    CLI::App app{ PROJECT_DESCRIPTION, program_name };
+
+    std::string version_string;
+    {
+        std::ostringstream ss;
+        ss << PROJECT_NAME << " version " << PROJECT_VERSION << endl;
+        ss << "Build time: " << BUILD_TIME << endl;
+        ss << "Compiler: " << COMPILER_ID << " v" << COMPILER_VERSION << " on " SYSTEM_ID << endl;
+        version_string = ss.str();
+    }
+    app.set_version_flag("--version", version_string);
 
     int n(-1), j(-1), s(-1);
     std::string input_config_file, input_file, output_file;
 
-    try {
-        auto result = cli_options.parse(argc, argv);
+    app.add_option("-n", n, "Number of histories to run (overrides config input)");
+    app.add_option("-j", j, "Number of threads (overrides config input)");
+    app.add_option("-s,--seed", s, "Random number generator seed (overrides config input)");
+    app.add_option("-i,--input", input_file, "Input HDF5 file name");
+    app.add_option("-f", input_config_file, "JSON config file");
+    app.add_option("-o,--output", output_file, "Output HDF5 file name (overrides config input)");
+    app.add_flag("-t,--template", "Print a template JSON config to stdout");
+    CLI11_PARSE(app, argc, argv);
 
-        if (result.count("help")) {
-            cout << cli_options.help() << endl;
-            return 0;
-        }
-        if (result.count("version")) {
-            cout << PROJECT_NAME << " version " << PROJECT_VERSION << endl;
-            cout << "Build time: " << BUILD_TIME << endl;
-            cout << "Compiler: " << COMPILER_ID << " v" << COMPILER_VERSION << " on " SYSTEM_ID
-                 << endl;
-            return 0;
-        }
-        if (result.count("template")) {
-            mcconfig opt;
-            opt.printJSON(cout);
-            return 0;
-        }
-        if (result.count("n"))
-            n = result["n"].as<int>();
-        if (result.count("j"))
-            j = result["j"].as<int>();
-        if (result.count("s"))
-            s = result["s"].as<int>();
-        if (result.count("f"))
-            input_config_file = result["f"].as<std::string>();
-        if (result.count("i"))
-            input_file = result["i"].as<std::string>();
-        if (result.count("o"))
-            output_file = result["o"].as<std::string>();
-    } catch (const cxxopts::exceptions::exception &e) {
-        cerr << "Error parsing command line: " << e.what() << endl;
-        return -1;
+    if (app.get_option("--template")->as<bool>()) { // NEW: print configuration and exit
+        mcconfig opt;
+        opt.printJSON(cout);
+        return 0;
     }
 
     if (!input_config_file.empty() && !input_file.empty()) {

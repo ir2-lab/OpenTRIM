@@ -6,18 +6,16 @@ set(FETCHCONTENT_TRY_FIND_PACKAGE_MODE NEVER)
 
 option(PACKAGE_BUILD "Flag for building binary package without internet and localy downloaded externals." OFF)
 
-FetchContent_Declare(external_cxxopts
-   GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
-   GIT_TAG v3.1.1
+FetchContent_Declare(external_CLI11
+   GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+   GIT_TAG v2.6.1
    GIT_SUBMODULES_RECURSE FALSE
    GIT_SHALLOW TRUE
-   EXCLUDE_FROM_ALL
-   SOURCE_SUBDIR dummy
 )
 if(PACKAGE_BUILD)
-   set(external_cxxopts_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext1)
+   set(external_CLI11_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext1)
 else()
-   FetchContent_MakeAvailable(external_cxxopts)
+   FetchContent_MakeAvailable(external_CLI11)
 endif()
 
 # set build flags for HighFive 

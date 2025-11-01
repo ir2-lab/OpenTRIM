@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <charconv>
 
-#include <cxxopts.hpp>
+#include <CLI/CLI.hpp>
 
 using std::cerr;
 using std::cout;
@@ -17,34 +17,19 @@ int gen_scattering_tbl(const std::string &short_screening_name);
 
 int main(int argc, char *argv[])
 {
-    cxxopts::Options cli_options("gen_scattering_tbl",
-                                 "Generate screened Coulomb scattering table");
 
-    cli_options.add_options()("s,screening", "Screening type: one of ZBL, Bohr, KrC, Moliere",
-                              cxxopts::value<std::string>())("h,help",
-                                                             "Display short help message");
+    CLI::App app{ "Generate screened Coulomb scattering table", "gen_scattering_tbl" };
 
     Screening s(Screening::ZBL);
     std::string short_screening_name("zbl");
 
-    try {
-        auto result = cli_options.parse(argc, argv);
+    app.add_option("-s,--screening", short_screening_name,
+                   "Screening type: one of ZBL, Bohr, KrC, Moliere");
 
-        if (result.count("help")) {
-            cout << cli_options.help() << endl;
-            return 0;
-        }
+    CLI11_PARSE(app, argc, argv);
 
-        if (result.count("s")) {
-            short_screening_name = result["s"].as<std::string>();
-            std::transform(short_screening_name.begin(), short_screening_name.end(),
-                           short_screening_name.begin(),
-                           [](unsigned char c) { return std::tolower(c); });
-        }
-    } catch (const cxxopts::exceptions::exception &e) {
-        cerr << "error parsing options: " << e.what() << endl;
-        return -1;
-    }
+    std::transform(short_screening_name.begin(), short_screening_name.end(),
+                   short_screening_name.begin(), [](unsigned char c) { return std::tolower(c); });
 
     if (short_screening_name == "zbl")
         s = Screening::ZBL;

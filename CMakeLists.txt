@@ -22,7 +22,8 @@ string(TIMESTAMP CMAKE_BUILD_TIME UTC)
 
 message (STATUS "Build time ${CMAKE_BUILD_TIME}")
 
-add_compile_options("-march=native")
+# This messes up valgrind !!!
+# add_compile_options("-march=native")
 
 add_compile_definitions(PROJECT_NAME="${PROJECT_NAME}"
                         PROJECT_VERSION="${PROJECT_VERSION}"
@@ -69,8 +70,6 @@ message(STATUS "HDF5 libs: ${HDF5_LIBRARIES}")
 
 include_directories(
     source/include
-    ${external_screened_coulomb_SOURCE_DIR}/include
-    ${external_ieee754_seq_SOURCE_DIR}/include
     )
 
 add_xs_library(zbl)
@@ -142,17 +141,18 @@ target_link_libraries(${LIB_TARGET}
     PUBLIC 
         Eigen3::Eigen
         nlohmann_json::nlohmann_json
+        ieee754_seq
+        screened_coulomb
+        dedx
     PRIVATE
         "-lm"
         ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_PTHREAD_LIBS_INIT}
         ${HDF5_LIBRARIES}
-        HighFive
-        dedx
-        xs_zbl xs_bohr xs_krc xs_moliere
+        HighFive        
+        xs_zbl xs_bohr xs_krc xs_moliere        
 )
 
 target_include_directories(${LIB_TARGET} PRIVATE
-    ${external_libdedx_SOURCE_DIR}/src/lib
     ${external_spline_SOURCE_DIR}/src)
 
 add_executable(${EXE_TARGET}
@@ -161,13 +161,9 @@ add_executable(${EXE_TARGET}
 # adjust exe name to be the same as the library's
 set_property(TARGET ${EXE_TARGET} PROPERTY OUTPUT_NAME ${PROJECT_NAME_LOWERCASE})
 
-target_include_directories(${EXE_TARGET} PRIVATE
-    ${external_cxxopts_SOURCE_DIR}/include
-    ${external_libdedx_SOURCE_DIR}/src/lib
-)
-
 target_link_libraries(${EXE_TARGET}
     ${LIB_TARGET}
+    CLI11
 )
 
 add_executable(genoptionsdoc EXCLUDE_FROM_ALL
@@ -230,6 +226,7 @@ target_include_directories(test_scattering_calc PRIVATE
 target_link_libraries(test_scattering_calc
     ${LIB_TARGET}
 )
+
 
 
 

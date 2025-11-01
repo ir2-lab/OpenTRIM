@@ -20,12 +20,12 @@ add_executable(gen_scattering_tbl EXCLUDE_FROM_ALL
     source/generators/gen_scattering_tbl.cpp
 )
 
-target_include_directories(gen_scattering_tbl PRIVATE
-    ${external_cxxopts_SOURCE_DIR}/include
-    ${external_screened_coulomb_SOURCE_DIR}/include)
-
-target_link_libraries(gen_scattering_tbl 
-    Eigen3::Eigen)
+target_link_libraries(gen_scattering_tbl PRIVATE
+    Eigen3::Eigen
+    CLI11
+    screened_coulomb
+    ieee754_seq
+)
 
 function(add_xs_library screeningName)
     add_custom_command(OUTPUT xs_${screeningName}_data.cpp
