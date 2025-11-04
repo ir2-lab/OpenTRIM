@@ -27,7 +27,7 @@ void user_tally::init(size_t natoms)
     push_bins(cTdam, par_.Tdam);
     push_bins(cV, par_.V, natoms);
     push_bins(cAtom_id, par_.atom_id);
-    push_bins(cAtom_id, par_.recoil_id);
+    push_bins(cRecoil_id, par_.recoil_id);
 
     // prepare buffers to store data
     idx.resize(bin_codes.size()); // same size as bin_sizes

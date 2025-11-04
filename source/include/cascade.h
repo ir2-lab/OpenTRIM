@@ -147,12 +147,15 @@ public:
     // update tally scores due to I-V recombinations
     void tally_update(tally &t)
     {
+
         // get relevant tally arrays
         auto &AI = t.at(tally::cI);
         auto &AV = t.at(tally::cV);
         auto &As = t.at(tally::eStored);
         auto &Al = t.at(tally::eLattice);
         auto &Ariv = t.at(tally::cRecombinations);
+        size_t ncells = AI.size() / AI.dim()[0];
+
         // update tally
         for (auto &fp : riv_) {
             // interstitial
@@ -160,16 +163,18 @@ public:
             int iid = i->a->id();
             float halfEl = i->a->El() / 2;
             int cid = i->cid;
-            AI(iid, cid)--;
-            As(iid, cid) -= halfEl;
-            Al(iid, cid) += halfEl;
-            Ariv(iid, cid)++;
+            size_t k = iid * ncells + cid;
+            AI(k)--;
+            As(k) -= halfEl;
+            Al(k) += halfEl;
+            Ariv(k)++;
             // vacancy
             auto &v = fp.second;
             cid = v->cid;
-            AV(iid, cid)--;
-            As(iid, cid) -= halfEl;
-            Al(iid, cid) += halfEl;
+            k = iid * ncells + cid;
+            AV(k)--;
+            As(k) -= halfEl;
+            Al(k) += halfEl;
         }
     }
 

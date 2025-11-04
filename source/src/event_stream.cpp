@@ -277,9 +277,10 @@ void exit_event::set(const ion *i) //, int cellid)
     buff_[ofDir + 2] = i->dir().z();
 }
 
+// { ofHid = 0, ofRid = 1, ofIid = 2, ofCid = 3, ofDid = 4, ofPos = 5, ofEnd = 8 }
 damage_event::damage_event()
-    : event(ofEnd, { "hid", "iid", "cid", "did", "x", "y", "z" },
-            { "history id", "ion species id", "ion's cell id before exiting",
+    : event(ofEnd, { "hid", "rid", "iid", "cid", "did", "x", "y", "z" },
+            { "history id", "recoil id", "ion species id", "ion's cell id before exiting",
               "defect type id 0: vacancy, 1: interstitial", "x position [nm]", "y position [nm]",
               "z position [nm]" })
 {

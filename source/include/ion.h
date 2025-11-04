@@ -156,7 +156,7 @@ public:
     /// increase recoil id
     void incRecoilId() { recoil_id_++; }
 
-    /// reset recoil id to 0
+    /// Set the recoil id
     void setRecoilId(int id) { recoil_id_ = id; }
 
     /// Returns a universal id for this ion

@@ -213,7 +213,7 @@ int mccore::run()
                 double T = i->erg();
                 i->setErg(i->erg() - i->myAtom()->El());
                 if (par_.move_recoil) {
-                    i->move(i->myAtom()->Rc());
+                    i->move(i->myAtom()->Rc() * 1.001);
                     dedx_calc_.preload(i, target_->cell(i->cellid()));
                     dedx_calc_(*i, i->myAtom()->Rc());
                 }
@@ -242,6 +242,7 @@ int mccore::run()
 
                 pka.cascade_start(*j);
 
+                ionEvent(Event::Vacancy, *j);
                 if (cscd) {
                     cscd->init(*j);
                 } else if (damage_stream_.is_open()) {
@@ -482,14 +483,14 @@ int mccore::transport(ion *i, abstract_cascade *cscd)
 
             // move recoil to the edge of recomb. area
             // checking also for boundary crossing
-            if (par_.move_recoil) {
-                j->move(z2->Rc());
-                dedx_calc_(*j, z2->Rc());
-                if (par_.recoil_sub_ed) {
-                    double de = j->erg() + z2->Ed() - T;
-                    j->de_phonon(de);
-                }
-            }
+            // if (par_.move_recoil) {
+            //     j->move(z2->Rc());
+            //     dedx_calc_(*j, z2->Rc());
+            //     if (par_.recoil_sub_ed) {
+            //         double de = j->erg() + z2->Ed() - T;
+            //         j->de_phonon(de);
+            //     }
+            // }
 
             /*
              * Now check whether the projectile might replace the recoil
@@ -503,11 +504,24 @@ int mccore::transport(ion *i, abstract_cascade *cscd)
                 // Replacement event, ion energy goes to Phonons
                 ionEvent(Event::Replacement, *i, z2);
                 j->setUid(i->uid());
-                // if (q) q->push(Event::Replacement,*i);
+                j->setRecoilId(i->recoil_id()); // j keeps the recoil id of i
+                //  if (q) q->push(Event::Replacement,*i);
                 return 0; // end of ion history
             }
 
+            // move recoil to the edge of recomb. area
+            // checking also for boundary crossing
+            if (par_.move_recoil) {
+                j->move(z2->Rc() * 1.001f);
+                dedx_calc_(*j, z2->Rc());
+                if (par_.recoil_sub_ed) {
+                    double de = j->erg() + z2->Ed() - T;
+                    j->de_phonon(de);
+                }
+            }
+
             // a vacancy has been created
+            ionEvent(Event::Vacancy, j1);
             if (cscd) {
                 cscd->push_vacancy(j1);
             } else if (damage_stream_.is_open()) {
