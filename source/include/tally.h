@@ -130,11 +130,11 @@ protected:
 
     enum counter_t { H = 0, V = 1, I = 2, R = 3, Rec = 4, P = 5, L = 6 };
 
-    uint32_t EventMask_{ static_cast<uint32_t>(Event::BoundaryCrossing)
-                         | static_cast<uint32_t>(Event::Replacement)
-                         | static_cast<uint32_t>(Event::IonStop)
-                         | static_cast<uint32_t>(Event::IonExit)
-                         | static_cast<uint32_t>(Event::CascadeComplete) };
+    uint32_t EventMask_{
+        static_cast<uint32_t>(Event::BoundaryCrossing) | static_cast<uint32_t>(Event::Replacement)
+        | static_cast<uint32_t>(Event::IonStop) | static_cast<uint32_t>(Event::Vacancy)
+        | static_cast<uint32_t>(Event::IonExit) | static_cast<uint32_t>(Event::CascadeComplete)
+    };
 
     size_t ncells_{ 0 };
 

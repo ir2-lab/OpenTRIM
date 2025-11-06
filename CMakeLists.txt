@@ -82,7 +82,8 @@ set (EXE_TARGET ${PROJECT_NAME_LOWERCASE}_exe)
 
 add_library(${LIB_TARGET} SHARED
     ${PTABLE_DATA_CPP}
-    source/src/ion.cpp   
+    source/src/ion.cpp  
+    source/src/cascade.cpp 
     source/src/target.cpp
     source/src/flight_path.cpp
     source/src/mccore.cpp   

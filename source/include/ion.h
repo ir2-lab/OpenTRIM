@@ -61,6 +61,11 @@ enum class BoundaryCrossing {
  */
 class ion
 {
+public:
+    enum ion_type { moving, vacancy, interstitial };
+
+private:
+    ion_type type_;
     vector3 pos_; // position = x,y,z in nm
     vector3 pos0_; // initial position (start of track)
     vector3 dir_; // direction cosines
@@ -97,13 +102,17 @@ class ion
         if (de > erg_)
             de = erg_;
         erg_ -= de;
-        *s += de;
+        if (s)
+            *s += de;
         assert(finite(erg_));
     }
 
 public:
     /// Default constructor
     ion();
+
+    ion_type type() const { return type_; }
+    void set_type(ion_type t) { type_ = t; }
 
     /// Returns the ion's position vector [nm]
     const vector3 &pos() const { return pos_; }
@@ -171,11 +180,14 @@ public:
     /// Subtract energy \a de due to phonon excitation
     void de_phonon(double de) { sub_erg(de, &phonon_); }
 
-    /// Subtract energy \a de due to phonon ionization
+    /// Subtract energy \a de due to ionization
     void de_ioniz(double de) { sub_erg(de, &ioniz_); }
 
     /// Subtract energy \a de due to recoil generation
     void de_recoil(double de) { sub_erg(de, &recoil_); }
+
+    /// Subtract energy \a de due to other proccesses
+    void de_other(double de) { sub_erg(de, nullptr); }
 
     /// Returns the amount of ion energy lost to phonons
     const double &phonon() const { return phonon_; }
@@ -304,6 +316,8 @@ class ion_queue
     ion_queue_t ion_buffer_; // buffer of allocated ion objects
     ion_queue_t recoil_queue_; // queue of generated recoils
     ion_queue_t pka_queue_; // queue of generated PKAs
+    ion_queue_t v_queue_; // queue of vacancies
+    ion_queue_t i_queue_; // queue of interstitials
 
     // pop an ion from the respective queue
     static ion *pop_one_(ion_queue_t &Q)
@@ -318,11 +332,8 @@ class ion_queue
     size_t sz_;
     size_t uctr_;
 
-public:
-    explicit ion_queue() : sz_(0), uctr_(0) { }
-
-    /// Returns a new ion object, initialized with data copied from non-null p
-    ion *new_ion(const ion *p = nullptr)
+    // Returns a new ion object, optionally initialized with data copied from p
+    ion *__new_ion__(const ion *p = nullptr)
     {
         ion *i;
         if (ion_buffer_.empty()) {
@@ -338,14 +349,42 @@ public:
         return i;
     }
 
+public:
+    explicit ion_queue() : sz_(0), uctr_(0) { }
+
+    /// Returns a clone of p
+    ion *clone_ion(const ion &p) { return __new_ion__(&p); }
+
+    /// Create an ion
+    ion *create_ion() { return __new_ion__(); }
+
     /// Push an ion object to the PKA queue
     void push_pka(ion *i) { pka_queue_.push(i); }
-    /// Push an ion object to the recoil queue
-    void push_recoil(ion *i) { recoil_queue_.push(i); }
     /// Pop a PKA ion object from the queue. If the queue is empty, a nullptr is returned.
     ion *pop_pka() { return pop_one_(pka_queue_); }
+
+    /// Push an ion object to the recoil queue
+    void push_recoil(ion *i) { recoil_queue_.push(i); }
     /// Pop a recoil ion object from the queue. If the queue is empty, a nullptr is returned.
     ion *pop_recoil() { return pop_one_(recoil_queue_); }
+
+    /// Push an ion object to the recoil queue
+    void push_vacancy(ion *i)
+    {
+        i->set_type(ion::vacancy);
+        v_queue_.push(i);
+    }
+    /// Pop a recoil ion object from the queue. If the queue is empty, a nullptr is returned.
+    ion *pop_vacancy() { return pop_one_(v_queue_); }
+
+    /// Push an ion object to the recoil queue
+    void push_interstitial(ion *i)
+    {
+        i->set_type(ion::interstitial);
+        i_queue_.push(i);
+    }
+    /// Pop a recoil ion object from the queue. If the queue is empty, a nullptr is returned.
+    ion *pop_interstitial() { return pop_one_(i_queue_); }
 
     /// Release a used ion object
     void free_ion(ion *i) { ion_buffer_.push(i); }

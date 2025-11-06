@@ -176,75 +176,97 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
     const pka_event *p;
     const atom *a;
     size_t ka, kb;
+
     switch (ev) {
+
     case Event::BoundaryCrossing:
         A[isCollision](kp) += i.ncoll();
         A[isFlightPath](kp) += i.path();
         A[eLattice](kp) += i.phonon();
         A[eIoniz](kp) += i.ioniz();
         break;
+
     case Event::Replacement:
         // add a replacement
         A[cR](k)++; // this atom, current cell
+        A[isCollision](k) += i.ncoll();
+        A[isFlightPath](k) += i.path();
+        A[eIoniz](k) += i.ioniz();
+        A[eLattice](k) += i.erg() + i.phonon();
+
         // remove a vac for the replaced atom (id passed in pointer pv), in current cell
         // and also half FP stored energy
-        a = reinterpret_cast<const atom *>(pv);
-        assert(a->id());
-        assert(cid >= 0);
-        ka = a->id() * ncells_ + cid;
-        A[cV](ka)--;
-        A[eStored](ka) -= i.myAtom()->El() / 2;
-        A[eLattice](ka) += i.myAtom()->El() / 2;
+        // a = reinterpret_cast<const atom *>(pv);
+        // assert(a->id());
+        // assert(cid >= 0);
+        // ka = a->id() * ncells_ + cid;
+        // A[cV](ka)--;
+        // A[eStored](ka) -= i.myAtom()->El() / 2;
+        // A[eLattice](ka) += i.myAtom()->El() / 2;
         // if this was a recoil, add a V, a D, & stored energy
         // Efp/2 at the starting & ending cell
-        if (i.recoil_id()) {
-            assert(iid);
-            assert(i.cellid0() >= 0);
-            kb = iid * ncells_ + i.cellid0();
-            A[cD](kb)++;
-            A[cV](kb)++;
-            A[eStored](kb) += i.myAtom()->El() / 2;
-            A[eLattice](k) += i.myAtom()->El() / 2;
-        }
-        A[isCollision](k) += i.ncoll();
-        A[isFlightPath](k) += i.path();
-        A[eIoniz](k) += i.ioniz();
-        A[eLattice](k) += i.erg() + i.phonon();
+        // if (i.recoil_id()) {
+        //     assert(iid);
+        //     assert(i.cellid0() >= 0);
+        //     kb = iid * ncells_ + i.cellid0();
+        //     A[cD](kb)++;
+        //     A[cV](kb)++;
+        //     A[eStored](kb) += i.myAtom()->El() / 2;
+        //     A[eLattice](k) += i.myAtom()->El() / 2;
+        // }
+
         break;
+
     case Event::IonStop:
-        A[cI](k)++; // add implantation at current (end) posvacancy
-        if (i.recoil_id()) { // this is a recoil
-            assert(iid);
-            assert(i.cellid0() >= 0);
-            kb = iid * ncells_ + i.cellid0();
-            A[cD](kb)++; // add displacement at start pos
-            A[cV](kb)++; // add vacancy at start pos
-            A[eStored](kb) += i.myAtom()->El() / 2; // Add half FP energy there
-            A[eStored](k) += i.myAtom()->El() / 2; // Add half FP energy here
-        }
+        A[cI](k)++; // add implantation at current pos
+        if (i.recoil_id()) // if this is a recoil (not a beam ion)
+            A[eStored](k) += i.myAtom()->El() / 2; // Add half FP energy here to stored energy
+
+        // if (i.recoil_id()) { // this is a recoil
+        //     assert(iid);
+        //     assert(i.cellid0() >= 0);
+        //     kb = iid * ncells_ + i.cellid0();
+        //     A[cD](kb)++; // add displacement at start pos
+        //     A[cV](kb)++; // add vacancy at start pos
+        //     A[eStored](kb) += i.myAtom()->El() / 2; // Add half FP energy there
+        //     A[eStored](k) += i.myAtom()->El() / 2; // Add half FP energy here
+        // }
+
         A[isCollision](k) += i.ncoll();
         A[isFlightPath](k) += i.path();
         A[eIoniz](k) += i.ioniz();
         A[eLattice](k) += i.erg() + i.phonon();
         break;
+
+    case Event::Vacancy:
+        A[cV](k)++; // add a vacancy at current pos
+        A[eStored](k) += i.myAtom()->El() / 2; // Add half FP energy here to stored energy
+        break;
+
     case Event::IonExit:
         A[cL](kp)++;
-        if (i.recoil_id()) { // this is a recoil
-            assert(iid);
-            assert(i.cellid0() >= 0);
-            kb = iid * ncells_ + i.cellid0();
-            A[cD](kb)++; // add displacement at start pos
-            A[cV](kb)++; // add vacancy at start pos
-            A[eStored](kb) += i.myAtom()->El() / 2; // Add half FP energy there
-            A[eLattice](k) +=
+        if (i.recoil_id()) // if this is a recoil
+            A[eLattice](kp) +=
                     i.myAtom()->El() / 2; // half FP energy released as lattice thermal energy
-        }
+
+        // if (i.recoil_id()) { // this is a recoil
+        //     assert(iid);
+        //     assert(i.cellid0() >= 0);
+        //     kb = iid * ncells_ + i.cellid0();
+        //     A[cD](kb)++; // add displacement at start pos
+        //     A[cV](kb)++; // add vacancy at start pos
+        //     A[eStored](kb) += i.myAtom()->El() / 2; // Add half FP energy there
+        //     A[eLattice](k) +=
+        //             i.myAtom()->El() / 2; // half FP energy released as lattice thermal energy
+        // }
+
         A[isCollision](kp) += i.ncoll();
         A[isFlightPath](kp) += i.path();
         A[eIoniz](kp) += i.ioniz();
         A[eLattice](kp) += i.phonon();
         A[eLost](kp) += i.erg();
         break;
+
     case Event::CascadeComplete:
         A[cPKA](k)++;
         // pv = pointer to pka_event struct
@@ -255,6 +277,7 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         A[dpTdam](k) += p->Tdam();
         A[dpVnrt](k) += p->NRT();
         break;
+
     default:
         break;
     }

@@ -197,7 +197,7 @@ int mccore::run()
         }
 
         // generate ion
-        ion *i = ion_queue_.new_ion();
+        ion *i = ion_queue_.create_ion();
         i->setId(ion_id);
         i->setRecoilId(cascadesOnly ? 1 : 0);
         i->reset_counters();
@@ -227,7 +227,7 @@ int mccore::run()
         } else {
             transport(i);
             // free the ion buffer
-            ion_queue_.free_ion(i);
+            // ion_queue_.free_ion(i);
         }
 
         // transport all PKAs
@@ -242,36 +242,70 @@ int mccore::run()
 
                 pka.cascade_start(*j);
 
-                ionEvent(Event::Vacancy, *j);
-                if (cscd) {
-                    cscd->init(*j);
-                } else if (damage_stream_.is_open()) {
-                    damage_ev.vacancy(*j);
-                    damage_stream_.write(&damage_ev);
-                }
+                // create a vacancy at pka position
+                // and store a copy in the vacancy queue
+                ion *v = ion_queue_.clone_ion(*j);
+                // Only for the PKA vacancy use pos0()
+                // to take into account "move_recoil" option
+                v->setPos(v->pos0());
+                ion_queue_.push_vacancy(v);
 
-                transport(j, cscd);
+                // ionEvent(Event::Vacancy, *j);
+                // if (cscd) {
+                //     cscd->init(*j);
+                // } else if (damage_stream_.is_open()) {
+                //     damage_ev.vacancy(*j);
+                //     damage_stream_.write(&damage_ev);
+                // }
+
+                transport(j);
 
                 // transport all secondary recoils
                 while (ion *k = ion_queue_.pop_recoil()) {
-                    transport(k, cscd);
+                    transport(k);
                     // free the ion buffer
-                    ion_queue_.free_ion(k);
+                    // ion_queue_.free_ion(k);
                 }
 
+                // optional cascade recombination
                 if (cscd) {
-                    cscd->intra_cascade_recombination();
-                    cscd->tally_update(tion_);
-                    if (damage_stream_.is_open())
-                        cscd->stream_update(damage_stream_);
+                    cscd->intra_cascade_recombination(ion_queue_);
+                }
+
+                // process PKA cascade events
+                {
+                    bool stream = damage_stream_.is_open();
+                    while (ion *k = ion_queue_.pop_interstitial()) {
+                        ionEvent(Event::IonStop, *k);
+                        if (stream) {
+                            damage_ev.interstitial(*k);
+                            damage_stream_.write(&damage_ev);
+                        }
+                        // free the ion buffer
+                        ion_queue_.free_ion(k);
+                    }
+                    while (ion *k = ion_queue_.pop_vacancy()) {
+                        ionEvent(Event::Vacancy, *k);
+                        if (stream) {
+                            damage_ev.vacancy(*k);
+                            damage_stream_.write(&damage_ev);
+                        }
+                        // free the ion buffer
+                        ion_queue_.free_ion(k);
+                    }
                 }
 
                 pka.mark(tion_);
                 pka.cascade_end(*j, cscd);
+
+                // clear optional cascade buffers
+                if (cscd) {
+                    cscd->clear(ion_queue_);
+                }
             }
 
             // free the ion buffer
-            ion_queue_.free_ion(j);
+            // ion_queue_.free_ion(j);
 
             // CascadeComplete event
             // Calc NRT values (using j1 - at initial pos!)
@@ -315,7 +349,7 @@ int mccore::run()
     return 0;
 }
 
-int mccore::transport(ion *i, abstract_cascade *cscd)
+int mccore::transport(ion *i)
 {
     // collision flag
     bool doCollision;
@@ -324,6 +358,8 @@ int mccore::transport(ion *i, abstract_cascade *cscd)
 
     // get the material at the ion's position
     const material *mat = target_->cell(i->cellid());
+    // get the ion species-id
+    int iid = i->myAtom()->id();
 
     // preload dEdx and fp tables for ion/material combination
     if (mat) {
@@ -336,14 +372,30 @@ int mccore::transport(ion *i, abstract_cascade *cscd)
 
         // Check if ion has enough energy to continue
         if (i->erg() < tr_opt_.min_energy) {
-            /* projectile has to stop. Store as implanted/interstitial atom*/
-            ionEvent(Event::IonStop, *i);
-            if (cscd) {
-                cscd->push_interstitial(*i);
-            } else if (damage_stream_.is_open()) {
-                damage_ev.interstitial(*i);
-                damage_stream_.write(&damage_ev);
+            /*
+             * projectile has to stop.
+             * Recoils are stored to the interstitial queue
+             * Ions (recoil_id==0) produce a IonStop - they are implanted
+             *
+             */
+            if (i->recoil_id()) {
+                ion_queue_.push_interstitial(i); // recoil
+            } else {
+                ionEvent(Event::IonStop, *i);
+                if (damage_stream_.is_open()) {
+                    damage_ev.interstitial(*i);
+                    damage_stream_.write(&damage_ev);
+                }
+                // the ion buffer is freed
+                ion_queue_.free_ion(i);
             }
+            // ionEvent(Event::IonStop, *i);
+            // if (cscd) {
+            //     cscd->push_interstitial(*i);
+            // } else if (damage_stream_.is_open()) {
+            //     damage_ev.interstitial(*i);
+            //     damage_stream_.write(&damage_ev);
+            // }
             return 0; // history ends
         }
 
@@ -434,7 +486,7 @@ int mccore::transport(ion *i, abstract_cascade *cscd)
         const atom *z2 = mat->selectAtom(rng);
 
         // get the cross-section and calculate scattering
-        auto xs = scattering_matrix_(i->myAtom()->id(), z2->id());
+        auto xs = scattering_matrix_(iid, z2->id());
         float T; // recoil energy
         float sintheta, costheta; // Lab sys scattering angle sin & cos
         xs->scatter(i->erg(), ip, T, sintheta, costheta);
@@ -479,7 +531,7 @@ int mccore::transport(ion *i, abstract_cascade *cscd)
 
             // create recoil (it is stored in the ion queue)
             ion *j = new_recoil(i, z2, T, nt);
-            ion j1(*j); // keep a copy
+            // ion j1(*j); // keep a copy
 
             // move recoil to the edge of recomb. area
             // checking also for boundary crossing
@@ -495,19 +547,38 @@ int mccore::transport(ion *i, abstract_cascade *cscd)
             /*
              * Now check whether the projectile might replace the recoil
              *
-             * Check if Z1==Z2 and E < Er
+             * conditions for this are: Z1==Z2 and E < Er
              *
-             * This is different from Iradina, where it is required
-             * Z1==Z2 && M1==M2
              */
             if ((i->myAtom()->Z() == z2->Z()) && (i->erg() < z2->Er())) {
                 // Replacement event, ion energy goes to Phonons
                 ionEvent(Event::Replacement, *i, z2);
                 j->setUid(i->uid());
                 j->setRecoilId(i->recoil_id()); // j keeps the recoil id of i
-                //  if (q) q->push(Event::Replacement,*i);
+                // the ion buffer is freed
+                ion_queue_.free_ion(i);
                 return 0; // end of ion history
             }
+
+            // a vacancy is created
+            // store to the vacancy queue only if i is a recoil (recoil_id>0)
+            // if i is a beam ion (recoil_id==0), the vacancy will be created with the pka
+            if (i->recoil_id()) {
+                ion *v = ion_queue_.clone_ion(*j);
+                ion_queue_.push_vacancy(v);
+            }
+
+            // subtract El from the recoil kinetic energy,
+            // this accounts for the FP creation
+            j->de_other(z2->El());
+
+            // ionEvent(Event::Vacancy, j1);
+            // if (cscd) {
+            //     cscd->push_vacancy(j1);
+            // } else if (damage_stream_.is_open()) {
+            //     damage_ev.vacancy(j1);
+            //     damage_stream_.write(&damage_ev);
+            // }
 
             // move recoil to the edge of recomb. area
             // checking also for boundary crossing
@@ -518,15 +589,6 @@ int mccore::transport(ion *i, abstract_cascade *cscd)
                     double de = j->erg() + z2->Ed() - T;
                     j->de_phonon(de);
                 }
-            }
-
-            // a vacancy has been created
-            ionEvent(Event::Vacancy, j1);
-            if (cscd) {
-                cscd->push_vacancy(j1);
-            } else if (damage_stream_.is_open()) {
-                damage_ev.vacancy(j1);
-                damage_stream_.write(&damage_ev);
             }
 
         } else { // T<E_d, recoil cannot be displaced

@@ -362,7 +362,7 @@ protected:
      * @param cscd a pointer to a cascade object
      * @return 0 if succesfull
      */
-    int transport(ion *i, abstract_cascade *cscd = nullptr);
+    int transport(ion *i);
 
     /**
      * @brief Generate a new recoil ion
@@ -383,15 +383,15 @@ protected:
     {
         // init the recoil by cloning the projectile ion
         // this gets the correct position and cell id
-        ion *j = ion_queue_.new_ion(proj);
+        ion *j = ion_queue_.clone_ion(*proj);
 
         // set atomic species,
         // recoil kinetic energy & direction
         // Energy partition
-        //   kinetic energy = T-Ed
+        //   kinetic energy = T !!! Was T-Ed
         //   Ed-Efp goes to the lattice (phonos)
         //   Efp is stored energy (will be deposited when the ion finishes)
-        j->init_recoil(target, recoil_erg - target->El());
+        j->init_recoil(target, recoil_erg); // - target->El());
         j->reset_counters();
         // j->de_phonon(target->Ed()); //(target->Ed()-target->El());
         j->setNormalizedDir(nt);
