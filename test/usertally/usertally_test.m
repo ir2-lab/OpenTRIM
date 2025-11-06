@@ -17,7 +17,7 @@ for iut = 1:2,
   D = permute(D,n:-1:1);
 
   labels = h5load(file_name,[path '/bin_names']);
-  labels = h5load(file_name,[path '/bin_decriptions']);
+  labels = h5load(file_name,[path '/bin_descriptions']);
 
   bins = {};
 
@@ -27,14 +27,11 @@ for iut = 1:2,
 
   figure(iut)
   clf
-  x = bins{2};
-  y = bins{3};
-  x = 0.5*(x(1:end-1) + x(2:end));
-  y = 0.5*(y(1:end-1) + y(2:end));
-  [c,h]=contour(y,x,D);
+  x = bins{1};   
+  y = bins{2}; 
+  contour(x,y,D(:,:,1).');
   title(["500 keV Fe in Fe, " user_tally_id{iut}])
-  # clabel(c,h)
-  xlabel(labels{3})
+  xlabel(labels{1})
   ylabel(labels{2})
   axis equal
   colorbar('location','southoutside')

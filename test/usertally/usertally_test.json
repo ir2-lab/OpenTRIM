@@ -3,22 +3,23 @@
         {
             "id": "Implanted Fe",
             "event": "IonStop",
-            "coordinates": "cyl", // xyz, cyl(rho,phi,z), sph(r,theta,phi)
-            "org": [
-                0,
-                600,
-                600
-            ],
-            "zaxis": [
-                1,
-                0,
-                0
-            ],
-            "xzvec": [
-                1,
-                0,
-                1
-            ],
+            "coordinate_system": {
+                "origin": [
+                    0,
+                    600,
+                    600
+                ],
+                "zaxis": [
+                    1,
+                    0,
+                    0
+                ],
+                "xzvector": [
+                    1,
+                    0,
+                    1
+                ]
+            },
             "rho": [
                 0,
                 20,
@@ -63,22 +64,23 @@
         {
             "id": "Fe Interstitials",
             "event": "IonStop",
-            "coordinates": "cyl", // xyz, cyl(rho,phi,z), sph(r,theta,phi)
-            "org": [
-                0,
-                600,
-                600
-            ],
-            "zaxis": [
-                1,
-                0,
-                0
-            ],
-            "xzvec": [
-                1,
-                0,
-                1
-            ],
+            "coordinate_system": {
+                "origin": [
+                    0,
+                    600,
+                    600
+                ],
+                "zaxis": [
+                    1,
+                    0,
+                    0
+                ],
+                "xzvector": [
+                    1,
+                    0,
+                    1
+                ]
+            },
             "rho": [
                 0,
                 20,
