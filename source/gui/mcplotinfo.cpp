@@ -316,11 +316,6 @@ TallyDataStore::TallyDataStore(const McDriverObj *d, const tally &t, const tally
     : driver_(d), data_(t.at(type)), errors_(dt.at(type)), type_(type)
 {
     dim_ = data_.dim();
-    if (type != tally::cT) {
-        dim_[1]--;
-        dim_[2]--;
-        dim_[3]--;
-    }
     name_ = t.arrayName(type);
     desc_ = t.arrayDescription(type);
     arrayNames_ = t.arrayNames();
@@ -439,8 +434,6 @@ UTallyDataStore::UTallyDataStore(const McDriverObj *d, const user_tally *t, cons
     : driver_(d), t_(t), dt_(dt), data_(t->data()), errors_(dt->data())
 {
     dim_ = data_.dim();
-    for (int i = 0; i < (int)dim_.size(); ++i)
-        dim_[i]--;
     name_ = t_->id();
     {
         desc_ = "Event: ";

@@ -164,9 +164,9 @@ bool user_tally::get_bin(const ion &i, const void *pv)
         idx[j] = std::upper_bound(bins[j].begin(), bins[j].end(), v) - bins[j].begin()
                 - 1; // id of bin starting from 0
 
-        // valid bin index is  0 <= idx < size-1
+        // valid bin index is  0 <= idx < bin_size
         // (the last bin is not included by default)
-        if (idx[j] < 0 || idx[j] >= bin_sizes[j] - 1)
+        if (idx[j] < 0 || idx[j] >= bin_sizes[j])
             return false; // invalid index -> reject
     }
 
@@ -182,13 +182,13 @@ bool user_tally::push_bins(variable_code c, const std::vector<float> &edges, siz
         for (size_t i = 1; i < natoms; ++i) {
             bin_codes.push_back(c);
             bins.push_back(edges);
-            bin_sizes.push_back(edges.size());
+            bin_sizes.push_back(edges.size() - 1);
             vac_id.push_back(i - 1);
         }
     } else {
         bin_codes.push_back(c);
         bins.push_back(edges);
-        bin_sizes.push_back(edges.size());
+        bin_sizes.push_back(edges.size() - 1);
         vac_id.push_back(0);
     }
     return true;
