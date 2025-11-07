@@ -138,17 +138,17 @@ bool user_tally::get_bin(const ion &i, const void *pv)
             break;
         case cE:
             v = (event() == Event::CascadeComplete)
-                    ? reinterpret_cast<const pka_event *>(pv)->recoilE()
+                    ? reinterpret_cast<const pka_buffer *>(pv)->recoilE()
                     : i.erg();
             break;
         case cTdam:
             v = (event() == Event::CascadeComplete)
-                    ? reinterpret_cast<const pka_event *>(pv)->Tdam()
+                    ? reinterpret_cast<const pka_buffer *>(pv)->Tdam()
                     : 0;
             break;
         case cV:
             v = (event() == Event::CascadeComplete)
-                    ? reinterpret_cast<const pka_event *>(pv)->Vac(vac_id[j])
+                    ? reinterpret_cast<const pka_buffer *>(pv)->Vac(vac_id[j])
                     : 0;
             break;
         case cAtom_id:

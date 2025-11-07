@@ -175,6 +175,9 @@ int dump_event_stream(h5::File &h5f, const std::string &grp_name, event_stream &
 
 int load_event_stream(h5::File &h5f, const std::string &grp_name, event_stream &es)
 {
+    if (!es.is_open())
+        return -1;
+
     // get row, column numbers
     size_t ncols(es.cols());
 
@@ -389,21 +392,28 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
             s_->setIonCount(Nh);
         }
 
+        // prepare to load events
+        uint32_t ev_mask{ 0 };
+        if (config_.Output.store_pka_events)
+            ev_mask |= static_cast<uint32_t>(Event::CascadeComplete);
+        if (config_.Output.store_exit_events)
+            ev_mask |= static_cast<uint32_t>(Event::IonExit);
+        if (config_.Output.store_damage_events)
+            ev_mask |= static_cast<uint32_t>(Event::Vacancy);
+        s_->init_streams(ev_mask);
+
         // load pka events
         if (config_.Output.store_pka_events) {
-            s_->open_pka_stream();
             load_event_stream(h5f, "/events/pka", s_->pka_stream());
         }
 
         // load exit events
         if (config_.Output.store_exit_events) {
-            s_->open_exit_stream();
             load_event_stream(h5f, "/events/exit", s_->exit_stream());
         }
 
         // load damage events
         if (config_.Output.store_damage_events) {
-            s_->open_damage_stream();
             load_event_stream(h5f, "/events/damage", s_->damage_stream());
         }
 

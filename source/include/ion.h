@@ -62,7 +62,7 @@ enum class BoundaryCrossing {
 class ion
 {
 public:
-    enum ion_type { moving, vacancy, interstitial };
+    enum ion_type { vacancy = 0, interstitial = 1, other };
 
 private:
     ion_type type_;
@@ -112,7 +112,6 @@ public:
     ion();
 
     ion_type type() const { return type_; }
-    void set_type(ion_type t) { type_ = t; }
 
     /// Returns the ion's position vector [nm]
     const vector3 &pos() const { return pos_; }
@@ -371,7 +370,7 @@ public:
     /// Push an ion object to the recoil queue
     void push_vacancy(ion *i)
     {
-        i->set_type(ion::vacancy);
+        i->type_ = ion::vacancy;
         v_queue_.push(i);
     }
     /// Pop a recoil ion object from the queue. If the queue is empty, a nullptr is returned.
@@ -380,7 +379,7 @@ public:
     /// Push an ion object to the recoil queue
     void push_interstitial(ion *i)
     {
-        i->set_type(ion::interstitial);
+        i->type_ = ion::interstitial;
         i_queue_.push(i);
     }
     /// Pop a recoil ion object from the queue. If the queue is empty, a nullptr is returned.

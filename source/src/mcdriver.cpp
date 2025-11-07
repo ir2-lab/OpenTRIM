@@ -139,26 +139,23 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
             sim_clones_[i]->rngJump();
     }
 
+    // init event streams
+    uint32_t ev_mask{ 0 };
+    if (config_.Output.store_pka_events)
+        ev_mask |= static_cast<uint32_t>(Event::CascadeComplete);
+    if (config_.Output.store_exit_events)
+        ev_mask |= static_cast<uint32_t>(Event::IonExit);
+    if (config_.Output.store_damage_events)
+        ev_mask |= static_cast<uint32_t>(Event::Vacancy);
+
     // open clone streams
-    for (int i = 0; i < nthreads; i++) {
-        if (config_.Output.store_pka_events)
-            sim_clones_[i]->open_pka_stream();
-        if (config_.Output.store_damage_events)
-            sim_clones_[i]->open_damage_stream();
-        if (config_.Output.store_exit_events)
-            sim_clones_[i]->open_exit_stream();
-    }
+    for (int i = 0; i < nthreads; i++)
+        sim_clones_[i]->init_streams(ev_mask);
 
     // If ion_count == 0, i.e. simulation starts,
-    // open the main streams
-    if (s_->ion_count() == 0) {
-        if (config_.Output.store_pka_events)
-            s_->open_pka_stream();
-        if (config_.Output.store_damage_events)
-            s_->open_damage_stream();
-        if (config_.Output.store_exit_events)
-            s_->open_exit_stream();
-    }
+    // open also the main simulation streams
+    if (s_->ion_count() == 0)
+        s_->init_streams(ev_mask);
 
     // set max ions in each thread
     for (int i = 0; i < nthreads; i++)

@@ -158,7 +158,8 @@ void target::createGrid(const vector3 &size, const ivector3 &cell_count, const i
     grid_.setY(size.y(), cell_count.y(), pbc.y());
     grid_.setZ(size.z(), cell_count.z(), pbc.z());
 
-    cells_ = ArrayND<const material *>(grid_.x().size(), grid_.y().size(), grid_.z().size());
+    cells_ = ArrayND<const material *>(grid_.x().size() - 1, grid_.y().size() - 1,
+                                       grid_.z().size() - 1);
 }
 
 material *target::addMaterial(const char *name)

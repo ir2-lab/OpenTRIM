@@ -178,8 +178,8 @@ public:
 
 class dmg_events_table : public data_table
 {
-    constexpr static int drows{ 5 };
-    constexpr static std::array<int, drows> idx{ tally::cD, tally::cV, tally::cI, tally::cR,
+    constexpr static int drows{ 4 };
+    constexpr static std::array<int, drows> idx{ tally::cV, tally::cI, tally::cR,
                                                  tally::cRecombinations };
 
 public:
@@ -491,10 +491,10 @@ public:
             x = t(tally::isFlightPath, j) * f;
             dx = dt(tally::isFlightPath, j) * f - x * x;
             dx = (dx > 0.0) ? std::sqrt(dx * f1) : 0.0;
-            if (t(tally::cD, j) > 0.0) {
-                x /= (t(tally::cD, j) * f);
-                dx /= (t(tally::cD, j) * f);
-            }
+            // if (t(tally::cD, j) > 0.0) {
+            //     x /= (t(tally::cD, j) * f);
+            //     dx /= (t(tally::cD, j) * f);
+            // }
             buff(0, i, j) = x;
             buff(1, i, j) = dx;
         }
@@ -513,10 +513,10 @@ public:
             x = t(tally::isCollision, j) * f;
             dx = dt(tally::isCollision, j) * f - x * x;
             dx = (dx > 0.0) ? std::sqrt(dx * f1) : 0.0;
-            if (t(tally::cD, j) > 0.0) {
-                x /= (t(tally::cD, j) * f);
-                dx /= (t(tally::cD, j) * f);
-            }
+            // if (t(tally::cD, j) > 0.0) {
+            //     x /= (t(tally::cD, j) * f);
+            //     dx /= (t(tally::cD, j) * f);
+            // }
             buff(0, i, j) = x;
             buff(1, i, j) = dx;
         }

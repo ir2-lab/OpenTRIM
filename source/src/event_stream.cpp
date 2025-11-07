@@ -3,7 +3,6 @@
 #include "ion.h"
 #include "target.h"
 #include "tally.h"
-#include "cascade.h"
 
 #include <filesystem>
 #include <cstdio>
@@ -11,69 +10,11 @@
 
 namespace fs = std::filesystem;
 
-void pka_event::mark(const tally &t)
+pka_buffer::pka_buffer() : event_buffer(static_cast<uint32_t>(Event::CascadeComplete)), natoms_(0)
 {
-    mark_T_ = 0.0f;
-    size_t ncells = t.at(1).dim()[1] * t.at(1).dim()[2] * t.at(1).dim()[3];
-    float *bv = mark_buff_.data();
-    float *br = mark_buff_.data() + natoms_;
-    float *bi = mark_buff_.data() + 2 * natoms_;
-    for (int i = 0; i < natoms_; i++) {
-        *bv = *br = *bi = 0.0f;
-        size_t k0 = (i + 1) * ncells; // index of the first element of the i-th atom cells matrix
-        const double *ps = &t.at(tally::eStored)(k0);
-        const double *pl = &t.at(tally::eLattice)(k0);
-        const double *pv = &t.at(tally::cV)(k0);
-        const double *pr = &t.at(tally::cR)(k0);
-        const double *pi = &t.at(tally::cI)(k0);
-
-        for (int j = 0; j < ncells; j++) {
-            mark_T_ += *ps++ + *pl++;
-            *bv += *pv++;
-            *bi += *pi++;
-            *br += *pr++;
-        }
-        bv++;
-        br++;
-        bi++;
-    }
 }
 
-void pka_event::cascade_start(const ion &i)
-{
-    buff_[ofTdam] = mark_T_;
-
-    float *p = buff_.data() + ofVac;
-    float *pend = p + 3 * natoms_;
-    const float *b = mark_buff_.data();
-    while (p < pend) {
-        *p = *b;
-        p++;
-        b++;
-    }
-}
-
-void pka_event::cascade_end(const ion &i, const abstract_cascade *cscd)
-{
-    // get the damage energy =
-    buff_[ofTdam] = mark_T_ - buff_[ofTdam]; // + i.myAtom()->El();
-    float *p = buff_.data() + ofVac;
-    float *pend = p + 3 * natoms_;
-    const float *b = mark_buff_.data();
-    while (p < pend) {
-        *p = *b - *p;
-        p++;
-        b++;
-    }
-    // get the recombinations
-    if (cscd) {
-        float *s = buff_.data() + ofVac + 3 * natoms_;
-        // cascade object returns the count of recombined FPs and correlated recombinations
-        cscd->count_riv(s, s + natoms_);
-    }
-}
-
-void pka_event::cascade_complete(const ion &i, const material *m)
+void pka_buffer::calc_nrt(const ion &i, const material *m)
 {
     // Make NRT damage estimations
     if (m) { // case NRT_average
@@ -92,11 +33,10 @@ void pka_event::cascade_complete(const ion &i, const material *m)
     }
 }
 
-void pka_event::setNatoms(int n, const std::vector<std::string> &labels)
+void pka_buffer::setNatoms(int n, const std::vector<std::string> &labels)
 {
     natoms_ = n;
     buff_.resize(ofVac + atom_cols_ * n);
-    mark_buff_.resize(mark_buff_cols_ * n);
     columnNames_.resize(buff_.size());
     columnDescriptions_.resize(buff_.size());
     int k = ofIonId;
@@ -105,27 +45,27 @@ void pka_event::setNatoms(int n, const std::vector<std::string> &labels)
     k = ofAtomId;
     columnNames_[k] = "pid";
     columnDescriptions_[k] = "PKA species id";
-    k = ofCellId;
-    columnNames_[k] = "cid";
-    columnDescriptions_[k] = "cell id";
+    k = ofPos;
+    columnNames_[k] = "x";
+    columnDescriptions_[k] = "PKA x position [nm]";
+    k = ofPos + 1;
+    columnNames_[k] = "y";
+    columnDescriptions_[k] = "PKA y position [nm]";
+    k = ofPos + 2;
+    columnNames_[k] = "z";
+    columnDescriptions_[k] = "PKA z position [nm]";
     k = ofErg;
     columnNames_[k] = "E";
     columnDescriptions_[k] = "PKA energy [eV]";
     k = ofTdam;
     columnNames_[k] = "Tdam";
     columnDescriptions_[k] = "Damage energy[eV]";
-    // k = ofRp;
-    // columnNames_[k] = "Rp"; columnDescriptions_[k] = "I-V distance [nm]";
+
     for (int i = 0; i < n; i++) {
         int k = ofVac + i;
         columnNames_[k] = "V";
         columnNames_[k] += std::to_string(i + 1);
         columnDescriptions_[k] = "Vacancies of ";
-        columnDescriptions_[k] += labels[i];
-        k += n;
-        columnNames_[k] = "R";
-        columnNames_[k] += std::to_string(i + 1);
-        columnDescriptions_[k] = "Replacements of ";
         columnDescriptions_[k] += labels[i];
         k += n;
         columnNames_[k] = "I";
@@ -145,22 +85,20 @@ void pka_event::setNatoms(int n, const std::vector<std::string> &labels)
     }
 }
 
-void pka_event::init(const ion *i)
+void pka_buffer::init(const ion *i)
 {
     reset();
     buff_[ofIonId] = i->ion_id();
     buff_[ofAtomId] = i->myAtom()->id();
-    buff_[ofCellId] = i->cellid();
-    buff_[ofErg] = i->erg() + i->myAtom()->El(); // add lattice energy to recoil E=T-El -> T=E+El
+    buff_[ofPos] = i->pos0().x();
+    buff_[ofPos + 1] = i->pos0().y();
+    buff_[ofPos + 2] = i->pos0().z();
+    buff_[ofErg] = i->erg0();
 }
 
-int event_stream::open(const event &ev)
+int event_stream::open()
 {
     close_();
-
-    cols_ = ev.size();
-    rows_ = 0;
-    event_proto_ = event(ev);
 
     auto tmpdir = fs::temp_directory_path();
     fname_ = tmpdir.u8string();
@@ -189,7 +127,7 @@ void event_stream::close_()
         fname_.clear();
     }
 }
-void event_stream::write(const event *ev)
+void event_stream::write(const event_buffer *ev)
 {
     if (is_open()) {
         std::fwrite(ev->data(), sizeof ev->data()[0], ev->size(), fs_);
@@ -227,6 +165,14 @@ int event_stream::merge(event_stream &ev)
     return 0; // successfully terminated
 }
 
+bool event_stream::set_event_prototype(const event_buffer &ev)
+{
+    close_();
+    cols_ = ev.size();
+    event_proto_ = event_buffer(ev);
+    return true;
+}
+
 void event_stream::rewind()
 {
     if (is_open())
@@ -255,15 +201,16 @@ size_t event_stream::write(const float *buff, size_t nevents)
     return 0;
 }
 
-exit_event::exit_event()
-    : event(ofEnd, { "hid", "iid", "cid", "E", "x", "y", "z", "nx", "ny", "nz" },
-            { "history id", "ion species id", "ion's cell id before exiting", "ion energy [eV]",
-              "x position [nm]", "y position [nm]", "z position [nm]", "x direction cosine",
-              "y direction cosine", "z direction cosine" })
+exit_buffer::exit_buffer()
+    : event_buffer(static_cast<uint32_t>(Event::IonExit), ofEnd,
+                   { "hid", "iid", "cid", "E", "x", "y", "z", "nx", "ny", "nz" },
+                   { "history id", "ion species id", "ion's cell id before exiting",
+                     "ion energy [eV]", "x position [nm]", "y position [nm]", "z position [nm]",
+                     "x direction cosine", "y direction cosine", "z direction cosine" })
 {
 }
 
-void exit_event::set(const ion *i) //, int cellid)
+void exit_buffer::set(const ion *i) //, int cellid)
 {
     buff_[ofIonId] = i->ion_id();
     buff_[ofAtomId] = i->myAtom()->id();
@@ -278,34 +225,22 @@ void exit_event::set(const ion *i) //, int cellid)
 }
 
 // { ofHid = 0, ofRid = 1, ofIid = 2, ofCid = 3, ofDid = 4, ofPos = 5, ofEnd = 8 }
-damage_event::damage_event()
-    : event(ofEnd, { "hid", "rid", "iid", "cid", "did", "x", "y", "z" },
-            { "history id", "recoil id", "ion species id", "ion's cell id before exiting",
-              "defect type id 0: vacancy, 1: interstitial", "x position [nm]", "y position [nm]",
-              "z position [nm]" })
+damage_event_buffer::damage_event_buffer()
+    : event_buffer(static_cast<uint32_t>(Event::IonStop) | static_cast<uint32_t>(Event::Vacancy),
+                   ofEnd, { "hid", "rid", "iid", "did", "x", "y", "z" },
+                   { "history id", "recoil id", "ion species id",
+                     "defect type id 0: vacancy, 1: interstitial", "x position [nm]",
+                     "y position [nm]", "z position [nm]" })
 {
 }
 
-void damage_event::set(defect_type_t t, const ion &i)
+void damage_event_buffer::set(const ion &i)
 {
     buff_[ofHid] = i.ion_id();
     buff_[ofRid] = i.recoil_id();
     buff_[ofIid] = i.myAtom()->id();
-    buff_[ofCid] = i.cellid();
-    buff_[ofDid] = t;
+    buff_[ofDid] = i.type();
     buff_[ofPos] = i.pos().x();
     buff_[ofPos + 1] = i.pos().y();
     buff_[ofPos + 2] = i.pos().z();
-}
-
-void damage_event::set(defect_type_t t, int hid, int rid, int iid, int cid, const vector3 pos)
-{
-    buff_[ofHid] = hid;
-    buff_[ofRid] = rid;
-    buff_[ofIid] = iid;
-    buff_[ofCid] = cid;
-    buff_[ofDid] = t;
-    buff_[ofPos] = pos.x();
-    buff_[ofPos + 1] = pos.y();
-    buff_[ofPos + 2] = pos.z();
 }

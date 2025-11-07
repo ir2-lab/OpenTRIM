@@ -527,13 +527,18 @@ public:
     }
 
     /// Return the id of the i-th cell
-    int cellid(const ivector3 &i) const { return (i.x() * y_.size() + i.y()) * z_.size() + i.z(); }
+    int cellid(const ivector3 &i) const
+    {
+        return (i.x() * (y_.size() - 1) + i.y()) * (z_.size() - 1) + i.z();
+    }
 
     static bool isNull(const ivector3 &i) { return (i.x() < 0) || (i.y() < 0) || (i.z() < 0); }
 
     static ivector3 nullcell() { return ivector3(-1, -1, -1); }
+
     /// Returns the total number of cells
     int ncells() const { return (x_.size() - 1) * (y_.size() - 1) * (z_.size() - 1); }
+
     /// Returns the total volume
     float volume() const { return x_.w() * y_.w() * z_.w(); }
 

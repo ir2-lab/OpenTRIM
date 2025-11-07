@@ -95,10 +95,10 @@ const char *event_description(Event ev)
 const char *tally::arrayName(int i)
 {
     static const char *names[] = {
-        "Totals",        "Vacancies",   "Implantations", "Replacements", "Recombinations",
-        "Displacements", "Ionization",  "Lattice",       "Stored",       "Lost",
-        "Pka",           "Pka_energy",  "Tdam",          "Tdam_LSS",     "Vnrt",
-        "Vnrt_LSS",      "Flight_path", "Collisions",    "Lost",         "X"
+        "Totals",   "Vacancies", "Implantations", "Replacements", "Recombinations", "Ionization",
+        "Lattice",  "Stored",    "Lost",          "Pka",          "Pka_energy",     "Tdam",
+        "Tdam_LSS", "Vnrt",      "Vnrt_LSS",      "Flight_path",  "Collisions",     "Lost",
+        "X"
     };
 
     return (i < std_tallies && i >= 0) ? names[i] : names[std_tallies];
@@ -119,8 +119,7 @@ const char *tally::arrayDescription(int i)
                                   "Vacancies",
                                   "Implantations & Interstitials",
                                   "Replacements",
-                                  "Intra-cascade recombinations",
-                                  "Displacements",
+                                  "Recombinations",
                                   "Energy deposited to ionization [eV]",
                                   "Energy deposited to the lattice as thermal energy [eV]",
                                   "Energy stored in lattice defects [eV]",
@@ -142,7 +141,6 @@ const char *tally::arrayDescription(int i)
 const char *tally::arrayGroup(int i)
 {
     static const char *desc[] = { "totals",
-                                  "damage_events",
                                   "damage_events",
                                   "damage_events",
                                   "damage_events",
@@ -170,107 +168,69 @@ const char *tally::arrayGroup(int i)
 
 void tally::operator()(Event ev, const ion &i, const void *pv)
 {
-    int iid = i.myAtom()->id(), cid = i.cellid(), pid = i.prev_cellid();
-    size_t k = iid * ncells_ + cid;
-    size_t kp = iid * ncells_ + pid;
-    const pka_event *p;
-    const atom *a;
-    size_t ka, kb;
+    int iid = i.myAtom()->id();
+    size_t k;
+    const pka_buffer *p;
 
     switch (ev) {
 
     case Event::BoundaryCrossing:
-        A[isCollision](kp) += i.ncoll();
-        A[isFlightPath](kp) += i.path();
-        A[eLattice](kp) += i.phonon();
-        A[eIoniz](kp) += i.ioniz();
+        k = iid * ncells_ + i.prev_cellid();
+        A[isCollision](k) += i.ncoll();
+        A[isFlightPath](k) += i.path();
+        A[eLattice](k) += i.phonon();
+        A[eIoniz](k) += i.ioniz();
+        ionizationCounter_ += i.ioniz();
         break;
 
     case Event::Replacement:
-        // add a replacement
+        k = iid * ncells_ + i.cellid();
         A[cR](k)++; // this atom, current cell
         A[isCollision](k) += i.ncoll();
         A[isFlightPath](k) += i.path();
         A[eIoniz](k) += i.ioniz();
         A[eLattice](k) += i.erg() + i.phonon();
-
-        // remove a vac for the replaced atom (id passed in pointer pv), in current cell
-        // and also half FP stored energy
-        // a = reinterpret_cast<const atom *>(pv);
-        // assert(a->id());
-        // assert(cid >= 0);
-        // ka = a->id() * ncells_ + cid;
-        // A[cV](ka)--;
-        // A[eStored](ka) -= i.myAtom()->El() / 2;
-        // A[eLattice](ka) += i.myAtom()->El() / 2;
-        // if this was a recoil, add a V, a D, & stored energy
-        // Efp/2 at the starting & ending cell
-        // if (i.recoil_id()) {
-        //     assert(iid);
-        //     assert(i.cellid0() >= 0);
-        //     kb = iid * ncells_ + i.cellid0();
-        //     A[cD](kb)++;
-        //     A[cV](kb)++;
-        //     A[eStored](kb) += i.myAtom()->El() / 2;
-        //     A[eLattice](k) += i.myAtom()->El() / 2;
-        // }
-
+        ionizationCounter_ += i.ioniz();
         break;
 
     case Event::IonStop:
+        k = iid * ncells_ + i.cellid();
         A[cI](k)++; // add implantation at current pos
         if (i.recoil_id()) // if this is a recoil (not a beam ion)
             A[eStored](k) += i.myAtom()->El() / 2; // Add half FP energy here to stored energy
-
-        // if (i.recoil_id()) { // this is a recoil
-        //     assert(iid);
-        //     assert(i.cellid0() >= 0);
-        //     kb = iid * ncells_ + i.cellid0();
-        //     A[cD](kb)++; // add displacement at start pos
-        //     A[cV](kb)++; // add vacancy at start pos
-        //     A[eStored](kb) += i.myAtom()->El() / 2; // Add half FP energy there
-        //     A[eStored](k) += i.myAtom()->El() / 2; // Add half FP energy here
-        // }
-
         A[isCollision](k) += i.ncoll();
         A[isFlightPath](k) += i.path();
         A[eIoniz](k) += i.ioniz();
         A[eLattice](k) += i.erg() + i.phonon();
+        ionizationCounter_ += i.ioniz();
         break;
 
     case Event::Vacancy:
+        k = iid * ncells_ + i.cellid();
         A[cV](k)++; // add a vacancy at current pos
         A[eStored](k) += i.myAtom()->El() / 2; // Add half FP energy here to stored energy
         break;
 
     case Event::IonExit:
-        A[cL](kp)++;
-        if (i.recoil_id()) // if this is a recoil
-            A[eLattice](kp) +=
-                    i.myAtom()->El() / 2; // half FP energy released as lattice thermal energy
-
-        // if (i.recoil_id()) { // this is a recoil
-        //     assert(iid);
-        //     assert(i.cellid0() >= 0);
-        //     kb = iid * ncells_ + i.cellid0();
-        //     A[cD](kb)++; // add displacement at start pos
-        //     A[cV](kb)++; // add vacancy at start pos
-        //     A[eStored](kb) += i.myAtom()->El() / 2; // Add half FP energy there
-        //     A[eLattice](k) +=
-        //             i.myAtom()->El() / 2; // half FP energy released as lattice thermal energy
-        // }
-
-        A[isCollision](kp) += i.ncoll();
-        A[isFlightPath](kp) += i.path();
-        A[eIoniz](kp) += i.ioniz();
-        A[eLattice](kp) += i.phonon();
-        A[eLost](kp) += i.erg();
+        k = iid * ncells_ + i.prev_cellid();
+        A[cL](k)++;
+        // if it was a recoil
+        // half FP energy is released as lattice thermal energy
+        if (i.recoil_id())
+            A[eLattice](k) += i.myAtom()->El() / 2;
+        A[isCollision](k) += i.ncoll();
+        A[isFlightPath](k) += i.path();
+        A[eIoniz](k) += i.ioniz();
+        A[eLattice](k) += i.phonon();
+        A[eLost](k) += i.erg();
+        ionizationCounter_ += i.ioniz();
         break;
 
     case Event::CascadeComplete:
+        k = iid * ncells_ + i.cellid();
         A[cPKA](k)++;
         // pv = pointer to pka_event struct
-        p = reinterpret_cast<const pka_event *>(pv);
+        p = reinterpret_cast<const pka_buffer *>(pv);
         A[ePKA](k) += p->recoilE();
         A[dpTdam_LSS](k) += p->Tdam_LSS();
         A[dpVnrt_LSS](k) += p->NRT_LSS();

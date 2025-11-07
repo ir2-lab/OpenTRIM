@@ -88,7 +88,6 @@ public:
         cI, /**< Interstitials or Implanted ions  */
         cR, /**< Replacements  */
         cRecombinations, /**< Recombinations */
-        cD, /**< Displacements */
         eIoniz, /**< Ionization energy  */
         eLattice, /**< Lattice energy = thermal energy deposited to the lattice */
         eStored, /**< Energy stored in lattice defects (Frenkel Pairs) */
@@ -115,7 +114,7 @@ public:
     static const char *arrayGroup(int i);
 
     /*
-     * Totals: 1 (N-ions,V-vacancies,I-interst/implant,R-replace,P-pka, L-lost,D-displ) 7 x 1
+     * Totals: 1 (N-ions,V-vacancies,I-interst/implant,R-replace,P-pka, L-lost) 7 x 1
      *
      * Cell counters: 5 (V,I,R,P,L) atoms x cells
      *
@@ -137,6 +136,8 @@ protected:
     };
 
     size_t ncells_{ 0 };
+
+    double ionizationCounter_;
 
 public:
     tally() = default;
@@ -178,12 +179,11 @@ public:
     {
         A[0][0] = 1; // 1 history
         size_t natom = A[1].dim()[0];
-        size_t ncell = A[1].dim()[1] * A[1].dim()[2] * A[1].dim()[3];
         for (size_t tid = 1; tid < std_tallies; ++tid)
             for (size_t iid = 0; iid < natom; ++iid) {
                 double *q = &(A[0](tid, iid));
                 const double *p = &(A[tid]({ iid, 0, 0, 0 }));
-                const double *pend = p + ncell;
+                const double *pend = p + ncells_;
                 while (p < pend)
                     *q += *p++;
             }
@@ -237,6 +237,9 @@ public:
     /// @param i the ion causing the event
     /// @param pv pointer to additional data, if available
     void operator()(Event ev, const ion &i, const void *pv = 0);
+
+    void resetIonizationCounter() { ionizationCounter_ = 0.0; }
+    double ionizationCounter() { return ionizationCounter_; }
 
     bool debugCheck(int id, double E0);
     bool debugCheck(double E0);

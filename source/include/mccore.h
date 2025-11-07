@@ -148,9 +148,10 @@ protected:
 
     // events
     event_stream pka_stream_, exit_stream_, damage_stream_;
-    pka_event pka;
-    exit_event exit_ev;
-    damage_event damage_ev;
+    pka_buffer pka;
+    exit_buffer exit_ev;
+    damage_event_buffer damage_ev;
+    uint32_t pka_stream_mask_, exit_stream_mask_, damage_stream_mask_;
 
     // ref counter
     std::shared_ptr<int> ref_count_;
@@ -238,16 +239,12 @@ public:
     std::vector<user_tally *> &getUserTally() { return utally_; }
     std::vector<user_tally *> &getUserTallyVar() { return dutally_; }
 
-    /// Open file stream to store \ref pka_event data
-    int open_pka_stream() { return pka_stream_.open(pka); }
+    /// Initialize the event streams
+    int init_streams(uint32_t event_mask);
     /// Return reference to the pka stream
     event_stream &pka_stream() { return pka_stream_; }
-    /// Open file stream to store \ref exit_event data
-    int open_exit_stream() { return exit_stream_.open(exit_ev); }
     /// Return reference to the exit stream
     event_stream &exit_stream() { return exit_stream_; }
-    /// Open file stream to store \ref damage_event data
-    int open_damage_stream() { return damage_stream_.open(damage_ev); }
     /// Return reference to the exit stream
     event_stream &damage_stream() { return damage_stream_; }
 
@@ -405,13 +402,30 @@ protected:
         return j;
     }
 
-    void ionEvent(Event ev, const ion &i, const void *pv = 0)
+    // handle an ion event
+    void handle_event(Event ev, const ion &i, const void *pv = 0)
     {
+        // send to tally for scoring
         if (static_cast<uint32_t>(ev) & tion_.eventMask())
             tion_(ev, i, pv);
+
+        // send to all user_tally objects
         if (static_cast<uint32_t>(ev) & utallyMask_) {
             for (int k = 0; k < ution_.size(); ++k)
                 (*(ution_[k]))(ev, i, pv);
+        }
+
+        // send to the event streams
+        if (static_cast<uint32_t>(ev) & damage_stream_mask_) {
+            damage_ev.set(i);
+            damage_stream_.write(&damage_ev);
+        }
+        if (static_cast<uint32_t>(ev) & exit_stream_mask_) {
+            exit_ev.set(&i);
+            exit_stream_.write(&exit_ev);
+        }
+        if (static_cast<uint32_t>(ev) & pka_stream_mask_) {
+            pka_stream_.write(&pka);
         }
     }
 };
