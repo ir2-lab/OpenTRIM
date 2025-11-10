@@ -13,16 +13,16 @@ Ion Angle to Surface = 0 degrees
   Layer # 1- Fe = 100  Atomic Percent = 100  Mass Percent
 ====================================================================
 Target energies for target atom = Fe
-    Displacement = 40 eV, Binding = 3 eV, Surface = 4 eV
+    Displacement = 40 eV, Binding = 3 eV, Surface = 4.34 eV
 ====================================================================
 Depth Range of Tabulated Data=  000000.E+00  -  600000.E-02  Angstroms
 ====================================================================
-Total Ions calculated =  000020
-Average Range         =   19128.E-01 Angstroms
-Average Straggling    =   33273.E-02 Angstroms
-Average Vacancy/Ion   =   34329.E-01
+Total Ions calculated =  020000
+Average Range         =   17470.E-01 Angstroms
+Average Straggling    =   66041.E-02 Angstroms
+Average Vacancy/Ion   =   31539.E-01
 ====================================================================
-Total Backscattered Ions=  0 
+Total Backscattered Ions=  18 
 Total Transmitted Ions  =  0 
 ====================================================================
 See files SRIM Outputs\*.txt for tables :

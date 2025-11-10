@@ -36,7 +36,8 @@
 
 ### Tests
 
-- [ ] Run SRIM-FC & Iradina benchmark #2 for 20000 histories 
+- [X] Run SRIM-FC benchmark #2 for 20000 histories 
+- [ ] Run Iradina benchmark #2 for 20000 histories 
 - [ ] Run SRIM & Iradina QC benchmarks and compare 
 
 ### GUI:
