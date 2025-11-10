@@ -189,14 +189,14 @@ void ion_beam::angular_distribution_t::sample(random_vars &g, const target &t, v
     case SingleValue:
         break;
     case Uniform:
-    case Gaussian: {
-        shift_left(dir); // x -> z
+    case Gaussian: // TODO: Gaussian
+    {
         float nx, ny, costh, sinth;
         g.random_azimuth_dir(nx, ny);
         costh = 1.f - g.u01s() * 2 * mu;
         sinth = std::sqrt(1 - costh * costh);
-        deflect_vector(dir, vector3(nx * sinth, ny * sinth, costh));
-        shift_right(dir);
+        dir = { nx * sinth, ny * sinth, costh };
+        dir = cs.rotation().transpose() * dir;
     }
         dir.normalize();
         break;
@@ -210,4 +210,15 @@ void ion_beam::angular_distribution_t::init(const target &t)
 {
     norm_center = center.normalized();
     mu = std::min(1.f, float(fwhm / 4 / M_PI));
+
+    // define a CS with the z-axis parallel to the center of the beam
+    cs.zaxis = norm_center;
+    // get an arbitrary xz-plane vector - just not collinear with zaxis
+    cs.xzvector = { 1, 0, 0 };
+    if (cs.xzvector.cross(norm_center).isZero())
+        cs.xzvector = { 0, 1, 0 };
+    // should be ok, but just in case
+    if (cs.xzvector.cross(norm_center).isZero())
+        cs.xzvector = { 0, 0, 1 };
+    cs.init();
 }

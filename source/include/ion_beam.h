@@ -94,6 +94,7 @@ public:
         void init(const target &t);
         float mu;
         vector3 norm_center;
+        coord_sys cs;
     };
 
     /**
