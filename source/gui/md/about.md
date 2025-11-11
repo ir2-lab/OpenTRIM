@@ -10,11 +10,13 @@ Documentation: https://ir2-lab.gitlab.io/opentrim
 
 Version: %3
 
-Build time: %4
+Git-tag: %4
 
-Compiler: %5 v%6
+Build time: %5
 
-System: %7
+Compiler: %6 v%7
+
+System: %8
 
 ### Contributors
 

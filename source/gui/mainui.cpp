@@ -110,7 +110,7 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
 
     driverObj_->loadJsonTemplate();
 
-    setWindowTitle(tr(PROJECT_NAME));
+    setWindowTitle(mcdriver::version_info().project_name);
     QPoint x0 = geometry().center();
     QScreen *scr = QGuiApplication::screenAt(x0);
     // resize(1024, 768);
@@ -143,7 +143,7 @@ void MainUI::updateWindowTitle()
     if (driverObj_->isModified())
         title += '*';
     title += " - ";
-    title += PROJECT_NAME;
+    title += mcdriver::version_info().project_name;
     setWindowTitle(title);
 }
 
@@ -158,8 +158,9 @@ void MainUI::closeEvent(QCloseEvent *event)
         QString msg = st == McDriverObj::mcRunning
                 ? "Stop the running simulation, discard data & quit program?"
                 : "Discard simulation data & quit program?";
-        int ret = QMessageBox::warning(this, QString("Close %1").arg(PROJECT_NAME), msg,
-                                       QMessageBox::Ok | QMessageBox::Cancel);
+        int ret = QMessageBox::warning(
+                this, QString("Close %1").arg(mcdriver::version_info().project_name), msg,
+                QMessageBox::Ok | QMessageBox::Cancel);
         driver_ok = (ret == QMessageBox::Ok);
     }
 
@@ -184,7 +185,7 @@ void MainUI::push(const QString &title, QWidget *page)
     lbl->setStyleSheet("font-size : 20pt; font-weight : bold;");
     vbox->addWidget(lbl);
     vbox->addSpacing(V_SPACING);
-    vbox->addWidget(page);    
+    vbox->addWidget(page);
     w->setLayout(vbox);
     _stackedWidget->addWidget(w);
 }

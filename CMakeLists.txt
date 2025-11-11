@@ -22,16 +22,11 @@ string(TIMESTAMP CMAKE_BUILD_TIME UTC)
 
 message (STATUS "Build time ${CMAKE_BUILD_TIME}")
 
-# This messes up valgrind !!!
+# !! Add this option to allow the compiler to 
+#    optimize for the specific build system
+# - Do not use for degugging/code analysis(valgrind)
+# - Do not use for package builds
 # add_compile_options("-march=native")
-
-add_compile_definitions(PROJECT_NAME="${PROJECT_NAME}"
-                        PROJECT_VERSION="${PROJECT_VERSION}"
-                        PROJECT_DESCRIPTION="${PROJECT_DESCRIPTION}"
-                        SYSTEM_ID="${CMAKE_CXX_PLATFORM_ID}"
-                        COMPILER_ID="${CMAKE_CXX_COMPILER_ID}"
-                        COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}"
-                        BUILD_TIME="${CMAKE_BUILD_TIME}") 
 
 # by default, install into $HOME/.local (not /usr/local), so that no root access (and sudo!!) is needed
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -72,6 +67,16 @@ include_directories(
     source/include
     )
 
+file(READ ${CMAKE_SOURCE_DIR}/git_tag _GIT_TAG_)
+string(STRIP ${_GIT_TAG_} GIT_TAG)
+message("Read git tag: ${GIT_TAG}")
+
+configure_file(
+    ${CMAKE_SOURCE_DIR}/source/src/version.cpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+)
+
+
 add_xs_library(zbl)
 add_xs_library(bohr)
 add_xs_library(krc)
@@ -98,6 +103,7 @@ add_library(${LIB_TARGET} SHARED
     source/src/options_spec.cpp
     source/src/user_tally.cpp
     source/src/mcinfo.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
 )
 
 set(OPENTRIM_HEADERS 

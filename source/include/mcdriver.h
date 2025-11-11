@@ -254,7 +254,21 @@ public:
         size_t total_ion_count;
     };
 
+    struct version_info_t
+    {
+        const char *project_name;
+        const char *description;
+        const char *version;
+        const char *git_tag;
+        const char *build_time;
+        const char *compiler_id;
+        const char *compiler_version;
+        const char *system_id;
+    };
+
 protected:
+    static version_info_t version_info_;
+
     std::vector<run_data> run_history_;
 
     // config
@@ -273,6 +287,8 @@ protected:
 public:
     mcdriver();
     ~mcdriver();
+
+    static const version_info_t &version_info() { return version_info_; }
 
     /**
      * @brief Get the currently active configuration

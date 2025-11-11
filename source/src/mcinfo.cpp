@@ -33,37 +33,44 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
             p1["name"] = { driver_, mcinfo::string, "code name",
                            [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                                s.resize(1);
-                               s[0] = std::string(PROJECT_NAME);
+                               s[0] = std::string(mcdriver::version_info().project_name);
                                d = { 1 };
                            } };
             p1["version"] = { driver_, mcinfo::string, "code version",
                               [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                                   s.resize(1);
-                                  s[0] = std::string(PROJECT_VERSION);
+                                  s[0] = std::string(mcdriver::version_info().version);
+                                  d = { 1 };
+                              } };
+            p1["git_tag"] = { driver_, mcinfo::string, "git describe --tags output",
+                              [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
+                                  s.resize(1);
+                                  s[0] = std::string(mcdriver::version_info().git_tag);
                                   d = { 1 };
                               } };
             p1["compiler"] = { driver_, mcinfo::string, "compiler",
                                [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                                    s.resize(1);
-                                   s[0] = std::string(COMPILER_ID);
+                                   s[0] = std::string(mcdriver::version_info().compiler_id);
                                    d = { 1 };
                                } };
             p1["compiler_version"] = { driver_, mcinfo::string, "compiler_version",
                                        [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                                            s.resize(1);
-                                           s[0] = std::string(COMPILER_VERSION);
+                                           s[0] = std::string(
+                                                   mcdriver::version_info().compiler_version);
                                            d = { 1 };
                                        } };
             p1["build_system"] = { driver_, mcinfo::string, "build system",
                                    [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                                        s.resize(1);
-                                       s[0] = std::string(SYSTEM_ID);
+                                       s[0] = std::string(mcdriver::version_info().system_id);
                                        d = { 1 };
                                    } };
             p1["build_time"] = { driver_, mcinfo::string, "build time",
                                  [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                                      s.resize(1);
-                                     s[0] = std::string(BUILD_TIME);
+                                     s[0] = std::string(mcdriver::version_info().build_time);
                                      d = { 1 };
                                  } };
         }

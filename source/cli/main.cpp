@@ -75,19 +75,22 @@ int main(int argc, char *argv[])
     // Enable buffering to prevent VS from chopping up UTF-8 byte sequences
     setvbuf(stdout, nullptr, _IOFBF, 1000);
 #endif
+    auto &version_info = mcdriver::version_info();
 
-    std::string program_name(PROJECT_NAME);
+    std::string program_name(version_info.project_name);
     std::transform(program_name.begin(), program_name.end(), program_name.begin(),
                    [](unsigned char c) { return std::tolower(c); });
 
-    CLI::App app{ PROJECT_DESCRIPTION, program_name };
+    CLI::App app{ version_info.description, program_name };
 
     std::string version_string;
     {
         std::ostringstream ss;
-        ss << PROJECT_NAME << " version " << PROJECT_VERSION << endl;
-        ss << "Build time: " << BUILD_TIME << endl;
-        ss << "Compiler: " << COMPILER_ID << " v" << COMPILER_VERSION << " on " SYSTEM_ID << endl;
+        ss << version_info.project_name << " version " << version_info.version << endl;
+        ss << "Git-tag: " << version_info.git_tag << endl;
+        ss << "Build time: " << version_info.build_time << endl;
+        ss << "Compiler: " << version_info.compiler_id << " v" << version_info.compiler_version
+           << " on " << version_info.system_id << endl;
         version_string = ss.str();
     }
     app.set_version_flag("--version", version_string);

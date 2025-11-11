@@ -24,32 +24,37 @@ mcplotinfo::mcplotinfo(const McDriverObj *d)
         {
             t = new TextDataStore(d, "name", "code name", 1,
                                   [](const TextDataStore *t, AbstractDataStore::strvec_t &s) {
-                                      s[0] = std::string(PROJECT_NAME);
+                                      s[0] = std::string(mcdriver::version_info().project_name);
                                   });
             p1->add_child("version", new mcplotinfo(t));
             t = new TextDataStore(d, "version", "code version", 1,
                                   [](const TextDataStore *t, AbstractDataStore::strvec_t &s) {
-                                      s[0] = std::string(PROJECT_VERSION);
+                                      s[0] = std::string(mcdriver::version_info().version);
                                   });
             p1->add_child("version", new mcplotinfo(t));
+            t = new TextDataStore(d, "git_tag", "git tag", 1,
+                                  [](const TextDataStore *t, AbstractDataStore::strvec_t &s) {
+                                      s[0] = std::string(mcdriver::version_info().git_tag);
+                                  });
+            p1->add_child("git_tag", new mcplotinfo(t));
             t = new TextDataStore(d, "compiler", "code name", 1,
                                   [](const TextDataStore *t, AbstractDataStore::strvec_t &s) {
-                                      s[0] = std::string(COMPILER_ID);
+                                      s[0] = std::string(mcdriver::version_info().compiler_id);
                                   });
             p1->add_child("compiler", new mcplotinfo(t));
             t = new TextDataStore(d, "compiler_version", "compiler version", 1,
                                   [](const TextDataStore *t, AbstractDataStore::strvec_t &s) {
-                                      s[0] = std::string(COMPILER_VERSION);
+                                      s[0] = std::string(mcdriver::version_info().compiler_version);
                                   });
             p1->add_child("compiler_version", new mcplotinfo(t));
             t = new TextDataStore(d, "build_system", "build system", 1,
                                   [](const TextDataStore *t, AbstractDataStore::strvec_t &s) {
-                                      s[0] = std::string(SYSTEM_ID);
+                                      s[0] = std::string(mcdriver::version_info().system_id);
                                   });
             p1->add_child("build_system", new mcplotinfo(t));
             t = new TextDataStore(d, "build_time", "build time", 1,
                                   [](const TextDataStore *t, AbstractDataStore::strvec_t &s) {
-                                      s[0] = std::string(BUILD_TIME);
+                                      s[0] = std::string(mcdriver::version_info().build_time);
                                   });
             p1->add_child("build_time", new mcplotinfo(t));
         }

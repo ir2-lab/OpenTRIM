@@ -216,14 +216,16 @@ WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ions
         about->setOpenExternalLinks(true);
         about->setTextInteractionFlags(Qt::TextBrowserInteraction);
         about->setTextFormat(Qt::MarkdownText);
+        auto &info = mcdriver::version_info();
         about->setText(QString(ba)
-                               .arg(PROJECT_NAME)
-                               .arg(PROJECT_DESCRIPTION)
-                               .arg(PROJECT_VERSION)
-                               .arg(BUILD_TIME)
-                               .arg(COMPILER_ID)
-                               .arg(COMPILER_VERSION)
-                               .arg(SYSTEM_ID));
+                               .arg(info.project_name)
+                               .arg(info.description)
+                               .arg(info.version)
+                               .arg(info.git_tag)
+                               .arg(info.build_time)
+                               .arg(info.compiler_id)
+                               .arg(info.compiler_version)
+                               .arg(info.system_id));
 
         sa->setWidget(about);
 
@@ -478,7 +480,7 @@ void WelcomeView::onFileNameChanged()
     QString location = info.absolutePath();
     QString title = ionsui->driverObj()->title();
 
-    QSettings settings("ir2-lab", PROJECT_NAME);
+    QSettings settings("ir2-lab", mcdriver::version_info().project_name);
     QStringList fileNames = settings.value("recentFiles/names").toStringList();
     QStringList fileTitles = settings.value("recentFiles/titles").toStringList();
     QStringList fileLocations = settings.value("recentFiles/locations").toStringList();
@@ -512,7 +514,7 @@ void WelcomeView::onFileNameChanged()
 
 void WelcomeView::updateRecentFiles()
 {
-    QSettings settings("ir2-lab", PROJECT_NAME);
+    QSettings settings("ir2-lab", mcdriver::version_info().project_name);
     QStringList fileNames = settings.value("recentFiles/names").toStringList();
     QStringList fileTitles = settings.value("recentFiles/titles").toStringList();
     QStringList fileLocations = settings.value("recentFiles/locations").toStringList();

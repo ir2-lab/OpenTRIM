@@ -1,0 +1,12 @@
+#include "mcdriver.h"
+
+mcdriver::version_info_t mcdriver::version_info_ = { 
+    "@PROJECT_NAME@",     
+    "@PROJECT_DESCRIPTION@",
+    "@PROJECT_VERSION@",  
+    "@GIT_TAG@",
+    "@CMAKE_BUILD_TIME@",       
+    "@CMAKE_CXX_COMPILER_ID@",
+    "@CMAKE_CXX_COMPILER_VERSION@", 
+    "@CMAKE_CXX_PLATFORM_ID@"
+};
