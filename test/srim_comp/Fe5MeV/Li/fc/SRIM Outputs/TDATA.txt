@@ -1,0 +1,36 @@
+====== Fe (5000) into Layer 1                   =======
+        SRIM-2013.00
+=======================================
+      Data  of  TRIM  Calculation      
+=======================================
+Ion = Fe (26)   Ion Mass= 055.9350
+Energy  = 5000000.E-03 keV
+Ion Angle to Surface = 0 degrees
+============= TARGET MATERIAL ======================================
+  Layer # 1 - Layer 1
+  Layer # 1 - Bottom Depth=     2.E+05 A
+  Layer # 1- Density = 4.632E22 atoms/cm3 = .534 g/cm3
+  Layer # 1- Li = 100  Atomic Percent = 100  Mass Percent
+====================================================================
+Target energies for target atom = Li
+    Displacement = 25 eV, Binding = 1.1 eV, Surface = 1.1 eV
+====================================================================
+Depth Range of Tabulated Data=  000000.E+00  -  150000.E+00  Angstroms
+====================================================================
+Total Ions calculated =  001000
+Average Range         =   10716.E+01 Angstroms
+Average Straggling    =   55458.E-01 Angstroms
+Average Vacancy/Ion   =   54501.E-01
+====================================================================
+Total Backscattered Ions=  0 
+Total Transmitted Ions  =  0 
+====================================================================
+See files SRIM Outputs\*.txt for tables :
+   TDATA.txt    -- Details of the calculation.
+   RANGE.txt    -- Final distribution of Ions/Recoils
+   VACANCY.txt  -- Distribution of Vacancies
+   IONIZ.txt    -- Distribution of Ionization
+   PHONON.txt   -- Distribution of Phonons
+   E2RECOIL.txt -- Energy transferred to recoils
+   NOVAC.txt    -- Replacement collisions
+   LATERAL.txt  -- Lateral Spread of Ions

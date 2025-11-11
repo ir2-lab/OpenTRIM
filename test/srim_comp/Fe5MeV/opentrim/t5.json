@@ -1,0 +1,131 @@
+{
+    "Simulation": {
+        "simulation_type": "FullCascade",
+        "screening_type": "ZBL",
+        "electronic_stopping": "SRIM13",
+        "electronic_straggling": "Off",
+        "nrt_calculation": "NRT_element",
+        "intra_cascade_recombination": false,
+        "time_ordered_cascades": true,
+        "correlated_recombination": true,
+        "move_recoil": false,
+        "recoil_sub_ed": false
+    },
+    "Transport": {
+        "flight_path_type": "Variable",
+        "flight_path_const": 1.0,
+        "min_energy": 1.0,
+        "min_recoil_energy": 1.0,
+        "min_scattering_angle": 2.0,
+        "max_rel_eloss": 0.05,
+        "mfp_range": [
+            1.0,
+            1e+30
+        ]
+    },
+    "IonBeam": {
+        "ion": {
+            "symbol": "Fe",
+            "atomic_number": 26,
+            "atomic_mass": 55.935
+        },
+        "energy_distribution": {
+            "type": "SingleValue",
+            "center": 5e+06,
+            "fwhm": 1.0
+        },
+        "spatial_distribution": {
+            "geometry": "Surface",
+            "type": "SingleValue",
+            "center": [
+                0.0,
+                5000.0,
+                5000.0
+            ],
+            "fwhm": 1.0
+        },
+        "angular_distribution": {
+            "type": "SingleValue",
+            "center": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "fwhm": 1.0
+        }
+    },
+    "Target": {
+        "origin": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "size": [
+            2500.0,
+            10000.0,
+            10000.0
+        ],
+        "cell_count": [
+            100,
+            1,
+            1
+        ],
+        "periodic_bc": [
+            0,
+            1,
+            1
+        ],
+        "materials": [
+            {
+                "id": "M",
+                "density": 5.96,
+                "composition": [
+                    {
+                        "element": {
+                            "symbol": "V"
+                        },
+                        "X": 1.0,
+                        "Ed": 40.0,
+                        "El": 5.4,
+                        "Es": 5.4,
+                        "Er": 40,
+                        "Rc": 0.946
+                    }
+                ],
+                "color": "#55aaff"
+            }
+        ],
+        "regions": [
+            {
+                "id": "R1",
+                "material_id": "M",
+                "origin": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "size": [
+                    20000.0,
+                    10000.0,
+                    10000.0
+                ]
+            }
+        ]
+    },
+    "Output": {
+        "title": "5MeV Fe on V",
+        "outfilename": "t5",
+        "storage_interval": 1000,
+        "store_exit_events": false,
+        "store_pka_events": false,
+        "store_damage_events": false,
+        "store_dedx": true
+    },
+    "Run": {
+        "max_no_ions": 1000,
+        "max_cpu_time": 0,
+        "threads": 4,
+        "seed": 123456789
+    },
+    "UserTally": []
+}
