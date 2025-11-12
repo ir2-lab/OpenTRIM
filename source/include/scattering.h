@@ -657,6 +657,46 @@ public:
     virtual const char *screeningName() const override { return _xs_lab_t::screeningName(); }
 };
 
+class magic_scattering_calc : public abstract_scattering_calc,
+                              private xs_lab<Screening::ZBL, Quadrature::Magic>
+{
+public:
+    typedef xs_cms<Screening::ZBL, Quadrature::Magic> _xs_cms_t;
+    typedef xs_lab<Screening::ZBL, Quadrature::Magic> _xs_lab_t;
+
+    magic_scattering_calc(int Z1, float M1, int Z2, float M2) : _xs_lab_t(Z1, M1, Z2, M2) { }
+    magic_scattering_calc(const magic_scattering_calc &x) : _xs_lab_t(x) { }
+
+    virtual void scatter2(float e, float s, float &recoil_erg, float &sintheta,
+                          float &costheta) const override
+    {
+        scatter(e, s, recoil_erg, sintheta, costheta);
+    }
+
+    virtual void scatter(float e, float s, float &recoil_erg, float &sintheta,
+                         float &costheta) const override
+    {
+        double th, T;
+        _xs_lab_t::scatter(e, s, T, th);
+        recoil_erg = T;
+        costheta = std::cos(th);
+        sintheta = std::sin(th);
+    }
+
+    virtual float sin2Thetaby2(float e, float s) const override
+    {
+        return _xs_cms_t::sin2Thetaby2(e, s);
+    }
+
+    virtual float find_p(float E, float T) const override { return _xs_lab_t::find_p(E, T); }
+    virtual float screening_length() const override { return _xs_lab_t::screening_length(); }
+    virtual float mass_ratio() const override { return _xs_lab_t::mass_ratio(); }
+    virtual float sqrt_mass_ratio() const override { return _xs_lab_t::sqrt_mass_ratio(); }
+    virtual float gamma() const override { return _xs_lab_t::gamma(); }
+    virtual float red_E_conv() const override { return _xs_lab_t::red_E_conv(); }
+    virtual const char *screeningName() const override { return _xs_lab_t::screeningName(); }
+};
+
 template <Screening ScreeningType>
 void scattering_calc<ScreeningType>::scatter(float e, float s, float &recoil_erg, float &sintheta,
                                              float &costheta) const

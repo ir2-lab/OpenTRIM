@@ -77,6 +77,20 @@ public:
     };
 
     /**
+     * \brief Enumeration of the supported types of screening
+     */
+    enum screening_t {
+        None = (int)Screening::None, /**< Unscreened Coulomb potential */
+        Bohr = (int)Screening::Bohr, /**< Bohr */
+        KrC = (int)Screening::KrC, /**< Kr-C */
+        Moliere = (int)Screening::Moliere, /**< Moliere */
+        ZBL = (int)Screening::ZBL, /**< Ziegler-Biersack-Littmark (ZBL) Universal */
+        ZBL_MAGIC = ((int)Screening::ZBL)
+                + 1, /**< Ziegler-Biersack-Littmark (ZBL) Universal with MAGIK approx */
+        InvalidScreening = -1 /**< Invalid screening value */
+    };
+
+    /**
      * @brief Simulation parameters/options
      */
     struct parameters
@@ -84,7 +98,7 @@ public:
         /// Type of the simulation
         simulation_type_t simulation_type{ FullCascade };
         /// screeninig
-        Screening screening_type{ Screening::ZBL };
+        screening_t screening_type{ ZBL };
         /// Electronic stopping calculation option
         dedx_calc::electronic_stopping_t electronic_stopping{
             dedx_calc::electronic_stopping_t::SRIM13

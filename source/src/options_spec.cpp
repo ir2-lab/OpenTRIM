@@ -44,14 +44,16 @@ R"-(
                         "Bohr",
                         "KrC",
                         "Moliere",
-                        "ZBL"
+                        "ZBL",
+                        "ZBL_MAGIC"
                     ],
                     "valueLabels": [
                         "None (Unscreened)",
                         "Bohr",
                         "KrC",
                         "Moliere",
-                        "ZBL"
+                        "ZBL",
+                        "ZBL_MAGIC (Analytic approx.)"
                     ],
                     "toolTip": "Define the type of screening potential.",
                     "whatsThis": [
@@ -60,8 +62,9 @@ R"-(
                         "- KrC: Kr-C screening",
                         "- Moliere - Moliere screening",
                         "- ZBL - Ziegler-Biersack-Littmark universal screening",
+                        "- ZBL_MAGIC - ZBL with analytic approx. formula",
                         "  ",
-                        "For Unscreened Coulomb the scattering is calculated analytically.",
+                        "For Unscreened Coulomb and ZBL_MAGIK the scattering is calculated analytically.",
                         "In all other cases interpolation tables are used."
                     ]
                 },

@@ -162,13 +162,14 @@ NLOHMANN_JSON_SERIALIZE_ENUM(mccore::simulation_type_t,
                                { mccore::IonsOnly, "IonsOnly" },
                                { mccore::CascadesOnly, "CascadesOnly" } })
 
-NLOHMANN_JSON_SERIALIZE_ENUM(Screening,
-                             { { Screening::Invalid, nullptr },
-                               { Screening::None, "None" },
-                               { Screening::Bohr, "Bohr" },
-                               { Screening::KrC, "KrC" },
-                               { Screening::Moliere, "Moliere" },
-                               { Screening::ZBL, "ZBL" } })
+NLOHMANN_JSON_SERIALIZE_ENUM(mccore::screening_t,
+                             { { mccore::InvalidScreening, nullptr },
+                               { mccore::None, "None" },
+                               { mccore::Bohr, "Bohr" },
+                               { mccore::KrC, "KrC" },
+                               { mccore::Moliere, "Moliere" },
+                               { mccore::ZBL, "ZBL" },
+                               { mccore::ZBL_MAGIC, "ZBL_MAGIC" } })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(dedx_calc::electronic_stopping_t,
                              { { dedx_calc::electronic_stopping_t::Invalid, nullptr },

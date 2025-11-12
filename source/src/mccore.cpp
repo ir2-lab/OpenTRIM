@@ -117,19 +117,22 @@ int mccore::init()
             float M2 = atoms[z2]->M();
 
             switch (par_.screening_type) {
-            case Screening::ZBL:
+            case ZBL:
                 scattering_matrix_(z1, z2) = new zbl_scattering_calc(Z1, M1, Z2, M2);
                 break;
-            case Screening::Bohr:
+            case ZBL_MAGIC:
+                scattering_matrix_(z1, z2) = new magic_scattering_calc(Z1, M1, Z2, M2);
+                break;
+            case Bohr:
                 scattering_matrix_(z1, z2) = new bohr_scattering_calc(Z1, M1, Z2, M2);
                 break;
-            case Screening::KrC:
+            case KrC:
                 scattering_matrix_(z1, z2) = new krc_scattering_calc(Z1, M1, Z2, M2);
                 break;
-            case Screening::Moliere:
+            case Moliere:
                 scattering_matrix_(z1, z2) = new moliere_scattering_calc(Z1, M1, Z2, M2);
                 break;
-            case Screening::None:
+            case None:
                 scattering_matrix_(z1, z2) = new unscreened_scattering_calc(Z1, M1, Z2, M2);
                 break;
             default:
