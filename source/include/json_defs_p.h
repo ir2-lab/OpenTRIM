@@ -34,7 +34,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(mcconfig::option_type_t,
                                { mcconfig::tString, "string" },
                                { mcconfig::tVector, "vector" },
                                { mcconfig::tIntVector, "ivector" },
-                               { mcconfig::tStruct, "struct" } })
+                               { mcconfig::tStruct, "struct" },
+                               { mcconfig::tArray, "array" } })
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcdriver::run_data, start_time, end_time, ips, cpu_time,
                                           nthreads, run_ion_count, total_ion_count)

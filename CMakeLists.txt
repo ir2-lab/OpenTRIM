@@ -67,15 +67,38 @@ include_directories(
     source/include
     )
 
-file(READ ${CMAKE_SOURCE_DIR}/git_tag _GIT_TAG_)
-string(STRIP ${_GIT_TAG_} GIT_TAG)
-message("Read git tag: ${GIT_TAG}")
-
+# configure the version.cpp file
+# all @###@ codes are replaced except for @GIT_TAG@
+# which is configured during build
+set(GIT_TAG "@GIT_TAG@")
 configure_file(
     ${CMAKE_SOURCE_DIR}/source/src/version.cpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version1.cpp
 )
 
+# Update the GIT_TAG in version.cpp
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+    COMMAND ${CMAKE_COMMAND}
+    -DRUN_BUILD_CONFIG_FILE=1
+    -DFILE_IN=${CMAKE_CURRENT_BINARY_DIR}/version1.cpp
+    -DFILE_OUT=${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+    -DFILE_CONTENT=${CMAKE_SOURCE_DIR}/git_tag
+    -DVAR_NAME="GIT_TAG"
+    -P ${CMAKE_SOURCE_DIR}/cmake/BuildConfigFile.cmake
+    MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/git_tag
+)
+
+# Update options_spec.cpp from options_spec.json
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/options_spec.cpp
+    COMMAND ${CMAKE_COMMAND}
+    -DRUN_BUILD_CONFIG_FILE=1
+    -DFILE_IN=${CMAKE_SOURCE_DIR}/source/src/options_spec.cpp.in
+    -DFILE_OUT=${CMAKE_CURRENT_BINARY_DIR}/options_spec.cpp
+    -DFILE_CONTENT=${CMAKE_SOURCE_DIR}/source/src/options_spec.json
+    -DVAR_NAME="OPTIONS_SPEC"
+    -P ${CMAKE_SOURCE_DIR}/cmake/BuildConfigFile.cmake
+    MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/source/src/options_spec.json
+)
 
 add_xs_library(zbl)
 add_xs_library(bohr)
@@ -100,10 +123,10 @@ add_library(${LIB_TARGET} SHARED
     source/src/mcdriver.cpp
     source/src/dedx.cpp
     source/src/straggling.cpp
-    source/src/options_spec.cpp
     source/src/user_tally.cpp
     source/src/mcinfo.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/options_spec.cpp
 )
 
 set(OPENTRIM_HEADERS 

@@ -51,6 +51,7 @@ struct mcconfig
         tVector,
         tIntVector,
         tStruct,
+        tArray,
         tInvalid
     };
 

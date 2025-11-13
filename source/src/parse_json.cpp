@@ -33,7 +33,7 @@ struct adl_serializer<Eigen::AlignedVector3<T>>
 void to_json(ojson &j, const mcconfig &p);
 void from_json(const ojson &j, mcconfig &p);
 
-// validate json config agains option specs
+// validate json config against option specs
 int validate_json_config(const std::string &specs, const ojson &j);
 
 int mcconfig::parseJSON(std::istream &js, bool doValidation, std::ostream *os)
@@ -444,37 +444,11 @@ void mcconfig::get_impl_(const std::string &path, std::string &json_str) const
 
 ojson get_option_spec();
 
-int validate_helper(const ojson &spec, const ojson &opt, const std::string &path = std::string())
+int validate_simple_value(const ojson &spec, ojson::const_reference &vref, const std::string &jpath)
 {
     mcconfig::option_type_t type;
     spec["type"].get_to(type);
-    std::string name;
-    spec["name"].get_to(name);
 
-    if (type == mcconfig::tStruct) {
-        std::string next_path = path.empty() ? "/" : path + name + "/";
-        for (auto it = spec["fields"].begin(); it != spec["fields"].end(); ++it) {
-            const ojson &opt_spec = *it;
-            // std::string next_path(path);
-            // next_path += opt_spec["name"].template get<std::string>();
-            // std::string typeName = opt_spec["type"].template get<std::string>();
-
-            validate_helper(opt_spec, opt, next_path);
-        }
-        return 0;
-    }
-
-    // try if json key exists
-    std::string jpath(path + name);
-    ojson::json_pointer ptr(jpath);
-    try {
-        ojson::const_reference vref = opt.at(ptr);
-    } catch (const ojson::out_of_range &e) {
-        return 0;
-    }
-
-    // check the vale
-    ojson::const_reference vref = opt.at(ptr);
     switch (type) {
     case mcconfig::tEnum: {
         std::vector<std::string> values;
@@ -563,6 +537,69 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
         break;
     }
     return 0;
+}
+
+int validate_helper(const ojson &spec, const ojson &opt, const std::string &path = std::string(),
+                    bool is_item = false)
+{
+    mcconfig::option_type_t type;
+    spec["type"].get_to(type);
+    std::string name;
+    spec["name"].get_to(name);
+
+    if (type == mcconfig::tStruct) {
+        std::string next_path = path.empty() ? "/" : path + name + "/";
+        for (auto it = spec["fields"].begin(); it != spec["fields"].end(); ++it) {
+            const ojson &opt_spec = *it;
+            // std::string next_path(path);
+            // next_path += opt_spec["name"].template get<std::string>();
+            // std::string typeName = opt_spec["type"].template get<std::string>();
+
+            validate_helper(opt_spec, opt, next_path);
+        }
+        return 0;
+    }
+
+    // try if json key exists
+    std::string jpath(path + name);
+    ojson::json_pointer ptr(jpath);
+    try {
+        ojson::const_reference vref = opt.at(ptr);
+    } catch (const ojson::out_of_range &e) {
+        return 0;
+    }
+
+    // get a reference to the value
+    ojson::const_reference vref = opt.at(ptr);
+
+    if (type == mcconfig::tArray) {
+        if (!vref.is_array()) {
+            std::ostringstream msg;
+            msg << "(" << jpath << ") ";
+            msg << "Should be an array" << std::endl;
+            throw std::invalid_argument(msg.str());
+        }
+        const ojson &item_spec = spec["items"];
+        mcconfig::option_type_t item_type;
+        item_spec["type"].get_to(item_type);
+
+        for (int k = 0; k < vref.size(); ++k) {
+            std::string item_path = jpath + "/";
+            item_path += std::to_string(k);
+            if (item_type == mcconfig::tStruct) {
+                item_path += "/";
+                for (auto it = item_spec["fields"].begin(); it != item_spec["fields"].end(); ++it) {
+                    const ojson &opt_spec = *it;
+                    validate_helper(opt_spec, opt, item_path);
+                }
+            } else {
+                validate_simple_value(item_spec, vref[k], item_path);
+            }
+        }
+        return 0;
+    }
+
+    return validate_simple_value(spec, vref, jpath);
 }
 
 int validate_json_config(const std::string &specs, const ojson &j)

@@ -1,9 +1,3 @@
-#include "mcdriver.h"
-
-// clang-format off
-
-static const char* option_spec_str_ =
-R"-(
 {
     "name": "options",
     "label": "Simulation Options",
@@ -510,14 +504,186 @@ R"-(
                 {
                     "name": "materials",
                     "label": "Target materials definition",
-                    "type": "struct",
-                    "fields": []
+                    "type": "array",
+                    "items": {
+                        "name": "material_desc",
+                        "label": "Material description",
+                        "type": "struct",
+                        "fields": [
+                            {
+                                "name": "id",
+                                "label": "material id",
+                                "type": "string",
+                                "toolTip": "Name of the material."
+                            },
+                            {
+                                "name": "density",
+                                "label": "Mass density [g/cm3]",
+                                "type": "float",
+                                "min": 1e-6,
+                                "max": 1e6,
+                                "toolTip": "Mass density [g/cm3]"
+                            },
+                            {
+                                "name": "color",
+                                "label": "html color code",
+                                "type": "string",
+                                "toolTip": "Html color code."
+                            },
+                            {
+                                "name": "composition",
+                                "label": "Material composition",
+                                "type": "array",
+                                "items": {
+                                    "name": "element_data",
+                                    "label": "Element data",
+                                    "type": "struct",
+                                    "fields": [
+                                        {
+                                            "name": "element",
+                                            "label": "Element definition",
+                                            "type": "struct",
+                                            "fields": [
+                                                {
+                                                    "name": "symbol",
+                                                    "label": "Symbol",
+                                                    "type": "string",
+                                                    "toolTip": "Chemical element symbol.",
+                                                    "whatsThis": ""
+                                                },
+                                                {
+                                                    "name": "atomic_number",
+                                                    "label": "Atomic number",
+                                                    "type": "int",
+                                                    "min": 1,
+                                                    "max": 92,
+                                                    "digits": 3,
+                                                    "toolTip": "Element atomic number.",
+                                                    "whatsThis": ""
+                                                },
+                                                {
+                                                    "name": "atomic_mass",
+                                                    "label": "Atomic mass",
+                                                    "type": "float",
+                                                    "min": 0.001,
+                                                    "max": 1000.0,
+                                                    "digits": 6,
+                                                    "toolTip": "Element atomic mass.",
+                                                    "whatsThis": ""
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "X",
+                                            "label": "Atomic concentration",
+                                            "type": "float",
+                                            "min": 0.001,
+                                            "max": 1000.0,
+                                            "digits": 3,
+                                            "toolTip": "Relative atomic concentration (un-normalized).",
+                                            "whatsThis": ""
+                                        },
+                                        {
+                                            "name": "Ed",
+                                            "label": "Displacement energy [eV]",
+                                            "type": "float",
+                                            "min": 0.001,
+                                            "max": 1000.0,
+                                            "digits": 3,
+                                            "toolTip": "Displacement energy [eV].",
+                                            "whatsThis": "Energy required to displace an atom from its atomic position."
+                                        },
+                                        {
+                                            "name": "El",
+                                            "label": "Lattice binding energy [eV]",
+                                            "type": "float",
+                                            "min": 0.001,
+                                            "max": 1000.0,
+                                            "digits": 3,
+                                            "toolTip": "Lattice binding energy [eV].",
+                                            "whatsThis": "Equivalent to the Frenkel pair formation energy."
+                                        },
+                                        {
+                                            "name": "Es",
+                                            "label": "Surface binding energy [eV]",
+                                            "type": "float",
+                                            "min": 0.001,
+                                            "max": 1000.0,
+                                            "digits": 3,
+                                            "toolTip": "Surface binding energy [eV].",
+                                            "whatsThis": ""
+                                        },
+                                        {
+                                            "name": "Er",
+                                            "label": "Replacement energy [eV]",
+                                            "type": "float",
+                                            "min": 0.001,
+                                            "max": 1000.0,
+                                            "digits": 3,
+                                            "toolTip": "Replacement energy [eV].",
+                                            "whatsThis": "An ion with kinetic energy E<Er can be captured in a vacant lattice site."
+                                        },
+                                        {
+                                            "name": "Rc",
+                                            "label": "Recombination radius [nm]",
+                                            "type": "float",
+                                            "min": 0.001,
+                                            "max": 1000.0,
+                                            "digits": 3,
+                                            "toolTip": "Recombination radius [nm].",
+                                            "whatsThis": "A Frenkel pair with an I-V distance R<Rc recombines spontaneously."
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
                 },
                 {
                     "name": "regions",
                     "label": "Target regions definition",
-                    "type": "struct",
-                    "fields": []
+                    "type": "array",
+                    "items": {
+                        "name": "region_desc",
+                        "label": "Region description",
+                        "type": "struct",
+                        "fields": [
+                            {
+                                "name": "id",
+                                "label": "region id",
+                                "type": "string",
+                                "toolTip": "Name of the region."
+                            },
+                            {
+                                "name": "material_id",
+                                "label": "Material id",
+                                "type": "string",
+                                "toolTip": "Id of the material that fills the region."
+                            },
+                            {
+                                "name": "origin",
+                                "label": "Origin [x₀,y₀,z₀] (nm)",
+                                "type": "vector",
+                                "size": 3,
+                                "min": -1.0e7,
+                                "max": 1.0e7,
+                                "digits": 6,
+                                "toolTip": "Origin of the region.",
+                                "whatsThis": ""
+                            },
+                            {
+                                "name": "size",
+                                "label": "Size [Lx, Ly, Lz] (nm)",
+                                "type": "vector",
+                                "size": 3,
+                                "min": 0.001,
+                                "max": 1.0e7,
+                                "digits": 6,
+                                "toolTip": "Size in nm of the simulation volume along the x-, y- and z-axis.",
+                                "whatsThis": ""
+                            }
+                        ]
+                    }
                 }
             ]
         },
@@ -617,12 +783,4 @@ R"-(
             ]
         }
     ]
-}
-)-";
-
-// clang-format on
-
-std::string mcconfig::options_spec()
-{
-    return std::string(option_spec_str_);
 }
