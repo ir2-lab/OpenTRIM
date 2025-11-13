@@ -1,0 +1,26 @@
+{
+    "Target": {
+        "materials": [
+            {
+                "id": "Iron",
+                "density": 7.8658,
+                "composition": [
+                    {
+                        "element": {
+                            "symbol": "Fe"
+                        }
+                    }
+                ]
+            }
+        ],
+        "regions": [
+            {
+                "id": "R1",
+                "material_id": "Iron"
+            }
+        ]
+    },
+    "UserTally": {
+        "id": "UserTally0"
+    }
+}

@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
            << " on " << version_info.system_id << endl;
         version_string = ss.str();
     }
-    app.set_version_flag("--version", version_string);
+    app.set_version_flag("-v,--version", version_string);
 
     int n(-1), j(-1), s(-1);
     std::string input_config_file, input_file, output_file;
@@ -108,8 +108,7 @@ int main(int argc, char *argv[])
     CLI11_PARSE(app, argc, argv);
 
     if (app.get_option("--template")->as<bool>()) { // NEW: print configuration and exit
-        mcconfig opt;
-        opt.printJSON(cout);
+        mcconfig::config_template().printJSON(cout);
         return 0;
     }
 

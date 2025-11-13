@@ -7,7 +7,6 @@
 #include <thread>
 #include "user_tally.h"
 
-
 /**
  * @brief mcconfig contains all configuration options for seting up and running simulation.
  *
@@ -137,6 +136,19 @@ struct mcconfig
      * @return The json code as a std::string
      */
     static std::string options_spec();
+
+    /**
+     * @brief Returns a configuration template with all default options
+     *
+     * The returned configuration has placeholders for all available options,
+     * including
+     * - materials
+     * - regions
+     * - user-specified tallies
+     *
+     * @return The template configuration
+     */
+    static mcconfig config_template();
 
     /// Return mcconfig as a JSON string
     std::string toJSON() const;

@@ -1,0 +1,20 @@
+#include "mcdriver.h"
+
+#include <sstream>
+
+// clang-format off
+
+static const char* option_template_str_ =
+R"-(
+@CONFIG_TEMPLATE@
+)-";
+
+// clang-format on
+
+mcconfig mcconfig::config_template()
+{
+    mcconfig cfg;
+    std::istringstream is(option_template_str_);
+    cfg.parseJSON(is);
+    return cfg;
+}

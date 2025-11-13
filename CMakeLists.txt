@@ -100,6 +100,18 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/options_spec.cpp
     MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/source/src/options_spec.json
 )
 
+# Update config_template.cpp from config_template.json
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/config_template.cpp
+    COMMAND ${CMAKE_COMMAND}
+    -DRUN_BUILD_CONFIG_FILE=1
+    -DFILE_IN=${CMAKE_SOURCE_DIR}/source/src/config_template.cpp.in
+    -DFILE_OUT=${CMAKE_CURRENT_BINARY_DIR}/config_template.cpp
+    -DFILE_CONTENT=${CMAKE_SOURCE_DIR}/source/src/config_template.json
+    -DVAR_NAME="CONFIG_TEMPLATE"
+    -P ${CMAKE_SOURCE_DIR}/cmake/BuildConfigFile.cmake
+    MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/source/src/config_template.json
+)
+
 add_xs_library(zbl)
 add_xs_library(bohr)
 add_xs_library(krc)
@@ -127,6 +139,7 @@ add_library(${LIB_TARGET} SHARED
     source/src/mcinfo.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/options_spec.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/config_template.cpp
 )
 
 set(OPENTRIM_HEADERS 
