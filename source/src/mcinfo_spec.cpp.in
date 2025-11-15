@@ -1,0 +1,55 @@
+#include "mcinfo.h"
+
+#include <sstream>
+
+static const char* mcinfo_spec_str_ =
+R"-(
+@MCINFO_SPEC@
+)-";
+
+std::string mcinfo::info_spec()
+{
+    std::istringstream is(mcinfo_spec_str_);
+    ojson info_specs = ojson::parse(is, nullptr, true, true);
+
+    {
+        ojson tally_specs(ojson::array({}));
+
+        std::map<std::string, std::map<std::string, int>> tmap;
+        int k = 1;
+        while (k < tally::std_tallies) {
+            tmap[tally::arrayGroup(k)][tally::arrayName(k)] = k;
+            k++;
+        }
+
+        for (const auto &tgroup : tmap) {
+            ojson group_j(ojson::object({}));
+
+            group_j["id"] = tgroup.first;
+            group_j["type"] = "Group";
+            group_j["description"] = "";
+
+            ojson objects(ojson::array({}));
+            for (const auto &tname : tgroup.second) {
+                ojson tally_j(ojson::object({}));
+                int k = tname.second;
+                tally_j["id"] = tname.first;
+                tally_j["type"] = "Dataset";
+                tally_j["description"] = tally::arrayDescription(k);
+                tally_j["datatype"] = "Numeric";
+                tally_j["size"] = "\\f$[N_{at},N_x,N_y,N_z]\\f$";
+
+                objects.push_back(tally_j);
+            }
+            group_j["objects"] = objects;
+
+            tally_specs.push_back(group_j);
+        }
+
+        ojson::json_pointer ptr("/objects/3/objects");
+        info_specs[ptr] = tally_specs;
+    }
+
+    return info_specs.dump(4);
+
+}

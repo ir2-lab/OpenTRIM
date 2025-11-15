@@ -37,6 +37,8 @@ struct mcinfo
     mcinfo(const mcinfo &o) = default;
     mcinfo(const mcdriver *d);
 
+    static std::string info_spec();
+
     mcinfo &operator[](const std::string &key) { return children_[key]; }
 
     info_t type() const { return type_; }

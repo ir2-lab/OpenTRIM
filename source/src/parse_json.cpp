@@ -573,30 +573,40 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
     ojson::const_reference vref = opt.at(ptr);
 
     if (type == mcconfig::tArray) {
-        if (!vref.is_array()) {
-            std::ostringstream msg;
-            msg << "(" << jpath << ") ";
-            msg << "Should be an array" << std::endl;
-            throw std::invalid_argument(msg.str());
-        }
+
+        // get the specs for the array items
         const ojson &item_spec = spec["items"];
         mcconfig::option_type_t item_type;
         item_spec["type"].get_to(item_type);
 
-        for (int k = 0; k < vref.size(); ++k) {
-            std::string item_path = jpath + "/";
-            item_path += std::to_string(k);
-            if (item_type == mcconfig::tStruct) {
+        // currently we only have arrays of objects (=struct)
+        if (item_type != mcconfig::tStruct) {
+            std::ostringstream msg;
+            msg << "(" << jpath << ") ";
+            msg << "array items shoul be JSON Objects" << std::endl;
+            throw std::invalid_argument(msg.str());
+        }
+
+        // we accept arrays of objects OR a single object (equiv. to array of size 1)
+        if (vref.is_array()) {
+            for (int k = 0; k < vref.size(); ++k) {
+                std::string item_path = jpath + "/";
+                item_path += std::to_string(k);
                 item_path += "/";
                 for (auto it = item_spec["fields"].begin(); it != item_spec["fields"].end(); ++it) {
                     const ojson &opt_spec = *it;
                     validate_helper(opt_spec, opt, item_path);
                 }
-            } else {
-                validate_simple_value(item_spec, vref[k], item_path);
             }
+            return 0;
+        } else {
+            std::string item_path = jpath + "/";
+            for (auto it = item_spec["fields"].begin(); it != item_spec["fields"].end(); ++it) {
+                const ojson &opt_spec = *it;
+                validate_helper(opt_spec, opt, item_path);
+            }
+            return 0;
         }
-        return 0;
     }
 
     return validate_simple_value(spec, vref, jpath);

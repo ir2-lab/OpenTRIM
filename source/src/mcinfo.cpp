@@ -48,20 +48,20 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
                                   s[0] = std::string(mcdriver::version_info().git_tag);
                                   d = { 1 };
                               } };
-            p1["compiler"] = { driver_, mcinfo::string, "compiler",
+            p1["compiler"] = { driver_, mcinfo::string, "C++ compiler",
                                [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                                    s.resize(1);
                                    s[0] = std::string(mcdriver::version_info().compiler_id);
                                    d = { 1 };
                                } };
-            p1["compiler_version"] = { driver_, mcinfo::string, "compiler_version",
+            p1["compiler_version"] = { driver_, mcinfo::string, "C++ compiler_version",
                                        [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                                            s.resize(1);
                                            s[0] = std::string(
                                                    mcdriver::version_info().compiler_version);
                                            d = { 1 };
                                        } };
-            p1["build_system"] = { driver_, mcinfo::string, "build system",
+            p1["build_system"] = { driver_, mcinfo::string, "System used for building the code",
                                    [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                                        s.resize(1);
                                        s[0] = std::string(mcdriver::version_info().system_id);
@@ -74,7 +74,7 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
                                      d = { 1 };
                                  } };
         }
-        p["run_history"] = { driver_, mcinfo::json, "run history",
+        p["run_history"] = { driver_, mcinfo::json, "JSON formattet run history",
                              [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
                                  s.resize(1);
                                  ojson j = i.driver()->run_history();

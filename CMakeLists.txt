@@ -85,7 +85,9 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
     -DFILE_CONTENT=${CMAKE_SOURCE_DIR}/git_tag
     -DVAR_NAME="GIT_TAG"
     -P ${CMAKE_SOURCE_DIR}/cmake/BuildConfigFile.cmake
-    MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/git_tag
+    DEPENDS 
+        ${CMAKE_SOURCE_DIR}/git_tag
+        ${CMAKE_SOURCE_DIR}/source/src/version.cpp.in
 )
 
 # Update options_spec.cpp from options_spec.json
@@ -97,7 +99,9 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/options_spec.cpp
     -DFILE_CONTENT=${CMAKE_SOURCE_DIR}/source/src/options_spec.json
     -DVAR_NAME="OPTIONS_SPEC"
     -P ${CMAKE_SOURCE_DIR}/cmake/BuildConfigFile.cmake
-    MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/source/src/options_spec.json
+    DEPENDS 
+        ${CMAKE_SOURCE_DIR}/source/src/options_spec.json
+        ${CMAKE_SOURCE_DIR}/source/src/options_spec.cpp.in
 )
 
 # Update config_template.cpp from config_template.json
@@ -109,7 +113,24 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/config_template.cpp
     -DFILE_CONTENT=${CMAKE_SOURCE_DIR}/source/src/config_template.json
     -DVAR_NAME="CONFIG_TEMPLATE"
     -P ${CMAKE_SOURCE_DIR}/cmake/BuildConfigFile.cmake
-    MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/source/src/config_template.json
+    DEPENDS 
+        ${CMAKE_SOURCE_DIR}/source/src/config_template.json
+        ${CMAKE_SOURCE_DIR}/source/src/config_template.cpp.in
+)
+
+# Update mcinfo_spec.cpp from mcinfo_spec.json
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/mcinfo_spec.cpp
+    COMMAND ${CMAKE_COMMAND}
+    -DRUN_BUILD_CONFIG_FILE=1
+    -DFILE_IN=${CMAKE_SOURCE_DIR}/source/src/mcinfo_spec.cpp.in
+    -DFILE_OUT=${CMAKE_CURRENT_BINARY_DIR}/mcinfo_spec.cpp
+    -DFILE_CONTENT=${CMAKE_SOURCE_DIR}/source/src/mcinfo_spec.json
+    -DVAR_NAME="MCINFO_SPEC"
+    -P ${CMAKE_SOURCE_DIR}/cmake/BuildConfigFile.cmake
+    DEPENDS 
+        ${CMAKE_SOURCE_DIR}/source/src/mcinfo_spec.json
+        ${CMAKE_SOURCE_DIR}/source/src/mcinfo_spec.cpp.in
+        
 )
 
 add_xs_library(zbl)
@@ -140,6 +161,7 @@ add_library(${LIB_TARGET} SHARED
     ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/options_spec.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/config_template.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/mcinfo_spec.cpp
 )
 
 set(OPENTRIM_HEADERS 

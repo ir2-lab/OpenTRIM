@@ -1,0 +1,552 @@
+{
+    "id": "",
+    "description": "File root object",
+    "type": "Group",
+    "objects": [
+        {
+            "id": "run_info",
+            "type": "Group",
+            "description": "Simulation run information",
+            "objects": [
+                {
+                    "id": "title",
+                    "type": "Dataset",
+                    "datatype": "Text",
+                    "description": "User supplied simulation title",
+                    "size": "Scalar"
+                },
+                {
+                    "id": "total_ion_count",
+                    "type": "Dataset",
+                    "datatype": "Numeric",
+                    "description": "Total number of simulated ion histories",
+                    "size": "Scalar"
+                },
+                {
+                    "id": "json_config",
+                    "type": "Dataset",
+                    "datatype": "Text",
+                    "description": "JSON formatted simulation options",
+                    "size": "Scalar"
+                },
+                {
+                    "id": "version_info",
+                    "type": "Group",
+                    "description": "Program version information",
+                    "objects": [
+                        {
+                            "id": "name",
+                            "type": "Dataset",
+                            "datatype": "Text",
+                            "description": "Code name",
+                            "size": "Scalar"
+                        },
+                        {
+                            "id": "version",
+                            "type": "Dataset",
+                            "datatype": "Text",
+                            "description": "Code version",
+                            "size": "Scalar"
+                        },
+                        {
+                            "id": "git_tag",
+                            "type": "Dataset",
+                            "datatype": "Text",
+                            "description": "Output of 'git describe --tags --always'",
+                            "size": "Scalar"
+                        },
+                        {
+                            "id": "compiler",
+                            "type": "Dataset",
+                            "datatype": "Text",
+                            "description": "C++ compiler",
+                            "size": "Scalar"
+                        },
+                        {
+                            "id": "compiler_version",
+                            "type": "Dataset",
+                            "datatype": "Text",
+                            "description": "C++ compiler version",
+                            "size": "Scalar"
+                        },
+                        {
+                            "id": "build_system",
+                            "type": "Dataset",
+                            "datatype": "Text",
+                            "description": "System used for building the code",
+                            "size": "Scalar"
+                        },
+                        {
+                            "id": "build_time",
+                            "type": "Dataset",
+                            "datatype": "Text",
+                            "description": "Build time",
+                            "size": "Scalar"
+                        }
+                    ]
+                },
+                {
+                    "id": "run_history",
+                    "type": "Dataset",
+                    "datatype": "Text",
+                    "description": "JSON formattet run history",
+                    "size": "Scalar"
+                },
+                {
+                    "id": "rng_state",
+                    "type": "Dataset",
+                    "datatype": "Numeric",
+                    "description": "Random number generator state",
+                    "size": "[4]"
+                }
+            ]
+        },
+        {
+            "id": "Target",
+            "type": "Group",
+            "description": "Information about the simulated target structure",
+            "objects": [
+                {
+                    "id": "grid",
+                    "type": "Group",
+                    "description": "Description of the 3D spatial grid",
+                    "objects": [
+                        {
+                            "id": "X",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "X-axis grid",
+                            "size": "\\f$[N_x]\\f$"
+                        },
+                        {
+                            "id": "Y",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Y-axis grid",
+                            "size": "\\f$[N_y]\\f$"
+                        },
+                        {
+                            "id": "Z",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Z-axis grid",
+                            "size": "\\f$[N_z]\\f$"
+                        }
+                    ]
+                },
+                {
+                    "id": "materials",
+                    "type": "Group",
+                    "description": "Target materials definition",
+                    "objects": [
+                        {
+                            "id": "name",
+                            "type": "Dataset",
+                            "datatype": "Text",
+                            "description": "Name of the material",
+                            "size": "\\f$[N_{mat}]\\f$"
+                        },
+                        {
+                            "id": "atomic_density",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Atomic density [at/nm^3]",
+                            "size": "\\f$[N_{mat}]\\f$"
+                        },
+                        {
+                            "id": "mass_density",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Mass density [at/nm^3]",
+                            "size": "\\f$[N_{mat}]\\f$"
+                        },
+                        {
+                            "id": "atomic_radius",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Atomic radius [nm]",
+                            "size": "\\f$[N_{mat}]\\f$"
+                        }
+                    ]
+                },
+                {
+                    "id": "atoms",
+                    "type": "Group",
+                    "description": "Properties of atoms",
+                    "objects": [
+                        {
+                            "id": "label",
+                            "type": "Dataset",
+                            "datatype": "Text",
+                            "description": "label = [Chemical symbol] in [Material]",
+                            "size": "\\f$[N_{at}]\\f$"
+                        },
+                        {
+                            "id": "symbol",
+                            "type": "Dataset",
+                            "datatype": "Text",
+                            "description": "Chemical symbol",
+                            "size": "\\f$[N_{at}]\\f$"
+                        },
+                        {
+                            "id": "Z",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Atomic number",
+                            "size": "\\f$[N_{at}]\\f$"
+                        },
+                        {
+                            "id": "M",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Atomic mass",
+                            "size": "\\f$[N_{at}]\\f$"
+                        },
+                        {
+                            "id": "Ed",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Displacement energy [eV]",
+                            "size": "\\f$[N_{at}]\\f$"
+                        },
+                        {
+                            "id": "El",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Lattice Binding energy [eV]",
+                            "size": "\\f$[N_{at}]\\f$"
+                        },
+                        {
+                            "id": "Es",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Surface binding energy [eV]",
+                            "size": "\\f$[N_{at}]\\f$"
+                        },
+                        {
+                            "id": "Er",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Replacement energy [eV]",
+                            "size": "\\f$[N_{at}]\\f$"
+                        },
+                        {
+                            "id": "Rc",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Recombination radius [nm]",
+                            "size": "\\f$[N_{at}]\\f$"
+                        }
+                    ]
+                },
+                {
+                    "id": "dedx",
+                    "type": "Group",
+                    "description": "Electronic stopping tables",
+                    "objects": [
+                        {
+                            "id": "erg",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Stopping table energy grid [eV]",
+                            "size": "\\f$[N_{e}]\\f$"
+                        },
+                        {
+                            "id": "dEdx",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Electronic stopping power [eV/nm]",
+                            "size": "\\f$[N_{at},N_{mat},N_e]\\f$"
+                        },
+                        {
+                            "id": "strag",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Electronic straggling [eV/nm^1/2]",
+                            "size": "\\f$[N_{at},N_{mat},N_e]\\f$"
+                        }
+                    ]
+                },
+                {
+                    "id": "flight_path",
+                    "type": "Group",
+                    "description": "Flight path selection tables",
+                    "objects": [
+                        {
+                            "id": "erg",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Flight path selection table energy grid [eV]",
+                            "size": "\\f$[N_{e}]\\f$"
+                        },
+                        {
+                            "id": "mfp",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Mean free path [nm]",
+                            "size": "\\f$[N_{at},N_{mat},N_e]\\f$"
+                        },
+                        {
+                            "id": "ipmax",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Max impact parameter [nm]",
+                            "size": "\\f$[N_{at},N_{mat},N_e]\\f$"
+                        },
+                        {
+                            "id": "fpmax",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Max flight path [nm]",
+                            "size": "\\f$[N_{at},N_{mat},N_e]\\f$"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "ion_beam",
+            "type": "Group",
+            "description": "Ion source details",
+            "objects": [
+                {
+                    "id": "E0",
+                    "type": "Dataset",
+                    "description": "Mean ion beam energy [eV]",
+                    "datatype": "Numeric",
+                    "size": "Scalar"
+                },
+                {
+                    "id": "Z",
+                    "type": "Dataset",
+                    "description": "Atomic number of source ions",
+                    "datatype": "Numeric",
+                    "size": "Scalar"
+                },
+                {
+                    "id": "M",
+                    "type": "Dataset",
+                    "description": "Atomic mass of source ions",
+                    "datatype": "Numeric",
+                    "size": "Scalar"
+                },
+                {
+                    "id": "dir0",
+                    "type": "Dataset",
+                    "description": "Mean direction of source ions",
+                    "datatype": "Numeric",
+                    "size": "[3]"
+                },
+                {
+                    "id": "x0",
+                    "type": "Dataset",
+                    "description": "Mean position of source ions",
+                    "datatype": "Numeric",
+                    "size": "[3]"
+                }
+            ]
+        },
+        {
+            "id": "tally",
+            "type": "Group",
+            "description": "Standard tally tables",
+            "objects": [] // will be filled out in c++
+        },
+        {
+            "id": "user_tally",
+            "type": "Group",
+            "description": "User defined tallies",
+            "objects": [
+                {
+                    "id": "tally name",
+                    "type": "Group",
+                    "description": "Name of user tally",
+                    "objects": [
+                        {
+                            "id": "description",
+                            "type": "Dataset",
+                            "description": "Tally description",
+                            "datatype": "Text",
+                            "size": "Scalar"
+                        },
+                        {
+                            "id": "coordinate_system",
+                            "type": "Group",
+                            "description": "User tally coordinate system definition",
+                            "objects": [
+                                {
+                                    "id": "origin",
+                                    "type": "Dataset",
+                                    "description": "Coordinate system origin",
+                                    "datatype": "Numeric",
+                                    "size": "[3]"
+                                },
+                                {
+                                    "id": "zaxis",
+                                    "type": "Dataset",
+                                    "description": "Coordinate system z-axis direction",
+                                    "datatype": "Numeric",
+                                    "size": "[3]"
+                                },
+                                {
+                                    "id": "xzvector",
+                                    "type": "Dataset",
+                                    "description": "Vector on the xz-plane",
+                                    "datatype": "Numeric",
+                                    "size": "[3]"
+                                }
+                            ]
+                        },
+                        {
+                            "id": "event",
+                            "type": "Dataset",
+                            "description": "Tally event",
+                            "datatype": "Text",
+                            "size": "Scalar"
+                        },
+                        {
+                            "id": "event_description",
+                            "type": "Dataset",
+                            "description": "Tally event description",
+                            "datatype": "Text",
+                            "size": "Scalar"
+                        },
+                        {
+                            "id": "bin_names",
+                            "type": "Dataset",
+                            "description": "Bin names",
+                            "datatype": "Text",
+                            "size": "\\f$[N_b]\\f$"
+                        },
+                        {
+                            "id": "bin_descriptions",
+                            "type": "Dataset",
+                            "description": "Bin descriptions",
+                            "datatype": "Text",
+                            "size": "\\f$[N_b]\\f$"
+                        },
+                        {
+                            "id": "data",
+                            "type": "Dataset",
+                            "description": "Tally bin data",
+                            "datatype": "Numeric",
+                            "size": "\\f$[N_1,N_2,...,N_{N_b}]\\f$"
+                        },
+                        {
+                            "id": "data_sem",
+                            "type": "Dataset",
+                            "description": "Standard error in the mean of tally bin data",
+                            "datatype": "Numeric",
+                            "size": "\\f$[N_1,N_2,...,N_{N_b}]\\f$"
+                        },
+                        {
+                            "id": "bins",
+                            "type": "Group",
+                            "description": "Bin edges",
+                            "objects": [
+                                {
+                                    "id": "bin_name1",
+                                    "type": "Dataset",
+                                    "description": "Bin edges of variable 1",
+                                    "datatype": "Numeric",
+                                    "size": "\\f$[N_1+1]\\f$"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "events",
+            "type": "Group",
+            "description": "lists of simulation events",
+            "objects": [
+                {
+                    "id": "exit",
+                    "type": "Group",
+                    "description": "Ions that exit the simulation volume",
+                    "objects": [
+                        {
+                            "id": "event_data",
+                            "type": "Dataset",
+                            "description": "Event data",
+                            "datatype": "Numeric",
+                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                        },
+                        {
+                            "id": "column_names",
+                            "type": "Dataset",
+                            "description": "Names of event data columns",
+                            "datatype": "Text",
+                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                        },
+                        {
+                            "id": "column_descriptions",
+                            "type": "Dataset",
+                            "description": "Description of event data columns",
+                            "datatype": "Text",
+                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                        }
+                    ]
+                },
+                {
+                    "id": "pka",
+                    "type": "Group",
+                    "description": "PKA events",
+                    "objects": [
+                        {
+                            "id": "event_data",
+                            "type": "Dataset",
+                            "description": "Event data",
+                            "datatype": "Numeric",
+                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                        },
+                        {
+                            "id": "column_names",
+                            "type": "Dataset",
+                            "description": "Names of event data columns",
+                            "datatype": "Text",
+                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                        },
+                        {
+                            "id": "column_descriptions",
+                            "type": "Dataset",
+                            "description": "Description of event data columns",
+                            "datatype": "Text",
+                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                        }
+                    ]
+                },
+                {
+                    "id": "damage",
+                    "type": "Group",
+                    "description": "Damage events",
+                    "objects": [
+                        {
+                            "id": "event_data",
+                            "type": "Dataset",
+                            "description": "Event data",
+                            "datatype": "Numeric",
+                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                        },
+                        {
+                            "id": "column_names",
+                            "type": "Dataset",
+                            "description": "Names of event data columns",
+                            "datatype": "Text",
+                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                        },
+                        {
+                            "id": "column_descriptions",
+                            "type": "Dataset",
+                            "description": "Description of event data columns",
+                            "datatype": "Text",
+                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

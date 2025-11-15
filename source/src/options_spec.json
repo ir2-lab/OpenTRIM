@@ -514,7 +514,8 @@
                                 "name": "id",
                                 "label": "material id",
                                 "type": "string",
-                                "toolTip": "Name of the material."
+                                "toolTip": "Name of the material.",
+                                "whatsThis": ""
                             },
                             {
                                 "name": "density",
@@ -522,13 +523,15 @@
                                 "type": "float",
                                 "min": 1e-6,
                                 "max": 1e6,
-                                "toolTip": "Mass density [g/cm3]"
+                                "toolTip": "Mass density [g/cm3]",
+                                "whatsThis": ""
                             },
                             {
                                 "name": "color",
                                 "label": "html color code",
                                 "type": "string",
-                                "toolTip": "Html color code."
+                                "toolTip": "Html color code.",
+                                "whatsThis": ""
                             },
                             {
                                 "name": "composition",
@@ -652,13 +655,15 @@
                                 "name": "id",
                                 "label": "region id",
                                 "type": "string",
-                                "toolTip": "Name of the region."
+                                "toolTip": "Name of the region.",
+                                "whatsThis": ""
                             },
                             {
                                 "name": "material_id",
                                 "label": "Material id",
                                 "type": "string",
-                                "toolTip": "Id of the material that fills the region."
+                                "toolTip": "Id of the material that fills the region.",
+                                "whatsThis": ""
                             },
                             {
                                 "name": "origin",
@@ -781,6 +786,302 @@
                     "whatsThis": ""
                 }
             ]
+        },
+        {
+            "name": "UserTally",
+            "label": "Array of user-defined tallies",
+            "type": "array",
+            "items": {
+                "name": "UserTally definition",
+                "label": "UserTally definition",
+                "type": "struct",
+                "fields": [
+                    {
+                        "name": "id",
+                        "label": "User specified tally id",
+                        "type": "string",
+                        "toolTip": "User specified tally id (name).",
+                        "whatsThis": [
+                            "For identifying the specific UserTally",
+                            "in the output file etc."
+                        ]
+                    },
+                    {
+                        "name": "description",
+                        "label": "User specified tally description",
+                        "type": "string",
+                        "toolTip": "Short description of the tally.",
+                        "whatsThis": [
+                            "One can give here a short explanation of",
+                            "the purpose of setting up this tally,",
+                            "what kind of information is expected, etc."
+                        ]
+                    },
+                    {
+                        "name": "event",
+                        "label": "Type of simulation event to tally.",
+                        "type": "enum",
+                        "values": [
+                            "IonExit",
+                            "IonStop",
+                            "Vacancy",
+                            "Replacement",
+                            "CascadeComplete",
+                            "BoundaryCrossing"
+                        ],
+                        "toolTip": "Simulation event that will trigger a tally score.",
+                        "whatsThis": [
+                            "The supported events are:",
+                            "- IonExit: the ion exits the simulation volume",
+                            "- IonStop: the ion stops inside the simulation volume",
+                            "- Vacancy: a lattice vacancy is created",
+                            "- Replacement: a replacement event occurs",
+                            "- CascadeComplete: a PKA cascade is completed",
+                            "- BoundaryCrossing: an ion crosses an internal cell boundary"
+                        ]
+                    },
+                    {
+                        "name": "coordinate_system",
+                        "label": "UserTally coordinate system",
+                        "type": "struct",
+                        "fields": [
+                            {
+                                "name": "origin",
+                                "label": "Origin [x₀,y₀,z₀] (nm)",
+                                "type": "vector",
+                                "size": 3,
+                                "min": -1.0e7,
+                                "max": 1.0e7,
+                                "digits": 6,
+                                "toolTip": "Origin of the UserTally coordinates.",
+                                "whatsThis": "The vector is defined with respect to the simulation space."
+                            },
+                            {
+                                "name": "zaxis",
+                                "label": "Z-axis direction vector",
+                                "type": "vector",
+                                "size": 3,
+                                "min": -1.0e7,
+                                "max": 1.0e7,
+                                "digits": 6,
+                                "toolTip": "A vector parallel to the z-axis of the UserTally coordinate system.",
+                                "whatsThis": "The vector is defined with respect to the simulation space."
+                            },
+                            {
+                                "name": "xzvector",
+                                "label": "Vector on the xz-plane",
+                                "type": "vector",
+                                "size": 3,
+                                "min": -1.0e7,
+                                "max": 1.0e7,
+                                "digits": 6,
+                                "toolTip": "A vector on the xz-plane of the UserTally coordinate system.",
+                                "whatsThis": "The vector is defined with respect to the simulation space."
+                            }
+                        ]
+                    },
+                    {
+                        "name": "x",
+                        "label": "x-coordinate bin edges [nm]",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion position x-coordinate.",
+                        "whatsThis": [
+                            "Coordinates refer to the UserTally coordinate system.",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "y",
+                        "label": "y-coordinate bin edges [nm]",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion position y-coordinate.",
+                        "whatsThis": [
+                            "Coordinates refer to the UserTally coordinate system.",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "z",
+                        "label": "z-coordinate bin edges [nm]",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion position z-coordinate.",
+                        "whatsThis": [
+                            "Coordinates refer to the UserTally coordinate system.",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "r",
+                        "label": "Radial distance r [nm]",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion's r=sqrt(x^2+y^2+z^2).",
+                        "whatsThis": [
+                            "Coordinates refer to the UserTally coordinate system.",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "rho",
+                        "label": "Cylindrical radial distance ρ [nm]",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion's ρ=sqrt(x^2+y^2).",
+                        "whatsThis": [
+                            "Coordinates refer to the UserTally coordinate system.",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "cosTheta",
+                        "label": "Polar angle cosine cosθ",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion's position cosθ = z/r.",
+                        "whatsThis": [
+                            "Coordinates refer to the UserTally coordinate system.",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "nx",
+                        "label": "x-axis direction cosine",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion's x-axis direction cosine.",
+                        "whatsThis": [
+                            "Coordinates refer to the UserTally coordinate system.",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "ny",
+                        "label": "y-axis direction cosine",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion's y-axis direction cosine.",
+                        "whatsThis": [
+                            "Coordinates refer to the UserTally coordinate system.",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "nz",
+                        "label": "z-axis direction cosine",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion's z-axis direction cosine.",
+                        "whatsThis": [
+                            "Coordinates refer to the UserTally coordinate system.",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "E",
+                        "label": "Ion kinetic energy [eV]",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion's kinetic energy.",
+                        "whatsThis": [
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "Tdam",
+                        "label": "Ion damage energy [eV]",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion's damage energy.",
+                        "whatsThis": [
+                            "Tdam refers to the energy of the PKA dissipated to atomic displacements during the whole cascade",
+                            "This can be used only with events of type CascadeComplete",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "V",
+                        "label": "Number of generated vacancies",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the number of generated vacancies.",
+                        "whatsThis": [
+                            "It refers to the total number of vacancies generated in a PKA cascade",
+                            "This can be used only with events of type CascadeComplete",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "atom_id",
+                        "label": "Atomic species id",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion's atomic species id.",
+                        "whatsThis": [
+                            "Each atomic species in the simulation is assigned an id number",
+                            "Beam ions always have an id of 0.",
+                            "Target atoms recoils have id>=1.",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    },
+                    {
+                        "name": "recoil_id",
+                        "label": "Recoil generation id",
+                        "type": "vector",
+                        "size": 0,
+                        "min": -1.0e7,
+                        "max": 1.0e7,
+                        "digits": 6,
+                        "toolTip": "Bin edges for the ion's recoil generation id.",
+                        "whatsThis": [
+                            "Beam ions always have a recoil generation id of 0.",
+                            "PKAs have id=1. Higher order recoils have higher recoil ids",
+                            "Bin edges must be monotonously increasing."
+                        ]
+                    }
+                ]
+            }
         }
     ]
 }
