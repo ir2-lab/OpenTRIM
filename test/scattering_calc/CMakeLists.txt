@@ -1,0 +1,19 @@
+add_executable(test_scattering_calc 
+    main.cpp
+)
+
+target_include_directories(test_scattering_calc 
+PRIVATE
+    ${CMAKE_SOURCE_DIR}/source/include
+)
+target_link_libraries(test_scattering_calc
+PUBLIC 
+        Eigen3::Eigen
+        ieee754_seq
+        screened_coulomb
+        dedx
+        xs_zbl 
+        xs_bohr 
+        xs_krc 
+        xs_moliere
+)

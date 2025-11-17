@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12.0)
     
 project(OpenTRIM 
-        VERSION 1.0.3
+        VERSION 1.1.0
         DESCRIPTION "Monte-Carlo simulation of ion transport in materials"
         HOMEPAGE_URL https://gitlab.com/ir2-lab/
         LANGUAGES C CXX)
@@ -15,6 +15,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 option (BUILD_GUI "build gui" ON)
+option (BUILD_TESTS "build tests" ON)
 
 message (STATUS "${PROJECT_NAME} version ${PROJECT_VERSION}")
 
@@ -41,9 +42,8 @@ message (STATUS "Install prefix =  ${CMAKE_INSTALL_PREFIX}")
 # this should be called after setting the prefix !!
 include (GNUInstallDirs)
 
-# Get external packages and define some helper cmake funcs
+# Get external packages
 include(Externals)
-include(HelperFunctions)
 
 if(PACKAGE_BUILD)
    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -63,234 +63,11 @@ include_directories(${HDF5_INCLUDE_DIRS})
 message(STATUS "HDF5 include: ${HDF5_INCLUDE_DIRS}")
 message(STATUS "HDF5 libs: ${HDF5_LIBRARIES}")
 
-include_directories(
-    source/include
-    )
+add_subdirectory(source)
 
-# configure the version.cpp file
-# all @###@ codes are replaced except for @GIT_TAG@
-# which is configured during build
-set(GIT_TAG "@GIT_TAG@")
-configure_file(
-    ${CMAKE_SOURCE_DIR}/source/src/version.cpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/version1.cpp
-)
-
-# Update the GIT_TAG in version.cpp
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
-    COMMAND ${CMAKE_COMMAND}
-    -DRUN_BUILD_CONFIG_FILE=1
-    -DFILE_IN=${CMAKE_CURRENT_BINARY_DIR}/version1.cpp
-    -DFILE_OUT=${CMAKE_CURRENT_BINARY_DIR}/version.cpp
-    -DFILE_CONTENT=${CMAKE_SOURCE_DIR}/git_tag
-    -DVAR_NAME="GIT_TAG"
-    -P ${CMAKE_SOURCE_DIR}/cmake/BuildConfigFile.cmake
-    DEPENDS 
-        ${CMAKE_SOURCE_DIR}/git_tag
-        ${CMAKE_SOURCE_DIR}/source/src/version.cpp.in
-)
-
-# Update options_spec.cpp from options_spec.json
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/options_spec.cpp
-    COMMAND ${CMAKE_COMMAND}
-    -DRUN_BUILD_CONFIG_FILE=1
-    -DFILE_IN=${CMAKE_SOURCE_DIR}/source/src/options_spec.cpp.in
-    -DFILE_OUT=${CMAKE_CURRENT_BINARY_DIR}/options_spec.cpp
-    -DFILE_CONTENT=${CMAKE_SOURCE_DIR}/source/src/options_spec.json
-    -DVAR_NAME="OPTIONS_SPEC"
-    -P ${CMAKE_SOURCE_DIR}/cmake/BuildConfigFile.cmake
-    DEPENDS 
-        ${CMAKE_SOURCE_DIR}/source/src/options_spec.json
-        ${CMAKE_SOURCE_DIR}/source/src/options_spec.cpp.in
-)
-
-# Update config_template.cpp from config_template.json
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/config_template.cpp
-    COMMAND ${CMAKE_COMMAND}
-    -DRUN_BUILD_CONFIG_FILE=1
-    -DFILE_IN=${CMAKE_SOURCE_DIR}/source/src/config_template.cpp.in
-    -DFILE_OUT=${CMAKE_CURRENT_BINARY_DIR}/config_template.cpp
-    -DFILE_CONTENT=${CMAKE_SOURCE_DIR}/source/src/config_template.json
-    -DVAR_NAME="CONFIG_TEMPLATE"
-    -P ${CMAKE_SOURCE_DIR}/cmake/BuildConfigFile.cmake
-    DEPENDS 
-        ${CMAKE_SOURCE_DIR}/source/src/config_template.json
-        ${CMAKE_SOURCE_DIR}/source/src/config_template.cpp.in
-)
-
-# Update mcinfo_spec.cpp from mcinfo_spec.json
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/mcinfo_spec.cpp
-    COMMAND ${CMAKE_COMMAND}
-    -DRUN_BUILD_CONFIG_FILE=1
-    -DFILE_IN=${CMAKE_SOURCE_DIR}/source/src/mcinfo_spec.cpp.in
-    -DFILE_OUT=${CMAKE_CURRENT_BINARY_DIR}/mcinfo_spec.cpp
-    -DFILE_CONTENT=${CMAKE_SOURCE_DIR}/source/src/mcinfo_spec.json
-    -DVAR_NAME="MCINFO_SPEC"
-    -P ${CMAKE_SOURCE_DIR}/cmake/BuildConfigFile.cmake
-    DEPENDS 
-        ${CMAKE_SOURCE_DIR}/source/src/mcinfo_spec.json
-        ${CMAKE_SOURCE_DIR}/source/src/mcinfo_spec.cpp.in
-        
-)
-
-add_xs_library(zbl)
-add_xs_library(bohr)
-add_xs_library(krc)
-add_xs_library(moliere)
-
-set (LIB_TARGET ${PROJECT_NAME_LOWERCASE})
-set (EXE_TARGET ${PROJECT_NAME_LOWERCASE}_exe)
-
-add_library(${LIB_TARGET} SHARED
-    ${PTABLE_DATA_CPP}
-    source/src/ion.cpp  
-    source/src/cascade.cpp 
-    source/src/target.cpp
-    source/src/flight_path.cpp
-    source/src/mccore.cpp   
-    source/src/ion_beam.cpp
-    source/src/event_stream.cpp
-    source/src/h5serialize.cpp
-    source/src/tally.cpp
-    source/src/parse_json.cpp    
-    source/src/mcdriver.cpp
-    source/src/dedx.cpp
-    source/src/straggling.cpp
-    source/src/user_tally.cpp
-    source/src/mcinfo.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/options_spec.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/config_template.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/mcinfo_spec.cpp
-)
-
-set(OPENTRIM_HEADERS 
-    source/include/scattering.h
-    source/include/periodic_table.h
-    source/include/ion.h 
-    source/include/cascade.h
-    source/include/random_vars.h
-    source/include/target.h 
-    source/include/flight_path.h
-    source/include/dedx.h
-    source/include/mccore.h 
-    source/include/geometry.h
-    source/include/ion_beam.h 
-    source/include/arrays.h
-    source/include/event_stream.h 
-    source/include/tally.h 
-    source/include/mcdriver.h 
-    source/include/user_tally.h
-    source/include/mcinfo.h
-)
-
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
-    target_sources(${LIB_TARGET}
-        PUBLIC FILE_SET HEADERS 
-            BASE_DIRS source/include
-            FILES
-                ${OPENTRIM_HEADERS}
-    )
-else()
-    set_property(TARGET ${LIB_TARGET}
-        PROPERTY PUBLIC_HEADER
-            ${OPENTRIM_HEADERS} 
-    )
-endif()
-target_sources(${LIB_TARGET}
-    PRIVATE 
-        source/include/json_defs_p.h
-)
-
-target_link_libraries(${LIB_TARGET} 
-    PUBLIC 
-        Eigen3::Eigen
-        nlohmann_json::nlohmann_json
-        ieee754_seq
-        screened_coulomb
-        dedx
-    PRIVATE
-        "-lm"
-        ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_PTHREAD_LIBS_INIT}
-        ${HDF5_LIBRARIES}
-        HighFive        
-        xs_zbl xs_bohr xs_krc xs_moliere        
-)
-
-target_include_directories(${LIB_TARGET} PRIVATE
-    ${external_spline_SOURCE_DIR}/src)
-
-add_executable(${EXE_TARGET}
-    source/cli/main.cpp
-)
-# adjust exe name to be the same as the library's
-set_property(TARGET ${EXE_TARGET} PROPERTY OUTPUT_NAME ${PROJECT_NAME_LOWERCASE})
-
-target_link_libraries(${EXE_TARGET}
-    ${LIB_TARGET}
-    CLI11
-)
-
-add_executable(genoptionsdoc EXCLUDE_FROM_ALL
-    source/generators/genoptionsdoc.cpp
-)
-
-target_include_directories(genoptionsdoc PRIVATE
-    ${external_libdedx_SOURCE_DIR}/src/lib
-)
-
-target_link_libraries(genoptionsdoc
-    ${LIB_TARGET}
-)
-
-add_custom_target(options_doc EXCLUDE_FROM_ALL
-    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/options.dox.md"
-)
-
-add_custom_command(OUTPUT options.dox.md
-        COMMAND genoptionsdoc DEPENDS genoptionsdoc
-    )
-
-# add_subdirectory(doc)
-
-set(installable_libs
-    dedx
-    xs_zbl xs_bohr xs_krc xs_moliere
-    ${LIB_TARGET} )
-
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
-    install(TARGETS ${installable_libs} ${EXE_TARGET}
-        LIBRARY
-        FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME_LOWERCASE}
-        RUNTIME
-    )
-else()
-    install(TARGETS ${installable_libs} ${EXE_TARGET}
-        LIBRARY
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME_LOWERCASE}
-        RUNTIME
-    )
-endif()
-
-if (BUILD_GUI)
-
-add_subdirectory(source/gui)
-
-endif () ## BUILD GUI
-
-## Tests
-
-add_executable(test_scattering_calc EXCLUDE_FROM_ALL
-    test/scattering_calc/main.cpp
-)
-
-target_include_directories(test_scattering_calc PRIVATE
-    ${external_libdedx_SOURCE_DIR}/src/lib
-)
-
-target_link_libraries(test_scattering_calc
-    ${LIB_TARGET}
-)
+if (BUILD_TESTS)
+    add_subdirectory(test/scattering_calc)
+endif () ## Tests
 
 
 
