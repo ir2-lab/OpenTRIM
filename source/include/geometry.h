@@ -608,27 +608,31 @@ inline void deflect_vector(vector3 &m, const vector3 &n)
  * The structure defines a coordinate system CS1 with respect
  * to a reference system CS0.
  *
- * It can be used to trasform the rectilinear coordinates \$(x,y,z)\$
+ * It can be used to trasform the rectilinear coordinates \f$(x,y,z)\f$
  * of a vector or point from CS0 to CS1.
  *
  * CS1 is defined by 3 vectors:
  * - a vector pointing to the origin of CS1
  * - a vector parallel to the z-axis direction of CS1,
  * - a vector lying on the xz-plane of CS1
+ *
  * All three vectors are given in CS0 coordinates.
  *
  * The transformation of a point from CS0 to CS1 is
  * actually a tranlation+rotation operation:
  * \f[
- *   \vec{x}' = R \cdot (\vec{x} - \vec{x_0})
+ *   \vec{x}' = R \cdot (\vec{x} - \vec{x}_0)
  * \f]
  * where \f$R\f$ is the rotation matrix and  \f$x_0\f$ is the origin of CS1.
  *
- * If \f$(\vec{n_x}, \vec{n_y}, \vec{n_z})\f$ are the basis vectors of CS1 then
+ * If \f$(\vec{n}_x, \vec{n}_y, \vec{n}_z)\f$ are the basis vectors of CS1 then
  * the rotation matrix is
  * \f[
- *   R = \left[ \vec{n_x}, \vec{n_y}, \vec{n_z} \right]^T
+ *   R = \left[ \vec{n}_x, \vec{n}_y, \vec{n}_z \right]^T
  * \f]
+ *
+ *
+ * @ingroup Geometry
  */
 struct coord_sys
 {

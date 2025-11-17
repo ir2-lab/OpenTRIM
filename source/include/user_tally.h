@@ -4,16 +4,38 @@
 #include "tally.h"
 #include "ion.h"
 
+/**
+ * @brief A class representing user-defined tallies
+ *
+ * In OpenTRIM extra tallies can be defined by the user in addition to the standard tally table.
+ *
+ * To define a tally the following must be defined through configuration options:
+ * - A name (or "id") for the tally
+ * - The type of event that will trigger a tally score,
+ * - The bin edges for the respective binning variables
+ *
+ * @ingroup Tallies
+ * @see out_file
+ *
+ */
 class user_tally
 {
 public:
+    /**
+     * @brief Parameters needed to define a user_tally
+     */
     struct parameters
     {
+        /// unique id or name for the tally
         std::string id{ "MyTally" };
+        /// optional short description for the tally
         std::string description;
+        /// Simulation event that will trigger the tally
         Event event{ Event::IonStop };
+        /// Coordinate system of the tally
         coord_sys coordinate_system;
         /* clang-format off */
+        /// tally variables
         std::vector<float> x, y, z,
                            r, rho, cosTheta,
                            nx, ny, nz,
