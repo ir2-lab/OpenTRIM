@@ -128,13 +128,14 @@ endwhile
 endfunction
 
 function [titles, shorttitles, ylabels, data] = getOpenTRIMdata(fname, natoms, atom_labels, atom_symbols, E0)
-  
+
   titles = {};
   shorttitles = {};
   ylabels = {};
   data = {};
   ii = 1;
   V = h5read(fname,'/tally/damage_events/Vacancies');
+  V = squeeze(V);
   for i=2:natoms,
     titles{ii} = ['Vacancies of ' atom_labels{i}];
     shorttitles{ii} = ['V(' atom_symbols{i} ')'];
@@ -154,52 +155,52 @@ function [titles, shorttitles, ylabels, data] = getOpenTRIMdata(fname, natoms, a
   titles{ii} = ['Replacements'];
   shorttitles{ii} = ['R(tot)'];
   ylabels{ii} = 'Replacements / ion';
-  data{ii} = sum(h5read(fname,'/tally/damage_events/Replacements'),2);
+  data{ii} = sum(squeeze(h5read(fname,'/tally/damage_events/Replacements')),2);
   ii++;
 
   titles{ii} = ['Implanted ' atom_labels{1}];
   shorttitles{ii} = ['I(' atom_symbols{1} ')'];
   ylabels{ii} = 'Implantations / ion';
-  data{ii} = h5read(fname,'/tally/damage_events/Implantations')(:,1) + ...
-             h5read(fname,'/tally/damage_events/Replacements')(:,1);
+  data{ii} = squeeze(h5read(fname,'/tally/damage_events/Implantations'))(:,1) + ...
+             squeeze(h5read(fname,'/tally/damage_events/Replacements'))(:,1);
   ii++;
 
   titles{ii} = ['Ionization fraction $E_I/E_0$ by ' atom_labels{1}];
   shorttitles{ii} = ['EI(' atom_symbols{1} ')/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = h5read(fname,'/tally/energy_deposition/Ionization')(:,1)/E0;
+  data{ii} = squeeze(h5read(fname,'/tally/energy_deposition/Ionization'))(:,1)/E0;
   ii++;
 
   titles{ii} = ['Ionization fraction $E_I/E_0$ by recoils'];
   shorttitles{ii} = ['EI(r)/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = sum(h5read(fname,'/tally/energy_deposition/Ionization')(:,2:end),2)/E0;
+  data{ii} = sum(squeeze(h5read(fname,'/tally/energy_deposition/Ionization'))(:,2:end),2)/E0;
   ii++;
 
   titles{ii} = ['Total Ionization fraction $E_I/E_0$'];
   shorttitles{ii} = ['EI/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = sum(h5read(fname,'/tally/energy_deposition/Ionization'),2)/E0;
+  data{ii} = sum(squeeze(h5read(fname,'/tally/energy_deposition/Ionization')),2)/E0;
   ii++;
 
   titles{ii} = ['Phonon energy fraction $E_{Ph}/E_0$ by ' atom_labels{1}];
   shorttitles{ii} = ['EPh(' atom_symbols{1} ')/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = h5read(fname,'/tally/energy_deposition/Lattice')(:,1)/E0;
+  data{ii} = squeeze(h5read(fname,'/tally/energy_deposition/Lattice'))(:,1)/E0;
   ii++;
 
   titles{ii} = ['Phonon energy fraction $E_{Ph}/E_0$ by recoils'];
   shorttitles{ii} = ['EPh(r)/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = (sum(h5read(fname,'/tally/energy_deposition/Lattice')(:,2:end),2) + ...
-             sum(h5read(fname,'/tally/energy_deposition/Stored')(:,2:end),2))/E0;
+  data{ii} = (sum(squeeze(h5read(fname,'/tally/energy_deposition/Lattice'))(:,2:end),2) + ...
+             sum(squeeze(h5read(fname,'/tally/energy_deposition/Stored'))(:,2:end),2))/E0;
   ii++;
 
   titles{ii} = ['Total Phonon energy fraction $E_{Ph}/E_0$'];
   shorttitles{ii} = ['EPh(tot)/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = (sum(h5read(fname,'/tally/energy_deposition/Lattice'),2) + ...
-             sum(h5read(fname,'/tally/energy_deposition/Stored'),2))/E0;
+  data{ii} = (sum(squeeze(h5read(fname,'/tally/energy_deposition/Lattice')),2) + ...
+             sum(squeeze(h5read(fname,'/tally/energy_deposition/Stored')),2))/E0;
   ii++;
 
   titles{ii} = ['Total fractional energy deposition $(E_I + E_{Ph})/E_0$'];
@@ -328,4 +329,4 @@ endfunction
 
 
 
-  
+
