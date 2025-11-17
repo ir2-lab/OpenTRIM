@@ -29,7 +29,8 @@ class mccore;
  *
  * The parametrization to be used by OpenTRIM is specified by the \ref StoppingModel enum.
  *
- * Stopping data are interpolated from a log-spaced energy range defined by \ref dedx_erange.
+ * Stopping data are interpolated from a log-spaced table as a function of energy.
+ * The energy grid is defined by \ref dedx_erange.
  *
  * The \ref dedx_interp interpolator object can be used for stopping
  * calculations in mono- and polyatomic materials. The stopping at a given
@@ -188,10 +189,9 @@ enum class StragglingModel {
  * the two different constructors. In polyatomic materials the Bragg
  * mixing rule is applied.
  *
- * Call the base class \ref log_interp::operator() to obtain the straggling coefficient
- * \f$\Omega(E)\f$ in eV/nm^(1/2) at a given
- * projectile energy \f$E\f$ in eV. The value is obtained by log-log interpolation
- * on the tabulated data stored internally.
+ * Call the base class \ref log_log_interp::operator() to obtain the straggling
+ * coefficient \f$\Omega(E)\f$ in eV/nm^(1/2) at a given projectile energy \f$E\f$ in eV. The value
+ * is obtained by log-log interpolation on the tabulated data stored internally.
  *
  * data() returns a pointer to the first element in the internal
  * straggling data table.

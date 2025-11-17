@@ -26,9 +26,6 @@
  *
  * All these are combined into the simulation \ref Core.
  *
- * The \ref Driver part facilitates the process of loading the configuration,
- * setting up the simulation, executing on multiple threads and adding up and storing the results.
- *
  *
  */
 
@@ -366,11 +363,9 @@ protected:
      * stops and remains implanted in the target.
      *
      * Tally scoring is performed at specific simulation events
-     * (cell change, ion exit, implantation)
-     * using the \ref tally object \p t.
+     * (e.g. cell change, ion exit, implantation)
      *
      * @param i pointer to the ion object
-     * @param cscd a pointer to a cascade object
      * @return 0 if succesfull
      */
     int transport(ion *i);
@@ -415,8 +410,18 @@ protected:
 
         return j;
     }
-
-    // handle an ion event
+    /**
+     * @brief Handle simulation events
+     *
+     * This function performs the following:
+     * - Sends the event to the standard tally for scoring
+     * - Sends the event to user tallies (if some tally has been registered for this event)
+     * - Sends the event to the appropriate stream (if it is open) for storage
+     *
+     * @param ev The type of event
+     * @param i The ion that generated the event
+     * @param pv Pointer to additional information for some types of events
+     */
     void handle_event(Event ev, const ion &i, const void *pv = 0)
     {
         // send to tally for scoring

@@ -451,7 +451,7 @@ private:
 };
 
 /**
- * @brief The abstract_xs_lab_tbl2d class defines the interface for lab system cross-section objects
+ * @brief Defines the interface for scattering calculations in the lab system
  *
  * @ingroup XS
  */
@@ -460,17 +460,78 @@ class abstract_scattering_calc
 public:
     abstract_scattering_calc() { }
     virtual ~abstract_scattering_calc() { }
-    virtual void scatter(float E, float P, float &recoil_erg, float &sintheta,
-                         float &costheta) const = 0;
+
+    /**
+     * @brief Calculate the scattering of an ion
+     *
+     * For the scattering of a projectile ion with given energy \f$E\f$ and impact parameter
+     * \f$P\f$, calculate the recoil energy \f$T\f$ and the scattering angle sine and cosine.
+     *
+     * The energy and impact parameter are first converted to reduced values, \f$(\epsilon, s)\f$.
+     * These are used to obtain the scattering angle \f$\theta\f$ in the center of mass system.
+     *
+     * The recoil energy is then given by
+     * \f[T = \gamma E \sin^2(\theta/2)\f]
+     * and the lab scattering
+     * angle is obtained from
+     * \f[ \tan\Theta = \frac{\sin\theta}{\cos\theta + m_1/m_2} \f]
+     *
+     * @param E Projectile energy [eV]
+     * @param P Impact parameter [nm]
+     * @param T Recoil energy [eV]
+     * @param sinTheta Scattering angle sine
+     * @param cosTheta Scattering angle cosine
+     */
+    virtual void scatter(float E, float P, float &T, float &sinTheta, float &cosTheta) const = 0;
+
     virtual void scatter2(float E, float P, float &recoil_erg, float &sintheta,
                           float &costheta) const = 0;
+
+    /**
+     * @brief Return \f$\sin^2(\theta/2)\f$ for given reduced energy and impact parameter
+     *
+     * \f$\theta\f$ is the scattering angle in the center-of-mass system.
+     *
+     * @param e reduced projectile energy
+     * @param s reduced impact factor
+     * @return the value of \f$\sin^2(\theta/2)\f$
+     */
     virtual float sin2Thetaby2(float e, float s) const = 0;
+
+    /**
+     * @brief Return the impact parameter [nm] for given incoming (E) and recoil (T) energy [eV]
+     */
     virtual float find_p(float E, float T) const = 0;
+
+    /**
+     * @brief Return the screening length [nm]
+     */
     virtual float screening_length() const = 0;
+
+    /**
+     * @brief Return the projectile to target mass ratio
+     */
     virtual float mass_ratio() const = 0;
+
+    /**
+     * @brief Return the square root of the mass ratio
+     */
     virtual float sqrt_mass_ratio() const = 0;
+
+    /**
+     * @brief Return the constant \f$\gamma = 4 m_1 m_2 / (m_1+m_2)^2\f$
+     */
     virtual float gamma() const = 0;
+
+    /**
+     * @brief Return the factor \f$f\f$ [eV^-1] to convert energy to reduced energy, \f$\epsilon =
+     * f\cdot E\f$
+     */
     virtual float red_E_conv() const = 0;
+
+    /**
+     * @brief Return the name of the screening function
+     */
     virtual const char *screeningName() const = 0;
 };
 
@@ -539,26 +600,6 @@ public:
      */
     scattering_calc(const scattering_calc &x) : _xs_lab_t(x), sinTable(x.sinTable) { }
 
-    /**
-     * @brief Calculate a scattering event
-     *
-     * For the scattering of a projectile with given energy \f$E\f$ and impact parameter \f$P\f$,
-     * calculate the recoil energy \f$T\f$ and the scattering angle sine and cosine.
-     *
-     * The energy and impact parameter are converted to reduced values, \f$(\epsilon, s)\f$.
-     * These are used to obtain the values of \f$\sin^2(\theta/2)\f$ and \f$\sin\Theta\f$ by
-     * log-log and log-lin bilinear interpolation, respectively, from the stored scattering tables.
-     *
-     * The recoil energy is given by \f$T = \gamma E \sin^2(\theta/2)\f$ and the scattering
-     * angle cosine is
-     * obtained by \f$ \cos\Theta = \sqrt{1-\sin^2\Theta}\f$
-     *
-     * @param E Projectile energy [eV]
-     * @param S Impact parameter [nm]
-     * @param T Recoil energy [eV]
-     * @param sinTheta Scattering angle sine
-     * @param cosTheta Scattering angle cosine
-     */
     virtual void scatter(float E, float S, float &T, float &sinTheta,
                          float &cosTheta) const override;
 
@@ -577,42 +618,13 @@ public:
         // bilog interpolation for sin^2(θ/2)
         xs_array_map_t log2_s2(_cms_tbl_t::log2_data(), scattering_tbl_grid::size);
         return std::exp2(log2_coeff.dot(log2_s2(i)));
-    }
-
-    /**
-     * @brief Return the impact parameter [nm] for given incoming (E) and recoil (T) energy [eV]
-     */
+    }    
     virtual float find_p(float E, float T) const override { return _xs_lab_t::find_p(E, T); }
-
-    /**
-     * @brief Return the screening length [nm]
-     */
     virtual float screening_length() const override { return _xs_lab_t::screening_length(); }
-
-    /**
-     * @brief Return the projectile to target mass ratio
-     */
     virtual float mass_ratio() const override { return _xs_lab_t::mass_ratio(); }
-
-    /**
-     * @brief Return the square root of the mass ratio
-     */
     virtual float sqrt_mass_ratio() const override { return _xs_lab_t::sqrt_mass_ratio(); }
-
-    /**
-     * @brief Return the constant \f$\gamma = 4 m_1 m_2 / (m_1+m_2)^2\f$
-     */
     virtual float gamma() const override { return _xs_lab_t::gamma(); }
-
-    /**
-     * @brief Return the factor \f$f\f$ [eV^-1] to convert energy to reduced energy, \f$\epsilon =
-     * f\cdot E\f$
-     */
     virtual float red_E_conv() const override { return _xs_lab_t::red_E_conv(); }
-
-    /**
-     * @brief Return the name of the screening function
-     */
     virtual const char *screeningName() const override { return _xs_lab_t::screeningName(); }
 };
 
@@ -657,6 +669,12 @@ public:
     virtual const char *screeningName() const override { return _xs_lab_t::screeningName(); }
 };
 
+/**
+ * @brief Implements scattering calculations with ZBL sreening employing the MAGIC approximation.
+ *
+ *
+ * @ingroup XS
+ */
 class magic_scattering_calc : public abstract_scattering_calc,
                               private xs_lab<Screening::ZBL, Quadrature::Magic>
 {

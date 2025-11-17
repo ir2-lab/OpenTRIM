@@ -67,7 +67,7 @@ public:
 /**
  * @brief A class representing a stream of simulation events
  *
- * An event_stream can store \ref event objects of a given type.
+ * An event_stream can store \ref event_buffer objects of a given type.
  *
  * During the simulation, events are stored in temporary disk buffers.
  * At the end of the simulation, event data are transfered to the

@@ -47,12 +47,36 @@
 &emsp;&emsp;&emsp;&emsp;\ref _Target_origin "\"origin\"": [0.0,0.0,0.0],<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Target_cell_count "\"cell_count\"": [1,1,1],<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Target_periodic_bc "\"periodic_bc\"": [0,1,1],<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Target_materials "\"materials\"": {<br>
-<br>
-&emsp;&emsp;&emsp;&emsp;},<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Target_regions "\"regions\"": {<br>
-<br>
-&emsp;&emsp;&emsp;&emsp;}<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Target_materials "\"materials\"": [<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;{<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_id "\"id\"": "Iron",<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_density "\"density\"": 7.8658,<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_color "\"color\"": "#55aaff",<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_composition "\"composition\"": [<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;{<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_composition_0_element "\"element\"": {<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_composition_0_element_symbol "\"symbol\"": "Fe",<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_composition_0_element_atomic_number "\"atomic_number\"": 26,<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_composition_0_element_atomic_mass "\"atomic_mass\"": 55.8452<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;},<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_composition_0_X "\"X\"": 1.0,<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_composition_0_Ed "\"Ed\"": 40.0,<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_composition_0_El "\"El\"": 3.0,<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_composition_0_Es "\"Es\"": 10.0,<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_composition_0_Er "\"Er\"": 40.0,<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_materials_0_composition_0_Rc "\"Rc\"": 0.946<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;}<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;]<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;}<br>
+&emsp;&emsp;&emsp;&emsp;],<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Target_regions "\"regions\"": [<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;{<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_regions_0_id "\"id\"": "R1",<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_regions_0_material_id "\"material_id\"": "Iron",<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_regions_0_origin "\"origin\"": [0.0,0.0,0.0],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _Target_regions_0_size "\"size\"": [100.0,100.0,100.0]<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;}<br>
+&emsp;&emsp;&emsp;&emsp;]<br>
 &emsp;&emsp;},<br>
 &emsp;&emsp;\ref _Output "\"Output\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_title "\"title\"": "Ion Simulation",<br>
@@ -67,7 +91,33 @@
 &emsp;&emsp;&emsp;&emsp;\ref _Run_max_no_ions "\"max_no_ions\"": 100,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Run_threads "\"threads\"": 1,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Run_seed "\"seed\"": 123456789<br>
-&emsp;&emsp;}<br>
+&emsp;&emsp;},<br>
+&emsp;&emsp;\ref _UserTally "\"UserTally\"": [<br>
+&emsp;&emsp;&emsp;&emsp;{<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_id "\"id\"": "UserTally0",<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_description "\"description\"": "",<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_event "\"event\"": "IonStop",<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_coordinate_system "\"coordinate_system\"": {<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_coordinate_system_origin "\"origin\"": [0.0,0.0,0.0],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_coordinate_system_zaxis "\"zaxis\"": [0.0,0.0,1.0],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_coordinate_system_xzvector "\"xzvector\"": [1.0,0.0,1.0]<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;},<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_x "\"x\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_y "\"y\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_z "\"z\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_r "\"r\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_rho "\"rho\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_cosTheta "\"cosTheta\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_nx "\"nx\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_ny "\"ny\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_nz "\"nz\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_E "\"E\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_Tdam "\"Tdam\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_V "\"V\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_atom_id "\"atom_id\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_recoil_id "\"recoil_id\"": []<br>
+&emsp;&emsp;&emsp;&emsp;}<br>
+&emsp;&emsp;]<br>
 }<br>
 <br>
 
@@ -87,7 +137,7 @@
 - IonsOnly: Simulate only ions, do not follow recoils<br>
 - CascadesOnly: Simulate recoil cascades<br>
 <tr><th colspan="2">\anchor _Simulation_screening_type /Simulation/screening_type<tr><td>Type <td>Enumerator
-<tr><td>Values<td> None | Bohr | KrC | Moliere | ZBL
+<tr><td>Values<td> None | Bohr | KrC | Moliere | ZBL | ZBL_MAGIC
 <tr><td>Default Value<td>"ZBL"<tr><td>Description <td>Define the type of screening potential.
 <br>
 - None: Unscreened Coulomb potential<br>
@@ -95,8 +145,9 @@
 - KrC: Kr-C screening<br>
 - Moliere - Moliere screening<br>
 - ZBL - Ziegler-Biersack-Littmark universal screening<br>
+- ZBL_MAGIC - ZBL with analytic approx. formula<br>
   <br>
-For Unscreened Coulomb the scattering is calculated analytically.<br>
+For Unscreened Coulomb and ZBL_MAGIK the scattering is calculated analytically.<br>
 In all other cases interpolation tables are used.<br>
 <tr><th colspan="2">\anchor _Simulation_electronic_stopping /Simulation/electronic_stopping<tr><td>Type <td>Enumerator
 <tr><td>Values<td> Off | SRIM96 | SRIM13 | DPASS22
@@ -258,10 +309,59 @@ The Gaussian distrubution is not yet implemented<br>
 <tr><td>Size<td>3
 <tr><td>Element range<td>0...1
 <tr><td>Default Value<td>[0,1,1]<tr><td>Description <td>Select periodic boundary conditions along the axes (0=normal, 1=periodic).
-<tr><th colspan="2">\anchor _Target_materials /Target/materials<tr><td>Type <td>Option group
+<tr><th colspan="2">\anchor _Target_materials /Target/materials<tr><td>Type <td>Array of same type options
 <tr><td>Description <td>Target materials definition
-<tr><th colspan="2">\anchor _Target_regions /Target/regions<tr><td>Type <td>Option group
+<tr><th colspan="2">\anchor _Target_materials_0_id /Target/materials/0/id<tr><td>Type <td>String
+<tr><td>Default Value<td>"Iron"<tr><td>Description <td>Name of the material.
+<tr><th colspan="2">\anchor _Target_materials_0_density /Target/materials/0/density<tr><td>Type <td>Floating point number
+<tr><td>Range<td>1e-06...1e+06
+<tr><td>Default Value<td>7.8658<tr><td>Description <td>Mass density [g/cm3]
+<tr><th colspan="2">\anchor _Target_materials_0_color /Target/materials/0/color<tr><td>Type <td>String
+<tr><td>Default Value<td>"#55aaff"<tr><td>Description <td>Html color code.
+<tr><th colspan="2">\anchor _Target_materials_0_composition /Target/materials/0/composition<tr><td>Type <td>Array of same type options
+<tr><td>Description <td>Material composition
+<tr><th colspan="2">\anchor _Target_materials_0_composition_0_element /Target/materials/0/composition/0/element<tr><td>Type <td>Option group
+<tr><td>Description <td>Element definition
+<tr><th colspan="2">\anchor _Target_materials_0_composition_0_element_symbol /Target/materials/0/composition/0/element/symbol<tr><td>Type <td>String
+<tr><td>Default Value<td>"Fe"<tr><td>Description <td>Chemical element symbol.
+<tr><th colspan="2">\anchor _Target_materials_0_composition_0_element_atomic_number /Target/materials/0/composition/0/element/atomic_number<tr><td>Type <td>Integer
+<tr><td>Range<td>1...92
+<tr><td>Default Value<td>26<tr><td>Description <td>Element atomic number.
+<tr><th colspan="2">\anchor _Target_materials_0_composition_0_element_atomic_mass /Target/materials/0/composition/0/element/atomic_mass<tr><td>Type <td>Floating point number
+<tr><td>Range<td>0.001...1000
+<tr><td>Default Value<td>55.8452<tr><td>Description <td>Element atomic mass.
+<tr><th colspan="2">\anchor _Target_materials_0_composition_0_X /Target/materials/0/composition/0/X<tr><td>Type <td>Floating point number
+<tr><td>Range<td>0.001...1000
+<tr><td>Default Value<td>1.0<tr><td>Description <td>Relative atomic concentration (un-normalized).
+<tr><th colspan="2">\anchor _Target_materials_0_composition_0_Ed /Target/materials/0/composition/0/Ed<tr><td>Type <td>Floating point number
+<tr><td>Range<td>0.001...1000
+<tr><td>Default Value<td>40.0<tr><td>Description <td>Displacement energy [eV].
+<tr><th colspan="2">\anchor _Target_materials_0_composition_0_El /Target/materials/0/composition/0/El<tr><td>Type <td>Floating point number
+<tr><td>Range<td>0.001...1000
+<tr><td>Default Value<td>3.0<tr><td>Description <td>Lattice binding energy [eV].
+<tr><th colspan="2">\anchor _Target_materials_0_composition_0_Es /Target/materials/0/composition/0/Es<tr><td>Type <td>Floating point number
+<tr><td>Range<td>0.001...1000
+<tr><td>Default Value<td>10.0<tr><td>Description <td>Surface binding energy [eV].
+<tr><th colspan="2">\anchor _Target_materials_0_composition_0_Er /Target/materials/0/composition/0/Er<tr><td>Type <td>Floating point number
+<tr><td>Range<td>0.001...1000
+<tr><td>Default Value<td>40.0<tr><td>Description <td>Replacement energy [eV].
+<tr><th colspan="2">\anchor _Target_materials_0_composition_0_Rc /Target/materials/0/composition/0/Rc<tr><td>Type <td>Floating point number
+<tr><td>Range<td>0.001...1000
+<tr><td>Default Value<td>0.946<tr><td>Description <td>Recombination radius [nm].
+<tr><th colspan="2">\anchor _Target_regions /Target/regions<tr><td>Type <td>Array of same type options
 <tr><td>Description <td>Target regions definition
+<tr><th colspan="2">\anchor _Target_regions_0_id /Target/regions/0/id<tr><td>Type <td>String
+<tr><td>Default Value<td>"R1"<tr><td>Description <td>Name of the region.
+<tr><th colspan="2">\anchor _Target_regions_0_material_id /Target/regions/0/material_id<tr><td>Type <td>String
+<tr><td>Default Value<td>"Iron"<tr><td>Description <td>Id of the material that fills the region.
+<tr><th colspan="2">\anchor _Target_regions_0_origin /Target/regions/0/origin<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>3
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[0.0,0.0,0.0]<tr><td>Description <td>Origin of the region.
+<tr><th colspan="2">\anchor _Target_regions_0_size /Target/regions/0/size<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>3
+<tr><td>Element range<td>0.001...1e+07
+<tr><td>Default Value<td>[100.0,100.0,100.0]<tr><td>Description <td>Size in nm of the simulation volume along the x-, y- and z-axis.
 <tr><th colspan="2">\anchor _Output /Output<tr><td>Type <td>Option group
 <tr><td>Description <td>Output options
 <tr><th colspan="2">\anchor _Output_title /Output/title<tr><td>Type <td>String
@@ -293,4 +393,144 @@ The name can contain the relative or absolute path to the file.<br>
 <tr><th colspan="2">\anchor _Run_seed /Run/seed<tr><td>Type <td>Integer
 <tr><td>Range<td>1...2.14748e+09
 <tr><td>Default Value<td>123456789<tr><td>Description <td>Random number generator seed.
+<tr><th colspan="2">\anchor _UserTally /UserTally<tr><td>Type <td>Array of same type options
+<tr><td>Description <td>Array of user-defined tallies
+<tr><th colspan="2">\anchor _UserTally_0_id /UserTally/0/id<tr><td>Type <td>String
+<tr><td>Default Value<td>"UserTally0"<tr><td>Description <td>User specified tally id (name).
+<br>
+For identifying the specific UserTally<br>
+in the output file etc.<br>
+<tr><th colspan="2">\anchor _UserTally_0_description /UserTally/0/description<tr><td>Type <td>String
+<tr><td>Default Value<td>""<tr><td>Description <td>Short description of the tally.
+<br>
+One can give here a short explanation of<br>
+the purpose of setting up this tally,<br>
+what kind of information is expected, etc.<br>
+<tr><th colspan="2">\anchor _UserTally_0_event /UserTally/0/event<tr><td>Type <td>Enumerator
+<tr><td>Values<td> IonExit | IonStop | Vacancy | Replacement | CascadeComplete | BoundaryCrossing
+<tr><td>Default Value<td>"IonStop"<tr><td>Description <td>Simulation event that will trigger a tally score.
+<br>
+The supported events are:<br>
+- IonExit: the ion exits the simulation volume<br>
+- IonStop: the ion stops inside the simulation volume<br>
+- Vacancy: a lattice vacancy is created<br>
+- Replacement: a replacement event occurs<br>
+- CascadeComplete: a PKA cascade is completed<br>
+- BoundaryCrossing: an ion crosses an internal cell boundary<br>
+<tr><th colspan="2">\anchor _UserTally_0_coordinate_system /UserTally/0/coordinate_system<tr><td>Type <td>Option group
+<tr><td>Description <td>UserTally coordinate system
+<tr><th colspan="2">\anchor _UserTally_0_coordinate_system_origin /UserTally/0/coordinate_system/origin<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>3
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[0.0,0.0,0.0]<tr><td>Description <td>Origin of the UserTally coordinates.
+<tr><th colspan="2">\anchor _UserTally_0_coordinate_system_zaxis /UserTally/0/coordinate_system/zaxis<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>3
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[0.0,0.0,1.0]<tr><td>Description <td>A vector parallel to the z-axis of the UserTally coordinate system.
+<tr><th colspan="2">\anchor _UserTally_0_coordinate_system_xzvector /UserTally/0/coordinate_system/xzvector<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>3
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[1.0,0.0,1.0]<tr><td>Description <td>A vector on the xz-plane of the UserTally coordinate system.
+<tr><th colspan="2">\anchor _UserTally_0_x /UserTally/0/x<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion position x-coordinate.
+<br>
+Coordinates refer to the UserTally coordinate system.<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_y /UserTally/0/y<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion position y-coordinate.
+<br>
+Coordinates refer to the UserTally coordinate system.<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_z /UserTally/0/z<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion position z-coordinate.
+<br>
+Coordinates refer to the UserTally coordinate system.<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_r /UserTally/0/r<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's r=sqrt(x^2+y^2+z^2).
+<br>
+Coordinates refer to the UserTally coordinate system.<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_rho /UserTally/0/rho<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's ρ=sqrt(x^2+y^2).
+<br>
+Coordinates refer to the UserTally coordinate system.<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_cosTheta /UserTally/0/cosTheta<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's position cosθ = z/r.
+<br>
+Coordinates refer to the UserTally coordinate system.<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_nx /UserTally/0/nx<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's x-axis direction cosine.
+<br>
+Coordinates refer to the UserTally coordinate system.<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_ny /UserTally/0/ny<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's y-axis direction cosine.
+<br>
+Coordinates refer to the UserTally coordinate system.<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_nz /UserTally/0/nz<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's z-axis direction cosine.
+<br>
+Coordinates refer to the UserTally coordinate system.<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_E /UserTally/0/E<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's kinetic energy.
+<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_Tdam /UserTally/0/Tdam<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's damage energy.
+<br>
+Tdam refers to the energy of the PKA dissipated to atomic displacements during the whole cascade<br>
+This can be used only with events of type CascadeComplete<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_V /UserTally/0/V<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the number of generated vacancies.
+<br>
+It refers to the total number of vacancies generated in a PKA cascade<br>
+This can be used only with events of type CascadeComplete<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_atom_id /UserTally/0/atom_id<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's atomic species id.
+<br>
+Each atomic species in the simulation is assigned an id number<br>
+Beam ions always have an id of 0.<br>
+Target atoms recoils have id>=1.<br>
+Bin edges must be monotonously increasing.<br>
+<tr><th colspan="2">\anchor _UserTally_0_recoil_id /UserTally/0/recoil_id<tr><td>Type <td>Vector of floating point values
+<tr><td>Size<td>Variable
+<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's recoil generation id.
+<br>
+Beam ions always have a recoil generation id of 0.<br>
+PKAs have id=1. Higher order recoils have higher recoil ids<br>
+Bin edges must be monotonously increasing.<br>
 </table>

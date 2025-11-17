@@ -297,26 +297,46 @@ public:
  *
  * Then the program moves to the next ion.
  *
- * Objects of the ion class are allocated by ion_queue and provided to the simulation
- * by the \ref new_ion() functions.
+ * During processing of a PKA recoil cascade, all the vacancies (V) created by secondary recoils
+ * and the interstitials (I)
+ * created when a recoil atom stops, are stored in 2 separate queues.
  *
- * When the simulation finishes an ion history, it returns the ion object to the
- * ion_queue by calling \ref free_ion(). The object buffer can then be used for
- * another ion history.
+ * After the cascade finishes, the Vs and Is may recombine, if cascade recombination option
+ * has been selected in the configuration.
+ *
+ * The remaining defect objects are counted, registered and finally deleted.
+ *
+ * Objects of the ion class are allocated by ion_queue and provided to the simulation
+ * by the function \ref create_ion(). clone_ion() can also be used, which produces a new
+ * ion object with all its properties copied from another ion.
+ *
+ * push_pka() and push_recoil()  push an ion object to the respective queues.
+ * Simlarly, push_vacancy() and push_interstitial() push a defect to the respective
+ * queue.
+ *
+ * When the simulation finishes an ion history, it must call free_ion() to release the ion
+ * object buffer so that it can be used again.
  *
  * @ingroup Ions
  */
 class ion_queue
 {
 
-    // FIFO ion buffer
+    // FIFO ion buffer type
     typedef std::queue<ion *> ion_queue_t;
 
+    // ion queues
     ion_queue_t ion_buffer_; // buffer of allocated ion objects
     ion_queue_t recoil_queue_; // queue of generated recoils
     ion_queue_t pka_queue_; // queue of generated PKAs
     ion_queue_t v_queue_; // queue of vacancies
     ion_queue_t i_queue_; // queue of interstitials
+
+    // # of available ion buffers
+    size_t sz_;
+
+    // unique code for an ion object
+    size_t uctr_;
 
     // pop an ion from the respective queue
     static ion *pop_one_(ion_queue_t &Q)
@@ -328,11 +348,8 @@ class ion_queue
         return i;
     }
 
-    size_t sz_;
-    size_t uctr_;
-
     // Returns a new ion object, optionally initialized with data copied from p
-    ion *__new_ion__(const ion *p = nullptr)
+    ion *new_ion_(const ion *p = nullptr)
     {
         ion *i;
         if (ion_buffer_.empty()) {
@@ -352,18 +369,20 @@ public:
     explicit ion_queue() : sz_(0), uctr_(0) { }
 
     /// Returns a clone of p
-    ion *clone_ion(const ion &p) { return __new_ion__(&p); }
+    ion *clone_ion(const ion &p) { return new_ion_(&p); }
 
     /// Create an ion
-    ion *create_ion() { return __new_ion__(); }
+    ion *create_ion() { return new_ion_(); }
 
     /// Push an ion object to the PKA queue
     void push_pka(ion *i) { pka_queue_.push(i); }
+
     /// Pop a PKA ion object from the queue. If the queue is empty, a nullptr is returned.
     ion *pop_pka() { return pop_one_(pka_queue_); }
 
     /// Push an ion object to the recoil queue
     void push_recoil(ion *i) { recoil_queue_.push(i); }
+
     /// Pop a recoil ion object from the queue. If the queue is empty, a nullptr is returned.
     ion *pop_recoil() { return pop_one_(recoil_queue_); }
 
@@ -373,6 +392,7 @@ public:
         i->type_ = ion::vacancy;
         v_queue_.push(i);
     }
+
     /// Pop a recoil ion object from the queue. If the queue is empty, a nullptr is returned.
     ion *pop_vacancy() { return pop_one_(v_queue_); }
 
@@ -382,6 +402,7 @@ public:
         i->type_ = ion::interstitial;
         i_queue_.push(i);
     }
+
     /// Pop a recoil ion object from the queue. If the queue is empty, a nullptr is returned.
     ion *pop_interstitial() { return pop_one_(i_queue_); }
 
@@ -400,6 +421,7 @@ public:
         assert(sz_ == 0);
     }
 
+    /// Return the total number of currently allocated ion buffers
     size_t size() const { return sz_; }
 };
 

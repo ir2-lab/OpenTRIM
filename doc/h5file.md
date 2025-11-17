@@ -29,11 +29,12 @@ projectile. Note that the same atom species belonging to different
 materials is counted as different atom. \n
 The order of atoms can be seen in `/target/atoms/labels`.
 - \f$N_{mat}\f$ : # of target materials
-- \f$N_x, N_y, N_z\f$ : # of grid points along the 3 axes
-- \f$N_c=(N_x-1)(N_y-1)(N_z-1)\f$ : # of target cells
+- \f$[N_x, N_y, N_z]\f$ : # of cells along the 3 axes
 - \f$N_e\f$ : # of energy points for energy loss tables
 - \f$N_{ev}\f$ : # of events
 
 To reach a variable in the archive use the complete path, e.g. `/tally/energy_deposition/Ionization`.
+
+## OpenTRIM HDF5 output archive structure
 
 \include{doc} h5file.dox.md

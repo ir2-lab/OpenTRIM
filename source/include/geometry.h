@@ -678,12 +678,12 @@ struct coord_sys
     /**
      * @brief Transform a point to the new system.
      *
-     * Calls
+     * Returns
      * @code
-     * p = rotation() * (p - origin);
+     * p1 = rotation() * (p - origin);
      * @endcode
      *
-     * @param p
+     * @param p The point to transform
      */
     vector3 transformPoint(const vector3 &p) const
     {
@@ -696,12 +696,12 @@ struct coord_sys
     /**
      * @brief Transform a vector to the new system.
      *
-     * Calls
+     * Returns
      * @code
-     * v = rotation() * v;
+     * v1 = rotation() * v;
      * @endcode
      *
-     * @param p
+     * @param v The vector to transform
      */
     vector3 transformVector(const vector3 &v) const
     {
