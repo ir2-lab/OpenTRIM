@@ -11,3 +11,8 @@ target_link_libraries(${EXE_TARGET}
     ${LIB_TARGET}
     CLI11
 )
+
+install(TARGETS ${EXE_TARGET}
+    LIBRARY
+    RUNTIME
+)

@@ -197,13 +197,13 @@ set(installable_libs
     ${LIB_TARGET} )
 
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.23)
-    install(TARGETS ${installable_libs} ${EXE_TARGET}
+    install(TARGETS ${installable_libs}
         LIBRARY
         FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME_LOWERCASE}
         RUNTIME
     )
 else()
-    install(TARGETS ${installable_libs} ${EXE_TARGET}
+    install(TARGETS ${installable_libs}
         LIBRARY
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME_LOWERCASE}
         RUNTIME
