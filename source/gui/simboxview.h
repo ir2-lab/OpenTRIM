@@ -1,70 +1,61 @@
 #ifndef SIMBOXVIEW_H
 #define SIMBOXVIEW_H
 
-#include <QVector3D>
 #include <QFrame>
-
-namespace QtDataVisualization {
-class Q3DScatter;
-class QCustom3DVolume;
-class QCustom3DItem;
-} // namespace QtDataVisualization
+#include <QVector3D>
 
 class QSlider;
 class QLabel;
 class QButtonGroup;
 class QGroupBox;
 class QToolButton;
+class QwtPlot;
 
 class SimBoxView : public QFrame
 {
     Q_OBJECT
 
-    // constexpr static const int txtrExp_ = 7;
-    constexpr static const int txtrExp_ = 8;
+protected:
+    enum slice_plane_t { xy, yz, zx };
+
+    struct Region3D
+    {
+        QVector3D x0, x1;
+        QRgb color;
+        QString name;
+        QRectF slice(slice_plane_t p, double v);
+    };
 
 public:
-    SimBoxView(QWidget *parent = nullptr);
-    ~SimBoxView();
+    explicit SimBoxView(QWidget *parent = nullptr);
 
-    constexpr static const int textureWidth = 1 << txtrExp_;
-    constexpr static const int textureSize = 1 << (txtrExp_ * 3);
-
-    static bool isSupported();
-    QVector<QRgb> colorTable() const;
-    void setScale(float Lx, float Ly, float Lz) { setScale(QVector3D(Lx, Ly, Lz)); }
-    void setScale(const QVector3D &L);
-    void setBackgroundColor(QColor clr);
-    void fill(const QVector3D &lowerLeft, const QVector3D &upperRight, const QColor &clr,
-              bool drawBorder = true);
-    void clearVolume();
+    void setBox(const QVector3D &X0, const QVector3D &X1);
+    void addRegion(const QVector3D &X0, const QVector3D &X1, const QRgb &c, const QString &name);
+    void clear();
 
 protected:
-    QWidget *container;
-    QtDataVisualization::Q3DScatter *graph;
-    QtDataVisualization::QCustom3DVolume *volume;
-    QVector<QtDataVisualization::QCustom3DItem *> simbox;
-    float scaleFactor;
-    float beamWidth;
-
-    // slicing
-    QToolButton *sliceEnable;
+    QwtPlot *plot;
     QButtonGroup *sliceSelector;
     QSlider *sliceSlider;
+    QLabel *sliderLbl;
 
-    int create3DScene();
-    int createCtrls();
-    void updateSlice();
+    Region3D box;
+    QVector<Region3D> regions;
+    double v;
+    QVector<QRectF> viewRects;
 
-    int idx(int x, int y, int z)
-    {
-        // return x + textureWidth * (y + textureWidth * z);
-        return x + textureWidth * ((textureWidth - 1 - z) + textureWidth * y);
-    }
+    friend class ToolTipper;
+
+    slice_plane_t slice_plane() const;
+    void resizeEvent(QResizeEvent *event) override;
+    QString labelAt(const QPointF &x);
 
 protected slots:
-    void on_sliceEnable_toggled(bool);
-    void on_sliceSelector_idClicked(int);
-    void on_sliceSlider_sliderMoved(int);
+
+    void updatePlot();
+    void setAxisEqual();
+    void setSlicePlane(int);
+    void setSlicePos(int);
 };
-#endif // SIMBOXVISUALIZER_H
+
+#endif // SimBoxView2_H

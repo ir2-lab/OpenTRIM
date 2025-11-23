@@ -267,14 +267,15 @@ void SimulationOptionsView::drawSimBox()
         mmap[md.id] = i;
     }
 
-    simBoxView->clearVolume();
-    simBoxView->setScale(qV3(t.size));
+    simBoxView->clear();
+    simBoxView->setBox(qV3(t.origin), qV3(t.origin + t.size));
     for (const auto &r : t.regions) {
         auto it = mmap.find(r.material_id);
         QColor clr = (it == mmap.end()) ? Qt::transparent
                                         : QColor(t.materials[it->second].color.c_str());
         QVector3D O = qV3(r.origin - t.origin);
-        simBoxView->fill(O, O + qV3(r.size), clr);
+        QString s = QString("Region: %1|Material: %2").arg(r.id.c_str()).arg(r.material_id.c_str());
+        simBoxView->addRegion(O, O + qV3(r.size), clr.rgba(), s);
     }
 }
 
@@ -332,7 +333,8 @@ QWidget *SimulationOptionsView::createTargetTab(const QModelIndex &idx)
     innerTab->addTab(regionsView, "Regions");
 
     simBoxView = new SimBoxView;
-    simBoxView->setBackgroundColor(Qt::white);
+    // simBoxView->setBackgroundColor(Qt::white);
+    simBoxView->setStyleSheet("background: white");
 
     QWidget *widget = new QWidget;
 

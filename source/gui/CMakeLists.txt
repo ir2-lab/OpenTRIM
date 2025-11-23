@@ -2,8 +2,10 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets DataVisualization)
+find_package(Qt5 REQUIRED COMPONENTS Core Widgets Svg)
 message(STATUS "Found Qt${QT_VERSION_MAJOR}")
+find_package(Qwt REQUIRED)
+message(STATUS "Found Qwt ${QWT_VERSION_STRING} at ${QWT_INCLUDE_DIR}")
 
 set(GUI_HEADERS
     mainui.h
@@ -55,12 +57,13 @@ add_executable(${GUI_TARGET}
 
 target_include_directories(${GUI_TARGET} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${external_libdedx_SOURCE_DIR}/src/lib
 )
 
-target_link_libraries(${GUI_TARGET} PRIVATE
-    Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::DataVisualization
+target_link_libraries(${GUI_TARGET} 
+PRIVATE
+    Qt5::Widgets
+    Qt5::Svg
+    Qwt::Qwt
     QtDataBrowser
     ${LIB_TARGET}
 )
