@@ -66,15 +66,18 @@ SimulationOptionsView::SimulationOptionsView(MainUI *iui, QWidget *parent)
         if (category == "Run")
             continue;
 
-        QWidget *widget;
+        QWidget *widget = nullptr;
         if (category == "IonBeam")
             widget = createIonBeamTab(idx);
         else if (category == "Target")
             widget = createTargetTab(idx);
-        else
+        else if (category == "UserTally") {
+            // TODO !!
+        } else
             widget = createTab(idx);
 
-        tabWidget->addTab(widget, item->name());
+        if (widget)
+            tabWidget->addTab(widget, item->name());
     }
 
     // main title widget

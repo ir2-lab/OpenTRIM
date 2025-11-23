@@ -14,20 +14,20 @@ void user_tally::init(size_t natoms)
     bin_sizes.clear();
 
     // push all bins defined by user
-    push_bins(cX, par_.x);
-    push_bins(cY, par_.y);
-    push_bins(cZ, par_.z);
-    push_bins(cR, par_.r);
-    push_bins(cRho, par_.rho);
-    push_bins(cCosTheta, par_.cosTheta);
-    push_bins(cNx, par_.nx);
-    push_bins(cNy, par_.ny);
-    push_bins(cNz, par_.nz);
-    push_bins(cE, par_.E);
-    push_bins(cTdam, par_.Tdam);
-    push_bins(cV, par_.V, natoms);
-    push_bins(cAtom_id, par_.atom_id);
-    push_bins(cRecoil_id, par_.recoil_id);
+    push_bins(cX, par_.bins.x);
+    push_bins(cY, par_.bins.y);
+    push_bins(cZ, par_.bins.z);
+    push_bins(cR, par_.bins.r);
+    push_bins(cRho, par_.bins.rho);
+    push_bins(cCosTheta, par_.bins.cosTheta);
+    push_bins(cNx, par_.bins.nx);
+    push_bins(cNy, par_.bins.ny);
+    push_bins(cNz, par_.bins.nz);
+    push_bins(cE, par_.bins.E);
+    push_bins(cTdam, par_.bins.Tdam);
+    push_bins(cV, par_.bins.V, natoms);
+    push_bins(cAtom_id, par_.bins.atom_id);
+    push_bins(cRecoil_id, par_.bins.recoil_id);
 
     // prepare buffers to store data
     idx.resize(bin_codes.size()); // same size as bin_sizes
@@ -173,7 +173,7 @@ bool user_tally::get_bin(const ion &i, const void *pv)
     return true;
 }
 
-bool user_tally::push_bins(variable_code c, const std::vector<float> &edges, size_t natoms)
+bool user_tally::push_bins(bin_variable_code c, const bin_vector_t &edges, size_t natoms)
 {
     if (edges.empty())
         return false;

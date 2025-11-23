@@ -20,7 +20,40 @@
  */
 class user_tally
 {
+    /* clang-format off */
+    // enumeration of all possible binning variables
+    enum bin_variable_code {
+        cX, cY, cZ,
+        cR, cRho, cCosTheta,
+        cNx, cNy, cNz,
+        cE,
+        cTdam, cV,
+        cAtom_id, cRecoil_id,
+        cNumCodes
+    };
+    /* clang-format on */
+
 public:
+    /// Type of bin edges vector
+    typedef std::vector<float> bin_vector_t;
+
+    /// Struct with all possible bin variable edges
+    struct bin_var_t
+    {
+        /// Ion position vector x, y, z
+        bin_vector_t x, y, z;
+        /// Ion position spherical coord. r and cosTheta & cylindrical coord. rho
+        bin_vector_t r, rho, cosTheta;
+        /// Ion direction cosines
+        bin_vector_t nx, ny, nz;
+        /// Ion energy
+        bin_vector_t E;
+        /// Pka damage energy and number of vacancies
+        bin_vector_t Tdam, V;
+        /// Atomic species id, recoil generation id
+        bin_vector_t atom_id, recoil_id;
+    };
+
     /**
      * @brief Parameters needed to define a user_tally
      */
@@ -34,14 +67,8 @@ public:
         Event event{ Event::IonStop };
         /// Coordinate system of the tally
         coord_sys coordinate_system;
-        /* clang-format off */
-        /// tally variables
-        std::vector<float> x, y, z,
-                           r, rho, cosTheta,
-                           nx, ny, nz,
-                           E, Tdam, V,
-                           atom_id, recoil_id;
-        /* clang-format on */
+        /// bin variables
+        bin_var_t bins;
     };
 
     user_tally(const parameters &p) : par_(p) { }
@@ -139,21 +166,11 @@ private:
     parameters par_;
     ArrayNDd data_;
 
-    /* clang-format off */
-    enum variable_code {
-        cX, cY, cZ,
-        cR, cRho, cCosTheta,
-        cNx, cNy, cNz,
-        cE, cTdam, cV,
-        cAtom_id, cRecoil_id,
-        cNumCodes
-    };
-    /* clang-format on */
 
     // codes of binning variables defined by user
-    std::vector<variable_code> bin_codes;
+    std::vector<bin_variable_code> bin_codes;
     // array of bin edges for each variable
-    std::vector<std::vector<float>> bins;
+    std::vector<bin_vector_t> bins;
     // # of bins for each binning variable
     std::vector<size_t> bin_sizes;
     // bin indexes for current event
@@ -162,7 +179,7 @@ private:
     std::vector<size_t> vac_id; // will be same size as bin_sizes
 
     bool get_bin(const ion &i, const void *pv = 0); // const;
-    bool push_bins(variable_code c, const std::vector<float> &edges, size_t natoms = 0);
+    bool push_bins(bin_variable_code c, const bin_vector_t &edges, size_t natoms = 0);
 };
 
 #endif // USER_TALLY_H
