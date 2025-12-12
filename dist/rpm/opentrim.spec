@@ -22,7 +22,7 @@ Source19:      ext9.tar.gz
 Source20:     ext10.tar.gz
 Source21:     ext11.tar.gz
 
-BuildRequires:	cmake >= 3.31.3
+BuildRequires:	cmake >= 3.23
 BuildRequires:	( gcc-c++ >= 11.0 or gcc11-c++ )
 
 Requires:      %{name}-libs
