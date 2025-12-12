@@ -1,6 +1,16 @@
 opentrim (1.1.1-0-0) stable; urgency=low
 
-  * Initial Release
+  * Core OpenTRIM changes:
+  * Added user defined tallies with class user_tally (GSoC2025)
+  * dEdx data extended to use different libraries (srim95, srim13, dpass) and made an external lib
+  * ieee754/corteo indexing made an external lib
+  * updated flight path algorithms. Now only 2: constant or variable
+  * GUI changes:
+  * Added simboxview to display the simulation box
+  * Added QDataBrowser for viewing simulation results
+  * General changes
+  * Improved cmake build
+  * Add git_tag to version info
 
  -- Michail Axiotis <psaxioti@gmail.com>  Fri, 21 Feb 2025 12:00:00 +0100
 
