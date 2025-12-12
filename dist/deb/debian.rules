@@ -53,4 +53,5 @@ override_dh_auto_install:
 	dh_install -p$(name)-gui   /usr/bin/$(name)-gui  $(_bindir)
 	dh_install -p$(name)-libs  /usr/lib              /usr
 	dh_install -p$(name)-dev   /usr/include          /usr
+	dh_install -p$(name)-dev   /usr/share            /usr
 	dh_install --sourcedir=./ -p$(name)-tests test/$(name) $(_datadir)
