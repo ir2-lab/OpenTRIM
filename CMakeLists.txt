@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12.0)
+cmake_minimum_required(VERSION 3.31.3)
     
 project(OpenTRIM 
         VERSION 1.1.0
