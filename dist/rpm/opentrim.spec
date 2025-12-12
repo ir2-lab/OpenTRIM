@@ -16,9 +16,13 @@ Source13:      ext3.tar.gz
 Source14:      ext4.tar.gz
 Source15:      ext5.tar.gz
 Source16:      ext6.tar.gz
+Source17:      ext7.tar.gz
+Source18:      ext8.tar.gz
+Source19:      ext9.tar.gz
+Source20:     ext10.tar.gz
 
 BuildRequires:	cmake >= 3.12
-BuildRequires:	( gcc-c++ >= 9.0 or gcc9-c++ )
+BuildRequires:	( gcc-c++ >= 11.0 or gcc11-c++ )
 
 Requires:      %{name}-libs
 
@@ -75,11 +79,15 @@ tar -zxf %{SOURCE13} -C external
 tar -zxf %{SOURCE14} -C external
 tar -zxf %{SOURCE15} -C external
 tar -zxf %{SOURCE16} -C external
+tar -zxf %{SOURCE17} -C external
+tar -zxf %{SOURCE18} -C external
+tar -zxf %{SOURCE19} -C external
+tar -zxf %{SOURCE20} -C external
 
 %build
 %cmake \
-%if %(g++ -dumpversion) < 9
-   -DCMAKE_C_COMPILER=gcc-9 -DCMAKE_CXX_COMPILER=g++-9 \
+%if %(g++ -dumpversion) < 11
+   -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 \
 %endif
    -DPACKAGE_BUILD=ON \
    -DCMAKE_BUILD_TYPE=Release \

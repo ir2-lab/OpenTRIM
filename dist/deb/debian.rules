@@ -21,6 +21,10 @@ SOURCE13 = $(_sourcedir)/ext3.tar.gz
 SOURCE14 = $(_sourcedir)/ext4.tar.gz
 SOURCE15 = $(_sourcedir)/ext5.tar.gz
 SOURCE16 = $(_sourcedir)/ext6.tar.gz
+SOURCE17 = $(_sourcedir)/ext7.tar.gz
+SOURCE18 = $(_sourcedir)/ext8.tar.gz
+SOURCE19 = $(_sourcedir)/ext9.tar.gz
+SOURCE10 = $(_sourcedir)/ext10.tar.gz
 
 %:
 	dh $@
@@ -33,6 +37,10 @@ override_dh_auto_configure:
 	tar -zxf $(SOURCE14) -C external
 	tar -zxf $(SOURCE15) -C external
 	tar -zxf $(SOURCE16) -C external
+	tar -zxf $(SOURCE17) -C external
+	tar -zxf $(SOURCE18) -C external
+	tar -zxf $(SOURCE19) -C external
+	tar -zxf $(SOURCE20) -C external
 	dh_auto_configure -- \
 	   -DPACKAGE_BUILD=ON \
 	   -DCMAKE_BUILD_TYPE=Release
