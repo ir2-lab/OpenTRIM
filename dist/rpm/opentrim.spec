@@ -20,6 +20,7 @@ Source17:      ext7.tar.gz
 Source18:      ext8.tar.gz
 Source19:      ext9.tar.gz
 Source20:     ext10.tar.gz
+Source21:     ext11.tar.gz
 
 BuildRequires:	cmake >= 3.12
 BuildRequires:	( gcc-c++ >= 11.0 or gcc11-c++ )
@@ -83,6 +84,7 @@ tar -zxf %{SOURCE17} -C external
 tar -zxf %{SOURCE18} -C external
 tar -zxf %{SOURCE19} -C external
 tar -zxf %{SOURCE20} -C external
+tar -zxf %{SOURCE21} -C external
 
 %build
 %cmake \
@@ -115,6 +117,8 @@ cp -r test/%{name}/* %{buildroot}/%{_datadir}/%{name}/tests/
 
 %files devel
 /usr/include/*
+%dir %{_datadir}/HighFive
+%{_datadir}/HighFive/*
 
 %files tests
 %dir %{_datadir}/%{name}

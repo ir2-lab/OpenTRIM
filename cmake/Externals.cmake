@@ -13,10 +13,9 @@ FetchContent_Declare(external_CLI11
    GIT_SHALLOW TRUE
 )
 if(PACKAGE_BUILD)
-   set(external_CLI11_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext1)
-else()
-   FetchContent_MakeAvailable(external_CLI11)
+   set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_CLI11 ${PROJECT_SOURCE_DIR}/external/ext1)
 endif()
+FetchContent_MakeAvailable(external_CLI11)
 
 # set build flags for HighFive 
 set(HIGHFIVE_USE_BOOST OFF) 
@@ -30,10 +29,9 @@ FetchContent_Declare(external_highfive
    GIT_SHALLOW TRUE
 )
 if(PACKAGE_BUILD)
-   set(external_highfive_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext2)
-else()
-   FetchContent_MakeAvailable(external_highfive)
+   set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_HIGHFIVE ${PROJECT_SOURCE_DIR}/external/ext2)
 endif()
+FetchContent_MakeAvailable(external_highfive)
 
 FetchContent_Declare(external_isotope
    GIT_REPOSITORY https://github.com/Gregstrq/Isotope-data.git
@@ -44,10 +42,9 @@ FetchContent_Declare(external_isotope
    SOURCE_SUBDIR dummy
 )
 if(PACKAGE_BUILD)
-   set(external_isotope_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext3)
-else()
-   FetchContent_MakeAvailable(external_isotope)
+   set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_ISOTOPE ${PROJECT_SOURCE_DIR}/external/ext3)
 endif()
+FetchContent_MakeAvailable(external_isotope)
 
 FetchContent_Declare(external_json
    GIT_REPOSITORY https://github.com/nlohmann/json.git
@@ -58,10 +55,9 @@ FetchContent_Declare(external_json
 #   SOURCE_SUBDIR dummy
 )
 if(PACKAGE_BUILD)
-   set(external_json_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext4)
-else()
-   FetchContent_MakeAvailable(external_json)
+   set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_JSON ${PROJECT_SOURCE_DIR}/external/ext4)
 endif()
+FetchContent_MakeAvailable(external_json)
 
 FetchContent_Declare(external_periodic
    GIT_REPOSITORY https://github.com/Bowserinator/Periodic-Table-JSON.git
@@ -72,10 +68,9 @@ FetchContent_Declare(external_periodic
    SOURCE_SUBDIR dummy
 )
 if(PACKAGE_BUILD)
-   set(external_periodic_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext5)
-else()
-   FetchContent_MakeAvailable(external_periodic)
+   set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_PERIODIC ${PROJECT_SOURCE_DIR}/external/ext5)
 endif()
+FetchContent_MakeAvailable(external_periodic)
 
 FetchContent_Declare(external_libdedx
    GIT_REPOSITORY https://github.com/ir2-lab/libdedx.git
@@ -84,10 +79,9 @@ FetchContent_Declare(external_libdedx
    GIT_SHALLOW TRUE
 )
 if(PACKAGE_BUILD)
-   set(external_libdedx_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext6)
-else()
-   FetchContent_MakeAvailable(external_libdedx)
+   set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_LIBDEDX ${PROJECT_SOURCE_DIR}/external/ext6)
 endif()
+FetchContent_MakeAvailable(external_libdedx)
 
 FetchContent_Declare(external_spline
    GIT_REPOSITORY https://github.com/ttk592/spline.git
@@ -98,10 +92,9 @@ FetchContent_Declare(external_spline
    SOURCE_SUBDIR dummy
 )
 if(PACKAGE_BUILD)
-   set(external_spline_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext7)
-else()
-   FetchContent_MakeAvailable(external_spline)
+   set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_SPLINE ${PROJECT_SOURCE_DIR}/external/ext7)
 endif()
+FetchContent_MakeAvailable(external_spline)
 
 FetchContent_Declare(external_screened_coulomb
    GIT_REPOSITORY https://github.com/ir2-lab/screened_coulomb.git
@@ -111,10 +104,9 @@ FetchContent_Declare(external_screened_coulomb
    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
 )
 if(PACKAGE_BUILD)
-   set(external_screened_coulomb_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext8)
-else()
-   FetchContent_MakeAvailable(external_screened_coulomb)
+   set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_SCREENED_COULOMB ${PROJECT_SOURCE_DIR}/external/ext8)
 endif()
+FetchContent_MakeAvailable(external_screened_coulomb)
 
 FetchContent_Declare(external_ieee754_seq
    GIT_REPOSITORY https://github.com/ir2-lab/ieee754_seq.git
@@ -124,10 +116,9 @@ FetchContent_Declare(external_ieee754_seq
    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
 )
 if(PACKAGE_BUILD)
-   set(external_ieee754_seq_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext9)
-else()
-   FetchContent_MakeAvailable(external_ieee754_seq)
+   set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_IEEE754_SEQ ${PROJECT_SOURCE_DIR}/external/ext9)
 endif()
+FetchContent_MakeAvailable(external_ieee754_seq)
 
 if (BUILD_GUI)
    FetchContent_Declare(external_qtdatabrowser
@@ -137,8 +128,8 @@ if (BUILD_GUI)
       GIT_SHALLOW TRUE
    )
    if(PACKAGE_BUILD)
-      set(external_qmatplotwidget_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ext10)
-   else()
-         FetchContent_MakeAvailable(external_qtdatabrowser)
+      set(FETCHCONTENT_SOURCE_DIR_QMATPLOTWIDGET ${PROJECT_SOURCE_DIR}/external/ext11)
+      set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_QTDATABROWSER ${PROJECT_SOURCE_DIR}/external/ext10)
    endif()
+   FetchContent_MakeAvailable(external_qtdatabrowser)
 endif()
