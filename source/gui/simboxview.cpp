@@ -4,6 +4,7 @@
 
 #include <QFontMetrics>
 #include <QVector3D>
+#include <QPen>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QGroupBox>
 #include <QtWidgets/QHBoxLayout>
@@ -29,24 +30,20 @@
 class ToolTipper : public QwtPlotPicker
 {
 public:
-    ToolTipper(SimBoxView *s,
-               int xAxis,
-               int yAxis,
-               RubberBand rubberBand,
-               DisplayMode trackerMode,
+    ToolTipper(SimBoxView *s, int xAxis, int yAxis, RubberBand rubberBand, DisplayMode trackerMode,
                QWidget *pc)
-        : QwtPlotPicker(xAxis, yAxis, rubberBand, trackerMode, pc)
-        , S(s)
-    {}
+        : QwtPlotPicker(xAxis, yAxis, rubberBand, trackerMode, pc), S(s)
+    {
+    }
 
 protected:
     SimBoxView *S;
     QwtText trackerTextF(const QPointF &pos) const override
     {
-        //Since the "paintAttributes", [text+background colour] act on QwtTexts
-        //break up the creation of trackerTextF: one function to create the text
+        // Since the "paintAttributes", [text+background colour] act on QwtTexts
+        // break up the creation of trackerTextF: one function to create the text
         //(as a QString), and another to set attributes and return the object.
-        QString s = S->labelAt(pos); //createLabelText(pos);
+        QString s = S->labelAt(pos); // createLabelText(pos);
         QwtText trackerText;
         trackerText.setBackgroundBrush(Qt::lightGray);
         trackerText.setText(s);
@@ -90,8 +87,7 @@ QRectF SimBoxView::Region3D::slice(slice_plane_t p, double v)
 class RectItem : public QwtPlotShapeItem
 {
 public:
-    RectItem(const QRectF &r, const QPen &p, const QBrush &b)
-        : QwtPlotShapeItem("Rect")
+    RectItem(const QRectF &r, const QPen &p, const QBrush &b) : QwtPlotShapeItem("Rect")
     {
         setRenderHint(QwtPlotItem::RenderAntialiased, true);
         QPainterPath path;
@@ -102,8 +98,7 @@ public:
     }
 };
 
-SimBoxView::SimBoxView(QWidget *parent)
-    : QFrame{parent}
+SimBoxView::SimBoxView(QWidget *parent) : QFrame{ parent }
 {
     QVBoxLayout *vLayout = new QVBoxLayout(this);
     vLayout->setContentsMargins(0, 0, 0, 0);
@@ -114,8 +109,8 @@ SimBoxView::SimBoxView(QWidget *parent)
     {
         plot = new QwtPlot;
         QwtPlotCanvas *cnv = new QwtPlotCanvas();
-        //cnv->setFrameStyle( QFrame::Box | QFrame::Plain );
-        //cnv->setLineWidth( 1 );
+        // cnv->setFrameStyle( QFrame::Box | QFrame::Plain );
+        // cnv->setLineWidth( 1 );
         cnv->setStyleSheet("border: 1px solid black; background: white");
         plot->setCanvas(cnv);
 
@@ -178,9 +173,8 @@ SimBoxView::SimBoxView(QWidget *parent)
         QHBoxLayout *hbox = new QHBoxLayout;
         hbox->setContentsMargins(0, 0, 0, 0);
         hbox->setSpacing(0);
-        const char *btLbl[] = {"XY", "YZ", "ZX"};
-        for (int i = 0; i < 3; i++)
-        {
+        const char *btLbl[] = { "XY", "YZ", "ZX" };
+        for (int i = 0; i < 3; i++) {
             bt[i] = new QToolButton;
             bt[i]->setCheckable(true);
             bt[i]->setText(btLbl[i]);
@@ -210,13 +204,10 @@ SimBoxView::SimBoxView(QWidget *parent)
     connect(sliceSlider, &QSlider::valueChanged, this, &SimBoxView::setSlicePos);
     connect(sliceSelector, &QButtonGroup::idClicked, this, &SimBoxView::setSlicePlane);
 
-    ToolTipper *tt = new ToolTipper(this,
-                                    QwtPlot::xBottom,
-                                    QwtPlot::yLeft,
-                                    //        QwtPicker::PointSelection | QwtPicker::DragSelection,
-                                    QwtPlotPicker::CrossRubberBand,
-                                    QwtPicker::AlwaysOn,
-                                    plot->canvas());
+    ToolTipper *tt =
+            new ToolTipper(this, QwtPlot::xBottom, QwtPlot::yLeft,
+                           //        QwtPicker::PointSelection | QwtPicker::DragSelection,
+                           QwtPlotPicker::CrossRubberBand, QwtPicker::AlwaysOn, plot->canvas());
     tt->setRubberBand(QwtPicker::CrossRubberBand);
 
     QwtPlotMagnifier *magnifier = new QwtPlotMagnifier(plot->canvas());
@@ -230,25 +221,23 @@ SimBoxView::SimBoxView(QWidget *parent)
 
 void SimBoxView::setBox(const QVector3D &X0, const QVector3D &X1)
 {
-    box = {X0, X1};
+    box = { X0, X1 };
     v = box.x0.z() + (box.x1.z() - box.x0.z()) * 0.5;
     sliceSlider->setValue(sliceSlider->maximum() / 2);
     setSlicePlane(0);
 }
 
-void SimBoxView::addRegion(const QVector3D &X0,
-                           const QVector3D &X1,
-                           const QRgb &c,
+void SimBoxView::addRegion(const QVector3D &X0, const QVector3D &X1, const QRgb &c,
                            const QString &name)
 {
-    regions.push_back({X0, X1, c, name});
+    regions.push_back({ X0, X1, c, name });
     updatePlot();
 }
 
 void SimBoxView::clear()
 {
     regions.clear();
-    setBox({0., 0., 0.}, {100., 100., 100.});
+    setBox({ 0., 0., 0. }, { 100., 100., 100. });
 }
 
 SimBoxView::slice_plane_t SimBoxView::slice_plane() const
@@ -280,8 +269,8 @@ void SimBoxView::updatePlot()
 
     slice_plane_t sp = slice_plane();
 
-    const char *axisLabels[] = {"X [nm]", "Y [nm]", "Z [nm]"};
-    int ix = (int) sp;
+    const char *axisLabels[] = { "X [nm]", "Y [nm]", "Z [nm]" };
+    int ix = (int)sp;
     int iy = (ix + 1) % 3;
     plot->setAxisTitle(QwtPlot::xBottom, axisLabels[ix]);
     plot->setAxisTitle(QwtPlot::yLeft, axisLabels[iy]);
@@ -330,7 +319,7 @@ void SimBoxView::setSlicePlane(int i)
 {
     if (i < 0 || i > 2)
         return;
-    const char *lbl[] = {"Z", "X", "Y"};
+    const char *lbl[] = { "Z", "X", "Y" };
     sliderLbl->setText(lbl[i]);
     setSlicePos(sliceSlider->value());
 }
