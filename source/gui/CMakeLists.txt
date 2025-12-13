@@ -21,7 +21,7 @@ set(GUI_HEADERS
     resultsview.h 
     simcontrolwidget.h 
     tabularview.h
-    error_fmt.h
+    value_with_error.h
     jsedit/jsedit.h 
     simboxview.h
     mcplotinfo.h

@@ -1,9 +1,9 @@
 #include "scattering.h"
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <algorithm>
-#include <charconv>
 
 #include <CLI/CLI.hpp>
 
@@ -71,28 +71,6 @@ const char *preample = "/*\n"
                        " * do not edit \n"
                        " */\n";
 
-// print out a 32bit float so that it is read back the same
-// employ C++17 std::to_chars to be system locale independent
-std::ostream &printfloat(std::ostream &os, float x)
-{
-    if (!finite(x)) {
-        os << "-1.0f/0.0f";
-        return os;
-    }
-
-    // print buffer
-    static constexpr int buff_len = 32;
-    char buff[buff_len]{};
-    // get number of digits for a float -> text -> float round-trip
-    static constexpr auto d = std::numeric_limits<float>::max_digits10;
-    // print the number
-    std::to_chars_result ret =
-            std::to_chars(buff, buff + buff_len, x, std::chars_format::general, d);
-    *ret.ptr = 0;
-    os << buff;
-    return os;
-}
-
 template <Screening ScreeningType>
 int gen_scattering_tbl(const std::string &short_screening_name)
 {
@@ -119,6 +97,9 @@ int gen_scattering_tbl(const std::string &short_screening_name)
             cout.flush();
         }
 
+        int oldp = ofs.precision();
+        ofs << std::setprecision(std::numeric_limits<float>::max_digits10);
+
         for (scattering_tbl_grid::s_iterator_t is; is < is.end(); is++) {
             float mu = xs.sin2Thetaby2(*ie, *is);
             // double log2mu = std::log2(mu);
@@ -132,13 +113,21 @@ int gen_scattering_tbl(const std::string &short_screening_name)
             //     cout << "exp2(log2(mu)) = " << std::exp2(log2mu) << endl;
             //     // exit(-1);
             // }
-            printfloat(ofs, mu);
+
+            if (finite(mu))
+                ofs << mu;
+            else
+                ofs << "-1.0f/0.0f";
+
             if (k != klast)
                 ofs << ',';
             k++;
+
             if (k % 16 == 0)
                 ofs << endl;
         }
+
+        ofs << std::setprecision(oldp);
     }
 
     ofs << "}; \n\n";

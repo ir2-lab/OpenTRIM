@@ -5,7 +5,7 @@
 #include "optionsmodel.h"
 #include "mcdriverobj.h"
 #include "tally.h"
-#include "error_fmt.h"
+#include "value_with_error.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -167,7 +167,7 @@ public:
                 if (dx > 0.) {
                     dx = std::sqrt(dx) * f2;
                     tblWidget_->item(i, j)->setText(QString::fromStdString(
-                            error_fmt::print_with_err(x, dx, std::chars_format::general, 1)));
+                            value_with_error(x, dx, 1, std::defaultfloat, true).to_string()));
                 } else {
                     tblWidget_->item(i, j)->setText(QString::number(x, 'g'));
                 }
@@ -271,7 +271,7 @@ public:
                 if (dx > 0.) {
                     dx = std::sqrt(dx) * f2;
                     tblWidget_->item(i, j)->setText(QString::fromStdString(
-                            error_fmt::print_with_err(x, dx, std::chars_format::general, 1)));
+                            value_with_error(x, dx, 1, std::defaultfloat, true).to_string()));
                 } else {
                     tblWidget_->item(i, j)->setText(QString::number(x, 'g'));
                 }
@@ -407,7 +407,7 @@ public:
                 if (dx > 0.) {
                     dx = std::sqrt(dx) * f2;
                     tblWidget_->item(i, j)->setText(QString::fromStdString(
-                            error_fmt::print_with_err(x, dx, std::chars_format::general, 1)));
+                            value_with_error(x, dx, 1, std::defaultfloat, true).to_string()));
                 } else {
                     tblWidget_->item(i, j)->setText(QString::number(x, 'g'));
                 }
@@ -553,7 +553,7 @@ public:
                 double dx = buff(1, i, j);
                 if (dx > 0.) {
                     tblWidget_->item(i, j)->setText(QString::fromStdString(
-                            error_fmt::print_with_err(x, dx, std::chars_format::general, 1)));
+                            value_with_error(x, dx, 1, std::defaultfloat, true).to_string()));
                 } else {
                     tblWidget_->item(i, j)->setText(QString::number(x, 'g'));
                 }
