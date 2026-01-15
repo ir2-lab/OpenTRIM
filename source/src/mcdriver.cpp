@@ -103,8 +103,9 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     struct timespec t_start, t_end;
 
     int nthreads = config_.Run.threads;
-    if (nthreads < 1)
-        nthreads = 1;
+    if (nthreads < 1) {
+        nthreads = std::thread::hardware_concurrency();
+    }
 
     // TIMING
     start_time_ = std::time(nullptr);
@@ -248,12 +249,6 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
 int mcconfig::validate(bool AcceptIncomplete)
 {
-    // Run
-    if (Run.max_no_ions <= 0)
-        throw std::invalid_argument("Simulation.max_no_ions must be larger than 0.");
-
-    if (Run.threads <= 0)
-        throw std::invalid_argument("Simulation.threads must be 1 or larger.");
 
     // Simulation & Transport
     CHECK_INVALID_ENUM(Simulation, simulation_type)
@@ -261,7 +256,6 @@ int mcconfig::validate(bool AcceptIncomplete)
     CHECK_INVALID_ENUM(Simulation, electronic_stopping)
     CHECK_INVALID_ENUM(Simulation, electronic_straggling)
     CHECK_INVALID_ENUM(Simulation, nrt_calculation)
-
     CHECK_INVALID_ENUM(Transport, flight_path_type)
 
     if (Transport.flight_path_type == flight_path_calc::Constant
@@ -274,15 +268,6 @@ int mcconfig::validate(bool AcceptIncomplete)
     CHECK_INVALID_ENUM(IonBeam.spatial_distribution, type)
     CHECK_INVALID_ENUM(IonBeam.spatial_distribution, geometry)
     CHECK_INVALID_ENUM(IonBeam.angular_distribution, type)
-    if (IonBeam.energy_distribution.type != ion_beam::SingleValue) {
-        CHECK_ZEROorNEG(IonBeam.energy_distribution, fwhm)
-    }
-    if (IonBeam.spatial_distribution.type != ion_beam::SingleValue) {
-        CHECK_ZEROorNEG(IonBeam.spatial_distribution, fwhm)
-    }
-    if (IonBeam.angular_distribution.type != ion_beam::SingleValue) {
-        CHECK_ZEROorNEG(IonBeam.angular_distribution, fwhm)
-    }
 
     // Output
     const std::string &fname = Output.outfilename;
@@ -301,9 +286,7 @@ int mcconfig::validate(bool AcceptIncomplete)
     std::unordered_map<std::string, int> mmap; // map material_id->index
 
     // Target
-    if (Target.materials.empty()) {
-        // if (!AcceptIncomplete) throw std::invalid_argument("Target.materials is empty.");
-    } else {
+    if (!Target.materials.empty()) {
         // Check Material descriptors
         for (int i = 0; i < Target.materials.size(); ++i) {
 
@@ -342,7 +325,6 @@ int mcconfig::validate(bool AcceptIncomplete)
                 throw std::invalid_argument(msg.str());
             }
 
-            int iat = 1;
             std::set<int> atset;
             for (const atom::parameters &at : md.composition) {
 
@@ -355,21 +337,11 @@ int mcconfig::validate(bool AcceptIncomplete)
                     throw std::invalid_argument(msg.str());
                 }
                 atset.insert(Z);
-
-                CHECK_ZERO_ATOMPAR(at, X, md.id)
-                CHECK_ZERO_ATOMPAR(at, Ed, md.id)
-                CHECK_ZERO_ATOMPAR(at, El, md.id)
-                CHECK_ZERO_ATOMPAR(at, Es, md.id)
-                CHECK_ZERO_ATOMPAR(at, Er, md.id)
-
-                iat++;
             }
         }
     }
 
     if (Target.regions.empty()) {
-        // if (!AcceptIncomplete)  throw std::invalid_argument("Target.regions is empty.");
-    } else {
         const ivector3 &cell_count = Target.cell_count;
         if (std::any_of(cell_count.begin(), cell_count.end(), [](int c) { return c <= 0; })) {
             std::stringstream msg;

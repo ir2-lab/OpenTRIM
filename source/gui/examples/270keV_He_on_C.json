@@ -1,0 +1,119 @@
+{
+    "Output": {
+        "title": "270keV He in 100μm/cm^2 C foil"
+    },
+    "Run": {
+        "max_no_ions": 1000000,
+        "threads": 4
+    },
+    "Simulation": {
+        "simulation_type": "IonsOnly"
+    },
+    "Transport": {
+        "flight_path_type": "Variable",
+        "min_scattering_angle": 0.05
+    },
+    "IonBeam": {
+        "ion": {
+            "symbol": "He",
+            "atomic_mass": 4.0026
+        },
+        "energy_distribution": {
+            "center": 270000.0
+        },
+        "spatial_distribution": {
+            "center": [
+                0.0,
+                1000.0,
+                1000.0
+            ]
+        }
+    },
+    "Target": {
+        "size": [
+            440.0,
+            2000.0,
+            2000.0
+        ],
+        "cell_count": [
+            1,
+            1,
+            1
+        ],
+        "periodic_bc": [
+            0,
+            1,
+            1
+        ],
+        "materials": [
+            {
+                "id": "Carbon foil",
+                "density": 2.27,
+                "composition": [
+                    {
+                        "element": {
+                            "symbol": "C",
+                            "atomic_mass": 12.011
+                        },
+                        "X": 1,
+                        "Ed": 20,
+                        "El": 3,
+                        "Es": 3,
+                        "Er": 20
+                    }
+                ]
+            }
+        ],
+        "regions": [
+            {
+                "id": "R1",
+                "material_id": "Carbon foil",
+                "size": [
+                    1000.0,
+                    10000.0,
+                    10000.0
+                ]
+            }
+        ]
+    },
+    "UserTally": [
+        {
+            "id": "AngularDistribution",
+            "description": "Angular distribution of He ions exiting the foil",
+            "event": "IonExit",
+            "bins": {
+                "nx": [
+                    0.980,
+                    0.981,
+                    0.982,
+                    0.983,
+                    0.984,
+                    0.985,
+                    0.986,
+                    0.987,
+                    0.988,
+                    0.989,
+                    0.990,
+                    0.991,
+                    0.992,
+                    0.993,
+                    0.994,
+                    0.995,
+                    0.996,
+                    0.997,
+                    0.998,
+                    0.999,
+                    1.000
+                ],
+                "x": [
+                    440,
+                    450
+                ],
+                "atom_id": [
+                    0,
+                    1
+                ]
+            }
+        }
+    ]
+}

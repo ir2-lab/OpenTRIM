@@ -28,11 +28,11 @@
 
 ### Simulation Output Data handling
 
-- [ ] Create mcinfo or mcdata object/adaptor that provides data in a unified manner.
+- [X] Create mcinfo or mcdata object/adaptor that provides data in a unified manner.
       E.g. multidim data Y vs X, name, description
-- [ ] Create a multi-dim array viewer widget, in the spirit of h5web. 
+- [X] Create a multi-dim array viewer widget, in the spirit of h5web. 
       Shows either table, 2D graph or 2D map (i.e. "spectrograph", "heatmap"). Has controls for data selection
-- [ ] Implement "slice selector" popup widget/dialog 
+- [X] Implement "slice selector" popup widget/dialog 
 
 ### Tests
 
@@ -43,6 +43,7 @@
 ### GUI:
 
 - [ ] Better help in configuration. A foldable dedicated text browser widget to show info?
+- [ ] Implement UserTally options/definition in GUI
 - [X] Getting Started
 - [X] About
 
@@ -55,7 +56,7 @@
   to set the limit either on the # of ions or in time
 
 Tally:
-- [ ] Make std. tally tables 4D by expanding the cells axis to Nx x Ny x Nz, where Nx, Ny, Nz are the # of cells along each axis
+- [X] Make std. tally tables 4D by expanding the cells axis to Nx x Ny x Nz, where Nx, Ny, Nz are the # of cells along each axis
 - [X] Remove counting of recoil energy (tally::eRecoil). It is not a well-defined sum
 - [X] Add a counter of Displacements (tally::cD)
   Every recoil should add +1 to this, regardless of fate (implantation = I, exit = L, replacement = R)
@@ -70,10 +71,10 @@ Tally:
   - This will aid in checking if a .json file is valid OpenTRIM options
   - With the possibility to relax the rule in the future to allow extra/new options
 
-- [x] Improve the Variable flight path algorithm
+- [X] Improve the Variable flight path algorithm
   - Implement the steps described in the docs, i.e., pre-compute the probability that a collision is rejected
 
-- [ ] Make user-defined tallies for various events. E.g.
+- [X] Make user-defined tallies for various events. E.g.
   - Implantation (position, atomic species)
   - Vacancy (position, atomic species)
   - Ion escape (have to distinguish backscattered/transmitted ions)
@@ -95,12 +96,11 @@ Tally:
 
 - [ ] Handle surface effects (sputtering etc.)
 
-- [ ] Database of known atomic data (displacement energy, FP energy, density of elements)
-
 ### User
 
 - GUI: 
-  - [ ] In material def form, add a button to calc density based on composition (by simple mixing)
+  - [ ] Add a database of pre-defined materials with full definition: composition, density, Ed, etc
+  - [ ] Pressing add material presents to the user a selection/search function to discover & select
 
 - CLI:
   - [ ] Block Ctrl-C signal so that data is saved before the program is aborted
