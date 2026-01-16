@@ -17,21 +17,27 @@ if(PACKAGE_BUILD)
 endif()
 FetchContent_MakeAvailable(external_CLI11)
 
-# set build flags for HighFive 
-set(HIGHFIVE_USE_BOOST OFF) 
-set(HIGHFIVE_EXAMPLES OFF)
-set(HIGHFIVE_BUILD_DOCS OFF)
-
+# set build flags and then include HighFive 
+set(HIGHFIVE_FIND_HDF5 Off)
+set(HIGHFIVE_UNIT_TESTS OFF)
 FetchContent_Declare(external_highfive
-   GIT_REPOSITORY https://github.com/BlueBrain/HighFive.git
-   GIT_TAG v2.9.0
+   GIT_REPOSITORY https://github.com/highfive-devs/highfive.git
+   GIT_TAG v3.3.0
    GIT_SUBMODULES_RECURSE FALSE
    GIT_SHALLOW TRUE
 )
 if(PACKAGE_BUILD)
    set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_HIGHFIVE ${PROJECT_SOURCE_DIR}/external/ext2)
 endif()
-FetchContent_MakeAvailable(external_highfive)
+# FetchContent_MakeAvailable(external_highfive)
+# We follow the method from this link
+#   https://stackoverflow.com/questions/65527126/disable-install-for-fetchcontent
+# so that highfive is NOT installed when we install opentrim
+FetchContent_GetProperties(external_highfive)
+if(NOT external_highfive_POPULATED)
+  FetchContent_Populate(external_highfive)
+  add_subdirectory(${external_highfive_SOURCE_DIR} ${external_highfive_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 
 FetchContent_Declare(external_isotope
    GIT_REPOSITORY https://github.com/Gregstrq/Isotope-data.git

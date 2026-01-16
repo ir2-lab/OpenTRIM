@@ -155,7 +155,7 @@ target_link_libraries(${LIB_TARGET}
         "-lm"
         ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_PTHREAD_LIBS_INIT}
         ${HDF5_LIBRARIES}
-        HighFive        
+        HighFive::Include        
         xs_zbl xs_bohr xs_krc xs_moliere        
 )
 

@@ -88,7 +88,7 @@ int load_array(h5::File &file, const std::string &path, ArrayND<T> &A, const siz
     auto dsetdim = dset.getDimensions();
     assert(dset.getDimensions() == A.dim());
 
-    dset.read(A.data());
+    dset.read_raw(A.data());
 
     for (size_t i = 0; i < A.size(); i++)
         A[i] *= N;
@@ -207,7 +207,7 @@ int load_event_stream(h5::File &h5f, const std::string &grp_name, event_stream &
         nrows -= count[0];
 
         // read from HDF5 file
-        dataset.select(offset, count).read<float>(buff.data());
+        dataset.select(offset, count).read_raw<float>(buff.data());
 
         // write to raw file buffer
         es.write(buff.data(), count[0]);
