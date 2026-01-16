@@ -72,17 +72,6 @@ if(PACKAGE_BUILD)
 endif()
 FetchContent_MakeAvailable(external_periodic)
 
-FetchContent_Declare(external_libdedx
-   GIT_REPOSITORY https://github.com/ir2-lab/libdedx.git
-   GIT_TAG main
-   GIT_SUBMODULES_RECURSE FALSE
-   GIT_SHALLOW TRUE
-)
-if(PACKAGE_BUILD)
-   set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_LIBDEDX ${PROJECT_SOURCE_DIR}/external/ext6)
-endif()
-FetchContent_MakeAvailable(external_libdedx)
-
 FetchContent_Declare(external_spline
    GIT_REPOSITORY https://github.com/ttk592/spline.git
    GIT_TAG master
@@ -120,16 +109,4 @@ if(PACKAGE_BUILD)
 endif()
 FetchContent_MakeAvailable(external_ieee754_seq)
 
-if (BUILD_GUI)
-   FetchContent_Declare(external_qtdatabrowser
-      GIT_REPOSITORY https://github.com/ir2-lab/QtDataBrowser.git
-      GIT_TAG main
-      GIT_SUBMODULES_RECURSE FALSE
-      GIT_SHALLOW TRUE
-   )
-   if(PACKAGE_BUILD)
-      set(FETCHCONTENT_SOURCE_DIR_QMATPLOTWIDGET ${PROJECT_SOURCE_DIR}/external/ext11)
-      set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_QTDATABROWSER ${PROJECT_SOURCE_DIR}/external/ext10)
-   endif()
-   FetchContent_MakeAvailable(external_qtdatabrowser)
-endif()
+

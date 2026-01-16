@@ -6,6 +6,8 @@ find_package(Qt5 REQUIRED COMPONENTS Core Widgets Svg)
 message(STATUS "Found Qt${QT_VERSION_MAJOR}")
 find_package(Qwt REQUIRED)
 message(STATUS "Found Qwt ${QWT_VERSION_STRING} at ${QWT_INCLUDE_DIR}")
+find_package(QtDataBrowser REQUIRED)
+message(STATUS "Found QtDataBrowser at ${QtDataBrowser_DIR}")
 
 set(GUI_HEADERS
     mainui.h
@@ -64,7 +66,7 @@ PRIVATE
     Qt5::Widgets
     Qt5::Svg
     Qwt::Qwt
-    QtDataBrowser
+    QtDataBrowser::QtDataBrowser
     ${LIB_TARGET}
 )
 

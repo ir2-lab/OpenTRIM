@@ -63,6 +63,8 @@ include_directories(${HDF5_INCLUDE_DIRS})
 message(STATUS "HDF5 include: ${HDF5_INCLUDE_DIRS}")
 message(STATUS "HDF5 libs: ${HDF5_LIBRARIES}")
 
+find_package(libdedx REQUIRED)
+
 add_subdirectory(source)
 
 if (BUILD_TESTS)

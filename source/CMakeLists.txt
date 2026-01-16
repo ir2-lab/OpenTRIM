@@ -150,7 +150,7 @@ target_link_libraries(${LIB_TARGET}
         nlohmann_json::nlohmann_json
         ieee754_seq
         screened_coulomb
-        dedx
+        libdedx::dedx
     PRIVATE
         "-lm"
         ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_PTHREAD_LIBS_INIT}
@@ -192,7 +192,6 @@ add_custom_command(OUTPUT options.dox.md
 
 # install specs
 set(installable_libs
-    dedx
     xs_zbl xs_bohr xs_krc xs_moliere
     ${LIB_TARGET} )
 
