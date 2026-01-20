@@ -1,4 +1,4 @@
-set (EXE_TARGET ${PROJECT_NAME_LOWERCASE}_exe)
+# Build the opentrim executable
 
 add_executable(${EXE_TARGET}
     main.cpp
@@ -13,6 +13,5 @@ target_link_libraries(${EXE_TARGET}
 )
 
 install(TARGETS ${EXE_TARGET}
-    LIBRARY
-    RUNTIME
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

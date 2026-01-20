@@ -14,14 +14,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-option (BUILD_GUI "build gui" ON)
-option (BUILD_TESTS "build tests" ON)
-
-message (STATUS "${PROJECT_NAME} version ${PROJECT_VERSION}")
+option (OPENTRIM_BUILD_GUI "build gui" ON)
+option (OPENTRIM_BUILD_TESTS "build tests" ON)
 
 string(TIMESTAMP CMAKE_BUILD_TIME UTC)
-
-message (STATUS "Build time ${CMAKE_BUILD_TIME}")
 
 # !! Add this option to allow the compiler to 
 #    optimize for the specific build system
@@ -52,27 +48,25 @@ elseif((CMAKE_SYSTEM_NAME STREQUAL "Linux") AND (NOT CMAKE_CROSSCOMPILING))
     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH OFF)
 endif()
-message (STATUS "Install rpath =  ${CMAKE_INSTALL_RPATH}")
 
+# Find required dependencies
 find_package(Threads REQUIRED)
-
 find_package(Eigen3 3.4 REQUIRED)
-
 find_package(HDF5 REQUIRED COMPONENTS C)
-include_directories(${HDF5_INCLUDE_DIRS})
-message(STATUS "HDF5 include: ${HDF5_INCLUDE_DIRS}")
-message(STATUS "HDF5 libs: ${HDF5_LIBRARIES}")
-
 find_package(libdedx REQUIRED)
+if(OPENTRIM_BUILD_GUI)
+    find_package(Qt5 REQUIRED COMPONENTS Core Widgets Svg)
+    find_package(Qwt REQUIRED)
+    find_package(QtDataBrowser REQUIRED)
+endif () ## BUILD GUI
 
 add_subdirectory(source)
 
-if (BUILD_TESTS)
+if (OPENTRIM_BUILD_TESTS)
     add_subdirectory(test/scattering_calc)
 endif () ## Tests
 
-
-
+include(CMakeSummary)
 
 
 

@@ -1,13 +1,8 @@
+# Build opentrim-gui executable
+
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
-
-find_package(Qt5 REQUIRED COMPONENTS Core Widgets Svg)
-message(STATUS "Found Qt${QT_VERSION_MAJOR}")
-find_package(Qwt REQUIRED)
-message(STATUS "Found Qwt ${QWT_VERSION_STRING} at ${QWT_INCLUDE_DIR}")
-find_package(QtDataBrowser REQUIRED)
-message(STATUS "Found QtDataBrowser at ${QtDataBrowser_DIR}")
 
 set(GUI_HEADERS
     mainui.h
@@ -57,10 +52,6 @@ add_executable(${GUI_TARGET}
   ${GUI_HEADERS}
 )
 
-target_include_directories(${GUI_TARGET} PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
-)
-
 target_link_libraries(${GUI_TARGET} 
 PRIVATE
     Qt5::Widgets
@@ -68,6 +59,7 @@ PRIVATE
     Qwt::Qwt
     QtDataBrowser::QtDataBrowser
     ${LIB_TARGET}
+    nlohmann_json::nlohmann_json
 )
 
 set_target_properties(${GUI_TARGET} PROPERTIES
@@ -79,10 +71,9 @@ set_target_properties(${GUI_TARGET} PROPERTIES
 )
 
 install(TARGETS ${GUI_TARGET}
-    BUNDLE DESTINATION .
-    LIBRARY
-    RUNTIME
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}   # executables (Linux/Windows)
+  BUNDLE  DESTINATION ${CMAKE_INSTALL_BINDIR}   # macOS app bundles
 )
 
-message(STATUS "Install ${GUI_TARGET} at ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+
 

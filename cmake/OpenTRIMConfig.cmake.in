@@ -1,0 +1,22 @@
+# Config file for @PROJECT_NAME@ package
+# This file is configured at build time and installed alongside
+# @PROJECT_NAME@Target files.
+
+# Allow find_dependency()
+include(CMakeFindDependencyMacro)
+
+# Require basic dependencies that provide imported targets used by the
+# public interface of the @PROJECT_NAME@ target.  If a dependency is not
+# required/available on all platforms, remove it from here.
+find_dependency(Eigen3 REQUIRED)
+find_dependency(libdedx REQUIRED)
+
+# Provide the exported targets for this package
+# the exported file is installed into the same directory as this config file
+include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
+
+# Optional: provide variables for users
+set(@PROJECT_NAME@_ROOT "${CMAKE_CURRENT_LIST_DIR}" CACHE INTERNAL "Root directory of @PROJECT_NAME@")
+set(@PROJECT_NAME@_VERSION "@PROJECT_VERSION@")
+
+# End of @PROJECT_NAME@Config.cmake.in

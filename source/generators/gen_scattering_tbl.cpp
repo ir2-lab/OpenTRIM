@@ -97,8 +97,12 @@ int gen_scattering_tbl(const std::string &short_screening_name)
             cout.flush();
         }
 
+        auto oldflags = ofs.flags();
+        ofs.setf(std::ios::scientific, std::ios::floatfield);
+
         int oldp = ofs.precision();
-        ofs << std::setprecision(std::numeric_limits<float>::max_digits10);
+        int ndig = std::numeric_limits<float>::max_digits10;
+        ofs << std::setprecision(ndig);
 
         for (scattering_tbl_grid::s_iterator_t is; is < is.end(); is++) {
             float mu = xs.sin2Thetaby2(*ie, *is);
@@ -115,19 +119,20 @@ int gen_scattering_tbl(const std::string &short_screening_name)
             // }
 
             if (finite(mu))
-                ofs << mu;
+                ofs << std::setw(ndig + 8) << mu << 'f';
             else
-                ofs << "-1.0f/0.0f";
+                ofs << std::setw(ndig + 8) << "-1.0f/0.0f";
 
             if (k != klast)
                 ofs << ',';
             k++;
 
-            if (k % 16 == 0)
+            if (k % 5 == 0)
                 ofs << endl;
         }
 
         ofs << std::setprecision(oldp);
+        ofs.setf(oldflags);
     }
 
     ofs << "}; \n\n";
