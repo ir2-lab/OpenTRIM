@@ -31,9 +31,10 @@ OpenTRIM on windows is built with https://msys2.org
 ### Build dependencies
 
 OpenTRIM depends on 3 projects of our own: 
+- [libdedx](https://github.com/ir2-lab/libdedx)
 - [QMatPlotWidget](https://github.com/gapost/qmatplotwidget)
 - [QtDataBrowser](https://github.com/ir2-lab/QtDataBrowser)
-- [libdedx](https://github.com/ir2-lab/libdedx)
+
 
 These have to be built and installed in $HOME/.local. For each of these projects, open a UCRT64 console and do:
 

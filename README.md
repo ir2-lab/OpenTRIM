@@ -39,46 +39,7 @@ On **Windows**, please download the latest [binary distribution release](https:/
 
 ### Building from source
 
-On **Linux** the project can be built and installed with `cmake`.
-
-Tested compilers: GCC 8 and above, Clang 14. 
-
-Clone the project using
-```
-> git clone git@gitlab.com:ir2-lab/opentrim.git
-```
-or download a tarball of the last version.
-
-OpenTRIM has the following dependencies:
-- [Eigen v3.4.0](https://eigen.tuxfamily.org) for vector operations
-- [HDF5 v1.10.7](https://www.hdfgroup.org/solutions/hdf5/) for file storage
-- [Qt5 or Qt6](https://www.qt.io/) for the GUI program
-- [Qwt v6.x](https://qwt.sourceforge.io/) for plotting
-
-They can be installed with
-```bash
-# Ubuntu 22.04 / DEB
-sudo apt install libeigen3-dev libhdf5-dev libhdf5-103-1 
-# for the GUI component add the following
-sudo apt install qtbase5-dev libqt5svg5 libqwt-qt5-dev libqwt-qt5-6
-
-# RHEL 9 / RPM
-sudo dnf install eigen3-devel.noarch hdf5.x86_64 hdf5-devel.x86_64
-```  
-
-Basic build recipe (run from project directory):
-
-```
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-ninja
-ninja install
-```
-The default install location is `$HOME/.local`, thus `sudo` is not required.
-Override this by setting the option `-DCMAKE_INSTALL_PREFIX="/your/install/location"` when calling `cmake`. 
-
-On **Windows** the project can be built with [MSYS2](https://www.msys2.org/). Detailed instructions will be given in the future.
+There are build instructions for [linux](./dist/linux_build.md) and [windows](./dist/mingw64/win_build_recipe.md).
 
 ## Usage
 
@@ -144,11 +105,13 @@ Furthermore, the following general open-source projects are used:
 
 - [JSON for Modern C++](https://github.com/nlohmann/json) by N. Lohmann is used for encoding/decoding program options to/from json.
 
-- [cxxopts](https://github.com/jarro2783/cxxopts) by [jarro2783](https://github.com/jarro2783) is used for handling cli options.
-
 - The [HDF5 library](https://github.com/HDFGroup/hdf5) with the [HighFive C++ interface](https://github.com/BlueBrain/HighFive) are used for saving results to the HDF5 archive.
 
+- [CLI11](https://github.com/CLIUtils/CLI11) is used for handling cli options.
+
 - The [Qt C++ toolkit](https://www.qt.io/) is utilized for the GUI implementation.
+  
+- [Qwt](https://qwt.sourceforge.io/) is used for plotting results.
 
 ## License
 
