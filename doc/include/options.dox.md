@@ -102,20 +102,22 @@
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_coordinate_system_zaxis "\"zaxis\"": [0.0,0.0,1.0],<br>
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_coordinate_system_xzvector "\"xzvector\"": [1.0,0.0,1.0]<br>
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;},<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_x "\"x\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_y "\"y\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_z "\"z\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_r "\"r\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_rho "\"rho\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_cosTheta "\"cosTheta\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_nx "\"nx\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_ny "\"ny\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_nz "\"nz\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_E "\"E\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_Tdam "\"Tdam\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_V "\"V\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_atom_id "\"atom_id\"": [],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_recoil_id "\"recoil_id\"": []<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins "\"bins\"": {<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_x "\"x\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_y "\"y\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_z "\"z\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_r "\"r\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_rho "\"rho\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_cosTheta "\"cosTheta\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_nx "\"nx\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_ny "\"ny\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_nz "\"nz\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_E "\"E\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_Tdam "\"Tdam\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_V "\"V\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_atom_id "\"atom_id\"": [],<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_recoil_id "\"recoil_id\"": []<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;}<br>
 &emsp;&emsp;&emsp;&emsp;}<br>
 &emsp;&emsp;]<br>
 }<br>
@@ -388,13 +390,13 @@ The name can contain the relative or absolute path to the file.<br>
 <tr><td>Range<td>1...2.14748e+09
 <tr><td>Default Value<td>100<tr><td>Description <td>Maximum number of ion histories to simulate.
 <tr><th colspan="2">\anchor _Run_threads /Run/threads<tr><td>Type <td>Integer
-<tr><td>Range<td>1...100
+<tr><td>Range<td>0...100
 <tr><td>Default Value<td>1<tr><td>Description <td>Number of execution threads.
 <tr><th colspan="2">\anchor _Run_seed /Run/seed<tr><td>Type <td>Integer
 <tr><td>Range<td>1...2.14748e+09
 <tr><td>Default Value<td>123456789<tr><td>Description <td>Random number generator seed.
 <tr><th colspan="2">\anchor _UserTally /UserTally<tr><td>Type <td>Array of same type options
-<tr><td>Description <td>Array of user-defined tallies
+<tr><td>Description <td>User tallies
 <tr><th colspan="2">\anchor _UserTally_0_id /UserTally/0/id<tr><td>Type <td>String
 <tr><td>Default Value<td>"UserTally0"<tr><td>Description <td>User specified tally id (name).
 <br>
@@ -431,76 +433,78 @@ The supported events are:<br>
 <tr><td>Size<td>3
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[1.0,0.0,1.0]<tr><td>Description <td>A vector on the xz-plane of the UserTally coordinate system.
-<tr><th colspan="2">\anchor _UserTally_0_x /UserTally/0/x<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins /UserTally/0/bins<tr><td>Type <td>Option group
+<tr><td>Description <td>Bin edges
+<tr><th colspan="2">\anchor _UserTally_0_bins_x /UserTally/0/bins/x<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion position x-coordinate.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_y /UserTally/0/y<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_y /UserTally/0/bins/y<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion position y-coordinate.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_z /UserTally/0/z<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_z /UserTally/0/bins/z<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion position z-coordinate.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_r /UserTally/0/r<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_r /UserTally/0/bins/r<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's r=sqrt(x^2+y^2+z^2).
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_rho /UserTally/0/rho<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_rho /UserTally/0/bins/rho<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's ρ=sqrt(x^2+y^2).
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_cosTheta /UserTally/0/cosTheta<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_cosTheta /UserTally/0/bins/cosTheta<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's position cosθ = z/r.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_nx /UserTally/0/nx<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_nx /UserTally/0/bins/nx<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's x-axis direction cosine.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_ny /UserTally/0/ny<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_ny /UserTally/0/bins/ny<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's y-axis direction cosine.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_nz /UserTally/0/nz<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_nz /UserTally/0/bins/nz<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's z-axis direction cosine.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_E /UserTally/0/E<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_E /UserTally/0/bins/E<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's kinetic energy.
 <br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_Tdam /UserTally/0/Tdam<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_Tdam /UserTally/0/bins/Tdam<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's damage energy.
@@ -508,7 +512,7 @@ Bin edges must be monotonously increasing.<br>
 Tdam refers to the energy of the PKA dissipated to atomic displacements during the whole cascade<br>
 This can be used only with events of type CascadeComplete<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_V /UserTally/0/V<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_V /UserTally/0/bins/V<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the number of generated vacancies.
@@ -516,7 +520,7 @@ Bin edges must be monotonously increasing.<br>
 It refers to the total number of vacancies generated in a PKA cascade<br>
 This can be used only with events of type CascadeComplete<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_atom_id /UserTally/0/atom_id<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_atom_id /UserTally/0/bins/atom_id<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's atomic species id.
@@ -525,7 +529,7 @@ Each atomic species in the simulation is assigned an id number<br>
 Beam ions always have an id of 0.<br>
 Target atoms recoils have id>=1.<br>
 Bin edges must be monotonously increasing.<br>
-<tr><th colspan="2">\anchor _UserTally_0_recoil_id /UserTally/0/recoil_id<tr><td>Type <td>Vector of floating point values
+<tr><th colspan="2">\anchor _UserTally_0_bins_recoil_id /UserTally/0/bins/recoil_id<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's recoil generation id.

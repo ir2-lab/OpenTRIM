@@ -1,5 +1,3 @@
-## Archive structure
-
 <table>
 <caption>OpenTRIM HDF5 output archive structure</caption>
 <tr><th>Path
