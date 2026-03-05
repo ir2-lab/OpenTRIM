@@ -3,16 +3,6 @@
         "max_no_ions": 20000,
         "threads": 4
     },
-    "Simulation": {
-        "simulation_type": "FullCascade",
-        "screening_type": "ZBL",
-        "eloss_calculation": "EnergyLoss"
-    },
-    "Transport": {
-        "flight_path_type": "Variable",
-        "min_energy": 1.0,
-        "min_recoil_energy": 1.0
-    },
     "IonBeam": {
         "ion": {
             "symbol": "Fe",
@@ -78,8 +68,6 @@
     },
     "Output": {
         "title": "2MeV Fe on Fe",
-        "outfilename": "b1",
-        "store_pka_events": true,
-        "store_dedx": true
+        "outfilename": "b1"
     }
 }

@@ -5,15 +5,8 @@
     },
     "Simulation": {
         "simulation_type": "CascadesOnly",
-        "screening_type": "ZBL",
-        "eloss_calculation": "EnergyLossOff",
-        "intra_cascade_recombination": true,
-        "correlated_recombination": true
-    },
-    "Transport": {
-        "flight_path_type": "Constant",
-        "min_energy": 1.0,
-        "min_recoil_energy": 1.0
+        "electronic_stopping": "Off",
+        "intra_cascade_recombination": true
     },
     "IonBeam": {
         "ion": {
@@ -21,9 +14,7 @@
             "atomic_mass": 55.935
         },
         "energy_distribution": {
-            "type": "SingleValue",
-            "center": 50000,
-            "fwhm": 1
+            "center": 50000
         },
         "spatial_distribution": {
             "geometry": "Volume",
@@ -83,8 +74,6 @@
     },
     "Output": {
         "title": "50keV Fe in Fe cascades",
-        "outfilename": "b8",
-        "store_pka_events": true,
-        "store_exit_events": true
+        "outfilename": "b8"
     }
 }

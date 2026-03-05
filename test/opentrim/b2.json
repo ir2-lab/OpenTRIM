@@ -3,15 +3,6 @@
         "max_no_ions": 20000,
         "threads": 4
     },
-    "Simulation": {
-        "simulation_type": "FullCascade",
-        "screening_type": "ZBL"
-    },
-    "Transport": {
-        "flight_path_type": "Constant",
-        "min_energy": 1.0,
-        "min_recoil_energy": 1.0
-    },
     "IonBeam": {
         "ion": {
             "symbol": "Fe",
@@ -76,8 +67,6 @@
     },
     "Output": {
         "title": "500 keV Fe on Fe",
-        "outfilename": "b2",
-        "store_pka_events": true,
-        "store_exit_events": true
+        "outfilename": "b2"
     }
 }
