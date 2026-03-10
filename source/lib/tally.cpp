@@ -300,11 +300,11 @@ bool tally::debugCheck(double E0)
     for (size_t i = 0; i < n; i++)
         sI += *p++;
 
-    p = &A[eLattice](id, 0);
-    for (size_t i = 0; i < ncell; i++)
+    p = A[eLattice].data();
+    for (size_t i = 0; i < n; i++)
         sPh += *p++;
-    p = &A[eStored](id, 0);
-    for (size_t i = 0; i < ncell; i++)
+    p = A[eStored].data();
+    for (size_t i = 0; i < n; i++)
         sPh += *p++;
 
     p = A[eLost].data();
