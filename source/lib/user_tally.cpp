@@ -125,7 +125,7 @@ bool user_tally::get_bin(const ion &i, const void *pv)
             v = std::sqrt(pos.x() * pos.x() + pos.y() * pos.y()); // rho = sqrt(x^2+y^2)
             break;
         case cCosTheta:
-            v = pos.z() / pos.norm(); // cosTheta = z/r
+            v = pos.isZero() ? 0.f : pos.z() / pos.norm();
             break;
         case cNx:
             v = dir.x(); // x-axis direction cosine
@@ -161,13 +161,13 @@ bool user_tally::get_bin(const ion &i, const void *pv)
             break;
         }
 
-        idx[j] = std::upper_bound(bins[j].begin(), bins[j].end(), v) - bins[j].begin()
-                - 1; // id of bin starting from 0
+        ptrdiff_t bin_idx = std::upper_bound(bins[j].begin(), bins[j].end(), v)
+                - bins[j].begin() - 1;
 
-        // valid bin index is  0 <= idx < bin_size
-        // (the last bin is not included by default)
-        if (idx[j] < 0 || idx[j] >= bin_sizes[j])
-            return false; // invalid index -> reject
+        if (bin_idx < 0 || static_cast<size_t>(bin_idx) >= bin_sizes[j])
+            return false;
+
+        idx[j] = static_cast<size_t>(bin_idx);
     }
 
     return true;
@@ -175,7 +175,7 @@ bool user_tally::get_bin(const ion &i, const void *pv)
 
 bool user_tally::push_bins(bin_variable_code c, const bin_vector_t &edges, size_t natoms)
 {
-    if (edges.empty())
+    if (edges.size() < 2)
         return false;
     if (c == cV) {
         // one bin for each target atom id=1,2,...natoms-1
