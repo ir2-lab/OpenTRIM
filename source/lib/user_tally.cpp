@@ -124,11 +124,9 @@ bool user_tally::get_bin(const ion &i, const void *pv)
         case cRho:
             v = std::sqrt(pos.x() * pos.x() + pos.y() * pos.y()); // rho = sqrt(x^2+y^2)
             break;
-        case cCosTheta: {
-            float r = pos.norm();
-            v = (r > 0.f) ? pos.z() / r : 0.f;
+        case cCosTheta:
+            v = pos.isZero() ? 0.f : pos.z() / pos.norm();
             break;
-        }
         case cNx:
             v = dir.x(); // x-axis direction cosine
             break;
