@@ -1,3 +1,5 @@
+# Build OpenTRIM on Windows using WSL
+
 # Enable WSL
 Open "Turn windows features on or off":
 Enable Virtual Platform on Windows Features, enable Windows Subsystem for Linux
@@ -18,11 +20,11 @@ Set wsl 2 as default:
 `wsl --set-default-version 2`
 `wsl --set-version Ubuntu-24.04 2`
 
-Install VS Code.
+Install the Windows application VS Code.
 Connect to WSL inside of VS Code (lower corner-left icon) and select "Connect to WSL" on the top menu.
 Install the vs code extension "cmake tools"
 
-Follow the instructions on this link:
+Follow the instructions on this link, selecting Ubuntu and then selecting Add repository and install manually:
 https://software.opensuse.org//download.html?project=home%3Amaxiotis%3Agapost&package=opentrim
 
 Run the following commands to install the needed packages:
