@@ -27,19 +27,14 @@ Install the vs code extension "cmake tools"
 Follow the instructions on this link, selecting Ubuntu and then selecting Add repository and install manually:
 https://software.opensuse.org//download.html?project=home%3Amaxiotis%3Agapost&package=opentrim
 
-Run the following commands to install the needed packages:
-`sudo apt update`
-`sudo apt install libeigen3-dev libhdf5-dev libhdf5-103-1`
+Follow the instructions for installing OpenTRIM on Linux on this link:
+https://github.com/ir2-lab/OpenTRIM/blob/main/dist/linux_build.md
 
-Packages for the GUI component add the following:
-`sudo apt install qtbase5-dev libqt5svg5 libqwt-qt5-dev libqwt-qt5-6`
-
+Run these commands on WSL:
 
 `sudo apt install cmake`
 `sudo apt install g++`
 `sudo apt install -y libqt5svg5-dev`
-
-
 `cd ~
 git clone https://github.com/gapost/qmatplotwidget QMatPlotWidget
 cd QMatPlotWidget
@@ -77,8 +72,8 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc`
 
 # If you need to run opentrim-gui:
 
-Install the X server vcxsrv -- It is necessary to have a graphic display on WSL, needed for opentrim-gui
-Run the xlauncher and create configuration with the following parameters
+Unless you have WSLg on Windows 11, you need to install the X server vcxsrv (it's a Windows program) -- It is necessary to have a graphic display on WSL, needed for opentrim-gui
+Run the xlauncher and create configuration with the following parameters:
 `"C:\Program Files\VcXsrv\vcxsrv.exe" :0 -ac -terminate -lesspointer -multiwindow -clipboard -wgl -listen tcp`
 
 On the WSL bash terminal run these commands:
