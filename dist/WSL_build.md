@@ -34,26 +34,11 @@ Run the following commands to install the needed packages:
 Packages for the GUI component add the following:
 `sudo apt install qtbase5-dev libqt5svg5 libqwt-qt5-dev libqwt-qt5-6`
 
-`sudo apt install qtcreator`
+
 `sudo apt install cmake`
 `sudo apt install g++`
 `sudo apt install -y libqt5svg5-dev`
 
-Install the X server vcxsrv -- It is necessary to have a graphic display on WSL
-Run the xlauncher and create configuration with the following parameters
-`"C:\Program Files\VcXsrv\vcxsrv.exe" :0 -ac -terminate -lesspointer -multiwindow -clipboard -wgl -listen tcp`
-
-On the WSL bash terminal run these commands:
-
-`export DISPLAY=localhost:0
-echo 'export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk "{print \$2}"):0.0' >> ~/.bashrc
-source ~/.bashrc`
-
-In order to check if the X server display is working try:
-`sudo apt install x11-apps
-xclock`
-
-If there is an error running xclock try restarting the PC
 
 `cd ~
 git clone https://github.com/gapost/qmatplotwidget QMatPlotWidget
@@ -89,3 +74,21 @@ cd ..`
 Make the path to the packages persistent:
 `export PATH="$HOME/.local/bin:$PATH"
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc`
+
+# If you need to run opentrim-gui:
+
+Install the X server vcxsrv -- It is necessary to have a graphic display on WSL, needed for opentrim-gui
+Run the xlauncher and create configuration with the following parameters
+`"C:\Program Files\VcXsrv\vcxsrv.exe" :0 -ac -terminate -lesspointer -multiwindow -clipboard -wgl -listen tcp`
+
+On the WSL bash terminal run these commands:
+
+`export DISPLAY=localhost:0
+echo 'export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk "{print \$2}"):0.0' >> ~/.bashrc
+source ~/.bashrc`
+
+In order to check if the X server display is working try:
+`sudo apt install x11-apps
+xclock`
+
+If there is an error running xclock try restarting the PC
