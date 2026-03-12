@@ -656,8 +656,8 @@ struct coord_sys
         vector3 nz = zaxis.normalized();
         vector3 xzn = xzvector.normalized();
 
-        // check if z_axis is nearly parallel to xzvector
-        if (std::abs(nz.dot(xzn) - 1) < 10 * std::numeric_limits<float>::epsilon())
+        // check if z_axis is nearly parallel or anti-parallel to xzvector
+        if (std::abs(std::abs(nz.dot(xzn)) - 1) < 10 * std::numeric_limits<float>::epsilon())
             return false;
 
         vector3 ny = nz.cross(xzn).normalized();
