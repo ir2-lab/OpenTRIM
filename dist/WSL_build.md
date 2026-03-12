@@ -11,15 +11,20 @@ If installing Windows on Hyper-V, run a Powershell command line for the virtual 
 
 ### To install WSL2:
 Run these commands on the windows command line: 
-`wsl --install`
-`wsl --update`
-`wsl --install -d Ubuntu-24.04`
+
+```wsl --install```
+
+```wsl --update```
+
+```wsl --install -d Ubuntu-24.04```
 
 Update the kernel if needed by installing wsl_update_x64.msi
 
 Set wsl 2 as default:
-`wsl --set-default-version 2`
-`wsl --set-version Ubuntu-24.04 2`
+
+```wsl --set-default-version 2```
+
+```wsl --set-version Ubuntu-24.04 2```
 
 ### Integration with VS code
 Install the Windows application VS Code.
@@ -34,51 +39,21 @@ Install the vs code extension "cmake tools"
 
 Run these commands on the WSL bash terminal:
 
-`sudo apt install cmake`
-`sudo apt install g++`
-`sudo apt install -y libqt5svg5-dev`
-`cd ~`
+```sudo apt install cmake```
 
-Follow the instructions for installing OpenTRIM on Linux on this link:
+```sudo apt install g++```
+
+```sudo apt install -y libqt5svg5-dev```
+
+```cd ~```
+
+Follow the instructions for building OpenTRIM on Linux on this link:
 https://github.com/ir2-lab/OpenTRIM/blob/main/dist/linux_build.md
 
-`git clone https://github.com/gapost/qmatplotwidget QMatPlotWidget
-cd QMatPlotWidget
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local
-cmake --build . -j"$(nproc)"
-cmake --install .
-cd ..`
-
-`cd ~
-git clone https://github.com/ir2-lab/libdedx
-cmake -S libdedx -B libdedx/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local
-cmake --build libdedx/build -j"$(nproc)"
-cmake --install libdedx/build
-cd ..`
-
-`git clone https://github.com/ir2-lab/QtDataBrowser QtDataBrowser
-cd QtDataBrowser
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build ./build
-cmake --build ./build --target install
-cd ..`
-
-
-
-`cd ~
-git clone https://github.com/ir2-lab/OpenTRIM.git
-cd OpenTRIM
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build ./build
-cmake --build ./build --target install
-cd ..`
-
-
-
 Make the path to the packages persistent:
-`export PATH="$HOME/.local/bin:$PATH"
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc`
+
+```export PATH="$HOME/.local/bin:$PATH"``
+```echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc```
 
 ## Packages for GUI build
 
@@ -86,6 +61,7 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc`
 
 Unless you have WSLg on Windows 11, you need to install the X server vcxsrv (it's a Windows program) -- It is necessary to have a graphic display on WSL, needed for opentrim-gui
 Run the xlauncher and create configuration with the following parameters:
+
 `"C:\Program Files\VcXsrv\vcxsrv.exe" :0 -ac -terminate -lesspointer -multiwindow -clipboard -wgl -listen tcp`
 
 On the WSL bash terminal run these commands:
@@ -95,7 +71,9 @@ echo 'export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk "{print \$2}
 source ~/.bashrc`
 
 In order to check if the X server display is working try:
-`sudo apt install x11-apps
-xclock`
+
+```sudo apt install x11-apps```
+
+```xclock```
 
 If there is an error running xclock try restarting the PC.
