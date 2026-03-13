@@ -1,0 +1,84 @@
+[
+    {
+        "name": "Iron (Fe)",
+        "data": {
+            "id": "Iron",
+            "density": 7.874,
+            "color": "#c0c0c0",
+            "composition": [
+                {
+                    "element": {
+                        "symbol": "Fe",
+                        "atomic_number": 26,
+                        "atomic_mass": 55.845
+                    },
+                    "X": 1.0,
+                    "Ed": 40.0,
+                    "El": 4.28,
+                    "Es": 4.28,
+                    "Er": 0.0,
+                    "Rc": 0.0
+                }
+            ]
+        }
+    },
+    {
+        "name": "Silicon (Si)",
+        "data": {
+            "id": "Silicon",
+            "density": 2.329,
+            "color": "#f0f0f0",
+            "composition": [
+                {
+                    "element": {
+                        "symbol": "Si",
+                        "atomic_number": 14,
+                        "atomic_mass": 28.085
+                    },
+                    "X": 1.0,
+                    "Ed": 15.0,
+                    "El": 4.63,
+                    "Es": 4.63,
+                    "Er": 0.0,
+                    "Rc": 0.0
+                }
+            ]
+        }
+    },    
+   {
+        "name": "Aluminum Oxide (Al2O3)",
+        "data": {
+            "id": "Al2O3",
+            "density": 3.95,
+            "color": "#FF9933",
+            "composition": [
+                {
+                    "element": {
+                        "symbol": "Al",
+                        "atomic_number": 13,
+                        "atomic_mass": 26.9815
+                    },
+                    "X": 2.0,
+                    "Ed": 25.0,
+                    "El": 3.39,
+                    "Es": 3.39,
+                    "Er": 0.0,
+                    "Rc": 0.0
+                },
+                {
+                    "element": {
+                        "symbol": "O",
+                        "atomic_number": 8,
+                        "atomic_mass": 15.999
+                    },
+                    "X": 3.0,
+                    "Ed": 28.0,
+                    "El": 3.39,
+                    "Es": 3.39,
+                    "Er": 0.0,
+                    "Rc": 0.0
+                }
+            ]
+        }
+    }
+]

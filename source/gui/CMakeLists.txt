@@ -8,6 +8,7 @@ set(GUI_HEADERS
     mainui.h
     simulationoptionsview.h 
     periodictablewidget.h  
+    materialdatabasedialog.h
     materialsdefview.h 
     optionsmodel.h 
     floatlineedit.h 
@@ -50,6 +51,7 @@ set(GUI_SOURCES
     opentrim.qrc
     "${_EXAMPLES_QRC}"
     simulationoptionsview.cpp
+    materialdatabasedialog.cpp
     periodictablewidget.cpp
     materialsdefview.cpp
     optionsmodel.cpp
