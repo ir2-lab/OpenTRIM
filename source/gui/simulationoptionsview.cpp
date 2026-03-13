@@ -9,8 +9,11 @@
 #include "mainui.h"
 #include "mcdriverobj.h"
 #include "simboxview.h"
+#include "materialdatabasedialog.h"
 
 #include <QJsonObject>
+#include <QJsonDocument>
+#include <QJsonArray>
 #include <QVBoxLayout>
 #include <QFormLayout>
 #include <QGridLayout>
@@ -352,6 +355,31 @@ QWidget *SimulationOptionsView::createTargetTab(const QModelIndex &idx)
         QVBoxLayout *vbox = new QVBoxLayout;
         vbox->addLayout(hbox1);
         vbox->addSpacing(12);
+        
+        QPushButton *addMatBtn = new QPushButton(QIcon(":/assets/ionicons/add-outline.svg"), "Add Material from Database...");
+        connect(addMatBtn, &QPushButton::clicked, [this]() {
+            MaterialDatabaseDialog dlg(this);
+            if (dlg.exec() == QDialog::Accepted) {
+                QJsonObject mat = dlg.getSelectedMaterial();
+                if (!mat.isEmpty()) {
+                    mcconfig cfg = *mapper->model()->options();
+                    std::string s;
+                    if (cfg.get("/Target/materials", s)) {
+                        QJsonDocument doc = QJsonDocument::fromJson(QByteArray::fromStdString(s));
+                        QJsonArray arr = doc.array();
+                        arr.append(mat);
+                        QJsonDocument newDoc(arr);
+                        cfg.set("/Target/materials", newDoc.toJson(QJsonDocument::Compact).toStdString());
+                        mapper->model()->setOptions(cfg);
+                        materialsView->setWidgetData();
+                        drawSimBox();
+                        setModified(true);
+                    }
+                }
+            }
+        });
+        vbox->addWidget(addMatBtn);
+        
         vbox->addWidget(innerTab);
         hbox->addLayout(vbox, 3);
     }
