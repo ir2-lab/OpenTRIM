@@ -283,14 +283,7 @@ public:
     float distance(float x1, float x2) const
     {
         float d = std::abs(x1 - x2);
-        if (periodic_ && d < w_ / 2) {
-            float d1 = std::abs(x1 - w_ - x2);
-            if (d1 < d)
-                return d1;
-            d1 = std::abs(x1 + w_ - x2);
-            if (d1 < d)
-                return d1;
-        }
+        if (periodic_) d = std::min(d, w_ - d);
         return d;
     }
 };
