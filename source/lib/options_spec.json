@@ -447,7 +447,7 @@
                             "toolTip": "Width in srad of a cone around the central ion beam direction.",
                             "whatsThis": [
                                 "For the Uniform distribution, fwhm defines a cone around the main direction, where the direction of generated ions is sampled uniformly",
-                                "The Gaussian distrubution is not yet implemented"
+                                "For the Gaussian distribution, fwhm defines the solid-angle width of the distribution around the main direction"
                             ]
                         }
                     ]

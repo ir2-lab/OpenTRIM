@@ -189,12 +189,27 @@ void ion_beam::angular_distribution_t::sample(random_vars &g, const target &t, v
     case SingleValue:
         break;
     case Uniform:
-    case Gaussian: // TODO: Gaussian
     {
         float nx, ny, costh, sinth;
         g.random_azimuth_dir(nx, ny);
         costh = 1.f - g.u01s() * 2 * mu;
         sinth = std::sqrt(1 - costh * costh);
+        dir = { nx * sinth, ny * sinth, costh };
+        dir = cs.rotation().transpose() * dir;
+    }
+        dir.normalize();
+        break;
+    case Gaussian:
+    {
+        float nx, ny;
+        float theta;
+        do {
+            theta = std::abs(g.normal() * sig);
+        } while (theta >= float(M_PI));
+
+        float costh = std::cos(theta);
+        float sinth = std::sin(theta);
+        g.random_azimuth_dir(nx, ny);
         dir = { nx * sinth, ny * sinth, costh };
         dir = cs.rotation().transpose() * dir;
     }
@@ -210,6 +225,9 @@ void ion_beam::angular_distribution_t::init(const target &t)
 {
     norm_center = center.normalized();
     mu = std::min(1.f, float(fwhm / 4 / M_PI));
+    // sig: convert solid-angle fwhm to polar-angle sigma
+    // using small-angle approx Omega ~= pi*theta^2  ( valid for typical beam divergence )
+    sig = std::sqrt(fwhm / float(M_PI)) / 2.354820045f;
 
     // define a CS with the z-axis parallel to the center of the beam
     cs.zaxis = norm_center;
