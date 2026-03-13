@@ -292,7 +292,7 @@ When sampling from a distribution, out-of-bounds positions are rejected and a ne
 <tr><td>Default Value<td>1.0<tr><td>Description <td>Width in srad of a cone around the central ion beam direction.
 <br>
 For the Uniform distribution, fwhm defines a cone around the main direction, where the direction of generated ions is sampled uniformly<br>
-For the Gaussian distribution, the polar angle is sampled from a half-normal distribution |N(0,sigma)| where sigma = sqrt(fwhm/pi) / 2.355. The azimuthal angle is sampled uniformly<br>
+For the Gaussian distribution, the two transverse direction components are sampled from an isotropic 2D Gaussian with sigma = sqrt(fwhm/pi) / 2.355. This corresponds to a Rayleigh-distributed polar angle around the main direction<br>
 <tr><th colspan="2">\anchor _Target /Target<tr><td>Type <td>Option group
 <tr><td>Description <td>Target
 <tr><th colspan="2">\anchor _Target_size /Target/size<tr><td>Type <td>Vector of floating point values
