@@ -99,8 +99,8 @@
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_event "\"event\"": "IonStop",<br>
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_coordinate_system "\"coordinate_system\"": {<br>
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_coordinate_system_origin "\"origin\"": [0.0,0.0,0.0],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_coordinate_system_zaxis "\"zaxis\"": [0.0,0.0,1.0],<br>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_coordinate_system_xzvector "\"xzvector\"": [1.0,0.0,1.0]<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
+ef _UserTally_0_coordinate_system_zaxis "\"zaxis\"": [0.0,0.0,1.0]<br>
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;},<br>
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins "\"bins\"": {<br>
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\ref _UserTally_0_bins_x "\"x\"": [],<br>
@@ -429,10 +429,6 @@ The supported events are:<br>
 <tr><td>Size<td>3
 <tr><td>Element range<td>-1e+07...1e+07
 <tr><td>Default Value<td>[0.0,0.0,1.0]<tr><td>Description <td>A vector parallel to the z-axis of the UserTally coordinate system.
-<tr><th colspan="2">\anchor _UserTally_0_coordinate_system_xzvector /UserTally/0/coordinate_system/xzvector<tr><td>Type <td>Vector of floating point values
-<tr><td>Size<td>3
-<tr><td>Element range<td>-1e+07...1e+07
-<tr><td>Default Value<td>[1.0,0.0,1.0]<tr><td>Description <td>A vector on the xz-plane of the UserTally coordinate system.
 <tr><th colspan="2">\anchor _UserTally_0_bins /UserTally/0/bins<tr><td>Type <td>Option group
 <tr><td>Description <td>Bin edges
 <tr><th colspan="2">\anchor _UserTally_0_bins_x /UserTally/0/bins/x<tr><td>Type <td>Vector of floating point values

@@ -866,17 +866,6 @@
                                 "digits": 6,
                                 "toolTip": "A vector parallel to the z-axis of the UserTally coordinate system.",
                                 "whatsThis": "The vector is defined with respect to the simulation space."
-                            },
-                            {
-                                "name": "xzvector",
-                                "label": "Vector on the xz-plane",
-                                "type": "vector",
-                                "size": 3,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
-                                "digits": 6,
-                                "toolTip": "A vector on the xz-plane of the UserTally coordinate system.",
-                                "whatsThis": "The vector is defined with respect to the simulation space."
                             }
                         ]
                     },

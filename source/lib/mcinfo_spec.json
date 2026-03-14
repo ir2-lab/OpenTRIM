@@ -387,13 +387,6 @@
                                     "description": "Coordinate system z-axis direction",
                                     "datatype": "Numeric",
                                     "size": "[3]"
-                                },
-                                {
-                                    "id": "xzvector",
-                                    "type": "Dataset",
-                                    "description": "Vector on the xz-plane",
-                                    "datatype": "Numeric",
-                                    "size": "[3]"
                                 }
                             ]
                         },

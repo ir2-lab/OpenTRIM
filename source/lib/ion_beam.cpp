@@ -213,12 +213,5 @@ void ion_beam::angular_distribution_t::init(const target &t)
 
     // define a CS with the z-axis parallel to the center of the beam
     cs.zaxis = norm_center;
-    // get an arbitrary xz-plane vector - just not collinear with zaxis
-    cs.xzvector = { 1, 0, 0 };
-    if (cs.xzvector.cross(norm_center).isZero())
-        cs.xzvector = { 0, 1, 0 };
-    // should be ok, but just in case
-    if (cs.xzvector.cross(norm_center).isZero())
-        cs.xzvector = { 0, 0, 1 };
     cs.init();
 }

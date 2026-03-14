@@ -7,6 +7,7 @@
 #include <cassert>
 
 #include <unsupported/Eigen/AlignedVector3>
+#include <Eigen/Geometry>
 
 /**
  * \defgroup Geometry Geometry
@@ -604,25 +605,22 @@ inline void deflect_vector(vector3 &m, const vector3 &n)
  * It can be used to trasform the rectilinear coordinates \f$(x,y,z)\f$
  * of a vector or point from CS0 to CS1.
  *
- * CS1 is defined by 3 vectors:
+ * CS1 is defined by 2 vectors:
  * - a vector pointing to the origin of CS1
- * - a vector parallel to the z-axis direction of CS1,
- * - a vector lying on the xz-plane of CS1
+ * - a vector parallel to the z-axis direction of CS1
  *
- * All three vectors are given in CS0 coordinates.
+ * Both vectors are given in CS0 coordinates.
  *
  * The transformation of a point from CS0 to CS1 is
- * actually a tranlation+rotation operation:
+ * a translation + rotation operation:
  * \f[
  *   \vec{x}' = R \cdot (\vec{x} - \vec{x}_0)
  * \f]
- * where \f$R\f$ is the rotation matrix and  \f$x_0\f$ is the origin of CS1.
+ * where \f$R\f$ is the rotation matrix and \f$x_0\f$ is the origin of CS1.
  *
- * If \f$(\vec{n}_x, \vec{n}_y, \vec{n}_z)\f$ are the basis vectors of CS1 then
- * the rotation matrix is
- * \f[
- *   R = \left[ \vec{n}_x, \vec{n}_y, \vec{n}_z \right]^T
- * \f]
+ * \f$R\f$ is computed as the shortest-arc rotation mapping
+ * the world z-axis \f$(0,0,1)\f$ to \c zaxis using
+ * Eigen::Quaternionf::FromTwoVectors.
  *
  *
  * @ingroup Geometry
@@ -631,35 +629,28 @@ struct coord_sys
 {
     vector3 origin{ 0, 0, 0 };
     vector3 zaxis{ 0, 0, 1 };
-    vector3 xzvector{ 1, 0, 1 };
 
     /**
-     * @brief Initialize the transformation
+     * @brief Initialize the transformation.
      *
      * Must be performed before using the class to transform objects.
-     *
-     * The initialization fails if the z-axis and xz-plane vectors
-     * are almost parallel. In this case
-     * the function returns false.
-     *
-     * @return true if initialization is succesfull
+     * Computes the shortest-arc rotation from world z-axis (0,0,1)
+     * to the given zaxis.
      */
-    bool init()
+    void init()
     {
-        vector3 nz = zaxis.normalized();
-        vector3 xzn = xzvector.normalized();
+        const float eps = 10.f * std::numeric_limits<float>::epsilon();
+        const Eigen::Vector3f world_z(0.f, 0.f, 1.f);
 
-        // check if z_axis is nearly parallel or anti-parallel to xzvector
-        if (std::abs(std::abs(nz.dot(xzn)) - 1) < 10 * std::numeric_limits<float>::epsilon())
-            return false;
+        if (zaxis.norm() < eps) {
+            rotation_.setIdentity();
+            identity_ = true;
+            return;
+        }
 
-        vector3 ny = nz.cross(xzn).normalized();
-        vector3 nx = ny.cross(nz).normalized();
-
-        rotation_ << nx, ny, nz;
-        rotation_.transposeInPlace();
-        identity_ = rotation_.isIdentity();
-        return true;
+        const Eigen::Vector3f nz(zaxis.x(), zaxis.y(), zaxis.z());
+        rotation_ = Eigen::Quaternionf::FromTwoVectors(world_z, nz).toRotationMatrix();
+        identity_ = rotation_.isIdentity(eps);
     }
 
     /// Reset to the identity transformation.
@@ -669,7 +660,6 @@ struct coord_sys
         rotation_ = Eigen::Matrix3f::Identity();
         origin = { 0, 0, 0 };
         zaxis = { 0, 0, 1 };
-        xzvector = { 1, 0, 1 };
     }
 
     /**

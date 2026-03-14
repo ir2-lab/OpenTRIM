@@ -476,18 +476,6 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
                                     },
                                     iut };
 
-                    p2["xzvector"] = {
-                        driver_, "Vector on the xz-plane",
-                        [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                            const user_tally *ut =
-                                    i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                            const vector3 &v = ut->cs().xzvector;
-                            s = { v.x(), v.y(), v.z() };
-                            d = { 3 };
-                        },
-                        iut
-                    };
-
                     p2["origin"] = { driver_, "Coordinate system origin",
                                      [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
                                          const user_tally *ut =

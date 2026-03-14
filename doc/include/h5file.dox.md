@@ -280,10 +280,6 @@
 <td>Numeric
 <td>[3]
 <td>Coordinate system z-axis direction
-<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;xzvector
-<td>Numeric
-<td>[3]
-<td>Vector on the xz-plane
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;event
 <td>Text
 <td>Scalar
