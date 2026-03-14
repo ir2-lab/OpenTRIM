@@ -34,14 +34,14 @@ void to_json(ojson &j, const mcconfig &p);
 void from_json(const ojson &j, mcconfig &p);
 
 // validate json config against option specs
-int validate_json_config(const std::string &specs, const ojson &j);
+int validate_json_config(const std::string &specs, const ojson &j, bool strict = true);
 
-int mcconfig::parseJSON(std::istream &js, bool doValidation, std::ostream *os)
+int mcconfig::parseJSON(std::istream &js, bool doValidation, std::ostream *os, bool strict)
 {
     if (os) {
         try {
             ojson j = ojson::parse(js, nullptr, true, true);
-            validate_json_config(options_spec(), j);
+            validate_json_config(options_spec(), j, strict);
             *this = j.template get<mcconfig>();
             if (doValidation)
                 validate();
@@ -56,7 +56,7 @@ int mcconfig::parseJSON(std::istream &js, bool doValidation, std::ostream *os)
         }
     } else {
         ojson j = ojson::parse(js, nullptr, true, true);
-        validate_json_config(options_spec(), j);
+        validate_json_config(options_spec(), j, strict);
         *this = j.template get<mcconfig>();
         if (doValidation)
             validate();
@@ -542,7 +542,7 @@ int validate_simple_value(const ojson &spec, ojson::const_reference &vref, const
 }
 
 int validate_helper(const ojson &spec, const ojson &opt, const std::string &path = std::string(),
-                    bool is_item = false)
+                    bool strict = true)
 {
     mcconfig::option_type_t type;
     spec["type"].get_to(type);
@@ -551,13 +551,38 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
 
     if (type == mcconfig::tStruct) {
         std::string next_path = path.empty() ? "/" : path + name + "/";
+
+        // reverse check: reject user-supplied keys that are not in spec
+        std::vector<std::string> known_names;
+        for (auto it = spec["fields"].begin(); it != spec["fields"].end(); ++it)
+            known_names.push_back((*it)["name"].template get<std::string>());
+
+        if (strict) {
+            try {
+                std::string struct_path = path + name;
+                const ojson &struct_node =
+                        path.empty() ? opt : opt.at(ojson::json_pointer(struct_path));
+
+                if (struct_node.is_object()) {
+                    for (auto &[key, val] : struct_node.items()) {
+                        if (std::find(known_names.begin(), known_names.end(), key)
+                            == known_names.end()) {
+                            std::ostringstream msg;
+                            msg << "(" << (path.empty() ? "" : struct_path) << "/" << key
+                                << ") ";
+                            msg << "Unrecognized option " << std::quoted(key) << std::endl;
+                            throw std::invalid_argument(msg.str());
+                        }
+                    }
+                }
+            } catch (const ojson::out_of_range &) {
+                // Struct section not provided by user input; defaults apply.
+            }
+        }
+
         for (auto it = spec["fields"].begin(); it != spec["fields"].end(); ++it) {
             const ojson &opt_spec = *it;
-            // std::string next_path(path);
-            // next_path += opt_spec["name"].template get<std::string>();
-            // std::string typeName = opt_spec["type"].template get<std::string>();
-
-            validate_helper(opt_spec, opt, next_path);
+            validate_helper(opt_spec, opt, next_path, strict);
         }
         return 0;
     }
@@ -589,23 +614,53 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
             throw std::invalid_argument(msg.str());
         }
 
+        std::vector<std::string> item_known_names;
+        for (auto it = item_spec["fields"].begin(); it != item_spec["fields"].end(); ++it)
+            item_known_names.push_back((*it)["name"].template get<std::string>());
+
         // we accept arrays of objects OR a single object (equiv. to array of size 1)
         if (vref.is_array()) {
             for (int k = 0; k < vref.size(); ++k) {
-                std::string item_path = jpath + "/";
-                item_path += std::to_string(k);
-                item_path += "/";
+                std::string item_obj_path = jpath + "/" + std::to_string(k);
+                std::string item_path = item_obj_path + "/";
+                if (strict) {
+                    const ojson &item_node = opt.at(ojson::json_pointer(item_obj_path));
+                    if (item_node.is_object()) {
+                        for (auto &[key, val] : item_node.items()) {
+                            if (std::find(item_known_names.begin(), item_known_names.end(), key)
+                                == item_known_names.end()) {
+                                std::ostringstream msg;
+                                msg << "(" << item_obj_path << "/" << key << ") ";
+                                msg << "Unrecognized option " << std::quoted(key) << std::endl;
+                                throw std::invalid_argument(msg.str());
+                            }
+                        }
+                    }
+                }
+
                 for (auto it = item_spec["fields"].begin(); it != item_spec["fields"].end(); ++it) {
                     const ojson &opt_spec = *it;
-                    validate_helper(opt_spec, opt, item_path);
+                    validate_helper(opt_spec, opt, item_path, strict);
                 }
             }
             return 0;
         } else {
+            if (strict && vref.is_object()) {
+                for (auto &[key, val] : vref.items()) {
+                    if (std::find(item_known_names.begin(), item_known_names.end(), key)
+                        == item_known_names.end()) {
+                        std::ostringstream msg;
+                        msg << "(" << jpath << "/" << key << ") ";
+                        msg << "Unrecognized option " << std::quoted(key) << std::endl;
+                        throw std::invalid_argument(msg.str());
+                    }
+                }
+            }
+
             std::string item_path = jpath + "/";
             for (auto it = item_spec["fields"].begin(); it != item_spec["fields"].end(); ++it) {
                 const ojson &opt_spec = *it;
-                validate_helper(opt_spec, opt, item_path);
+                validate_helper(opt_spec, opt, item_path, strict);
             }
             return 0;
         }
@@ -614,10 +669,10 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
     return validate_simple_value(spec, vref, jpath);
 }
 
-int validate_json_config(const std::string &specs, const ojson &j)
+int validate_json_config(const std::string &specs, const ojson &j, bool strict)
 {
     std::istringstream is(specs);
     ojson json_specs = ojson::parse(is, nullptr, true, true);
-    validate_helper(json_specs, j);
+    validate_helper(json_specs, j, std::string(), strict);
     return 0;
 }

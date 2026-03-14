@@ -96,6 +96,7 @@ int main(int argc, char *argv[])
     app.set_version_flag("-v,--version", version_string);
 
     int n(-1), j(-1), s(-1);
+    bool relaxed(false);
     std::string input_config_file, input_file, output_file;
 
     app.add_option("-n", n, "Number of histories to run (overrides config input)");
@@ -105,6 +106,8 @@ int main(int argc, char *argv[])
     app.add_option("-f", input_config_file, "JSON config file");
     app.add_option("-o,--output", output_file, "Output HDF5 file name (overrides config input)");
     app.add_flag("-t,--template", "Print a template JSON config to stdout");
+    app.add_flag("--relaxed", relaxed,
+                 "Allow unrecognized JSON config keys (relaxed validation)");
     CLI11_PARSE(app, argc, argv);
 
     if (app.get_option("--template")->as<bool>()) { // NEW: print configuration and exit
@@ -154,12 +157,12 @@ int main(int argc, char *argv[])
                 cout << "Parsing JSON config from " << input_config_file << endl;
             }
 
-            if (config.parseJSON(is, true, &cerr) != 0)
+            if (config.parseJSON(is, true, &cerr, !relaxed) != 0)
                 return -1;
 
         } else {
 
-            if (config.parseJSON(cin, true, &cerr) != 0)
+            if (config.parseJSON(cin, true, &cerr, !relaxed) != 0)
                 return -1;
         }
 

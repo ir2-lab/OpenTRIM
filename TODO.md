@@ -67,7 +67,7 @@ Tally:
 
 ### Core lib
 
-- [ ] json parser: un-recognized options should create an error
+- [X] json parser: un-recognized options should create an error
   - This will aid in checking if a .json file is valid OpenTRIM options
   - With the possibility to relax the rule in the future to allow extra/new options
 
