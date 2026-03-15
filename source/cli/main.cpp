@@ -12,6 +12,8 @@
 #  include <cstdio>
 #endif
 
+#include <csignal>
+
 using std::cerr;
 using std::cin;
 using std::cout;
@@ -62,6 +64,14 @@ void progress_callback(const mcdriver &d, void *)
 {
     info.update(d);
     info.print();
+}
+
+static mcdriver *g_driver_ptr = nullptr;
+
+static void sigint_handler(int)
+{
+    if (g_driver_ptr)
+        g_driver_ptr->abort();
 }
 
 int main(int argc, char *argv[])
@@ -184,13 +194,22 @@ int main(int argc, char *argv[])
     info.init(D);
     info.print();
 
+    // Install handler: Ctrl-C calls abort() instead of killing the process immediately.
+    g_driver_ptr = &D;
+    signal(SIGINT, sigint_handler);
+
     D.exec(progress_callback, 200);
 
-    const mcdriver::run_data &rd = D.run_history().back();
-    cout << endl << endl << "Completed " << rd.total_ion_count << " ion histories." << endl;
-    cout << "Threads: " << D.config().Run.threads << endl;
-    cout << "Cpu time (s):  " << rd.cpu_time << ",\t" << "Ions/cpu-s:  " << rd.ips << endl;
-    cout << "Real time (s): " << info.elapsed() << ",\t" << "Ions/real-s: " << info.ips() << endl;
+    // Guard: run_history is empty only if exec() returned early (n_end <= n_start).
+    // For all other exits including SIGINT abort, exec() pushes before returning.
+    if (!D.run_history().empty()) {
+        const mcdriver::run_data &rd = D.run_history().back();
+        cout << endl << endl << "Completed " << rd.total_ion_count << " ion histories." << endl;
+        cout << "Threads: " << D.config().Run.threads << endl;
+        cout << "Cpu time (s):  " << rd.cpu_time << ",\t" << "Ions/cpu-s:  " << rd.ips << endl;
+        cout << "Real time (s): " << info.elapsed() << ",\t" << "Ions/real-s: " << info.ips() << endl;
+    }
+    // D.save() runs regardless and writes whatever was accumulated before abort.
     cout << "Storing results in " << D.outFileName() << " ...";
     cout.flush();
     D.save(D.outFileName(), &cerr);
