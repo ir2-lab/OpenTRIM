@@ -88,11 +88,13 @@ public:
         distribution_t type{ SingleValue };
         /// Cental direction of generated ions. Unnormalized vector, default: (1,0,0).
         vector3 center{ 1, 0, 0 };
-        /// Full-width at half-maximum of ion angular distribution [srad]. Default: 0.1.
+        /// Full-width at half-maximum of ion angular distribution [srad].
+        /// For Uniform this is cone solid-angle width; for Gaussian this is solid-angle FWHM.
         float fwhm{ 1.0f };
         void sample(random_vars &g, const target &t, vector3 &dir) const;
         void init(const target &t);
         float mu;
+        float sig;
         vector3 norm_center;
         coord_sys cs;
     };

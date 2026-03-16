@@ -248,7 +248,7 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
 bool tally::debugCheck(int id, double E0)
 {
     double s(0), sI(0), sPh(0), sL(0);
-    size_t ncell = A[1].dim()[1];
+    size_t ncell = ncells_;
     double *p;
 
     p = &A[eIoniz](id, 0);
@@ -273,7 +273,7 @@ bool tally::debugCheck(int id, double E0)
 bool tally::debugCheck(double E0)
 {
     double s0(0), sI0(0), sPh0(0), sL0(0);
-    size_t ncell = A[1].dim()[1];
+    size_t ncell = ncells_;
     double *p;
     int id = 0;
 
@@ -300,11 +300,11 @@ bool tally::debugCheck(double E0)
     for (size_t i = 0; i < n; i++)
         sI += *p++;
 
-    p = &A[eLattice](id, 0);
-    for (size_t i = 0; i < ncell; i++)
+    p = A[eLattice].data();
+    for (size_t i = 0; i < n; i++)
         sPh += *p++;
-    p = &A[eStored](id, 0);
-    for (size_t i = 0; i < ncell; i++)
+    p = A[eStored].data();
+    for (size_t i = 0; i < n; i++)
         sPh += *p++;
 
     p = A[eLost].data();
@@ -321,7 +321,7 @@ bool tally::debugCheck(double E0)
 double tally::totalErg(int id)
 {
     double s(0), sI(0), sPh(0), sL(0);
-    size_t ncell = A[1].dim()[1];
+    size_t ncell = ncells_;
     double *p;
 
     p = &A[eIoniz](id, 0);

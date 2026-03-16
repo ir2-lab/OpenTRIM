@@ -283,14 +283,7 @@ public:
     float distance(float x1, float x2) const
     {
         float d = std::abs(x1 - x2);
-        if (periodic_ && d < w_ / 2) {
-            float d1 = std::abs(x1 - w_ - x2);
-            if (d1 < d)
-                return d1;
-            d1 = std::abs(x1 + w_ - x2);
-            if (d1 < d)
-                return d1;
-        }
+        if (periodic_) d = std::min(d, w_ - d);
         return d;
     }
 };
@@ -656,8 +649,8 @@ struct coord_sys
         vector3 nz = zaxis.normalized();
         vector3 xzn = xzvector.normalized();
 
-        // check if z_axis is nearly parallel to xzvector
-        if (std::abs(nz.dot(xzn) - 1) < 10 * std::numeric_limits<float>::epsilon())
+        // check if z_axis is nearly parallel or anti-parallel to xzvector
+        if (std::abs(std::abs(nz.dot(xzn)) - 1) < 10 * std::numeric_limits<float>::epsilon())
             return false;
 
         vector3 ny = nz.cross(xzn).normalized();

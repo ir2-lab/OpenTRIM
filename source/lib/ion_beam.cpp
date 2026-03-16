@@ -189,13 +189,32 @@ void ion_beam::angular_distribution_t::sample(random_vars &g, const target &t, v
     case SingleValue:
         break;
     case Uniform:
-    case Gaussian: // TODO: Gaussian
     {
         float nx, ny, costh, sinth;
         g.random_azimuth_dir(nx, ny);
         costh = 1.f - g.u01s() * 2 * mu;
         sinth = std::sqrt(1 - costh * costh);
         dir = { nx * sinth, ny * sinth, costh };
+        dir = cs.rotation().transpose() * dir;
+    }
+        dir.normalize();
+        break;
+    case Gaussian:
+    {
+        float tx, ty, r2;
+        // Sample transverse direction cosines from an isotropic 2D Gaussian.
+        // The resulting polar angle is Rayleigh-distributed (small-angle beam model).
+        // Reject r2 >= 1 so tz = sqrt(1-r2) stays real (paraxial constraint).
+        // P(reject) = exp(-1/(2*sig^2)); e.g. fwhm=1 srad -> sig=0.24 rad -> P~0.016%.
+        // Truncation bias on E[r2] is negligible for all physical beam divergences.
+        do {
+            tx = g.normal() * sig;
+            ty = g.normal() * sig;
+            r2 = tx * tx + ty * ty;
+        } while (r2 >= 1.f);
+
+        float tz = std::sqrt(1.f - r2);
+        dir = { tx, ty, tz };
         dir = cs.rotation().transpose() * dir;
     }
         dir.normalize();
@@ -210,6 +229,9 @@ void ion_beam::angular_distribution_t::init(const target &t)
 {
     norm_center = center.normalized();
     mu = std::min(1.f, float(fwhm / 4 / M_PI));
+    // sig: convert solid-angle fwhm to effective angular sigma
+    // using small-angle approx Omega ~= pi*theta^2  ( valid for typical beam divergence )
+    sig = std::sqrt(fwhm / float(M_PI)) / 2.354820045f;
 
     // define a CS with the z-axis parallel to the center of the beam
     cs.zaxis = norm_center;

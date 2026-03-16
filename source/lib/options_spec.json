@@ -423,7 +423,7 @@
                             "whatsThis": [
                                 "- Single Value: All ions have the same initial direction",
                                 "- Uniform: Ion direction distributed uniformly within a cone around the central direction",
-                                "- Gaussian: Ion direction distributed according to the Gaussian(Normal) distribution around the central direction"
+                                "- Gaussian: Ion direction distributed according to a 2D isotropic Gaussian around the central direction. Transverse components tx,ty ~ N(0,sigma); polar angle follows Rayleigh distribution, azimuthal angle is automatically uniform"
                             ]
                         },
                         {
@@ -447,7 +447,7 @@
                             "toolTip": "Width in srad of a cone around the central ion beam direction.",
                             "whatsThis": [
                                 "For the Uniform distribution, fwhm defines a cone around the main direction, where the direction of generated ions is sampled uniformly",
-                                "The Gaussian distrubution is not yet implemented"
+                                "For the Gaussian distribution, fwhm defines the solid-angle width around the main direction, sampled via an isotropic 2D Gaussian in the transverse components"
                             ]
                         }
                     ]

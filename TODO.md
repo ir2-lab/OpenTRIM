@@ -67,7 +67,7 @@ Tally:
 
 ### Core lib
 
-- [ ] json parser: un-recognized options should create an error
+- [X] json parser: un-recognized options should create an error
   - This will aid in checking if a .json file is valid OpenTRIM options
   - With the possibility to relax the rule in the future to allow extra/new options
 
@@ -103,7 +103,7 @@ Tally:
   - [ ] Pressing add material presents to the user a selection/search function to discover & select
 
 - CLI:
-  - [ ] Block Ctrl-C signal so that data is saved before the program is aborted
+  - [X] Block Ctrl-C signal so that data is saved before the program is aborted
 
 - General
   - [ ] Provide progress info for HDF5 i/o operations

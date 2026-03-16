@@ -320,7 +320,7 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
         {
             std::string json = h5e::load<std::string>(h5f, "/run_info/json_config");
             std::stringstream is(json);
-            if (opt.parseJSON(is, true, os) != 0)
+            if (opt.parseJSON(is, true, os, false) != 0)
                 return -1;
         }
 

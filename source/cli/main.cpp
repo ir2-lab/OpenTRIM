@@ -12,6 +12,8 @@
 #  include <cstdio>
 #endif
 
+#include <csignal>
+
 using std::cerr;
 using std::cin;
 using std::cout;
@@ -64,6 +66,14 @@ void progress_callback(const mcdriver &d, void *)
     info.print();
 }
 
+static mcdriver *g_driver_ptr = nullptr;
+
+static void sigint_handler(int)
+{
+    if (g_driver_ptr)
+        g_driver_ptr->abort();
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -96,6 +106,7 @@ int main(int argc, char *argv[])
     app.set_version_flag("-v,--version", version_string);
 
     int n(-1), j(-1), s(-1);
+    bool relaxed(false);
     std::string input_config_file, input_file, output_file;
 
     app.add_option("-n", n, "Number of histories to run (overrides config input)");
@@ -105,6 +116,8 @@ int main(int argc, char *argv[])
     app.add_option("-f", input_config_file, "JSON config file");
     app.add_option("-o,--output", output_file, "Output HDF5 file name (overrides config input)");
     app.add_flag("-t,--template", "Print a template JSON config to stdout");
+    app.add_flag("--relaxed", relaxed,
+                 "Allow unrecognized JSON config keys (relaxed validation)");
     CLI11_PARSE(app, argc, argv);
 
     if (app.get_option("--template")->as<bool>()) { // NEW: print configuration and exit
@@ -154,12 +167,12 @@ int main(int argc, char *argv[])
                 cout << "Parsing JSON config from " << input_config_file << endl;
             }
 
-            if (config.parseJSON(is, true, &cerr) != 0)
+            if (config.parseJSON(is, true, &cerr, !relaxed) != 0)
                 return -1;
 
         } else {
 
-            if (config.parseJSON(cin, true, &cerr) != 0)
+            if (config.parseJSON(cin, true, &cerr, !relaxed) != 0)
                 return -1;
         }
 
@@ -181,13 +194,22 @@ int main(int argc, char *argv[])
     info.init(D);
     info.print();
 
+    // Install handler: Ctrl-C calls abort() instead of killing the process immediately.
+    g_driver_ptr = &D;
+    signal(SIGINT, sigint_handler);
+
     D.exec(progress_callback, 200);
 
-    const mcdriver::run_data &rd = D.run_history().back();
-    cout << endl << endl << "Completed " << rd.total_ion_count << " ion histories." << endl;
-    cout << "Threads: " << D.config().Run.threads << endl;
-    cout << "Cpu time (s):  " << rd.cpu_time << ",\t" << "Ions/cpu-s:  " << rd.ips << endl;
-    cout << "Real time (s): " << info.elapsed() << ",\t" << "Ions/real-s: " << info.ips() << endl;
+    // Guard: run_history is empty only if exec() returned early (n_end <= n_start).
+    // For all other exits including SIGINT abort, exec() pushes before returning.
+    if (!D.run_history().empty()) {
+        const mcdriver::run_data &rd = D.run_history().back();
+        cout << endl << endl << "Completed " << rd.total_ion_count << " ion histories." << endl;
+        cout << "Threads: " << D.config().Run.threads << endl;
+        cout << "Cpu time (s):  " << rd.cpu_time << ",\t" << "Ions/cpu-s:  " << rd.ips << endl;
+        cout << "Real time (s): " << info.elapsed() << ",\t" << "Ions/real-s: " << info.ips() << endl;
+    }
+    // D.save() runs regardless and writes whatever was accumulated before abort.
     cout << "Storing results in " << D.outFileName() << " ...";
     cout.flush();
     D.save(D.outFileName(), &cerr);
