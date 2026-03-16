@@ -3,6 +3,7 @@
 #include "periodic_table.h"
 #include "periodictablewidget.h"
 #include "materialsdefview.h"
+#include "usertallyview.h"
 #include "regionsview.h"
 #include "optionsmodel.h"
 #include "mydatawidgetmapper.h"
@@ -72,7 +73,8 @@ SimulationOptionsView::SimulationOptionsView(MainUI *iui, QWidget *parent)
         else if (category == "Target")
             widget = createTargetTab(idx);
         else if (category == "UserTally") {
-            // TODO !!
+            userTallyView_ = new UserTallyView(model);
+            widget = userTallyView_;
         } else
             widget = createTab(idx);
 
@@ -193,6 +195,8 @@ void SimulationOptionsView::revert()
     mapper->model()->setOptions(opt);
     mapper->revert();
     materialsView->setWidgetData();
+    if (userTallyView_)
+        userTallyView_->setWidgetData();
     regionsView->revert();
     jsonView->setPlainText(QString::fromStdString(ionsui->driverObj()->json()));
 
@@ -443,6 +447,8 @@ void SimulationOptionsView::onDriverStatusChanged()
     mapper->setEnabled(isreset);
     btSelectIon->setEnabled(isreset);
     materialsView->setEnabled(isreset);
+    if (userTallyView_)
+        userTallyView_->setEnabled(isreset);
     regionsView->setEnabled(isreset);
     if (isreset)
         applyRules();

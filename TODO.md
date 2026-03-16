@@ -43,7 +43,7 @@
 ### GUI:
 
 - [ ] Better help in configuration. A foldable dedicated text browser widget to show info?
-- [ ] Implement UserTally options/definition in GUI
+- [X] Implement UserTally options/definition in GUI
 - [X] Getting Started
 - [X] About
 
@@ -99,8 +99,8 @@ Tally:
 ### User
 
 - GUI: 
-  - [ ] Add a database of pre-defined materials with full definition: composition, density, Ed, etc
-  - [ ] Pressing add material presents to the user a selection/search function to discover & select
+  - [X] Add a database of pre-defined materials with full definition: composition, density, Ed, etc
+  - [X] Pressing add material presents to the user a selection/search function to discover & select
 
 - CLI:
   - [X] Block Ctrl-C signal so that data is saved before the program is aborted

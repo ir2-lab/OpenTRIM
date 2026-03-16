@@ -3,6 +3,7 @@
 #include "periodic_table.h"
 #include "periodictablewidget.h"
 #include "floatlineedit.h"
+#include "materialdatabasedialog.h"
 #include "optionsmodel.h"
 
 #include <QVBoxLayout>
@@ -20,6 +21,7 @@
 #include <QFontMetrics>
 #include <QItemSelectionModel>
 #include <QColorDialog>
+#include <QHash>
 
 void MaterialsDefView::setBtMatColor(const QColor &clr)
 {
@@ -44,27 +46,35 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     QFormLayout *flayout = new QFormLayout;
 
     cbMaterialID = new MyComboBox;
-    cbMaterialID->setPlaceholderText("Material id");
+    cbMaterialID->setPlaceholderText("Add material or search database...");
     cbMaterialID->setMinimumContentsLength(15);
+    cbMaterialID->setEnabled(false);
+    cbMaterialID->setToolTip(
+        "Select material. If empty, use 'Add material from database' or 'Add new material'.");
 
     connect(cbMaterialID, &MyComboBox::doubleClicked, this, &MaterialsDefView::editMaterialName);
-    connect(cbMaterialID, &MyComboBox::currentTextChanged, this,
+    connect(cbMaterialID, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &MaterialsDefView::updateSelectedMaterial);
+
+    btDbMaterial = new QToolButton;
+    btDbMaterial->setIcon(QIcon(":/assets/lucide/database-search.svg"));
+    btDbMaterial->setToolTip("Add material from database");
 
     btAddMaterial = new QToolButton;
     btAddMaterial->setIcon(QIcon(":/assets/ionicons/add-outline.svg"));
-    btAddMaterial->setToolTip("Add Material");
+    btAddMaterial->setToolTip("Add new material");
 
     btDelMaterial = new QToolButton;
     btDelMaterial->setIcon(QIcon(":/assets/ionicons/remove-outline.svg"));
-    btDelMaterial->setToolTip("Remove Material");
+    btDelMaterial->setToolTip("Remove material");
     btDelMaterial->setEnabled(false);
 
     btEdtMaterial = new QToolButton;
     btEdtMaterial->setIcon(QIcon(":/assets/ionicons/create-outline.svg"));
-    btEdtMaterial->setToolTip("Edit Material's Name");
+    btEdtMaterial->setToolTip("Rename material");
     btEdtMaterial->setEnabled(false);
 
+    connect(btDbMaterial, &QToolButton::clicked, this, &MaterialsDefView::addFromDatabase);
     connect(btAddMaterial, &QToolButton::clicked, this, &MaterialsDefView::addMaterial);
     connect(btDelMaterial, &QToolButton::clicked, this, &MaterialsDefView::removeMaterial);
     connect(btEdtMaterial, &QToolButton::clicked, this, &MaterialsDefView::editMaterialName);
@@ -73,6 +83,7 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     sbDensity->setMinimum(0.001);
     sbDensity->setMaximum(100.0);
     sbDensity->setDecimals(4);
+    sbDensity->setEnabled(false);
     connect(sbDensity, SIGNAL(valueChanged(double)), this, SLOT(setDensity(double)));
 
     btMatColor = new QToolButton;
@@ -80,9 +91,11 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     btMatColor->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     setBtMatColor(Qt::darkBlue);
     btMatColor->setToolTip("Select display color for this material");
+    btMatColor->setEnabled(false);
     connect(btMatColor, &QToolButton::pressed, this, &MaterialsDefView::selectColor);
 
     hbox->addWidget(cbMaterialID);
+    hbox->addWidget(btDbMaterial);
     hbox->addWidget(btAddMaterial);
     hbox->addWidget(btDelMaterial);
     hbox->addWidget(btEdtMaterial);
@@ -105,6 +118,26 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     setLayout(vbox);
 }
 
+void MaterialsDefView::addFromDatabase()
+{
+    MaterialDatabaseDialog dlg(this);
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+
+    material::material_desc_t mat = dlg.selectedMaterial();
+    if (mat.id.empty())
+        return;
+
+    auto &materials = model_->options()->Target.materials;
+    materials.push_back(mat);
+    setWidgetData();
+    cbMaterialID->setCurrentIndex(cbMaterialID->count() - 1);
+    updateSelectedMaterial();
+    model_->notifyDataChanged(materialsIndex_);
+
+    emit materialsChanged();
+}
+
 void MaterialsDefView::addMaterial()
 {
     bool ok;
@@ -117,10 +150,9 @@ void MaterialsDefView::addMaterial()
         newMaterial.id = id.toStdString();
         materials.push_back(newMaterial);
         setWidgetData(); // widgets updated
-        cbMaterialID->setCurrentText(id);
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
+        cbMaterialID->setCurrentIndex(cbMaterialID->count() - 1);
+        updateSelectedMaterial();
+        model_->notifyDataChanged(materialsIndex_);
 
         emit materialsChanged();
     }
@@ -140,9 +172,7 @@ void MaterialsDefView::editMaterialName()
         cbMaterialID->setItemText(i, id);
         material::material_desc_t &m = model_->options()->Target.materials[i];
         m.id = id.toStdString();
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
+        model_->notifyDataChanged(materialsIndex_);
     }
     setValueData(); // update material name
 }
@@ -160,10 +190,7 @@ void MaterialsDefView::removeMaterial()
         auto &materials = model_->options()->Target.materials;
         materials.erase(materials.begin() + i);
         setWidgetData(); // widgets updated
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
-
+        model_->notifyDataChanged(materialsIndex_);
         emit materialsChanged();
     }
 }
@@ -172,7 +199,7 @@ void MaterialsDefView::setWidgetData()
 {
     auto &materials = model_->options()->Target.materials;
 
-    int i = cbMaterialID->currentIndex();
+    int prevIdx = cbMaterialID->currentIndex();
     cbMaterialID->blockSignals(true);
 
     cbMaterialID->clear();
@@ -180,29 +207,39 @@ void MaterialsDefView::setWidgetData()
     materialsView->setMaterialIdx();
 
     if (materials.empty()) {
+        cbMaterialID->setPlaceholderText("No materials - use + or DB button");
+        cbMaterialID->setEnabled(false);
+        cbMaterialID->setCurrentIndex(-1);
+        sbDensity->setEnabled(false);
+        btMatColor->setEnabled(false);
+        btDelMaterial->setEnabled(false);
+        btEdtMaterial->setEnabled(false);
         cbMaterialID->blockSignals(false);
         return;
     }
 
-    // copy materials to combo box
+    // Copy materials to combo box and disambiguate duplicate IDs in display text.
     int n = materials.size();
+    QHash<QString, int> idCount;
     for (int k = 0; k < n; ++k) {
-        cbMaterialID->addItem(QString::fromStdString(materials[k].id));
+        QString id = QString::fromStdString(materials[k].id).trimmed();
+        if (id.isEmpty())
+            id = QString("Material #%1").arg(k + 1);
+        int occ = ++idCount[id];
+        QString displayId = (occ > 1) ? QString("%1 (%2)").arg(id).arg(occ) : id;
+        cbMaterialID->addItem(displayId);
     }
 
-    // update selection if out of bounds
-    if (n) {
-        if (i < 0)
-            i = 0;
-        else if (i >= n)
-            i = n - 1;
-    } else
-        i = -1;
-
-    // set data to selected material
+    // Always select the first material if previously empty, else keep previous index if valid
+    int i = (prevIdx < 0 || prevIdx >= n) ? 0 : prevIdx;
     cbMaterialID->setCurrentIndex(i);
+
+    cbMaterialID->setEnabled(true);
+    sbDensity->setEnabled(true);
+    btMatColor->setEnabled(true);
     btDelMaterial->setEnabled(i >= 0);
     btEdtMaterial->setEnabled(i >= 0);
+
     sbDensity->blockSignals(true);
     sbDensity->setValue(materials[i].density);
     sbDensity->blockSignals(false);
@@ -215,15 +252,31 @@ void MaterialsDefView::setValueData() { }
 
 void MaterialsDefView::updateSelectedMaterial()
 {
-    int i = cbMaterialID->currentIndex();
-    if (i < 0) { // no selection
+    auto &materials = model_->options()->Target.materials;
+    if (materials.empty()) {
         sbDensity->clear();
+        sbDensity->setEnabled(false);
+        btMatColor->setEnabled(false);
+        materialsView->setMaterialIdx();
+        btDelMaterial->setEnabled(false);
+        btEdtMaterial->setEnabled(false);
+        return;
+    }
+
+    int i = cbMaterialID->currentIndex();
+    if (i < 0 || i >= materials.size()) { // no valid selection
+        cbMaterialID->setCurrentIndex(-1);
+        sbDensity->clear();
+        sbDensity->setEnabled(false);
+        btMatColor->setEnabled(false);
         materialsView->setMaterialIdx();
     } else {
-        const material::material_desc_t &mat = model_->options()->Target.materials[i];
+        const material::material_desc_t &mat = materials[i];
         sbDensity->blockSignals(true);
         sbDensity->setValue(mat.density);
         sbDensity->blockSignals(false);
+        sbDensity->setEnabled(true);
+        btMatColor->setEnabled(true);
         setBtMatColor(QColor(mat.color.c_str()));
         materialsView->setMaterialIdx(i);
     }
@@ -245,9 +298,7 @@ void MaterialsDefView::setDensity(double v)
     QString matid = cbMaterialID->currentText();
     material::material_desc_t &mat = materials[i];
     mat.density = v;
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    model_->notifyDataChanged(materialsIndex_);
 }
 
 void MaterialsDefView::selectColor()
@@ -269,9 +320,7 @@ void MaterialsDefView::selectColor()
     if (clr.isValid()) {
         mat.color = clr.name(QColor::HexArgb).toStdString();
         setBtMatColor(clr);
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
+        model_->notifyDataChanged(materialsIndex_);
 
         emit materialsChanged();
     }
@@ -431,9 +480,7 @@ bool MaterialCompositionModel::setData(const QModelIndex &index, const QVariant 
     default:;
     }
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    model_->notifyDataChanged(materialsIndex_);
 
     return true;
 }
@@ -451,9 +498,7 @@ bool MaterialCompositionModel::insertRows(int position, int rows, const QModelIn
     mat->composition.push_back(atom::parameters());
     endInsertRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    model_->notifyDataChanged(materialsIndex_);
 
     return true;
 }
@@ -473,9 +518,7 @@ bool MaterialCompositionModel::removeRows(int position, int rows, const QModelIn
     mat->composition.erase(mat->composition.begin() + position);
     endRemoveRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    model_->notifyDataChanged(materialsIndex_);
 
     return true;
 }

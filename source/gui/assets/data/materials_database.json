@@ -1,0 +1,503 @@
+[
+  {
+    "id": "Fe",
+    "description": "Iron (BCC, standard SRIM values)",
+    "density": 7.874,
+    "composition": [
+      { "symbol": "Fe", "X": 1.0, "Ed": 40.0, "El": 3.0, "Es": 4.28, "Er": 40.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Fe-low",
+    "description": "Iron (low-damage model)",
+    "density": 7.874,
+    "composition": [
+      { "symbol": "Fe", "X": 1.0, "Ed": 25.0, "El": 3.0, "Es": 4.28, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "FeO",
+    "description": "Iron oxide",
+    "density": 5.745,
+    "composition": [
+      { "symbol": "Fe", "X": 1.0, "Ed": 40.0, "El": 3.0, "Es": 4.28, "Er": 40.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 1.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Fe2O3",
+    "description": "Hematite",
+    "density": 5.24,
+    "composition": [
+      { "symbol": "Fe", "X": 2.0, "Ed": 40.0, "El": 3.0, "Es": 4.28, "Er": 40.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 3.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Fe3O4",
+    "description": "Magnetite",
+    "density": 5.17,
+    "composition": [
+      { "symbol": "Fe", "X": 3.0, "Ed": 40.0, "El": 3.0, "Es": 4.28, "Er": 40.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 4.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Si",
+    "description": "Silicon",
+    "density": 2.329,
+    "composition": [
+      { "symbol": "Si", "X": 1.0, "Ed": 15.0, "El": 2.0, "Es": 4.7, "Er": 15.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "SiO2",
+    "description": "Silicon dioxide (amorphous)",
+    "density": 2.2,
+    "composition": [
+      { "symbol": "Si", "X": 1.0, "Ed": 15.0, "El": 2.0, "Es": 4.7, "Er": 15.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 2.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "SiC",
+    "description": "Silicon carbide",
+    "density": 3.21,
+    "composition": [
+      { "symbol": "Si", "X": 1.0, "Ed": 20.0, "El": 3.0, "Es": 4.7, "Er": 20.0, "Rc": 0.946 },
+      { "symbol": "C", "X": 1.0, "Ed": 25.0, "El": 3.0, "Es": 7.4, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "C",
+    "description": "Carbon (graphite)",
+    "density": 2.267,
+    "composition": [
+      { "symbol": "C", "X": 1.0, "Ed": 25.0, "El": 3.0, "Es": 7.4, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "C-diamond",
+    "description": "Carbon (diamond)",
+    "density": 3.51,
+    "composition": [
+      { "symbol": "C", "X": 1.0, "Ed": 43.0, "El": 3.0, "Es": 7.4, "Er": 43.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Al",
+    "description": "Aluminum",
+    "density": 2.70,
+    "composition": [
+      { "symbol": "Al", "X": 1.0, "Ed": 25.0, "El": 3.36, "Es": 3.36, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Al2O3",
+    "description": "Alumina",
+    "density": 3.97,
+    "composition": [
+      { "symbol": "Al", "X": 2.0, "Ed": 25.0, "El": 3.36, "Es": 3.36, "Er": 25.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 3.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "AlN",
+    "description": "Aluminum nitride",
+    "density": 3.26,
+    "composition": [
+      { "symbol": "Al", "X": 1.0, "Ed": 25.0, "El": 3.36, "Es": 3.36, "Er": 25.0, "Rc": 0.946 },
+      { "symbol": "N", "X": 1.0, "Ed": 10.0, "El": 2.0, "Es": 2.0, "Er": 10.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Cu",
+    "description": "Copper",
+    "density": 8.96,
+    "composition": [
+      { "symbol": "Cu", "X": 1.0, "Ed": 30.0, "El": 3.49, "Es": 3.49, "Er": 30.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Ni",
+    "description": "Nickel",
+    "density": 8.90,
+    "composition": [
+      { "symbol": "Ni", "X": 1.0, "Ed": 40.0, "El": 3.0, "Es": 4.5, "Er": 40.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Cr",
+    "description": "Chromium",
+    "density": 7.19,
+    "composition": [
+      { "symbol": "Cr", "X": 1.0, "Ed": 40.0, "El": 3.0, "Es": 4.0, "Er": 40.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "NiCr",
+    "description": "Nickel-chromium alloy",
+    "density": 8.4,
+    "composition": [
+      { "symbol": "Ni", "X": 0.8, "Ed": 40.0, "El": 3.0, "Es": 4.5, "Er": 40.0, "Rc": 0.946 },
+      { "symbol": "Cr", "X": 0.2, "Ed": 40.0, "El": 3.0, "Es": 4.0, "Er": 40.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "SS304",
+    "description": "Stainless steel 304",
+    "density": 8.0,
+    "composition": [
+      { "symbol": "Fe", "X": 0.70, "Ed": 40.0, "El": 3.0, "Es": 4.28, "Er": 40.0, "Rc": 0.946 },
+      { "symbol": "Cr", "X": 0.19, "Ed": 40.0, "El": 3.0, "Es": 4.0, "Er": 40.0, "Rc": 0.946 },
+      { "symbol": "Ni", "X": 0.11, "Ed": 40.0, "El": 3.0, "Es": 4.5, "Er": 40.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "W",
+    "description": "Tungsten",
+    "density": 19.25,
+    "composition": [
+      { "symbol": "W", "X": 1.0, "Ed": 90.0, "El": 3.0, "Es": 8.79, "Er": 90.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "WC",
+    "description": "Tungsten carbide",
+    "density": 15.63,
+    "composition": [
+      { "symbol": "W", "X": 1.0, "Ed": 90.0, "El": 3.0, "Es": 8.79, "Er": 90.0, "Rc": 0.946 },
+      { "symbol": "C", "X": 1.0, "Ed": 25.0, "El": 3.0, "Es": 7.4, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Au",
+    "description": "Gold",
+    "density": 19.32,
+    "composition": [
+      { "symbol": "Au", "X": 1.0, "Ed": 25.0, "El": 3.81, "Es": 3.81, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Ag",
+    "description": "Silver",
+    "density": 10.49,
+    "composition": [
+      { "symbol": "Ag", "X": 1.0, "Ed": 25.0, "El": 2.95, "Es": 2.95, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Pt",
+    "description": "Platinum",
+    "density": 21.45,
+    "composition": [
+      { "symbol": "Pt", "X": 1.0, "Ed": 30.0, "El": 3.5, "Es": 3.5, "Er": 30.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Pd",
+    "description": "Palladium",
+    "density": 12.02,
+    "composition": [
+      { "symbol": "Pd", "X": 1.0, "Ed": 30.0, "El": 3.0, "Es": 3.0, "Er": 30.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Pb",
+    "description": "Lead",
+    "density": 11.34,
+    "composition": [
+      { "symbol": "Pb", "X": 1.0, "Ed": 25.0, "El": 2.0, "Es": 2.0, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "PbWO4",
+    "description": "Lead tungstate",
+    "density": 8.28,
+    "composition": [
+      { "symbol": "Pb", "X": 1.0, "Ed": 25.0, "El": 2.0, "Es": 2.0, "Er": 25.0, "Rc": 0.946 },
+      { "symbol": "W", "X": 1.0, "Ed": 90.0, "El": 3.0, "Es": 8.79, "Er": 90.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 4.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Ti",
+    "description": "Titanium",
+    "density": 4.506,
+    "composition": [
+      { "symbol": "Ti", "X": 1.0, "Ed": 30.0, "El": 3.0, "Es": 4.85, "Er": 30.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "TiO2",
+    "description": "Titanium dioxide",
+    "density": 4.23,
+    "composition": [
+      { "symbol": "Ti", "X": 1.0, "Ed": 30.0, "El": 3.0, "Es": 4.85, "Er": 30.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 2.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Zr",
+    "description": "Zirconium",
+    "density": 6.52,
+    "composition": [
+      { "symbol": "Zr", "X": 1.0, "Ed": 40.0, "El": 3.0, "Es": 6.25, "Er": 40.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "ZrO2",
+    "description": "Zirconia",
+    "density": 5.68,
+    "composition": [
+      { "symbol": "Zr", "X": 1.0, "Ed": 40.0, "El": 3.0, "Es": 6.25, "Er": 40.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 2.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Hf",
+    "description": "Hafnium",
+    "density": 13.31,
+    "composition": [
+      { "symbol": "Hf", "X": 1.0, "Ed": 40.0, "El": 3.0, "Es": 6.0, "Er": 40.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "HfO2",
+    "description": "Hafnia",
+    "density": 9.68,
+    "composition": [
+      { "symbol": "Hf", "X": 1.0, "Ed": 40.0, "El": 3.0, "Es": 6.0, "Er": 40.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 2.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Y2O3",
+    "description": "Yttria",
+    "density": 5.01,
+    "composition": [
+      { "symbol": "Y", "X": 2.0, "Ed": 25.0, "El": 3.0, "Es": 3.0, "Er": 25.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 3.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "CeO2",
+    "description": "Ceria",
+    "density": 7.22,
+    "composition": [
+      { "symbol": "Ce", "X": 1.0, "Ed": 25.0, "El": 3.0, "Es": 3.0, "Er": 25.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 2.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "UO2",
+    "description": "Uranium dioxide",
+    "density": 10.97,
+    "composition": [
+      { "symbol": "U", "X": 1.0, "Ed": 40.0, "El": 3.0, "Es": 6.0, "Er": 40.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 2.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "GaAs",
+    "description": "Gallium arsenide",
+    "density": 5.32,
+    "composition": [
+      { "symbol": "Ga", "X": 1.0, "Ed": 10.0, "El": 3.0, "Es": 3.0, "Er": 10.0, "Rc": 0.946 },
+      { "symbol": "As", "X": 1.0, "Ed": 10.0, "El": 3.0, "Es": 3.0, "Er": 10.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "GaN",
+    "description": "Gallium nitride",
+    "density": 6.15,
+    "composition": [
+      { "symbol": "Ga", "X": 1.0, "Ed": 10.0, "El": 3.0, "Es": 3.0, "Er": 10.0, "Rc": 0.946 },
+      { "symbol": "N", "X": 1.0, "Ed": 10.0, "El": 2.0, "Es": 2.0, "Er": 10.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "InP",
+    "description": "Indium phosphide",
+    "density": 4.81,
+    "composition": [
+      { "symbol": "In", "X": 1.0, "Ed": 10.0, "El": 3.0, "Es": 3.0, "Er": 10.0, "Rc": 0.946 },
+      { "symbol": "P", "X": 1.0, "Ed": 10.0, "El": 3.0, "Es": 3.0, "Er": 10.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Ge",
+    "description": "Germanium",
+    "density": 5.32,
+    "composition": [
+      { "symbol": "Ge", "X": 1.0, "Ed": 15.0, "El": 3.0, "Es": 3.0, "Er": 15.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Li",
+    "description": "Lithium",
+    "density": 0.534,
+    "composition": [
+      { "symbol": "Li", "X": 1.0, "Ed": 10.0, "El": 2.0, "Es": 2.0, "Er": 10.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Be",
+    "description": "Beryllium",
+    "density": 1.85,
+    "composition": [
+      { "symbol": "Be", "X": 1.0, "Ed": 25.0, "El": 3.0, "Es": 3.0, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "B",
+    "description": "Boron",
+    "density": 2.34,
+    "composition": [
+      { "symbol": "B", "X": 1.0, "Ed": 25.0, "El": 3.0, "Es": 3.0, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "BN",
+    "description": "Boron nitride",
+    "density": 2.1,
+    "composition": [
+      { "symbol": "B", "X": 1.0, "Ed": 25.0, "El": 3.0, "Es": 3.0, "Er": 25.0, "Rc": 0.946 },
+      { "symbol": "N", "X": 1.0, "Ed": 10.0, "El": 2.0, "Es": 2.0, "Er": 10.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Mg",
+    "description": "Magnesium",
+    "density": 1.74,
+    "composition": [
+      { "symbol": "Mg", "X": 1.0, "Ed": 25.0, "El": 3.0, "Es": 2.9, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "MgO",
+    "description": "Magnesium oxide",
+    "density": 3.58,
+    "composition": [
+      { "symbol": "Mg", "X": 1.0, "Ed": 25.0, "El": 3.0, "Es": 2.9, "Er": 25.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 1.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Ca",
+    "description": "Calcium",
+    "density": 1.55,
+    "composition": [
+      { "symbol": "Ca", "X": 1.0, "Ed": 20.0, "El": 2.0, "Es": 2.0, "Er": 20.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "CaO",
+    "description": "Calcium oxide",
+    "density": 3.34,
+    "composition": [
+      { "symbol": "Ca", "X": 1.0, "Ed": 20.0, "El": 2.0, "Es": 2.0, "Er": 20.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 1.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Co",
+    "description": "Cobalt",
+    "density": 8.90,
+    "composition": [
+      { "symbol": "Co", "X": 1.0, "Ed": 35.0, "El": 3.0, "Es": 3.0, "Er": 35.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Mn",
+    "description": "Manganese",
+    "density": 7.21,
+    "composition": [
+      { "symbol": "Mn", "X": 1.0, "Ed": 35.0, "El": 3.0, "Es": 3.0, "Er": 35.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "V",
+    "description": "Vanadium",
+    "density": 6.11,
+    "composition": [
+      { "symbol": "V", "X": 1.0, "Ed": 35.0, "El": 3.0, "Es": 3.0, "Er": 35.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Nb",
+    "description": "Niobium",
+    "density": 8.57,
+    "composition": [
+      { "symbol": "Nb", "X": 1.0, "Ed": 40.0, "El": 3.0, "Es": 3.0, "Er": 40.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Mo",
+    "description": "Molybdenum",
+    "density": 10.28,
+    "composition": [
+      { "symbol": "Mo", "X": 1.0, "Ed": 60.0, "El": 3.0, "Es": 5.0, "Er": 60.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Ta",
+    "description": "Tantalum",
+    "density": 16.65,
+    "composition": [
+      { "symbol": "Ta", "X": 1.0, "Ed": 90.0, "El": 3.0, "Es": 8.0, "Er": 90.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Sn",
+    "description": "Tin",
+    "density": 7.31,
+    "composition": [
+      { "symbol": "Sn", "X": 1.0, "Ed": 25.0, "El": 2.0, "Es": 2.0, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Zn",
+    "description": "Zinc",
+    "density": 7.14,
+    "composition": [
+      { "symbol": "Zn", "X": 1.0, "Ed": 25.0, "El": 2.0, "Es": 2.0, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "CuZn",
+    "description": "Brass (Cu-Zn)",
+    "density": 8.5,
+    "composition": [
+      { "symbol": "Cu", "X": 0.7, "Ed": 30.0, "El": 3.49, "Es": 3.49, "Er": 30.0, "Rc": 0.946 },
+      { "symbol": "Zn", "X": 0.3, "Ed": 25.0, "El": 2.0, "Es": 2.0, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "CuSn",
+    "description": "Bronze (Cu-Sn)",
+    "density": 8.8,
+    "composition": [
+      { "symbol": "Cu", "X": 0.9, "Ed": 30.0, "El": 3.49, "Es": 3.49, "Er": 30.0, "Rc": 0.946 },
+      { "symbol": "Sn", "X": 0.1, "Ed": 25.0, "El": 2.0, "Es": 2.0, "Er": 25.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "H2O",
+    "description": "Water",
+    "density": 1.0,
+    "composition": [
+      { "symbol": "H", "X": 2.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 1.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  },
+  {
+    "id": "Ice",
+    "description": "Water ice",
+    "density": 0.92,
+    "composition": [
+      { "symbol": "H", "X": 2.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 },
+      { "symbol": "O", "X": 1.0, "Ed": 2.0, "El": 2.0, "Es": 2.0, "Er": 2.0, "Rc": 0.946 }
+    ]
+  }
+]

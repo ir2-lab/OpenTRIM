@@ -9,6 +9,8 @@ set(GUI_HEADERS
     simulationoptionsview.h 
     periodictablewidget.h  
     materialsdefview.h 
+    materialdatabasedialog.h
+    usertallyview.h
     optionsmodel.h 
     floatlineedit.h 
     mydatawidgetmapper.h 
@@ -31,6 +33,8 @@ set(GUI_SOURCES
     simulationoptionsview.cpp
     periodictablewidget.cpp
     materialsdefview.cpp
+    materialdatabasedialog.cpp
+    usertallyview.cpp
     optionsmodel.cpp
     floatlineedit.cpp
     mydatawidgetmapper.cpp

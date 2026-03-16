@@ -23,6 +23,7 @@ class MaterialsDefView : public QWidget
     Q_OBJECT
 
     MyComboBox *cbMaterialID;
+    QToolButton *btDbMaterial;
     QToolButton *btAddMaterial;
     QToolButton *btDelMaterial;
     QToolButton *btEdtMaterial;
@@ -42,6 +43,7 @@ signals:
     void materialsChanged();
 
 public slots:
+    void addFromDatabase();
     void addMaterial();
     void removeMaterial();
     void editMaterialName();
