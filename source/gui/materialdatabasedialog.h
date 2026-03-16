@@ -2,7 +2,10 @@
 #define MATERIALDATABASEDIALOG_H
 
 #include <QDialog>
-#include <QJsonObject>
+#include <QSet>
+#include <QStringList>
+
+#include "json_defs_p.h"
 
 class QListWidget;
 class QTextBrowser;
@@ -16,9 +19,10 @@ class MaterialDatabaseDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit MaterialDatabaseDialog(QWidget *parent = nullptr);
+    explicit MaterialDatabaseDialog(const QStringList &existingMaterialIds = {},
+                                    QWidget *parent = nullptr);
 
-    QJsonObject getSelectedMaterial() const;
+    ojson getSelectedMaterial() const;
 
 private slots:
     void onMaterialSelected(int currentRow);
@@ -32,7 +36,8 @@ private:
     QListWidget *materialListWidget;
     QLineEdit *filterLineEdit;
     QDialogButtonBox *buttonBox;
-    QVector<QJsonObject> materials;
+    std::vector<ojson> materials;
+    QSet<QString> existingMaterialIds_;
     QLabel *idLabel;
     QLabel *densityLabel;
     QTableWidget *compositionTable;
