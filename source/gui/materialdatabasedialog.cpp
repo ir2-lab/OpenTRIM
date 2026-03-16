@@ -10,13 +10,13 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QFile>
-#include <QJsonDocument>
-#include <QJsonArray>
 #include <QMessageBox>
 #include <QPushButton>
 
-MaterialDatabaseDialog::MaterialDatabaseDialog(QWidget *parent)
-    : QDialog(parent)
+MaterialDatabaseDialog::MaterialDatabaseDialog(const QStringList &existingMaterialIds,
+                                               QWidget *parent)
+    : QDialog(parent), existingMaterialIds_(QSet<QString>(existingMaterialIds.begin(),
+                                                          existingMaterialIds.end()))
 {
     setWindowTitle("Select Material from Database");
     setMinimumSize(600, 400);
@@ -25,6 +25,10 @@ MaterialDatabaseDialog::MaterialDatabaseDialog(QWidget *parent)
     filterLineEdit->setPlaceholderText("Filter materials...");
 
     materialListWidget = new QListWidget;
+        materialListWidget->setStyleSheet(
+            "QListWidget::item:disabled {"
+            " background-color: palette(alternate-base);"
+            " }");
     
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
@@ -62,13 +66,31 @@ void MaterialDatabaseDialog::loadDatabase()
         return;
     }
 
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-    QJsonArray materialArray = doc.array();
+    ojson doc;
+    try {
+        doc = ojson::parse(file.readAll().toStdString(), nullptr, true, true);
+    }
+    catch (const std::exception &) {
+        QMessageBox::critical(this, "Error", "Could not parse material database.");
+        return;
+    }
 
-    for (const QJsonValue &value : materialArray) {
-        QJsonObject obj = value.toObject();
-        materials.append(obj["data"].toObject());
-        materialListWidget->addItem(obj["name"].toString());
+    for (const auto &obj : doc) {
+        const ojson &mat = obj["data"];
+        materials.push_back(mat);
+
+        QString itemName = QString::fromStdString(obj["name"].get<std::string>());
+        QString materialId = QString::fromStdString(mat["id"].get<std::string>());
+        if (existingMaterialIds_.contains(materialId)) {
+            itemName += " [selected]";
+        }
+
+        QListWidgetItem *item = new QListWidgetItem(itemName);
+        if (existingMaterialIds_.contains(materialId)) {
+            item->setFlags(item->flags() & ~Qt::ItemIsEnabled & ~Qt::ItemIsSelectable);
+            item->setToolTip("Already added");
+        }
+        materialListWidget->addItem(item);
     }
 }
 
@@ -80,32 +102,45 @@ void MaterialDatabaseDialog::onMaterialSelected(int currentRow)
         return;
     }
 
-    QJsonObject selected = materials.at(currentRow);
-    idLabel->setText(selected["id"].toString());
-    densityLabel->setText(QString::number(selected["density"].toDouble()) + " g/cm³");
+    QListWidgetItem *currentItem = materialListWidget->item(currentRow);
+    if (!currentItem || !(currentItem->flags() & Qt::ItemIsEnabled)) {
+        clearDetails();
+        buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+        return;
+    }
+
+    const ojson &selected = materials.at(currentRow);
+    idLabel->setText(QString::fromStdString(selected["id"].get<std::string>()));
+    densityLabel->setText(QString::number(selected["density"].get<double>()) + " g/cm³");
 
     compositionTable->setRowCount(0);
-    QJsonArray composition = selected["composition"].toArray();
-    for (const QJsonValue &compValue : composition) {
-        QJsonObject compObj = compValue.toObject();
-        QJsonObject elemObj = compObj["element"].toObject();
+    for (const auto &compObj : selected["composition"]) {
+        const ojson &elemObj = compObj["element"];
         
         int row = compositionTable->rowCount();
         compositionTable->insertRow(row);
-        compositionTable->setItem(row, 0, new QTableWidgetItem(QString("%1 (%2)").arg(elemObj["symbol"].toString()).arg(elemObj["atomic_number"].toInt())));
-        compositionTable->setItem(row, 1, new QTableWidgetItem(QString::number(compObj["X"].toDouble())));
-        compositionTable->setItem(row, 2, new QTableWidgetItem(QString::number(compObj["Ed"].toDouble())));
-        compositionTable->setItem(row, 3, new QTableWidgetItem(QString::number(compObj["El"].toDouble())));
-        compositionTable->setItem(row, 4, new QTableWidgetItem(QString::number(compObj["Es"].toDouble())));
+        compositionTable->setItem(
+                row, 0,
+                new QTableWidgetItem(
+                        QString("%1 (%2)").arg(QString::fromStdString(elemObj["symbol"].get<std::string>()))
+                                .arg(elemObj["atomic_number"].get<int>())));
+        compositionTable->setItem(row, 1,
+                                  new QTableWidgetItem(QString::number(compObj["X"].get<double>())));
+        compositionTable->setItem(row, 2,
+                                  new QTableWidgetItem(QString::number(compObj["Ed"].get<double>())));
+        compositionTable->setItem(row, 3,
+                                  new QTableWidgetItem(QString::number(compObj["El"].get<double>())));
+        compositionTable->setItem(row, 4,
+                                  new QTableWidgetItem(QString::number(compObj["Es"].get<double>())));
     }
     buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
 }
 
-QJsonObject MaterialDatabaseDialog::getSelectedMaterial() const
+ojson MaterialDatabaseDialog::getSelectedMaterial() const
 {
     int currentRow = materialListWidget->currentRow();
     if (currentRow < 0 || currentRow >= materials.size()) {
-        return QJsonObject();
+        return ojson();
     }
     return materials.at(currentRow);
 }
@@ -119,6 +154,7 @@ void MaterialDatabaseDialog::onFilterTextChanged(const QString &text)
         item->setHidden(!match);
     }
     clearDetails();
+    buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 }
 
 QWidget *MaterialDatabaseDialog::createDetailsPanel()
