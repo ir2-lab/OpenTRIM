@@ -45,7 +45,7 @@ void McDriverObj::setOptions(const mcconfig &opt, bool initFromFile)
 {
     options_ = opt;
     if (initFromFile) {
-        max_ions_ = opt.Run.max_no_ions;
+        setMaxIons(opt.Run.max_no_ions);
         nThreads_ = opt.Run.threads;
         seed_ = opt.Run.seed;
         updInterval_ = opt.Output.storage_interval;

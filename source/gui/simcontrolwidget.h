@@ -5,6 +5,7 @@
 
 class QLineEdit;
 class QLabel;
+class QDoubleSpinBox;
 class QSpinBox;
 class QProgressBar;
 class QToolButton;
@@ -35,11 +36,11 @@ private:
     McDriverObj *driver_;
     QToolButton *btStart;
     QToolButton *btReset;
-    QSpinBox *sbIons;
+    QDoubleSpinBox *sbIons;
     QSpinBox *sbNThreads;
     QSpinBox *sbSeed;
     QSpinBox *sbUpdInterval;
-    std::vector<QSpinBox *> simCtrls;
+    std::vector<QWidget *> simCtrls;
     std::vector<QLineEdit *> simIndicators;
     QProgressBar *progressBar;
     QLabel *runIndicator;

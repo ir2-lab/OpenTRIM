@@ -14,6 +14,7 @@
 #include <QLineEdit>
 #include <QToolButton>
 #include <QProgressBar>
+#include <QDoubleSpinBox>
 #include <QSpinBox>
 #include <QLabel>
 #include <QStyle>
@@ -64,13 +65,17 @@ SimControlWidget::SimControlWidget(MainUI *ui, QWidget *parent)
     // because they can be overriden every time we run the sim
     OptionsModel *model = mainui_->optionsModel;
     QModelIndex driverOptionsIdx = model->index("Run");
-    QModelIndex idx = model->index("max_no_ions", 0, driverOptionsIdx);
-    OptionsItem *item = model->getItem(idx);
-    sbIons = (QSpinBox *)item->createEditor(this);
+    // QSpinBox is limited to INT_MAX. Used QDoubleSpinBox with 0 decimals
+    // to support integer values up to 2^53 exactly
+    sbIons = new QDoubleSpinBox;
+    sbIons->setDecimals(0);
+    sbIons->setRange(1, static_cast<double>(McDriverObj::kMaxExactIons));
+    sbIons->setSingleStep(100'000);
+    sbIons->setValue(static_cast<double>(driver_->maxIons()));
     simCtrls.push_back(sbIons);
 
-    idx = model->index("threads", 0, driverOptionsIdx);
-    item = model->getItem(idx);
+    QModelIndex idx = model->index("threads", 0, driverOptionsIdx);
+    OptionsItem *item = model->getItem(idx);
     sbNThreads = (QSpinBox *)item->createEditor(this);
     simCtrls.push_back(sbNThreads);
 
@@ -191,7 +196,8 @@ SimControlWidget::SimControlWidget(MainUI *ui, QWidget *parent)
 
     connect(driver_, &McDriverObj::configChanged, this, &SimControlWidget::revert);
 
-    connect(sbIons, QOverload<int>::of(&QSpinBox::valueChanged), driver_, &McDriverObj::setMaxIons);
+    connect(sbIons, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [this](double v) { driver_->setMaxIons(static_cast<quint64>(v)); });
     connect(sbNThreads, QOverload<int>::of(&QSpinBox::valueChanged), driver_,
             &McDriverObj::setNThreads);
     connect(sbSeed, QOverload<int>::of(&QSpinBox::valueChanged), driver_, &McDriverObj::setSeed);
@@ -333,7 +339,7 @@ void SimControlWidget::onSimulationCreated()
 
 void SimControlWidget::revert()
 {
-    sbIons->setValue(driver_->maxIons());
+    sbIons->setValue(static_cast<double>(driver_->maxIons()));
     sbNThreads->setValue(driver_->nThreads());
     sbSeed->setValue(driver_->seed());
     sbUpdInterval->setValue(driver_->updInterval());
