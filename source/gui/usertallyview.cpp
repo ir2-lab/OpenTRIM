@@ -646,7 +646,7 @@ UserTallyView::UserTallyView(OptionsModel *m, QWidget *parent)
     top->addWidget(btAddTally_);
 
     btDupTally_ = new QToolButton;
-    btDupTally_->setIcon(QIcon(":/assets/ionicons/create-outline.svg"));
+    btDupTally_->setIcon(QIcon(":/assets/ionicons/copy-outline.svg"));
     btDupTally_->setToolTip("Duplicate tally");
     top->addWidget(btDupTally_);
 
@@ -782,15 +782,30 @@ void UserTallyView::setWidgetData()
         updateSelectedTally();
     } else {
         leDescription_->clear();
+        cbEvent_->setCurrentIndex(0);
+        cbUseLabFrame_->setChecked(true);
+        onUseLabFrameChanged();
         binModel_->clear();
         warningLabel_->clear();
         updateSummaryLabel();
+        setTallyEditorEnabled(false);
     }
 
     const bool has = !ut.empty();
+    cbTallyID_->setEnabled(has);
     btDupTally_->setEnabled(has);
     btDelTally_->setEnabled(has);
     btEdtTally_->setEnabled(has);
+}
+
+void UserTallyView::setTallyEditorEnabled(bool enabled)
+{
+    leDescription_->setEnabled(enabled);
+    cbEvent_->setEnabled(enabled);
+    cbUseLabFrame_->setEnabled(enabled);
+    coordWidget_->setEnabled(enabled && !cbUseLabFrame_->isChecked());
+    btAddBin_->setEnabled(enabled);
+    binTableView_->setEnabled(enabled);
 }
 
 void UserTallyView::setValueData()
@@ -937,8 +952,10 @@ void UserTallyView::loadFromTemplate()
 void UserTallyView::updateSelectedTally()
 {
     const user_tally::parameters *t = currentTally();
-    if (!t)
+    if (!t) {
+        setTallyEditorEnabled(false);
         return;
+    }
 
     syncingUi_ = true;
 
@@ -960,6 +977,8 @@ void UserTallyView::updateSelectedTally()
     leDescription_->blockSignals(false);
     cbEvent_->blockSignals(false);
     syncingUi_ = false;
+
+    setTallyEditorEnabled(true);
 
     btDelTally_->setEnabled(true);
     btEdtTally_->setEnabled(true);

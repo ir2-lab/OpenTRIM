@@ -133,6 +133,7 @@ private slots:
 private:
     Event currentEvent() const;
     void setCurrentEvent(Event ev);
+    void setTallyEditorEnabled(bool enabled);
     user_tally::parameters *currentTally();
     const user_tally::parameters *currentTally() const;
 

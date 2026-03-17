@@ -40,6 +40,7 @@
         <file>assets/ionicons/open-outline.svg</file>
         <file>assets/3d/cubeFlat.obj</file>
         <file>assets/ionicons/create-outline.svg</file>
+        <file>assets/ionicons/copy-outline.svg</file>
         <file>examples/270keV_He_on_C.json</file>
     </qresource>
 </RCC>
