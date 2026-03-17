@@ -140,6 +140,7 @@ public:
     int nThreads() const { return nThreads_; }
     int seed() const { return seed_; }
     int updInterval() const { return updInterval_; }
+    int maxCpuTime() const { return max_cpu_time_; }
 
 public slots:
 
@@ -151,6 +152,7 @@ public slots:
     void setNThreads(int n) { nThreads_ = n; };
     void setSeed(int n) { seed_ = n; }
     void setUpdInterval(int n) { updInterval_ = n; }
+    void setMaxCpuTime(int n) { max_cpu_time_ = std::max(0, n); }
 
 private slots:
 
@@ -199,6 +201,7 @@ private:
     int nThreads_;
     int seed_;
     int updInterval_;
+    int max_cpu_time_;
 
     // run info
     running_sim_info info_;

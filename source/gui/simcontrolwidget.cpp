@@ -5,6 +5,7 @@
 #include "optionsmodel.h"
 #include "simulationoptionsview.h"
 
+#include <climits>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -90,6 +91,15 @@ SimControlWidget::SimControlWidget(MainUI *ui, QWidget *parent)
     sbSeed = (QSpinBox *)item->createEditor(this);
     simCtrls.push_back(sbSeed);
 
+    // 0 means no time limit.
+    sbMaxTime = new QSpinBox;
+    sbMaxTime->setRange(0, INT_MAX);
+    sbMaxTime->setSingleStep(60);
+    sbMaxTime->setSuffix(" s");
+    sbMaxTime->setSpecialValueText("no limit");
+    sbMaxTime->setValue(driver_->maxCpuTime());
+    sbMaxTime->setToolTip("Stop after this many CPU seconds. With N threads, wall time will be ~1/N of this value. 0 means no time limit.");
+
     /* Create Info items */
 
     QStringList ctrlLabels{ "Ions to run", "Threads", "Upd period (ms)", "Seed" };
@@ -164,6 +174,13 @@ SimControlWidget::SimControlWidget(MainUI *ui, QWidget *parent)
                 }
             }
             {
+                QHBoxLayout *hbox3 = new QHBoxLayout;
+                hbox3->addWidget(new QLabel("Max CPU time (s)"));
+                hbox3->addWidget(sbMaxTime);
+                hbox3->addStretch();
+                vbox->addLayout(hbox3);
+            }
+            {
                 QHBoxLayout *hbox2 = new QHBoxLayout;
                 hbox2->addWidget(runIndicator);
                 hbox2->addWidget(progressBar);
@@ -203,6 +220,8 @@ SimControlWidget::SimControlWidget(MainUI *ui, QWidget *parent)
     connect(sbSeed, QOverload<int>::of(&QSpinBox::valueChanged), driver_, &McDriverObj::setSeed);
     connect(sbUpdInterval, QOverload<int>::of(&QSpinBox::valueChanged), driver_,
             &McDriverObj::setUpdInterval);
+    connect(sbMaxTime, QOverload<int>::of(&QSpinBox::valueChanged), driver_,
+            &McDriverObj::setMaxCpuTime);
 }
 
 void SimControlWidget::onStart(bool b)
@@ -289,6 +308,7 @@ void SimControlWidget::onDriverStatusChanged()
     sbNThreads->setEnabled(st != McDriverObj::mcRunning);
     sbUpdInterval->setEnabled(st != McDriverObj::mcRunning);
     sbSeed->setEnabled(st == McDriverObj::mcReset);
+    sbMaxTime->setEnabled(st != McDriverObj::mcRunning);
 }
 
 QString mytimefmt_(double t, bool ceil = false)
@@ -343,4 +363,5 @@ void SimControlWidget::revert()
     sbNThreads->setValue(driver_->nThreads());
     sbSeed->setValue(driver_->seed());
     sbUpdInterval->setValue(driver_->updInterval());
+    sbMaxTime->setValue(driver_->maxCpuTime());
 }

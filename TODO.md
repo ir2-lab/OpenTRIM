@@ -51,7 +51,7 @@
 - [ ] Program icon/logo
 - [ ] Desktop integration
 
-- [ ] Implement function to set limit on ion histories or time to run
+- [X] Implement function to set limit on ion histories or time to run
   E.g., the "Ions to run" label can become a ToolButton, allowing the user
   to set the limit either on the # of ions or in time
 

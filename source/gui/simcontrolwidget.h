@@ -40,6 +40,7 @@ private:
     QSpinBox *sbNThreads;
     QSpinBox *sbSeed;
     QSpinBox *sbUpdInterval;
+    QSpinBox *sbMaxTime;
     std::vector<QWidget *> simCtrls;
     std::vector<QLineEdit *> simIndicators;
     QProgressBar *progressBar;

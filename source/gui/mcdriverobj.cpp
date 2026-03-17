@@ -2,6 +2,7 @@
 
 #include "mcdriver.h"
 
+#include <climits>
 #include <fstream>
 
 #include <QFile>
@@ -21,7 +22,8 @@ McDriverObj::McDriverObj()
       max_ions_(100),
       nThreads_(1),
       seed_(123456789),
-      updInterval_(1000)
+      updInterval_(1000),
+      max_cpu_time_(0)
 {
     // internal start signal connection
     connect(this, &McDriverObj::startSignal, this, &McDriverObj::start_, Qt::QueuedConnection);
@@ -49,6 +51,9 @@ void McDriverObj::setOptions(const mcconfig &opt, bool initFromFile)
         nThreads_ = opt.Run.threads;
         seed_ = opt.Run.seed;
         updInterval_ = opt.Output.storage_interval;
+        setMaxCpuTime(opt.Run.max_cpu_time > static_cast<size_t>(INT_MAX)
+                              ? INT_MAX
+                              : static_cast<int>(opt.Run.max_cpu_time));
     }
     emit configChanged();
     setModified(true);
@@ -61,6 +66,7 @@ std::string McDriverObj::json() const
     opt.Run.seed = seed_;
     opt.Run.threads = nThreads_;
     opt.Output.storage_interval = updInterval_;
+    opt.Run.max_cpu_time = static_cast<size_t>(max_cpu_time_);
     return opt.toJSON();
 }
 
@@ -143,6 +149,7 @@ bool McDriverObj::validateOptions(QString *msg) const
     opt.Run.seed = seed_;
     opt.Run.threads = nThreads_;
     opt.Output.storage_interval = updInterval_;
+    opt.Run.max_cpu_time = static_cast<size_t>(max_cpu_time_);
 
     bool isValid = true;
 
@@ -283,6 +290,7 @@ void McDriverObj::saveJson(const QString &fname)
         opt.Run.seed = seed_;
         opt.Run.threads = nThreads_;
         opt.Output.storage_interval = updInterval_;
+        opt.Run.max_cpu_time = static_cast<size_t>(max_cpu_time_);
     }
 
     opt.Output.outfilename = fileName().toStdString();
@@ -347,6 +355,7 @@ void McDriverObj::start(bool b)
             opt.Run.seed = seed_;
             opt.Run.threads = nThreads_;
             opt.Output.storage_interval = updInterval_;
+            opt.Run.max_cpu_time = static_cast<size_t>(max_cpu_time_);
 
             driver_->init(opt);
 
@@ -360,6 +369,7 @@ void McDriverObj::start(bool b)
             mcconfig::run_options par = driver_->config().Run;
             par.max_no_ions = max_ions_;
             par.threads = nThreads_;
+            par.max_cpu_time = static_cast<size_t>(max_cpu_time_);
             driver_->setRunOptions(par);
 
             mcconfig::output_options opts = driver_->config().Output;
