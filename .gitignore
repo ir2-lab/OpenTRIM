@@ -18,3 +18,6 @@ CTestTestfile.cmake
 _deps
 build_qt_debug/
 *.oct
+test/python/config.json
+.gitignore
+test/python/result.h5
