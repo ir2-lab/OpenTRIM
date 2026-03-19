@@ -10,7 +10,6 @@
 #include "mcdriverobj.h"
 #include "simboxview.h"
 
-#include <QJsonObject>
 #include <QVBoxLayout>
 #include <QFormLayout>
 #include <QGridLayout>
@@ -352,6 +351,7 @@ QWidget *SimulationOptionsView::createTargetTab(const QModelIndex &idx)
         QVBoxLayout *vbox = new QVBoxLayout;
         vbox->addLayout(hbox1);
         vbox->addSpacing(12);
+
         vbox->addWidget(innerTab);
         hbox->addLayout(vbox, 3);
     }

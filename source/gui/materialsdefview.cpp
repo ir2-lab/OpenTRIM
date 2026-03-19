@@ -4,6 +4,8 @@
 #include "periodictablewidget.h"
 #include "floatlineedit.h"
 #include "optionsmodel.h"
+#include "materialdatabasedialog.h"
+#include "json_defs_p.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -51,20 +53,25 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     connect(cbMaterialID, &MyComboBox::currentTextChanged, this,
             &MaterialsDefView::updateSelectedMaterial);
 
+    btDbMaterial = new QToolButton;
+    btDbMaterial->setIcon(QIcon(":/assets/lucide/database-search.svg"));
+    btDbMaterial->setToolTip("Add material from database");
+
     btAddMaterial = new QToolButton;
     btAddMaterial->setIcon(QIcon(":/assets/ionicons/add-outline.svg"));
-    btAddMaterial->setToolTip("Add Material");
+    btAddMaterial->setToolTip("Add new material");
 
     btDelMaterial = new QToolButton;
     btDelMaterial->setIcon(QIcon(":/assets/ionicons/remove-outline.svg"));
-    btDelMaterial->setToolTip("Remove Material");
+    btDelMaterial->setToolTip("Remove material");
     btDelMaterial->setEnabled(false);
 
     btEdtMaterial = new QToolButton;
     btEdtMaterial->setIcon(QIcon(":/assets/ionicons/create-outline.svg"));
-    btEdtMaterial->setToolTip("Edit Material's Name");
+    btEdtMaterial->setToolTip("Rename material");
     btEdtMaterial->setEnabled(false);
 
+    connect(btDbMaterial, &QToolButton::clicked, this, &MaterialsDefView::addMaterialFromDatabase);
     connect(btAddMaterial, &QToolButton::clicked, this, &MaterialsDefView::addMaterial);
     connect(btDelMaterial, &QToolButton::clicked, this, &MaterialsDefView::removeMaterial);
     connect(btEdtMaterial, &QToolButton::clicked, this, &MaterialsDefView::editMaterialName);
@@ -83,6 +90,7 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     connect(btMatColor, &QToolButton::pressed, this, &MaterialsDefView::selectColor);
 
     hbox->addWidget(cbMaterialID);
+    hbox->addWidget(btDbMaterial);
     hbox->addWidget(btAddMaterial);
     hbox->addWidget(btDelMaterial);
     hbox->addWidget(btEdtMaterial);
@@ -103,6 +111,39 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
 
     vbox->addWidget(materialsView);
     setLayout(vbox);
+}
+
+void MaterialsDefView::addMaterialFromDatabase()
+{
+    QStringList existingMaterialIds;
+    for (const auto &material : model_->options()->Target.materials)
+        existingMaterialIds << QString::fromStdString(material.id);
+
+    MaterialDatabaseDialog dlg(existingMaterialIds, this);
+    if (dlg.exec() == QDialog::Accepted) {
+        ojson mat = dlg.getSelectedMaterial();
+        if (!mat.is_null() && !mat.empty()) {
+            mcconfig cfg = *model_->options();
+            std::string s;
+            if (cfg.get("/Target/materials", s)) {
+                ojson arr;
+                try {
+                    arr = ojson::parse(s, nullptr, true, true);
+                }
+                catch (const std::exception &) {
+                    arr = ojson::array();
+                }
+                if (!arr.is_array())
+                    arr = ojson::array();
+                arr.push_back(mat);
+                cfg.set("/Target/materials", arr.dump());
+                model_->setOptions(cfg);
+                setWidgetData();
+                cbMaterialID->setCurrentText(QString::fromStdString(mat["id"].get<std::string>()));
+                emit materialsChanged();
+            }
+        }
+    }
 }
 
 void MaterialsDefView::addMaterial()

@@ -12,6 +12,7 @@
         <file>assets/ionicons/remove-outline.svg</file>
         <file>assets/ionicons/add-outline.svg</file>
         <file>assets/ionicons/checkmark-done-outline.svg</file>
+        <file>assets/materials.json</file>
         <file>assets/ionicons/document-text-outline.svg</file>
         <file>assets/ionicons/play-circle-outline.png</file>
         <file>assets/ionicons/refresh-circle-outline.png</file>
@@ -26,6 +27,7 @@
         <file>assets/ionicons/list-outline.png</file>
         <file>assets/ionicons/bar-chart-outline.png</file>
         <file>assets/lucide/chart-line.svg</file>
+        <file>assets/lucide/database-search.svg</file>
         <file>md/quick_start.md</file>
         <file>md/images/intro.png</file>
         <file>md/images/intro22.png</file>

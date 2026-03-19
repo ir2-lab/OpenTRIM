@@ -99,8 +99,9 @@ Tally:
 ### User
 
 - GUI: 
-  - [ ] Add a database of pre-defined materials with full definition: composition, density, Ed, etc
-  - [ ] Pressing add material presents to the user a selection/search function to discover & select
+  - [x] Add a database of pre-defined materials with full definition: composition, density, Ed, etc
+  - [x] Pressing add material presents to the user a selection/search function to discover & select
+  - [] Extend the database of pre-defined materials
 
 - CLI:
   - [X] Block Ctrl-C signal so that data is saved before the program is aborted
