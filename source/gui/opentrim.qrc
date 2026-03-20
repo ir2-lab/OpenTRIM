@@ -26,6 +26,7 @@
         <file>assets/ionicons/list-outline.png</file>
         <file>assets/ionicons/bar-chart-outline.png</file>
         <file>assets/lucide/chart-line.svg</file>
+        <file>assets/data/tally_templates.json</file>
         <file>md/quick_start.md</file>
         <file>md/images/intro.png</file>
         <file>md/images/intro22.png</file>
@@ -37,6 +38,7 @@
         <file>assets/ionicons/open-outline.svg</file>
         <file>assets/3d/cubeFlat.obj</file>
         <file>assets/ionicons/create-outline.svg</file>
+        <file>assets/ionicons/copy-outline.svg</file>
         <file>examples/270keV_He_on_C.json</file>
     </qresource>
 </RCC>

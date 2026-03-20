@@ -118,9 +118,7 @@ void MaterialsDefView::addMaterial()
         materials.push_back(newMaterial);
         setWidgetData(); // widgets updated
         cbMaterialID->setCurrentText(id);
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
+        model_->notifyDataChanged(materialsIndex_);
 
         emit materialsChanged();
     }
@@ -140,9 +138,7 @@ void MaterialsDefView::editMaterialName()
         cbMaterialID->setItemText(i, id);
         material::material_desc_t &m = model_->options()->Target.materials[i];
         m.id = id.toStdString();
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
+        model_->notifyDataChanged(materialsIndex_);
     }
     setValueData(); // update material name
 }
@@ -160,9 +156,7 @@ void MaterialsDefView::removeMaterial()
         auto &materials = model_->options()->Target.materials;
         materials.erase(materials.begin() + i);
         setWidgetData(); // widgets updated
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
+        model_->notifyDataChanged(materialsIndex_);
 
         emit materialsChanged();
     }
@@ -245,9 +239,7 @@ void MaterialsDefView::setDensity(double v)
     QString matid = cbMaterialID->currentText();
     material::material_desc_t &mat = materials[i];
     mat.density = v;
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    model_->notifyDataChanged(materialsIndex_);
 }
 
 void MaterialsDefView::selectColor()
@@ -269,9 +261,7 @@ void MaterialsDefView::selectColor()
     if (clr.isValid()) {
         mat.color = clr.name(QColor::HexArgb).toStdString();
         setBtMatColor(clr);
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
+        model_->notifyDataChanged(materialsIndex_);
 
         emit materialsChanged();
     }
@@ -431,9 +421,7 @@ bool MaterialCompositionModel::setData(const QModelIndex &index, const QVariant 
     default:;
     }
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    model_->notifyDataChanged(materialsIndex_);
 
     return true;
 }
@@ -451,9 +439,7 @@ bool MaterialCompositionModel::insertRows(int position, int rows, const QModelIn
     mat->composition.push_back(atom::parameters());
     endInsertRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    model_->notifyDataChanged(materialsIndex_);
 
     return true;
 }
@@ -473,9 +459,7 @@ bool MaterialCompositionModel::removeRows(int position, int rows, const QModelIn
     mat->composition.erase(mat->composition.begin() + position);
     endRemoveRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    model_->notifyDataChanged(materialsIndex_);
 
     return true;
 }
