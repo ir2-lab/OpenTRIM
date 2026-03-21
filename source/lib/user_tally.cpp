@@ -96,26 +96,29 @@ bool user_tally::get_bin(const ion &i, const void *pv)
 {
     int n = bin_codes.size();
 
-    // get ion position at user tally ref. frame
+    // Transform ion position and direction to tally coordinate system once
+    // (avoids repeated transformations in the binning loop)
     vector3 pos = par_.coordinate_system.transformPoint(i.pos());
     vector3 dir = par_.coordinate_system.transformVector(i.dir());
 
+    // Single loop over all binning variables with early ion rejection
+    // If the ion falls outside any bin range, immediately return false
+    // This avoids scoring out-of-bounds ions and saves computation
     for (int j = 0; j < n; ++j) {
 
         float v; // value for tally scoring
-        // int atom_id = i.myAtom()->id();
 
+        // Calculate binning value based on variable code
+        // Supported variables: position (x,y,z), radial (r,rho,cosTheta),
+        // direction (nx,ny,nz), energy (E), damage (Tdam,V), particle ids
         switch (bin_codes[j]) {
         case cX:
-            // pos = i.pos()[0]; // ion x-position
             v = pos.x(); // ion x-position
             break;
         case cY:
-            // pos = i.pos()[1]; // ion y-position
             v = pos.y(); // ion y-position
             break;
         case cZ:
-            // pos = i.pos()[2]; // ion z-position
             v = pos.z(); // ion z-position
             break;
         case cR:
@@ -161,12 +164,16 @@ bool user_tally::get_bin(const ion &i, const void *pv)
             break;
         }
 
+        // Find bin index using binary search (upper_bound)
         ptrdiff_t bin_idx = std::upper_bound(bins[j].begin(), bins[j].end(), v)
                 - bins[j].begin() - 1;
 
+        // EARLY REJECTION: If ion is outside bin range, reject immediately
+        // This prevents wasted computation and avoids scoring out-of-bounds ions
         if (bin_idx < 0 || static_cast<size_t>(bin_idx) >= bin_sizes[j])
             return false;
 
+        // Store bin index for multi-dimensional data access
         idx[j] = static_cast<size_t>(bin_idx);
     }
 
