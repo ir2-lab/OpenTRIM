@@ -521,6 +521,27 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
                     iut
                 };
 
+                // Coordinates type
+                p1["coordinates"] = { driver_, mcinfo::string, "Coordinate system type",
+                                      [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
+                                          const user_tally *ut =
+                                                  i.driver_->getSim()->getUserTally()[i.extra_idx1_];
+                                          s.resize(1);
+                                          switch (ut->coordinates()) {
+                                          case user_tally::coordinate_t::xyz:
+                                              s[0] = "xyz";
+                                              break;
+                                          case user_tally::coordinate_t::cylindrical:
+                                              s[0] = "cylindrical";
+                                              break;
+                                          case user_tally::coordinate_t::spherical:
+                                              s[0] = "spherical";
+                                              break;
+                                          }
+                                          d = { 1 };
+                                      },
+                                      iut };
+
                 // Bin names
                 p1["bin_names"] = { driver_, mcinfo::string, "Bin names",
                                     [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {

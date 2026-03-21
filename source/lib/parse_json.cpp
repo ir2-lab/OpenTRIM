@@ -250,11 +250,16 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::output_options, title, outfi
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(coord_sys, origin, zaxis, xzvector)
 
+NLOHMANN_JSON_SERIALIZE_ENUM(user_tally::coordinate_t,
+                             { { user_tally::coordinate_t::xyz, "xyz" },
+                               { user_tally::coordinate_t::cylindrical, "cylindrical" },
+                               { user_tally::coordinate_t::spherical, "spherical" } })
+
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(user_tally::bin_var_t, x, y, z, r, rho, cosTheta, nx, ny,
                                           nz, E, Tdam, V, atom_id, recoil_id)
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(user_tally::parameters, id, description, event,
-                                          coordinate_system, bins)
+                                          coordinates, coordinate_system, bins)
 
 // MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 //     target::target_desc_t,

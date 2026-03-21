@@ -34,6 +34,12 @@ class user_tally
     /* clang-format on */
 
 public:
+    /// Enumeration of coordinate system types
+    enum class coordinate_t {
+        xyz,         /**< Cartesian coordinates (x, y, z) */
+        cylindrical, /**< Cylindrical coordinates (rho, phi, z) */
+        spherical    /**< Spherical coordinates (r, theta, phi) */
+    };
     /// Type of bin edges vector
     typedef std::vector<float> bin_vector_t;
 
@@ -65,6 +71,8 @@ public:
         std::string description;
         /// Simulation event that will trigger the tally
         Event event{ Event::IonStop };
+        /// Coordinate system type (xyz, cylindrical, or spherical)
+        coordinate_t coordinates{ coordinate_t::xyz };
         /// Coordinate system of the tally
         coord_sys coordinate_system;
         /// bin variables
@@ -101,6 +109,9 @@ public:
 
     /// @brief Return Event
     const Event &event() const { return par_.event; }
+
+    /// @brief Return the coordinate type (xyz, cylindrical, or spherical)
+    coordinate_t coordinates() const { return par_.coordinates; }
 
     /// @brief Initialize tally buffers for given # of atoms and cells
     void init(size_t natoms);
