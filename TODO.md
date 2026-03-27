@@ -43,7 +43,7 @@
 ### GUI:
 
 - [ ] Better help in configuration. A foldable dedicated text browser widget to show info?
-- [ ] Implement UserTally options/definition in GUI
+- [X] Implement UserTally options/definition in GUI
 - [X] Getting Started
 - [X] About
 

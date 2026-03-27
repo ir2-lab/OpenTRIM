@@ -67,9 +67,19 @@ QVariant OptionsItem::value() const
 }
 bool OptionsItem::setValue(const QVariant &v)
 {
+    QString vnew = v.toString();
+    if (vnew.trimmed().isEmpty()) {
+        const QString k = key().trimmed();
+        const QString jp = QString::fromStdString(jpath_);
+        if (k == "materials" || k == "regions" || k == "UserTally"
+            || jp.endsWith("/materials") || jp.endsWith("/regions") || jp.endsWith("/UserTally")) {
+            vnew = "[]";
+        }
+    }
+
     QVariant v0 = value();
-    if (v0.toString() != v.toString()) {
-        set_(v.toString());
+    if (v0.toString() != vnew) {
+        set_(vnew);
         return true;
     }
     return false;
@@ -112,6 +122,21 @@ bool OptionsItem::get_(QString &qs) const
 bool OptionsItem::set_(const QString &qs)
 {
     std::string s = qs.toStdString();
+    if (qs.trimmed().isEmpty()) {
+        const QString jp = QString::fromStdString(jpath_);
+        if (jp.endsWith("/materials") || jp.endsWith("/regions") || jp.endsWith("/UserTally")) {
+            s = "[]";
+        }
+
+        QString current;
+        if (s.empty() && get_(current)) {
+            const QString trimmed = current.trimmed();
+            if (trimmed.startsWith('['))
+                s = "[]";
+            else if (trimmed.startsWith('{'))
+                s = "{}";
+        }
+    }
     std::ostringstream os;
     bool ret = options_->set(jpath_, s, &os);
     if (!ret) {
@@ -450,16 +475,24 @@ QVariant OptionsModel::data(const QModelIndex &index, int role) const
 }
 bool OptionsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    // int col = index.column();
     if (Qt::EditRole == role) {
-        // if (col == 1) {
+        if (!index.isValid() || index.column() != 1 || !value.isValid())
+            return false;
+
         OptionsItem *item = static_cast<OptionsItem *>(index.internalPointer());
+        // Base OptionsItem represents struct/array containers; these should never be edited directly.
+        if (typeid(*item) == typeid(OptionsItem))
+            return false;
+
         if (item->setValue(value))
             emit dataChanged(index, index, { Qt::EditRole });
         return true;
-        //}
     }
     return false;
+}
+void OptionsModel::notifyDataChanged(const QModelIndex &index)
+{
+    emit dataChanged(index, index, { Qt::EditRole });
 }
 QVariant OptionsModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
@@ -552,10 +585,16 @@ int OptionsModel::columnCount(const QModelIndex &parent) const
 
 Qt::ItemFlags OptionsModel::flags(const QModelIndex &index) const
 {
-    if (index.column() == 1)
-        return Qt::ItemIsEditable | QAbstractItemModel::flags(index);
-    else
-        return QAbstractItemModel::flags(index);
+    Qt::ItemFlags baseFlags = QAbstractItemModel::flags(index);
+    if (!index.isValid() || index.column() != 1)
+        return baseFlags;
+
+    OptionsItem *item = static_cast<OptionsItem *>(index.internalPointer());
+    // Only typed option nodes are editable. Container nodes (struct/array) are read-only.
+    if (item && typeid(*item) != typeid(OptionsItem))
+        return baseFlags | Qt::ItemIsEditable;
+
+    return baseFlags;
 }
 
 OptionsItem *OptionsModel::getItem(const QModelIndex &index) const

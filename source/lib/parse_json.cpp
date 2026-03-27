@@ -428,7 +428,12 @@ void mcconfig::set_impl_(const std::string &path, const std::string &json_str)
 {
     ojson j(*this);
     ojson::json_pointer ptr(path.c_str());
-    ojson v = ojson::parse(json_str);
+    std::string normalized = json_str;
+    if (normalized.empty()) {
+        // Defensive guard: empty input is invalid JSON. Preserve existing value instead.
+        normalized = j.at(ptr).dump();
+    }
+    ojson v = ojson::parse(normalized);
     j.at(ptr) = v;
     *this = j;
     validate(true);
