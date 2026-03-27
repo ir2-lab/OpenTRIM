@@ -760,16 +760,6 @@ QString HelpPanel::generateHelpHtml(OptionsItem *item) const{
         ).arg(valStr, bg);
     }
 
-
-    /*Group info*/
-    if(item->childCount() > 0){
-        html += sectionHeader("Contents");
-        html += QString("<tr><td style='padding: 2px 0 10px 0; color: #888;'>"
-            "  <i>Group with %1 sub-options</i>"
-            "</td></tr>"
-        ).arg(item->childCount());
-    }
-
     html += "</table>";
     html += "</body></html>";
     return html;
