@@ -9,15 +9,13 @@ class QModelIndex;
 class OptionsModel;
 class OptionsItem;
 
-struct HelpEntry {
+struct HelpEntry{
     QString description;   
     QString tip;           
-    QString units;         
-    QString defaultValue;       
+    QString units;               
 };
 
-class HelpPanel : public QWidget
-{
+class HelpPanel : public QWidget{
     Q_OBJECT
 
 public:
@@ -54,4 +52,4 @@ private:
     QMap<QString, HelpEntry> helpDb_;
 };
 
-#endif // HELPPANEL_H
+#endif 

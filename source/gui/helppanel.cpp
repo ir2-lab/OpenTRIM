@@ -23,21 +23,21 @@ void HelpPanel::buildHelpDatabase(){
         "Defines which particles are explicitly transported.",
         "Use <b>FullCascade</b> for radiation damage studies. "
         "Use <b>IonsOnly</b> for fast ion range/energy-loss profiles.",
-        "", "FullCascade"
+        ""
     };
 
     helpDb_["screening_type"] = {
         "The screened Coulomb potential used for calculating nuclear scattering angles. "
         "This determines the ion-atom interaction physics.",
         "<b>ZBL</b> is the common default and is compatible with standard SRIM-style screened nuclear scattering assumptions. ",
-        "", "ZBL"
+        ""
     };
 
     helpDb_["electronic_stopping"] = {
         "Model for continuous energy loss of moving particles to target electrons. "
         "This is the dominant energy loss mechanism at high velocities.",
         "Use <b>SRIM13</b> for best agreement with experimental data. ",
-        "", "SRIM13"
+        ""
     };
 
     helpDb_["electronic_straggling"] = {
@@ -45,14 +45,14 @@ void HelpPanel::buildHelpDatabase(){
         "Adds realistic broadening to ion range distributions.",
         "Enable for realistic range distributions. "
         "Disable for faster runs when only mean ranges are needed.",
-        "", "Off"
+        ""
     };
 
     helpDb_["nrt_calculation"] = {
         "Method for estimating the number of displacements produced in a collision cascade. ",
         "The NRT model is the standard for radiation damage estimation. "
         "Different sub-models handle multi-element targets differently.",
-        "", "NRT_element"
+        ""
     };
 
     helpDb_["intra_cascade_recombination"] = {
@@ -60,7 +60,7 @@ void HelpPanel::buildHelpDatabase(){
         "In reality, many displaced atoms recombine with nearby vacancies during cascade evolution",
         "Enable for more realistic defect counts. "
         "Enabling this option can reduce the number of surviving defects relative to pure NRT-style estimates",
-        "", "false"
+        ""
     };
 
     //Ion transport options
@@ -70,7 +70,7 @@ void HelpPanel::buildHelpDatabase(){
         "Lowering this value tracks particles to lower energies — more accurate but slower.",
         "For sputtering: use 1 eV or lower. "
         "For deep implant profiles: 5–10 eV is usually sufficient. ",
-        "eV", "1.0"
+        "eV"
     };
 
     helpDb_["flight_path_type"] = {
@@ -78,7 +78,7 @@ void HelpPanel::buildHelpDatabase(){
         "This determines how collision distances are sampled. ",
         "<b>Constant</b> uses a fixed mean free path. "
         "<b>Variable</b> uses energy-dependent mean-free-path tables and may skip low impact scattering events ,below energy or angle thresholds.",
-        "", "Constant"
+        ""
     };
 
     helpDb_["flight_path_const"] = {
@@ -86,7 +86,7 @@ void HelpPanel::buildHelpDatabase(){
         "A value of 1.0 corresponds to roughly one collision per atomic spacing.",
         "Values around 1.0 are standard. Smaller values increase accuracy but slow down the simulation. "
         "Values much larger than 1 may miss important close collisions.",
-        "× atomic radius", "1.0"
+        "× atomic radius"
     };
 
     helpDb_["max_rel_loss"] = {
@@ -94,7 +94,7 @@ void HelpPanel::buildHelpDatabase(){
         "If a step would lose more than this fraction, the step is shortened.",
         "Smaller values give more accurate energy loss tracking at the cost of speed. "
         "The default 0.05 (5%) is a good balance.",
-        "", "0.05"
+        ""
     };
 
     helpDb_["min_recoil_energy"] = {
@@ -102,7 +102,7 @@ void HelpPanel::buildHelpDatabase(){
         "Recoils below this energy are not tracked and contribute only to local energy deposition.",
         "Lower values track more recoils (more accurate damage profiles, slower). "
         "Should be ≤ the displacement energy for accurate defect counting.",
-        "eV", "1.0"
+        "eV"
     };
 
     helpDb_["min_scattering_angle"] = {
@@ -110,7 +110,7 @@ void HelpPanel::buildHelpDatabase(){
         "Very small-angle events below this threshold may be ignored for efficiency.",
         "The default 2° skips very small angle deflections. "
         "Reduce to 0.5° only if you need extreme accuracy in angular distributions.",
-        "degrees", "2.0"
+        "degrees"
     };
 
 
@@ -120,7 +120,7 @@ void HelpPanel::buildHelpDatabase(){
         "Atomic number of the incident ion. Determines the nuclear charge, affecting "
         " scattering cross-sections and electronic stopping power.",
         "Common ions: H(1), He(2), C(6), N(7), O(8), Ne(10), Si(14), Ar(18), Kr(36), Xe(54), Au(79).",
-        "", ""
+        ""
     };
 
     helpDb_["atomic_mass"] = {
@@ -128,7 +128,7 @@ void HelpPanel::buildHelpDatabase(){
         "If set to 0, the natural isotopic average mass is used automatically.",
         "Set explicitly for specific isotopes (D=2.014, ³He=3.016). "
         "Leave at 0 for the natural average.",
-        "amu", "0 (natural)"
+        "amu"
     };
 
      helpDb_["center"] = {
@@ -137,7 +137,7 @@ void HelpPanel::buildHelpDatabase(){
         "For spatial: the beam center position [x, y, z] in nm. "
         "For angular: the beam center direction vector.",
         "Combine with a non-SingleValue distribution type and FWHM to model beam spread.",
-        "", ""
+        ""
     };
 
 
@@ -146,7 +146,7 @@ void HelpPanel::buildHelpDatabase(){
         "<b>SingleValue</b> uses a fixed value (monoenergetic or single direction).",
         "Use <b>SingleValue</b> for idealized beam conditions. "
         "Other types add spread around the central value, controlled by the FWHM.",
-        "", "SingleValue"
+        ""
     };
 
 
@@ -155,7 +155,7 @@ void HelpPanel::buildHelpDatabase(){
         "Controls the spread around the mean value. "
         "Only active when the distribution type is not SingleValue.",
         "Typical beam spot sizes depend on teh system and focusing optics.",
-        "", "1.0"
+        ""
     };
 
     //Target
@@ -165,14 +165,14 @@ void HelpPanel::buildHelpDatabase(){
         "The z-axis is the depth direction. Defines the spatial resolution of tallied profiles.",
         "More cells = finer spatial resolution but more memory. "
         "200–500 depth cells is typical. For 1D simulations, spacial resolution is usually controlled through nz.",
-        "cells", ""
+        "cells"
     };
 
     helpDb_["origin"] = {
         "Origin of the simulation grid in nm [x₀, y₀, z₀]. "
-        "Usually [0, 0, 0] — the target surface.",
+        "Usually [0, 0, 0], the target surface.",
         "Adjust if your target does not start at the origin.",
-        "nm", "[0, 0, 0]"
+        "nm"
     };
 
     helpDb_["size"] = {
@@ -180,7 +180,7 @@ void HelpPanel::buildHelpDatabase(){
         "Lz is the target depth. Must be large enough that ions stop inside.",
         "Use roughly 3× the projected ion range for Lz. "
         "For 1D simulations, Lx and Ly are irrelevant.",
-        "nm", ""
+        "nm"
     };
 
     helpDb_["periodic_bc"] = {
@@ -188,7 +188,7 @@ void HelpPanel::buildHelpDatabase(){
         "A value of 1 enables periodic BC, 0 disables it. "
         "Periodic BCs wrap particles that exit one side back through the opposite side.",
         "",
-        "", "[0, 1, 1]"
+        ""
     };
 
     //Output options
@@ -198,7 +198,7 @@ void HelpPanel::buildHelpDatabase(){
         "Provides detailed information about each defect-producing event.",
         "Enable for detailed damage analysis. "
         "Can produce large output for high-energy cascades.",
-        "", "false"
+        ""
     };
 
     helpDb_["store_dedx"] = {
@@ -207,7 +207,7 @@ void HelpPanel::buildHelpDatabase(){
         "Essential for understanding where energy is dissipated in the target. "
         "The nuclear component corresponds to lattice damage, the electronic "
         "component to ionization and excitation.",
-        "", "false"
+        ""
     };
 
     helpDb_["store_exit_events"] = {
@@ -215,7 +215,7 @@ void HelpPanel::buildHelpDatabase(){
         "Required for computing sputtering yields and transmission data.",
         "Enable for sputtering studies or thin-film transmission experiments. "
         "Disable to save memory for bulk targets where only depth profiles are needed.",
-        "", "false"
+        ""
     };
 
     helpDb_["store_pka_events"] = {
@@ -223,7 +223,7 @@ void HelpPanel::buildHelpDatabase(){
         "PKAs are target atoms initially displaced by the incoming ion, "
         "initiating a recoil cascade.",
         "Useful for analyzing PKA energy spectra and damage initiation.",
-        "", "false"
+        ""
     };
 
 
