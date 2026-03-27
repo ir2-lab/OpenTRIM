@@ -31,7 +31,7 @@ void user_tally::init(size_t natoms)
 
     // prepare buffers to store data
     idx.resize(bin_codes.size()); // same size as bin_sizes
-    data_ = ArrayNDd(bin_sizes);
+    data_ = bin_sizes.empty() ? ArrayNDd(0) : ArrayNDd(bin_sizes);
 }
 
 // clang-format off
@@ -95,6 +95,8 @@ std::vector<std::string> user_tally::bin_descriptions() const
 bool user_tally::get_bin(const ion &i, const void *pv)
 {
     int n = bin_codes.size();
+    if (n == 0)
+        return false;
 
     // get ion position at user tally ref. frame
     vector3 pos = par_.coordinate_system.transformPoint(i.pos());
