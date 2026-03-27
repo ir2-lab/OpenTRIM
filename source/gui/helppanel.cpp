@@ -132,7 +132,7 @@ void HelpPanel::buildHelpDatabase(){
     };
 
      helpDb_["center"] = {
-        "Center value of this distribution. "
+        "Mean value of this distribution. "
         "For energy: the mean ion beam energy in eV. "
         "For spatial: the beam center position [x, y, z] in nm. "
         "For angular: the beam center direction vector.",
@@ -143,7 +143,7 @@ void HelpPanel::buildHelpDatabase(){
 
     helpDb_["type"] = {
         "Type of probability distribution used to sample this parameter. "
-        "<b>SingleValue</b> uses a fixed value (monoenergetic or single directional).",
+        "<b>SingleValue</b> uses a fixed value (monoenergetic or single direction).",
         "Use <b>SingleValue</b> for idealized beam conditions. "
         "Other types add spread around the central value, controlled by the FWHM.",
         "", "SingleValue"
@@ -151,14 +151,14 @@ void HelpPanel::buildHelpDatabase(){
 
 
     helpDb_["fwhm"] = {
-        "Full Width at Half Maximum of the ion position distribution. "
-        "Controls the spread around the central value. "
+        "Full Width at Half Maximum of the distribution. "
+        "Controls the spread around the mean value. "
         "Only active when the distribution type is not SingleValue.",
         "Typical beam spot sizes depend on teh system and focusing optics.",
         "", "1.0"
     };
 
-    // ── Target ──
+    //Target
 
     helpDb_["cell_count"] = {
         "Number of simulation cells along each axis [nx, ny, nz]. "
@@ -191,15 +191,7 @@ void HelpPanel::buildHelpDatabase(){
         "", "[0, 1, 1]"
     };
 
-    // ── Output options ──
-
-    helpDb_["store_transmitted_ions"] = {
-        "Whether to record particles (ions and atoms) that exit the target. "
-        "Useful for thin-film or foil simulations.",
-        "Enable for transmission experiments or thin targets. "
-        "Disable to save memory for bulk targets.",
-        "", "false"   };
-
+    //Output options
 
     helpDb_["store_damage_events"] = {
         "Whether to store individual damage events (displacements, replacements, vacancies). "
