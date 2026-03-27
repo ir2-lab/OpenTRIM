@@ -9,6 +9,7 @@
 #include "mainui.h"
 #include "mcdriverobj.h"
 #include "simboxview.h"
+#include "helppanel.h"
 
 #include <QJsonObject>
 #include <QVBoxLayout>
@@ -392,6 +393,8 @@ QFormLayout *SimulationOptionsView::createForm(const QModelIndex &parent, QWidge
         if (w) {
             mapper->addMapping(w, i, item->editorSignal());
             flayout->addRow(item->name(), w);
+
+            ionsui->helpPanel->registerWidget(w ,i);
         }
     }
     return flayout;

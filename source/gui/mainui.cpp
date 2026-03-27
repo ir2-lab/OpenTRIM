@@ -7,6 +7,7 @@
 #include "simcontrolwidget.h"
 #include "resultsview.h"
 #include "tabularview.h"
+#include "helppanel.h"
 
 #include <QVBoxLayout>
 
@@ -76,10 +77,13 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     QVBoxLayout *vbox = new QVBoxLayout;
     vbox->addWidget(_stackedWidget);
     vbox->addWidget(ctrlWidget);
+    
+    helpPanel = new HelpPanel(optionsModel, this);
 
     QHBoxLayout *layout = new QHBoxLayout;
     layout->addWidget(sidebar);
     layout->addLayout(vbox);
+    layout->addWidget(helpPanel);
     setLayout(layout);
     layout->setSpacing(0);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -107,6 +111,7 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     connect(pageButtonGrp, &QButtonGroup::idClicked, this, &MainUI::changePage);
     connect(driverObj_, &McDriverObj::fileNameChanged, this, &MainUI::updateWindowTitle);
     connect(driverObj_, &McDriverObj::modificationChanged, this, &MainUI::updateWindowTitle);
+
 
     driverObj_->loadJsonTemplate();
 

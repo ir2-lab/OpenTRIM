@@ -9,6 +9,7 @@ class QTextBrowser;
 class QToolButton;
 class QLabel;
 class QButtonGroup;
+class HelpPanel;
 
 class OptionsModel;
 class SimControlWidget;
@@ -26,12 +27,14 @@ class MainUI : public QWidget
     Q_OBJECT
 
 public:
-    OptionsModel *optionsModel;
+OptionsModel *optionsModel;
 
-    SimulationOptionsView *optionsView;
+SimulationOptionsView *optionsView;
 
-    explicit MainUI(QWidget *parent = nullptr);
-    ~MainUI();
+explicit MainUI(QWidget *parent = nullptr);
+~MainUI();
+
+HelpPanel *helpPanel;
 
     // const McDriverObj* driverObj() const { return ions_driver; }
     McDriverObj *driverObj() { return driverObj_; }
