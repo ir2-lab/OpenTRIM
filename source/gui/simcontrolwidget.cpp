@@ -5,6 +5,7 @@
 #include "optionsmodel.h"
 #include "simulationoptionsview.h"
 
+#include <climits>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -14,6 +15,7 @@
 #include <QLineEdit>
 #include <QToolButton>
 #include <QProgressBar>
+#include <QDoubleSpinBox>
 #include <QSpinBox>
 #include <QLabel>
 #include <QStyle>
@@ -64,13 +66,17 @@ SimControlWidget::SimControlWidget(MainUI *ui, QWidget *parent)
     // because they can be overriden every time we run the sim
     OptionsModel *model = mainui_->optionsModel;
     QModelIndex driverOptionsIdx = model->index("Run");
-    QModelIndex idx = model->index("max_no_ions", 0, driverOptionsIdx);
-    OptionsItem *item = model->getItem(idx);
-    sbIons = (QSpinBox *)item->createEditor(this);
+    // QSpinBox is limited to INT_MAX. Used QDoubleSpinBox with 0 decimals
+    // to support integer values up to 2^53 exactly
+    sbIons = new QDoubleSpinBox;
+    sbIons->setDecimals(0);
+    sbIons->setRange(1, static_cast<double>(McDriverObj::kMaxExactIons));
+    sbIons->setSingleStep(100'000);
+    sbIons->setValue(static_cast<double>(driver_->maxIons()));
     simCtrls.push_back(sbIons);
 
-    idx = model->index("threads", 0, driverOptionsIdx);
-    item = model->getItem(idx);
+    QModelIndex idx = model->index("threads", 0, driverOptionsIdx);
+    OptionsItem *item = model->getItem(idx);
     sbNThreads = (QSpinBox *)item->createEditor(this);
     simCtrls.push_back(sbNThreads);
 
@@ -84,6 +90,15 @@ SimControlWidget::SimControlWidget(MainUI *ui, QWidget *parent)
     item = model->getItem(idx);
     sbSeed = (QSpinBox *)item->createEditor(this);
     simCtrls.push_back(sbSeed);
+
+    // 0 means no time limit.
+    sbMaxTime = new QSpinBox;
+    sbMaxTime->setRange(0, INT_MAX);
+    sbMaxTime->setSingleStep(60);
+    sbMaxTime->setSuffix(" s");
+    sbMaxTime->setSpecialValueText("no limit");
+    sbMaxTime->setValue(driver_->maxCpuTime());
+    sbMaxTime->setToolTip("Stop after this many CPU seconds. With N threads, wall time will be ~1/N of this value. 0 means no time limit.");
 
     /* Create Info items */
 
@@ -159,6 +174,13 @@ SimControlWidget::SimControlWidget(MainUI *ui, QWidget *parent)
                 }
             }
             {
+                QHBoxLayout *hbox3 = new QHBoxLayout;
+                hbox3->addWidget(new QLabel("Max CPU time (s)"));
+                hbox3->addWidget(sbMaxTime);
+                hbox3->addStretch();
+                vbox->addLayout(hbox3);
+            }
+            {
                 QHBoxLayout *hbox2 = new QHBoxLayout;
                 hbox2->addWidget(runIndicator);
                 hbox2->addWidget(progressBar);
@@ -191,12 +213,15 @@ SimControlWidget::SimControlWidget(MainUI *ui, QWidget *parent)
 
     connect(driver_, &McDriverObj::configChanged, this, &SimControlWidget::revert);
 
-    connect(sbIons, QOverload<int>::of(&QSpinBox::valueChanged), driver_, &McDriverObj::setMaxIons);
+    connect(sbIons, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [this](double v) { driver_->setMaxIons(static_cast<quint64>(v)); });
     connect(sbNThreads, QOverload<int>::of(&QSpinBox::valueChanged), driver_,
             &McDriverObj::setNThreads);
     connect(sbSeed, QOverload<int>::of(&QSpinBox::valueChanged), driver_, &McDriverObj::setSeed);
     connect(sbUpdInterval, QOverload<int>::of(&QSpinBox::valueChanged), driver_,
             &McDriverObj::setUpdInterval);
+    connect(sbMaxTime, QOverload<int>::of(&QSpinBox::valueChanged), driver_,
+            &McDriverObj::setMaxCpuTime);
 }
 
 void SimControlWidget::onStart(bool b)
@@ -283,6 +308,7 @@ void SimControlWidget::onDriverStatusChanged()
     sbNThreads->setEnabled(st != McDriverObj::mcRunning);
     sbUpdInterval->setEnabled(st != McDriverObj::mcRunning);
     sbSeed->setEnabled(st == McDriverObj::mcReset);
+    sbMaxTime->setEnabled(st != McDriverObj::mcRunning);
 }
 
 QString mytimefmt_(double t, bool ceil = false)
@@ -333,8 +359,9 @@ void SimControlWidget::onSimulationCreated()
 
 void SimControlWidget::revert()
 {
-    sbIons->setValue(driver_->maxIons());
+    sbIons->setValue(static_cast<double>(driver_->maxIons()));
     sbNThreads->setValue(driver_->nThreads());
     sbSeed->setValue(driver_->seed());
     sbUpdInterval->setValue(driver_->updInterval());
+    sbMaxTime->setValue(driver_->maxCpuTime());
 }

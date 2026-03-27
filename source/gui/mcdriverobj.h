@@ -1,6 +1,7 @@
 #ifndef MCDRIVEROBJ_H
 #define MCDRIVEROBJ_H
 
+#include <algorithm>
 #include <chrono>
 
 #include <QObject>
@@ -25,6 +26,10 @@ class McDriverObj : public QObject
     Q_OBJECT
 
 public:
+    // Largest integer exactly representable as double (53-bit mantissa).
+    // QDoubleSpinBox uses double internally; larger integers lose precision.
+    static constexpr quint64 kMaxExactIons = 1ULL << 53;
+
     // helper class for getting real-time info
     // for the running simulation
     class running_sim_info
@@ -131,18 +136,23 @@ public:
     const mccore *getSim() const;
 
     // get run parameters
-    size_t maxIons() const { return max_ions_; }
+    quint64 maxIons() const { return max_ions_; }
     int nThreads() const { return nThreads_; }
     int seed() const { return seed_; }
     int updInterval() const { return updInterval_; }
+    int maxCpuTime() const { return max_cpu_time_; }
 
 public slots:
 
     // set run parameters
-    void setMaxIons(int n) { max_ions_ = n; };
+    void setMaxIons(quint64 n)
+    {
+        max_ions_ = (n >= 1) ? std::min(n, kMaxExactIons) : 1;
+    };
     void setNThreads(int n) { nThreads_ = n; };
     void setSeed(int n) { seed_ = n; }
     void setUpdInterval(int n) { updInterval_ = n; }
+    void setMaxCpuTime(int n) { max_cpu_time_ = std::max(0, n); }
 
 private slots:
 
@@ -187,10 +197,11 @@ private:
     int io_ret_;
     std::string io_err_;
 
-    size_t max_ions_;
+    quint64 max_ions_;
     int nThreads_;
     int seed_;
     int updInterval_;
+    int max_cpu_time_;
 
     // run info
     running_sim_info info_;
