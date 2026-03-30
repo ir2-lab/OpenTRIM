@@ -22,6 +22,7 @@ set(GUI_HEADERS
     jsedit/jsedit.h 
     simboxview.h
     mcplotinfo.h
+    helppanel.h
 )
 
 set(GUI_SOURCES
@@ -43,6 +44,7 @@ set(GUI_SOURCES
     jsedit/jsedit.cpp
     simboxview.cpp
     mcplotinfo.cpp
+    helppanel.cpp
 )
 
 set (GUI_TARGET ${PROJECT_NAME_LOWERCASE}-gui)

@@ -54,11 +54,11 @@
                         "- None: Unscreened Coulomb potential",
                         "- Bohr: Bohr screening",
                         "- KrC: Kr-C screening",
-                        "- Moliere - Moliere screening",
-                        "- ZBL - Ziegler-Biersack-Littmark universal screening",
-                        "- ZBL_MAGIC - ZBL with analytic approx. formula",
+                        "- Moliere: Moliere screening",
+                        "- ZBL: Ziegler-Biersack-Littmark universal screening",
+                        "- ZBL_MAGIC: ZBL with analytic approx. formula",
                         "  ",
-                        "For Unscreened Coulomb and ZBL_MAGIK the scattering is calculated analytically.",
+                        "For Unscreened Coulomb and ZBL_MAGIC the scattering is calculated analytically.",
                         "In all other cases interpolation tables are used."
                     ]
                 },
@@ -206,7 +206,7 @@
                     "digits": 3,
                     "toolTip": "Minimum recoil energy in eV.",
                     "whatsThis": [
-                        "Events with recoil energy below this value will be ignoredif the scattering angle is also below min_scattering_angle.",
+                        "Events with recoil energy below this value will be ignored if the scattering angle is also below min_scattering_angle.",
                         "Applicable only when flight_path_type=Variable"
                     ]
                 },
@@ -220,7 +220,7 @@
                     "toolTip": "Minimum scattering angle in degrees.",
                     "whatsThis": [
                         "Refers to the projectile scattering angle in the lab reference frame.",
-                        "Events with scattering angle lower that this value will be ignotred if the recoil energy is also below min_recoil_energy.",
+                        "Events with scattering angle lower that this value will be ignored if the recoil energy is also below min_recoil_energy.",
                         "Applicable only when flight_path_type=Variable"
                     ]
                 },

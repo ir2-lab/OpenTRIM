@@ -82,6 +82,9 @@ protected:
 class FloatOptionsItem : public OptionsItem
 {
 public:
+
+    double min() const { return fmin_; }
+    double max() const { return fmax_; }
     FloatOptionsItem(double fmin, double fmax, int digits, const QString &key, const QString &name,
                      OptionsItem *parent);
     virtual QWidget *createEditor(QWidget *parent) const override;
@@ -97,6 +100,9 @@ protected:
 class IntOptionsItem : public OptionsItem
 {
 public:
+    int min() const { return imin_; }
+    int max() const { return imax_; }
+
     IntOptionsItem(int imin, int imax, const QString &key, const QString &name,
                    OptionsItem *parent);
     // virtual QVariant value() const override;
