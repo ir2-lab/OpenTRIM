@@ -10,6 +10,7 @@ class QToolButton;
 class QLabel;
 class QButtonGroup;
 class HelpPanel;
+class QSplitter;
 
 class OptionsModel;
 class SimControlWidget;

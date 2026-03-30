@@ -8,12 +8,7 @@ class QTextBrowser;
 class QModelIndex;
 class OptionsModel;
 class OptionsItem;
-
-struct HelpEntry{
-    QString description;   
-    QString tip;           
-    QString units;               
-};
+class QPushButton;
 
 class HelpPanel : public QWidget{
     Q_OBJECT
@@ -21,35 +16,26 @@ class HelpPanel : public QWidget{
 public:
     explicit HelpPanel(OptionsModel *model, QWidget *parent = nullptr);
 
-    void registerWidget(QWidget *editor, const QModelIndex &index);
-
-    bool eventFilter(QObject *watched, QEvent *event) override;
-
-public slots:
     void showHelpFor(const QModelIndex &index);
-    void clear();
-    void toggleVisibility();
+    void registerWidget(QWidget *editor, const QModelIndex &index);
+    bool eventFilter(QObject *watched, QEvent *event) override;
+    void togglePanel();
 
 private:
-    QString generateHelpHtml(OptionsItem *item) const;
-    QString parseOptionsListHtml(const QString &text) const;
-    QString extractMeaning(const QString &text) const;
-    QStringList extractOptions(const QString &text) const;
-    QString typeInfoHtml(OptionsItem *item) const;
-    QString booleanEffectHtml(OptionsItem *item) const;
+    QString generateHelpHtml(OptionsItem *item)const ;
+    QString sectionHeader(const QString &title)const;
+    QString detectCurrentValue(OptionsItem *item)const;
+    QString BooleanHelp(OptionsItem *item)const;
+    QString EnumHelp(OptionsItem *item)const;
+    QString NumericHelp(OptionsItem *item)const;
+    QString VectorHelp(OptionsItem *item)const;
 
-    QString sectionHeader(const QString &title) const;
-    QString codeBlock(const QString &text) const;
-    QString infoBox(const QString &text, const QString &color = "#e8f0fe") const;
-    QString typeBadge(const QString &typeName) const;
-    QString effectRow(const QString &value, const QString &desc, const QString &color) const;
 
-    void buildHelpDatabase();
-
-    QTextBrowser *browser_;
     OptionsModel *model_;
+    QTextBrowser *browser_;
+    QPushButton *closeButton_;
+
     QMap<QWidget *, QPersistentModelIndex> widgetIndexMap_;
-    QMap<QString, HelpEntry> helpDb_;
 };
 
 #endif 

@@ -24,6 +24,7 @@
 #include <QScreen>
 #include <QFile>
 #include <QButtonGroup>
+#include <QSplitter>
 
 #define SIDEBAR_W 70
 #define SIDEBAR_H 70
@@ -77,13 +78,10 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     QVBoxLayout *vbox = new QVBoxLayout;
     vbox->addWidget(_stackedWidget);
     vbox->addWidget(ctrlWidget);
-    
-    helpPanel = new HelpPanel(optionsModel, this);
 
     QHBoxLayout *layout = new QHBoxLayout;
     layout->addWidget(sidebar);
     layout->addLayout(vbox);
-    layout->addWidget(helpPanel);
     setLayout(layout);
     layout->setSpacing(0);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -92,8 +90,52 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     welcomeView = new WelcomeView(this);
     push(tr("Welcome"), welcomeView);
 
+    helpPanel = new HelpPanel(optionsModel);
+
     optionsView = new SimulationOptionsView(this);
-    push(tr("Configuration"), optionsView);
+
+    auto *configSplitter = new QSplitter(Qt::Horizontal);
+    configSplitter->addWidget(optionsView);
+    configSplitter->addWidget(helpPanel);
+    
+    configSplitter->setStretchFactor(0, 3);
+    configSplitter->setStretchFactor(1, 1);
+
+    configSplitter->setCollapsible(0, false);
+    configSplitter->setCollapsible(1, true);
+
+    configSplitter->setSizes({600, 200});
+
+    QWidget *configPage = new QWidget;
+    QVBoxLayout *configLayout = new QVBoxLayout(configPage);
+    configLayout->setContentsMargins(0, 0, 0, 0);
+
+    QHBoxLayout *toolBar = new QHBoxLayout;
+    toolBar->addStretch();
+
+    QToolButton *helpToggle = new QToolButton;
+    helpToggle->setText("Toggle Help");
+    helpToggle->setToolTip(tr("Show/Hide Help Panel"));
+    helpToggle->setCheckable(true);
+    helpToggle->setChecked(true);
+    helpToggle->setStyleSheet("QToolButton { font-weight: bold; font-size: 10pt; border: 1px solid #aaa; "
+        "border-radius: 4px; padding: 4px 10px; background: #e3f2fd; color: #1565c0; }"
+        "QToolButton:checked { background: #1565c0; color: white; }");
+        
+    connect(helpToggle, &QToolButton::clicked, this, [helpToggle, this]() {
+        helpPanel->togglePanel();
+        QSplitter *splitter = qobject_cast<QSplitter *>(helpPanel->parentWidget());
+        
+        if(splitter) helpToggle->setChecked(splitter->sizes()[1] > 0);
+    });
+    toolBar->addWidget(helpToggle);
+
+    configLayout->addLayout(toolBar);
+    configLayout->addWidget(configSplitter);
+
+    helpPanel->setVisible(true);
+    
+    push(tr("Configuration"), configPage);
 
     // runView = new RunView(this);
     // push(tr("Run"), runView);
