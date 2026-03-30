@@ -33,7 +33,6 @@ private:
 
     OptionsModel *model_;
     QTextBrowser *browser_;
-    QPushButton *closeButton_;
 
     QMap<QWidget *, QPersistentModelIndex> widgetIndexMap_;
 };

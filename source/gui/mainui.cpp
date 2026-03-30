@@ -114,19 +114,23 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     toolBar->addStretch();
 
     QToolButton *helpToggle = new QToolButton;
-    helpToggle->setText("Toggle Help");
+    helpToggle->setText("Hide Help");
     helpToggle->setToolTip(tr("Show/Hide Help Panel"));
     helpToggle->setCheckable(true);
     helpToggle->setChecked(true);
     helpToggle->setStyleSheet("QToolButton { font-weight: bold; font-size: 10pt; border: 1px solid #aaa; "
         "border-radius: 4px; padding: 4px 10px; background: #e3f2fd; color: #1565c0; }"
         "QToolButton:checked { background: #1565c0; color: white; }");
-        
+
     connect(helpToggle, &QToolButton::clicked, this, [helpToggle, this]() {
         helpPanel->togglePanel();
         QSplitter *splitter = qobject_cast<QSplitter *>(helpPanel->parentWidget());
         
-        if(splitter) helpToggle->setChecked(splitter->sizes()[1] > 0);
+        if(splitter){
+            bool visible = splitter->sizes()[1] > 0;    
+            helpToggle->setChecked(visible);
+            helpToggle->setText(visible ? tr("Hide Help") : tr("Show Help"));  
+        } 
     });
     toolBar->addWidget(helpToggle);
 
