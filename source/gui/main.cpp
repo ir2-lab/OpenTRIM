@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QStyleFactory>
+#include <QScreen>
 
 #include "qdatabrowser.h"
 
@@ -19,5 +20,12 @@ int main(int argc, char *argv[])
     MainUI w;
     w.setLocale(QLocale::c());
     w.show();
+
+#ifdef Q_OS_WIN
+    QScreen *screen = QGuiApplication::primaryScreen();
+    QRect screenGeom = screen->availableGeometry();
+    w.move(screenGeom.center() - w.frameGeometry().center());
+#endif
+
     return app.exec();
 }
