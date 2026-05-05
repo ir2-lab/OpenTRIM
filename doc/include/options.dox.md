@@ -269,10 +269,10 @@ In a Gaussian distribution, each component of the position vector is sampled fro
 When sampling from a distribution, out-of-bounds positions are rejected and a new sample is drawn.<br>
 <tr><th colspan="2">\anchor _IonBeam_spatial_distribution_center /IonBeam/spatial_distribution/center<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>3
-<tr><td>Element range<td>-1e+10...1e+10
+<tr><td>Element range<td>-1e+12...1e+12
 <tr><td>Default Value<td>[0.0,0.0,0.0]<tr><td>Description <td>Central initial position of generated ions, [x,y,z] in nm.
 <tr><th colspan="2">\anchor _IonBeam_spatial_distribution_fwhm /IonBeam/spatial_distribution/fwhm<tr><td>Type <td>Floating point number
-<tr><td>Range<td>0.1...1e+10
+<tr><td>Range<td>1e-06...1e+12
 <tr><td>Default Value<td>1.0<tr><td>Description <td>Full-width at half-maximum of the generated ions position distribution in nm.
 <tr><th colspan="2">\anchor _IonBeam_angular_distribution /IonBeam/angular_distribution<tr><td>Type <td>Option group
 <tr><td>Description <td>Angular Distribution
@@ -282,7 +282,7 @@ When sampling from a distribution, out-of-bounds positions are rejected and a ne
 <br>
 - Single Value: All ions have the same initial direction<br>
 - Uniform: Ion direction distributed uniformly within a cone around the central direction<br>
-- Gaussian: Ion direction distributed according to the Gaussian(Normal) distribution around the central direction<br>
+- Gaussian: Ion direction distributed according to a 2D isotropic Gaussian around the central direction. Transverse components tx,ty ~ N(0,sigma); polar angle follows Rayleigh distribution, azimuthal angle is automatically uniform<br>
 <tr><th colspan="2">\anchor _IonBeam_angular_distribution_center /IonBeam/angular_distribution/center<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>3
 <tr><td>Element range<td>-1000...1000
@@ -292,16 +292,16 @@ When sampling from a distribution, out-of-bounds positions are rejected and a ne
 <tr><td>Default Value<td>1.0<tr><td>Description <td>Width in srad of a cone around the central ion beam direction.
 <br>
 For the Uniform distribution, fwhm defines a cone around the main direction, where the direction of generated ions is sampled uniformly<br>
-The Gaussian distrubution is not yet implemented<br>
+For the Gaussian distribution, fwhm defines the solid-angle width around the main direction, sampled via an isotropic 2D Gaussian in the transverse components<br>
 <tr><th colspan="2">\anchor _Target /Target<tr><td>Type <td>Option group
 <tr><td>Description <td>Target
 <tr><th colspan="2">\anchor _Target_size /Target/size<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>3
-<tr><td>Element range<td>0.001...1e+07
+<tr><td>Element range<td>0.001...1e+12
 <tr><td>Default Value<td>[100.0,100.0,100.0]<tr><td>Description <td>Size in nm of the simulation volume along the x-, y- and z-axis.
 <tr><th colspan="2">\anchor _Target_origin /Target/origin<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>3
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>-1e+12...1e+12
 <tr><td>Default Value<td>[0.0,0.0,0.0]<tr><td>Description <td>Origin of the simulation space.
 <tr><th colspan="2">\anchor _Target_cell_count /Target/cell_count<tr><td>Type <td>Vector of integer values
 <tr><td>Size<td>3
@@ -358,11 +358,11 @@ The Gaussian distrubution is not yet implemented<br>
 <tr><td>Default Value<td>"Iron"<tr><td>Description <td>Id of the material that fills the region.
 <tr><th colspan="2">\anchor _Target_regions_0_origin /Target/regions/0/origin<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>3
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>-1e+12...1e+12
 <tr><td>Default Value<td>[0.0,0.0,0.0]<tr><td>Description <td>Origin of the region.
 <tr><th colspan="2">\anchor _Target_regions_0_size /Target/regions/0/size<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>3
-<tr><td>Element range<td>0.001...1e+07
+<tr><td>Element range<td>0.001...1e+12
 <tr><td>Default Value<td>[100.0,100.0,100.0]<tr><td>Description <td>Size in nm of the simulation volume along the x-, y- and z-axis.
 <tr><th colspan="2">\anchor _Output /Output<tr><td>Type <td>Option group
 <tr><td>Description <td>Output options
@@ -423,7 +423,7 @@ The supported events are:<br>
 <tr><td>Description <td>UserTally coordinate system
 <tr><th colspan="2">\anchor _UserTally_0_coordinate_system_origin /UserTally/0/coordinate_system/origin<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>3
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>-1e+12...1e+12
 <tr><td>Default Value<td>[0.0,0.0,0.0]<tr><td>Description <td>Origin of the UserTally coordinates.
 <tr><th colspan="2">\anchor _UserTally_0_coordinate_system_zaxis /UserTally/0/coordinate_system/zaxis<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>3
@@ -437,76 +437,76 @@ The supported events are:<br>
 <tr><td>Description <td>Bin edges
 <tr><th colspan="2">\anchor _UserTally_0_bins_x /UserTally/0/bins/x<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>-1e+12...1e+12
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion position x-coordinate.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_y /UserTally/0/bins/y<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>-1e+12...1e+12
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion position y-coordinate.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_z /UserTally/0/bins/z<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>-1e+12...1e+12
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion position z-coordinate.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_r /UserTally/0/bins/r<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>0...1e+12
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's r=sqrt(x^2+y^2+z^2).
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_rho /UserTally/0/bins/rho<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>0...1e+12
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's ρ=sqrt(x^2+y^2).
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_cosTheta /UserTally/0/bins/cosTheta<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>-1...1
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's position cosθ = z/r.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_nx /UserTally/0/bins/nx<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>-1...1
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's x-axis direction cosine.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_ny /UserTally/0/bins/ny<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>-1...1
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's y-axis direction cosine.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_nz /UserTally/0/bins/nz<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>-1...1
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's z-axis direction cosine.
 <br>
 Coordinates refer to the UserTally coordinate system.<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_E /UserTally/0/bins/E<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>0...1e+12
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's kinetic energy.
 <br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_Tdam /UserTally/0/bins/Tdam<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>0...1e+12
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's damage energy.
 <br>
 Tdam refers to the energy of the PKA dissipated to atomic displacements during the whole cascade<br>
@@ -514,7 +514,7 @@ This can be used only with events of type CascadeComplete<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_V /UserTally/0/bins/V<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>0...1e+12
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the number of generated vacancies.
 <br>
 It refers to the total number of vacancies generated in a PKA cascade<br>
@@ -522,7 +522,7 @@ This can be used only with events of type CascadeComplete<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_atom_id /UserTally/0/bins/atom_id<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>0...1e+06
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's atomic species id.
 <br>
 Each atomic species in the simulation is assigned an id number<br>
@@ -531,7 +531,7 @@ Target atoms recoils have id>=1.<br>
 Bin edges must be monotonously increasing.<br>
 <tr><th colspan="2">\anchor _UserTally_0_bins_recoil_id /UserTally/0/bins/recoil_id<tr><td>Type <td>Vector of floating point values
 <tr><td>Size<td>Variable
-<tr><td>Element range<td>-1e+07...1e+07
+<tr><td>Element range<td>0...1e+06
 <tr><td>Default Value<td>[]<tr><td>Description <td>Bin edges for the ion's recoil generation id.
 <br>
 Beam ions always have a recoil generation id of 0.<br>
