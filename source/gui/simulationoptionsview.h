@@ -13,6 +13,7 @@ class QLineEdit;
 
 class MyDataWidgetMapper;
 class MaterialsDefView;
+class UserTallyView;
 class RegionsView;
 class SimBoxView;
 class OptionsModel;
@@ -74,6 +75,7 @@ private:
     QLineEdit *simTitle;
     MyDataWidgetMapper *mapper;
     MaterialsDefView *materialsView;
+    UserTallyView *userTallyView_{ nullptr };
     RegionsView *regionsView;
     SimBoxView *simBoxView;
     QDialogButtonBox *buttonBox;

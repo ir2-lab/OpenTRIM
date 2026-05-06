@@ -164,9 +164,7 @@ bool RegionsModel::setData(const QModelIndex &index, const QVariant &value, int 
         break;
     }
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(regionsIndex_, QVariant());
+    model_->notifyDataChanged(regionsIndex_);
 
     emit dataChanged(index, index);
 
@@ -188,9 +186,7 @@ bool RegionsModel::insertRows(int position, int rows, const QModelIndex &parent)
     opt->Target.regions.push_back(reg);
     endInsertRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(regionsIndex_, QVariant());
+    model_->notifyDataChanged(regionsIndex_);
 
     return true;
 }
@@ -208,9 +204,7 @@ bool RegionsModel::removeRows(int position, int rows, const QModelIndex &parent)
     regions.erase(it);
     endRemoveRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(regionsIndex_, QVariant());
+    model_->notifyDataChanged(regionsIndex_);
 
     return true;
 }
@@ -242,9 +236,7 @@ bool RegionsModel::moveRow(int from, int to)
     regions.insert(regions.begin() + to, reg);
     endInsertRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(regionsIndex_, QVariant());
+    model_->notifyDataChanged(regionsIndex_);
 
     return true;
 }
