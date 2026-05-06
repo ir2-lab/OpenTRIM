@@ -134,6 +134,34 @@
                     "type": "bool",
                     "toolTip": "Enable intra-cascade recombination of Frenkel pairs.",
                     "whatsThis": ""
+                },
+                {
+                    "name": "time_ordered_cascades",
+                    "label": "Time ordered recombinations in cascades  [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Time ordered recombinations in cascades  [Experimental]",
+                    "whatsThis": ""
+                },
+                {
+                    "name": "correlated_recombination",
+                    "label": "Allow same Frenkel pair recombination [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Allow same Frenkel pair recombination [Experimental]",
+                    "whatsThis": ""
+                },
+                {
+                    "name": "move_recoil",
+                    "label": "Move recoil atom to Rc [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Move recoil atom to Rc [Experimental]",
+                    "whatsThis": ""
+                },
+                {
+                    "name": "recoil_sub_ed",
+                    "label": "Subtract Ed from recoil energy [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Subtract Ed from recoil energy [Experimental]",
+                    "whatsThis": ""
                 }
             ]
         },
@@ -766,6 +794,18 @@
                     "max": 2147483647,
                     "toolTip": "Maximum number of ion histories to simulate.",
                     "whatsThis": "The simulation will stop when the maximum number of histories has been reached."
+                },
+                {
+                    "name": "max_cpu_time",
+                    "label": "Max cpu time in s",
+                    "type": "int",
+                    "min": 0,
+                    "max": 2147483647,
+                    "toolTip": "Maximum cpu time for the simulation in s.",
+                    "whatsThis": [
+                        "The simulation will stop when the maximum cpu time has been reached.",
+                        "A value of 0 disables the cpu time limit."
+                    ]
                 },
                 {
                     "name": "threads",

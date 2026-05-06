@@ -8,7 +8,11 @@
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_electronic_stopping "\"electronic_stopping\"": "SRIM13",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_electronic_straggling "\"electronic_straggling\"": "Off",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_nrt_calculation "\"nrt_calculation\"": "NRT_element",<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Simulation_intra_cascade_recombination "\"intra_cascade_recombination\"": false<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Simulation_intra_cascade_recombination "\"intra_cascade_recombination\"": false,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Simulation_time_ordered_cascades "\"time_ordered_cascades\"": true,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Simulation_correlated_recombination "\"correlated_recombination\"": true,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Simulation_move_recoil "\"move_recoil\"": false,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Simulation_recoil_sub_ed "\"recoil_sub_ed\"": false<br>
 &emsp;&emsp;},<br>
 &emsp;&emsp;\ref _Transport "\"Transport\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Transport_min_energy "\"min_energy\"": 1.0,<br>
@@ -89,6 +93,7 @@
 &emsp;&emsp;},<br>
 &emsp;&emsp;\ref _Run "\"Run\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Run_max_no_ions "\"max_no_ions\"": 100,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Run_max_cpu_time "\"max_cpu_time\"": 0,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Run_threads "\"threads\"": 1,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Run_seed "\"seed\"": 123456789<br>
 &emsp;&emsp;},<br>
@@ -175,6 +180,14 @@ In all other cases interpolation tables are used.<br>
 - NRT_average: NRT calculated using material average values<br>
 <tr><th colspan="2">\anchor _Simulation_intra_cascade_recombination /Simulation/intra_cascade_recombination<tr><td>Type <td>Boolean
 <tr><td>Default Value<td>false<tr><td>Description <td>Enable intra-cascade recombination of Frenkel pairs.
+<tr><th colspan="2">\anchor _Simulation_time_ordered_cascades /Simulation/time_ordered_cascades<tr><td>Type <td>Boolean
+<tr><td>Default Value<td>true<tr><td>Description <td>Time ordered recombinations in cascades  [Experimental]
+<tr><th colspan="2">\anchor _Simulation_correlated_recombination /Simulation/correlated_recombination<tr><td>Type <td>Boolean
+<tr><td>Default Value<td>true<tr><td>Description <td>Allow same Frenkel pair recombination [Experimental]
+<tr><th colspan="2">\anchor _Simulation_move_recoil /Simulation/move_recoil<tr><td>Type <td>Boolean
+<tr><td>Default Value<td>false<tr><td>Description <td>Move recoil atom to Rc [Experimental]
+<tr><th colspan="2">\anchor _Simulation_recoil_sub_ed /Simulation/recoil_sub_ed<tr><td>Type <td>Boolean
+<tr><td>Default Value<td>false<tr><td>Description <td>Subtract Ed from recoil energy [Experimental]
 <tr><th colspan="2">\anchor _Transport /Transport<tr><td>Type <td>Option group
 <tr><td>Description <td>Ion transport options
 <tr><th colspan="2">\anchor _Transport_min_energy /Transport/min_energy<tr><td>Type <td>Floating point number
@@ -389,6 +402,12 @@ The name can contain the relative or absolute path to the file.<br>
 <tr><th colspan="2">\anchor _Run_max_no_ions /Run/max_no_ions<tr><td>Type <td>Integer
 <tr><td>Range<td>1...2.14748e+09
 <tr><td>Default Value<td>100<tr><td>Description <td>Maximum number of ion histories to simulate.
+<tr><th colspan="2">\anchor _Run_max_cpu_time /Run/max_cpu_time<tr><td>Type <td>Integer
+<tr><td>Range<td>0...2.14748e+09
+<tr><td>Default Value<td>0<tr><td>Description <td>Maximum cpu time for the simulation in s.
+<br>
+The simulation will stop when the maximum cpu time has been reached.<br>
+A value of 0 disables the cpu time limit.<br>
 <tr><th colspan="2">\anchor _Run_threads /Run/threads<tr><td>Type <td>Integer
 <tr><td>Range<td>0...100
 <tr><td>Default Value<td>1<tr><td>Description <td>Number of execution threads.
