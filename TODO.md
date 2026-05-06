@@ -44,6 +44,10 @@
 
 - [ ] Better help in configuration. A foldable dedicated text browser widget to show info?
 - [ ] Implement UserTally options/definition in GUI
+- [ ] Threads option 0 - auto thread number by OpenTRIM
+      Make the "Threads" SpinBox widget indicate that 0 means auto thread number
+      e.g. instead of just "0" to show "0 (Auto)" and when the sim
+      runs to show the actual number of threads used
 - [X] Getting Started
 - [X] About
 
