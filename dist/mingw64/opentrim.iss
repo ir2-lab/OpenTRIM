@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "OpenTRIM"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.1.3"
 #define MyAppPublisher "OpenTRIM Contributors"
 #define MyAppURL "https://github.com/ir2-lab/OpenTRIM"
 #define MyAppExeName "opentrim-gui.exe"
@@ -49,8 +49,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "Y:\Dev\ionsim\opentrim\.winbuild\opentrim-1.1.0\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "Y:\Dev\ionsim\opentrim\.winbuild\opentrim-1.1.0\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "Y:\Dev\ionsim\opentrim\.winbuild\opentrim-1.1.2\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "Y:\Dev\ionsim\opentrim\.winbuild\opentrim-1.1.2\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]

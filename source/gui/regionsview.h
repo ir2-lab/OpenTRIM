@@ -45,6 +45,8 @@ private:
     QStringList col_names_{ "id", "material_id", "origin", "size" };
     QStringList col_labels_{ "Region id", "Material id", "[x₀,y₀,z₀]", "[Lx,Ly,Lz]" };
     friend class RegionDelegate;
+    float origin_lim_[2];
+    float size_lim_[2];
 };
 
 class RegionDelegate : public QStyledItemDelegate
