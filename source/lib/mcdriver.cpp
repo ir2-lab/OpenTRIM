@@ -105,6 +105,10 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     int nthreads = config_.Run.threads;
     if (nthreads < 1) {
         nthreads = std::thread::hardware_concurrency();
+        if (nthreads <= 3)
+            nthreads = 1;
+        else
+            nthreads >>= 1; // use half the available threads
     }
 
     // TIMING
@@ -122,7 +126,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     if (config_.Run.max_cpu_time) {
         tlim = config_.Run.max_cpu_time;
         for (auto &rd : run_history_)
-            tlim -= rd.cpu_time;
+            tlim -= rd.cpu_time_s;
     }
 
     // If ion_count == 0, i.e. simulation starts, seed the rng
@@ -215,19 +219,20 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
     // save run info
     run_data rd;
-    rd.cpu_time = elapsed_sec(t_start, t_end);
+    rd.cpu_time_s = elapsed_sec(t_start, t_end);
     rd.run_ion_count = s_->ion_count() - n_start;
     rd.total_ion_count = s_->ion_count();
-    rd.ips = rd.run_ion_count / rd.cpu_time;
+    rd.ions_per_cpu_s = rd.run_ion_count / rd.cpu_time_s;
     rd.nthreads = nthreads;
+    // store ISO 8601 timestamps %Y-%m-%dT%H:%M:%SZ
     {
         std::stringstream ss;
-        ss << std::put_time(std::localtime(&start_time_), "%c %Z");
+        ss << std::put_time(std::gmtime(&start_time_), "%Y-%m-%dT%H:%M:%SZ");
         rd.start_time = ss.str();
     }
     {
         std::stringstream ss;
-        ss << std::put_time(std::localtime(&end_time_), "%c %Z");
+        ss << std::put_time(std::gmtime(&end_time_), "%Y-%m-%dT%H:%M:%SZ");
         rd.end_time = ss.str();
     }
     run_history_.push_back(rd);
@@ -272,12 +277,12 @@ int mcconfig::validate(bool AcceptIncomplete)
     // Output
     const std::string &fname = Output.outfilename;
     if (fname.empty() && !AcceptIncomplete)
-        throw std::invalid_argument("Output.OutputFileBaseName is empty.");
+        throw std::invalid_argument("Output.outfilename is empty.");
 
     if (!fname.empty() && std::any_of(fname.begin(), fname.end(), [](unsigned char c) {
             return !(std::isalnum(c) || c == '_');
         })) {
-        std::string msg = "Output.OutputFileBaseName=\"";
+        std::string msg = "Output.outfilename=\"";
         msg += fname;
         msg += "\" contains invalid characters. Valid chars=[0-9a-zA-Z_].";
         throw std::invalid_argument(msg);

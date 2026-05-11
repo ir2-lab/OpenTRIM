@@ -368,10 +368,16 @@ QWidget *SimulationOptionsView::createTargetTab(const QModelIndex &idx)
 
 QWidget *SimulationOptionsView::createTab(const QModelIndex &idx)
 {
+    // exclude experimental stuff
+    QStringList excludeKeys;
+    excludeKeys << "time_ordered_cascades"
+                << "correlated_recombination"
+                << "move_recoil"
+                << "recoil_sub_ed";
     QWidget *widget = new QWidget;
     QHBoxLayout *hbox = new QHBoxLayout;
     widget->setLayout(hbox);
-    hbox->addLayout(createForm(idx, widget));
+    hbox->addLayout(createForm(idx, widget, excludeKeys));
     hbox->addStretch();
     return widget;
 }

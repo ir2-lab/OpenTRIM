@@ -115,12 +115,12 @@ struct mcconfig
      *
      * @param js a JSON formatted input stream
      * @param doValidation if true the function calls validate()
-    * @param os optional pointer to an output stream to recieve error messages
-    * @param strict if true reject unrecognized option keys during config validation
+     * @param os optional pointer to an output stream to recieve error messages
+     * @param strict if true reject unrecognized option keys during config validation
      * @return 0 if succesfull, negative value otherwise
      */
     int parseJSON(std::istream &js, bool doValidation = true, std::ostream *os = nullptr,
-               bool strict = true);
+                  bool strict = true);
 
     /// Pretty print JSON formattet mcconfig to a stream
     void printJSON(std::ostream &os) const;
@@ -262,8 +262,8 @@ public:
     {
         std::string start_time;
         std::string end_time;
-        double ips;
-        double cpu_time;
+        double ions_per_cpu_s;
+        double cpu_time_s;
         int nthreads;
         size_t run_ion_count;
         size_t total_ion_count;

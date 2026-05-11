@@ -18,12 +18,39 @@
 #include <QFontMetrics>
 #include <QItemSelectionModel>
 
+#include "json_defs_p.h"
+
 RegionsModel::RegionsModel(OptionsModel *m, QObject *parent)
     : QAbstractTableModel(parent), model_(m)
 {
     QModelIndex idx = model_->index("Target");
     idx = model_->index("regions", 1, idx);
     regionsIndex_ = idx;
+
+    // get origin and size limits from mcconfig
+    // path:
+    std::istringstream is(mcconfig::options_spec());
+    ojson opt_spec = ojson::parse(is, nullptr, true, true);
+    ojson::array_t arr = opt_spec["fields"];
+    for (size_t i = 0; i < arr.size(); ++i) {
+        if (arr[i]["name"] == "Target") {
+            ojson::array_t arr1 = arr[i]["fields"];
+            for (size_t j = 0; j < arr1.size(); ++j) {
+                if (arr1[j]["name"] == "regions") {
+                    ojson::array_t arr2 = arr1[j]["items"]["fields"];
+                    for (size_t k = 0; k < arr2.size(); ++k) {
+                        if (arr2[k]["name"] == "origin") {
+                            arr2[k]["min"].get_to(origin_lim_[0]);
+                            arr2[k]["max"].get_to(origin_lim_[1]);
+                        } else if (arr2[k]["name"] == "size") {
+                            arr2[k]["min"].get_to(origin_lim_[0]);
+                            arr2[k]["max"].get_to(origin_lim_[1]);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 int RegionsModel::rowCount(const QModelIndex & /* parent */) const
 {
@@ -261,9 +288,14 @@ QWidget *RegionDelegate::createEditor(QWidget *parent, const QStyleOptionViewIte
         }
         w = cb;
     } break;
-    case 2:
+    case 2: {
+        VectorLineEdit *edt =
+                new VectorLineEdit(3, rmodel->origin_lim_[0], rmodel->origin_lim_[1], 3, parent);
+        w = edt;
+    } break;
     case 3: {
-        VectorLineEdit *edt = new VectorLineEdit(3, 0.f, 1.e6f, 3, parent);
+        VectorLineEdit *edt =
+                new VectorLineEdit(3, rmodel->size_lim_[0], rmodel->size_lim_[1], 3, parent);
         w = edt;
     } break;
     }
