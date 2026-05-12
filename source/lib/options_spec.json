@@ -134,6 +134,34 @@
                     "type": "bool",
                     "toolTip": "Enable intra-cascade recombination of Frenkel pairs.",
                     "whatsThis": ""
+                },
+                {
+                    "name": "time_ordered_cascades",
+                    "label": "Time ordered recombinations in cascades  [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Time ordered recombinations in cascades  [Experimental]",
+                    "whatsThis": ""
+                },
+                {
+                    "name": "correlated_recombination",
+                    "label": "Allow same Frenkel pair recombination [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Allow same Frenkel pair recombination [Experimental]",
+                    "whatsThis": ""
+                },
+                {
+                    "name": "move_recoil",
+                    "label": "Move recoil atom to Rc [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Move recoil atom to Rc [Experimental]",
+                    "whatsThis": ""
+                },
+                {
+                    "name": "recoil_sub_ed",
+                    "label": "Subtract Ed from recoil energy [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Subtract Ed from recoil energy [Experimental]",
+                    "whatsThis": ""
                 }
             ]
         },
@@ -382,8 +410,8 @@
                             "label": "Center position (nm)",
                             "type": "vector",
                             "size": 3,
-                            "min": -1.0e10,
-                            "max": 1.0e10,
+                            "min": -1.0e12,
+                            "max": 1.0e12,
                             "digits": 6,
                             "toolTip": "Central initial position of generated ions, [x,y,z] in nm.",
                             "whatsThis": "Must be either within the simulation box or at the lowest yz-plane boundary."
@@ -392,8 +420,8 @@
                             "name": "fwhm",
                             "label": "FWHM (nm)",
                             "type": "float",
-                            "min": 0.1,
-                            "max": 1.0e10,
+                            "min": 1e-6,
+                            "max": 1.0e12,
                             "digits": 6,
                             "toolTip": "Full-width at half-maximum of the generated ions position distribution in nm.",
                             "whatsThis": ""
@@ -465,7 +493,7 @@
                     "type": "vector",
                     "size": 3,
                     "min": 0.001,
-                    "max": 1.0e7,
+                    "max": 1.0e12,
                     "digits": 6,
                     "toolTip": "Size in nm of the simulation volume along the x-, y- and z-axis.",
                     "whatsThis": ""
@@ -475,8 +503,8 @@
                     "label": "Origin [x₀,y₀,z₀] (nm)",
                     "type": "vector",
                     "size": 3,
-                    "min": -1.0e7,
-                    "max": 1.0e7,
+                    "min": -1.0e12,
+                    "max": 1.0e12,
                     "digits": 6,
                     "toolTip": "Origin of the simulation space.",
                     "whatsThis": ""
@@ -670,8 +698,8 @@
                                 "label": "Origin [x₀,y₀,z₀] (nm)",
                                 "type": "vector",
                                 "size": 3,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": -1.0e12,
+                                "max": 1.0e12,
                                 "digits": 6,
                                 "toolTip": "Origin of the region.",
                                 "whatsThis": ""
@@ -682,7 +710,7 @@
                                 "type": "vector",
                                 "size": 3,
                                 "min": 0.001,
-                                "max": 1.0e7,
+                                "max": 1.0e12,
                                 "digits": 6,
                                 "toolTip": "Size in nm of the simulation volume along the x-, y- and z-axis.",
                                 "whatsThis": ""
@@ -768,6 +796,18 @@
                     "whatsThis": "The simulation will stop when the maximum number of histories has been reached."
                 },
                 {
+                    "name": "max_cpu_time",
+                    "label": "Max cpu time in s",
+                    "type": "int",
+                    "min": 0,
+                    "max": 2147483647,
+                    "toolTip": "Maximum cpu time for the simulation in s.",
+                    "whatsThis": [
+                        "The simulation will stop when the maximum cpu time has been reached.",
+                        "A value of 0 disables the cpu time limit."
+                    ]
+                },
+                {
                     "name": "threads",
                     "label": "Number of threads",
                     "type": "int",
@@ -850,8 +890,8 @@
                                 "label": "Origin [x₀,y₀,z₀] (nm)",
                                 "type": "vector",
                                 "size": 3,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": -1.0e12,
+                                "max": 1.0e12,
                                 "digits": 6,
                                 "toolTip": "Origin of the UserTally coordinates.",
                                 "whatsThis": "The vector is defined with respect to the simulation space."
@@ -890,8 +930,8 @@
                                 "label": "x-coordinate bin edges [nm]",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": -1.0e12,
+                                "max": 1.0e12,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion position x-coordinate.",
                                 "whatsThis": [
@@ -904,8 +944,8 @@
                                 "label": "y-coordinate bin edges [nm]",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": -1.0e12,
+                                "max": 1.0e12,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion position y-coordinate.",
                                 "whatsThis": [
@@ -918,8 +958,8 @@
                                 "label": "z-coordinate bin edges [nm]",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": -1.0e12,
+                                "max": 1.0e12,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion position z-coordinate.",
                                 "whatsThis": [
@@ -932,8 +972,8 @@
                                 "label": "Radial distance r [nm]",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": 0.0,
+                                "max": 1.0e12,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's r=sqrt(x^2+y^2+z^2).",
                                 "whatsThis": [
@@ -946,8 +986,8 @@
                                 "label": "Cylindrical radial distance ρ [nm]",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": 0.0,
+                                "max": 1.0e12,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's ρ=sqrt(x^2+y^2).",
                                 "whatsThis": [
@@ -960,8 +1000,8 @@
                                 "label": "Polar angle cosine cosθ",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": -1.0,
+                                "max": 1.0,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's position cosθ = z/r.",
                                 "whatsThis": [
@@ -974,8 +1014,8 @@
                                 "label": "x-axis direction cosine",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": -1.0,
+                                "max": 1.0,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's x-axis direction cosine.",
                                 "whatsThis": [
@@ -988,8 +1028,8 @@
                                 "label": "y-axis direction cosine",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": -1.0,
+                                "max": 1.0,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's y-axis direction cosine.",
                                 "whatsThis": [
@@ -1002,8 +1042,8 @@
                                 "label": "z-axis direction cosine",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": -1.0,
+                                "max": 1.0,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's z-axis direction cosine.",
                                 "whatsThis": [
@@ -1016,8 +1056,8 @@
                                 "label": "Ion kinetic energy [eV]",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": 0,
+                                "max": 1.0e12,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's kinetic energy.",
                                 "whatsThis": [
@@ -1029,8 +1069,8 @@
                                 "label": "Ion damage energy [eV]",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": -0,
+                                "max": 1.0e12,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's damage energy.",
                                 "whatsThis": [
@@ -1044,8 +1084,8 @@
                                 "label": "Number of generated vacancies",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": 0,
+                                "max": 1.0e12,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the number of generated vacancies.",
                                 "whatsThis": [
@@ -1059,8 +1099,8 @@
                                 "label": "Atomic species id",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": 0,
+                                "max": 1.0e6,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's atomic species id.",
                                 "whatsThis": [
@@ -1075,8 +1115,8 @@
                                 "label": "Recoil generation id",
                                 "type": "vector",
                                 "size": 0,
-                                "min": -1.0e7,
-                                "max": 1.0e7,
+                                "min": 0,
+                                "max": 1.0e6,
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's recoil generation id.",
                                 "whatsThis": [

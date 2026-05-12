@@ -1,19 +1,46 @@
 # OpenTRIM - Package build
 
-The following table shows packages to be built and their dependencies (rpm style)
+OpenTRIM and its subprojects:
 
-| Package        | Type          | Requires      | BuildRequires  |
-| -------------- | ------------- | ------------- | -------------- |
-| libdedx        | Shared Lib    | -             | -              |
-| libdedx-devel  | Lib interface | libdedx       | -              |
-| qmatplotwidget | Static Lib    | qwt-qt5       | qwt-qt5-devel  |
-| qtdatabrowser  | Static Lib    | qwt-qt5       | qmatplotwidget |
-| opentrim       | Executable    | libdedx       | libdedx-devel  |
-|                |               |               | eigen-devel    |
-|                |               | hdf5          | hdf5-devel     |
-| opentrim-gui   | Executable    | opentrim      |                |
-|                |               | qwt-qt5       | qtdatabrowser  |
-| opentrim-devel | Lib interface | opentrim      |                |
-|                |               | libdedx-devel |                |
-|                |               | eigen-devel   |                |
-  
+- [libdedx](https://github.com/ir2-lab/libdedx) 
+- [QMatPlotWidget](https://github.com/gapost/qmatplotwidget) 
+- [QtDataBrowser](https://github.com/ir2-lab/QtDataBrowser) 
+
+are organized in a number of packages as shown below. 
+
+Mutual dependencies or external dependencies are also given.
+
+---
+## Packages
+
+1. **libdedx** — Shared Lib
+   - Requires: —
+   - BuildRequires: —
+
+2. **libdedx-devel** — Lib interface
+   - Requires: libdedx
+   - BuildRequires: —
+
+3. **qmatplotwidget-devel** — Static Lib
+   - Requires: qwt-qt5-devel
+   - BuildRequires: qwt-qt5-devel
+
+4. **qtdatabrowser-devel** — Static Lib
+   - Requires: qmatplotwidget-devel
+   - BuildRequires: qmatplotwidget-devel
+
+5. **libopentrim** — Shared Lib
+   - Requires: libdedx, hdf5
+   - BuildRequires: libdedx-devel, eigen3-devel, hdf5-devel
+
+6. **libopentrim-devel** — Lib interface
+   - Requires: libopentrim, libdedx-devel, eigen3-devel
+   - BuildRequires: libopentrim, libdedx-devel, eigen3-devel, hdf5-devel
+
+7. **opentrim** — Executable
+   - Requires: libopentrim
+   - BuildRequires: libopentrim-devel
+
+8. **opentrim-gui** — Executable
+   - Requires: libopentrim, qwt-qt5
+   - BuildRequires: qtdatabrowser-devel, libopentrim-devel

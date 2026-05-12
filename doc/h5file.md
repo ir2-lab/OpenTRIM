@@ -17,7 +17,7 @@ For example, the following is possible:
 
 ```bash
 > opentrim -f config.json -n 1000 -o f1.h5  # run a simulation with 1000 ions
-> opetrim -i f1.h5 -n 2000 -o f2.h5 # continue to 2000 ions and save under a different name
+> opentrim -i f1.h5 -n 2000 -o f2.h5 # continue to 2000 ions and save under a different name
 ```
 
 A brief description of the file contents is given below. More detailed

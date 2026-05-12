@@ -21,7 +21,7 @@ using ojson = nlohmann::basic_json<nlohmann::ordered_map, std::vector, std::stri
     }                                                                                           \
     inline void from_json(const ojson &nlohmann_json_j, Type &nlohmann_json_t)                  \
     {                                                                                           \
-        const Type nlohmann_json_default_obj{};                                                 \
+        const Type nlohmann_json_default_obj{ };                                                \
         NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, __VA_ARGS__)) \
     }
 
@@ -37,7 +37,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(mcconfig::option_type_t,
                                { mcconfig::tStruct, "struct" },
                                { mcconfig::tArray, "array" } })
 
-MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcdriver::run_data, start_time, end_time, ips, cpu_time,
-                                          nthreads, run_ion_count, total_ion_count)
+MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcdriver::run_data, start_time, end_time, ions_per_cpu_s,
+                                          cpu_time_s, nthreads, run_ion_count, total_ion_count)
 
 #endif // JSON_DEFS_P_H
