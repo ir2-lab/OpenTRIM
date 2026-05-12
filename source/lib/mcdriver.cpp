@@ -102,7 +102,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // cpu time
     struct timespec t_start, t_end;
 
-    int nthreads = config_.Run.threads;
+    size_t nthreads = config_.Run.threads;
     if (nthreads < 1) {
         nthreads = std::thread::hardware_concurrency();
         if (nthreads <= 3)
@@ -121,6 +121,9 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     if (n_end <= n_start)
         return -1;
 
+    // ions to run
+    size_t n_run = n_end - n_start;
+
     // check cpu time limit
     double tlim = std::numeric_limits<double>::max();
     if (config_.Run.max_cpu_time) {
@@ -135,12 +138,12 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
     // create simulation clones
     sim_clones_.resize(nthreads);
-    for (int i = 0; i < nthreads; i++)
+    for (size_t i = 0; i < nthreads; i++)
         sim_clones_[i] = new mccore(*s_);
 
     // jump the rng's of clones (except the 1st one)
-    for (int i = 1; i < nthreads; i++) {
-        for (int j = 0; j < i; ++j)
+    for (size_t i = 1; i < nthreads; i++) {
+        for (size_t j = 0; j < i; ++j)
             sim_clones_[i]->rngJump();
     }
 
@@ -154,7 +157,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
         ev_mask |= static_cast<uint32_t>(Event::Vacancy);
 
     // open clone streams
-    for (int i = 0; i < nthreads; i++)
+    for (size_t i = 0; i < nthreads; i++)
         sim_clones_[i]->init_streams(ev_mask);
 
     // If ion_count == 0, i.e. simulation starts,
@@ -162,15 +165,16 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     if (s_->ion_count() == 0)
         s_->init_streams(ev_mask);
 
-    // set max ions in each thread
-    for (int i = 0; i < nthreads; i++)
-        sim_clones_[i]->setMaxIons(n_end);
-
-    // clear the abort flag
-    s_->clear_abort_flag();
+    // arm the clones
+    // each clone runs N/nthread ions +1 if i < N % nthread
+    for (size_t i = 0; i < nthreads; i++) {
+        size_t id0 = s_->ion_count() + i;
+        size_t n_thread = (n_run / nthreads) + (i < (n_run % nthreads) ? 1 : 0);
+        sim_clones_[i]->arm(n_thread, id0, nthreads);
+    }
 
     // create & start worker threads
-    for (int i = 0; i < nthreads; i++)
+    for (size_t i = 0; i < nthreads; i++)
         thread_pool_.emplace_back(&mccore::run, sim_clones_[i]);
 
     // waiting loop
@@ -190,7 +194,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
         // report progress if callback function is given
         if (cb) {
             // consolidate results
-            for (int i = 0; i < nthreads; i++)
+            for (size_t i = 0; i < nthreads; i++)
                 s_->mergeTallies(*(sim_clones_[i]));
             // callback
             cb(*this, callback_user_data);

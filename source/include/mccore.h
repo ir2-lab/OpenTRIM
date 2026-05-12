@@ -170,12 +170,20 @@ protected:
     // max # of ion histories to run
     size_t max_no_ions_;
 
-    // shared ion counter
-    std::shared_ptr<std::atomic_size_t> ion_counter_; // shared ion counter
-    std::atomic_size_t thread_ion_counter_; // per thread ion counter
+    /* variables for multi-threading */
 
+    // shared total ion counter = total # of simulated ion histories
+    std::shared_ptr<std::atomic_size_t> ion_counter_;
     // shared abort flag
-    std::shared_ptr<std::atomic_bool> abort_flag_; // thread safe abort simulation flag
+    std::shared_ptr<std::atomic_bool> abort_flag_;
+    // per thread ion id
+    size_t thread_ion_id_;
+    // id stride = number of threads
+    size_t ion_id_stride_;
+    // per thread ion counter
+    size_t thread_ion_counter_;
+    // thread max ions
+    size_t thread_max_no_ions_;
 
     // shared mutex for tally data
     std::shared_ptr<std::mutex> tally_mutex_;
@@ -213,8 +221,6 @@ public:
     // This number refers to all threads
     size_t ion_count() const { return *ion_counter_; }
     void setIonCount(size_t n) { *ion_counter_ = n; }
-    // Number of ions run in the current tread
-    size_t thread_ion_count() const { return thread_ion_counter_; }
 
     /// Returns the core simulation parameters
     const parameters &getSimulationParameters() const { return par_; }
@@ -320,6 +326,23 @@ public:
     void mergeEvents(mccore &other);
 
     /**
+     * @brief Prepare for simulating @a nion histories
+     *
+     * Initialize internal counters so that the next call
+     * to run() will simulate @a nion histories.
+     *
+     * The id of each simulated ion is
+     *
+     *   id = id0 + k * id_stride
+     *
+     *
+     * @param nions
+     * @param id0
+     * @param id_stride
+     */
+    void arm(size_t nions, size_t id0 = 0, size_t id_stride = 1);
+
+    /**
      * @brief Run the ion transport simulation
      *
      * This function runs the actual Monte-Carlo loop, repeating
@@ -336,7 +359,6 @@ public:
      */
     int run();
 
-    void clear_abort_flag() { *abort_flag_ = false; }
     void abort() { *abort_flag_ = true; }
     bool abort_flag() const { return *abort_flag_; }
 
