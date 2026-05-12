@@ -116,8 +116,7 @@ int main(int argc, char *argv[])
     app.add_option("-f", input_config_file, "JSON config file");
     app.add_option("-o,--output", output_file, "Output HDF5 file name (overrides config input)");
     app.add_flag("-t,--template", "Print a template JSON config to stdout");
-    app.add_flag("--relaxed", relaxed,
-                 "Allow unrecognized JSON config keys (relaxed validation)");
+    app.add_flag("--relaxed", relaxed, "Allow unrecognized JSON config keys (relaxed validation)");
     CLI11_PARSE(app, argc, argv);
 
     if (app.get_option("--template")->as<bool>()) { // NEW: print configuration and exit
@@ -205,9 +204,11 @@ int main(int argc, char *argv[])
     if (!D.run_history().empty()) {
         const mcdriver::run_data &rd = D.run_history().back();
         cout << endl << endl << "Completed " << rd.total_ion_count << " ion histories." << endl;
-        cout << "Threads: " << D.config().Run.threads << endl;
-        cout << "Cpu time (s):  " << rd.cpu_time << ",\t" << "Ions/cpu-s:  " << rd.ips << endl;
-        cout << "Real time (s): " << info.elapsed() << ",\t" << "Ions/real-s: " << info.ips() << endl;
+        cout << "Threads: " << rd.nthreads << endl;
+        cout << "CPU time (s):  " << rd.cpu_time_s << ",\t" << "Ions/cpu-s:  " << rd.ions_per_cpu_s
+             << endl;
+        cout << "Wall time (s): " << info.elapsed() << ",\t" << "Ions/wall-s: " << info.ips()
+             << endl;
     }
     // D.save() runs regardless and writes whatever was accumulated before abort.
     cout << "Storing results in " << D.outFileName() << " ...";
