@@ -203,14 +203,15 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     } while ((s_->ion_count() < n_end) && !(s_->abort_flag()));
 
     // wait for threads to finish...
-    for (int i = 0; i < nthreads; i++)
+    for (size_t i = 0; i < nthreads; i++)
         thread_pool_[i].join();
 
-    // consolidate tallies & events
-    for (int i = 0; i < nthreads; i++) {
+    // consolidate tallies
+    for (size_t i = 0; i < nthreads; i++) {
         s_->mergeTallies(*(sim_clones_[i]));
-        s_->mergeEvents(*(sim_clones_[i]));
     }
+    // consolidate events, ordered per history id
+    s_->mergeEvents(sim_clones_);
 
     // report progress for the last time
     if (cb) {

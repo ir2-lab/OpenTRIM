@@ -326,6 +326,18 @@ public:
     void mergeEvents(mccore &other);
 
     /**
+     * @brief Merge the events from a vector of simulation objects
+     *
+     * The streamed events from all objects in @p other are
+     * added to this object's event streams.
+     *
+     * The events in all objects in @p other are cleared.
+     *
+     * @param other a vector of simulation objects
+     */
+    void mergeEvents(std::vector<mccore *> &other);
+
+    /**
      * @brief Prepare for simulating @a nion histories
      *
      * Initialize internal counters so that the next call
