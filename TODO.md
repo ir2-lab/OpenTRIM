@@ -5,6 +5,11 @@
 - [X] The rpath is not correctly set the 1st time that cmake configures the project. (problem for local builds/installs to $HOME/.local)
   Solved - include(GNUInstalldirs) must be called after setting the prefix !!
 
+- [ ] (Not an actual bug but needs fixing) Monte-Carlo runs with multiple threads are not reproducible
+  This is because threads race to obtain the next ion's ID to simulate and the allocation depends on OS scheduling.
+  The solution could be to preallocate which ion IDs are to be simulated by each thread, e.g., with 2 threads: thread 0 will simulate even ion IDs and thread 1 odd ones.
+  This can be used while merging thread output so that events are stored sequentially per ion ID.
+
 ## Functionality that needs to be completed
 
 ### JSON I/O
