@@ -182,6 +182,15 @@ int mccore::reset()
     return 0;
 }
 
+void mccore::arm(size_t nions, size_t id0, size_t id_stride)
+{
+    thread_ion_id_ = id0;
+    ion_id_stride_ = id_stride;
+    thread_ion_counter_ = 0;
+    thread_max_no_ions_ = nions;
+    *abort_flag_ = false;
+}
+
 int mccore::run()
 {
     abstract_cascade *cscd = nullptr;
@@ -193,13 +202,19 @@ int mccore::run()
 
     bool cascadesOnly = par_.simulation_type == CascadesOnly;
 
-    while (!(*abort_flag_)) {
-        // get the next ion id
-        size_t ion_id = ion_counter_->fetch_add(1) + 1;
-        if (ion_id > max_no_ions_) {
-            (*ion_counter_)--;
-            break;
-        }
+    while (!(*abort_flag_) && thread_ion_counter_ < thread_max_no_ions_) {
+
+        // get the ion id = 1-based index
+        size_t ion_id = thread_ion_id_ + 1;
+
+        // prepare id for the next ion
+        thread_ion_id_ += ion_id_stride_;
+
+        // increment thread counter
+        thread_ion_counter_++;
+
+        // increment total ion counter
+        (*ion_counter_)++;
 
         // generate ion
         ion *i = ion_queue_.create_ion();
@@ -323,9 +338,6 @@ int mccore::run()
         tion_.clear();
         for (int i = 0; i < utally_.size(); ++i)
             ution_[i]->clear();
-
-        // update thread counter
-        thread_ion_counter_++;
 
     } // ion loop
 
