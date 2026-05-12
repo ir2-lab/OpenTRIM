@@ -587,6 +587,21 @@ void mccore::mergeEvents(mccore &other)
     other.damage_stream_.clear();
 }
 
+void mccore::mergeEvents(std::vector<mccore *> &other)
+{
+    int n = other.size();
+    std::vector<event_stream *> streams(other.size());
+    for (int i = 0; i < n; ++i)
+        streams[i] = &(other[i]->pka_stream_);
+    pka_stream_.merge(streams);
+    for (int i = 0; i < n; ++i)
+        streams[i] = &(other[i]->exit_stream_);
+    exit_stream_.merge(streams);
+    for (int i = 0; i < n; ++i)
+        streams[i] = &(other[i]->damage_stream_);
+    damage_stream_.merge(streams);
+}
+
 ArrayNDd mccore::getTallyTable(int i) const
 {
     if (i < 0 || i >= tally::tEnd)
