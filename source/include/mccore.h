@@ -176,13 +176,14 @@ protected:
     std::shared_ptr<std::atomic_size_t> ion_counter_;
     // shared abort flag
     std::shared_ptr<std::atomic_bool> abort_flag_;
-    // per thread ion id
-    size_t thread_ion_id_;
+    // id of the next simulated ion
+    size_t next_ion_id_;
+    // id stride : next_id = id + stride
     // id stride = number of threads
     size_t ion_id_stride_;
-    // per thread ion counter
+    // per thread simulated ion counter
     size_t thread_ion_counter_;
-    // thread max ions
+    // max ions to be simulated by this thread
     size_t thread_max_no_ions_;
 
     // shared mutex for tally data
@@ -221,6 +222,8 @@ public:
     // This number refers to all threads
     size_t ion_count() const { return *ion_counter_; }
     void setIonCount(size_t n) { *ion_counter_ = n; }
+    size_t next_ion_id() const { return next_ion_id_; }
+    size_t thread_ion_count() const { return thread_ion_counter_; }
 
     /// Returns the core simulation parameters
     const parameters &getSimulationParameters() const { return par_; }
@@ -338,21 +341,26 @@ public:
     void mergeEvents(std::vector<mccore *> &other);
 
     /**
-     * @brief Prepare for simulating @a nion histories
+     * @brief Prepare for simulating @p N ion histories
      *
      * Initialize internal counters so that the next call
-     * to run() will simulate @a nion histories.
+     * to run() will simulate @p N histories.
      *
      * The id of each simulated ion is
      *
-     *   id = id0 + k * id_stride
+     *   id = id1 + k * id_stride, k=0,1,...,N-1
      *
+     * In multi-threaded runs, @p id_stride is set equal to
+     * the number of threads.
      *
-     * @param nions
-     * @param id0
-     * @param id_stride
+     * Ion history id is a 1-based index. The 1st simulated ion
+     * has id=1, etc
+     *
+     * @param N # of ions to simulate
+     * @param id1 id of the 1st ion
+     * @param id_stride id allocation stride
      */
-    void arm(size_t nions, size_t id0 = 0, size_t id_stride = 1);
+    void arm(size_t N, size_t id1 = 1, size_t id_stride = 1);
 
     /**
      * @brief Run the ion transport simulation
