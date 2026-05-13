@@ -1,0 +1,85 @@
+{
+    "Run": {
+        "max_no_ions": 50,
+        "threads": 0
+    },
+    "Simulation": {
+        "nrt_calculation": "NRT_average"
+    },
+    "IonBeam": {
+        "ion": {
+            "symbol": "Xe",
+            "atomic_mass": 131.904
+        },
+        "energy_distribution": {
+            "center": 3e6
+        },
+        "spatial_distribution": {
+            "center": [
+                0,
+                600,
+                600
+            ]
+        }
+    },
+    "Target": {
+        "size": [
+            1200,
+            1200,
+            1200
+        ],
+        "cell_count": [
+            100,
+            1,
+            1
+        ],
+        "periodic_bc": [
+            0,
+            1,
+            1
+        ],
+        "materials": [
+            {
+                "id": "Uranium oxide",
+                "density": 10.97,
+                "composition": [
+                    {
+                        "element": {
+                            "symbol": "U"
+                        },
+                        "X": 1,
+                        "Ed": 40,
+                        "El": 4,
+                        "Es": 4,
+                        "Er": 20
+                    },
+                    {
+                        "element": {
+                            "symbol": "O"
+                        },
+                        "X": 2,
+                        "Ed": 20,
+                        "El": 2,
+                        "Es": 2,
+                        "Er": 20
+                    }
+                ]
+            }
+        ],
+        "regions": [
+            {
+                "id": "R1",
+                "material_id": "Uranium oxide",
+                "size": [
+                    1200,
+                    1200,
+                    1200
+                ]
+            }
+        ]
+    },
+    "Output": {
+        "title": "3MeV Xe on UO2",
+        "outfilename": "out2"
+    }
+}
