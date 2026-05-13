@@ -9,8 +9,8 @@ mccore::mccore()
       target_(new target),
       ref_count_(new int(0)),
       ion_counter_(new std::atomic_size_t(0)),
-      thread_ion_counter_(0),
       abort_flag_(new std::atomic_bool()),
+      thread_ion_counter_(0),
       tally_mutex_(new std::mutex)
 {
 }
@@ -22,8 +22,8 @@ mccore::mccore(const parameters &p, const transport_options &t)
       target_(new target),
       ref_count_(new int(0)),
       ion_counter_(new std::atomic_size_t(0)),
-      thread_ion_counter_(0),
       abort_flag_(new std::atomic_bool()),
+      thread_ion_counter_(0),
       tally_mutex_(new std::mutex)
 {
 }
@@ -38,8 +38,8 @@ mccore::mccore(const mccore &s)
       tion_(s.tion_),
       ref_count_(s.ref_count_),
       ion_counter_(s.ion_counter_),
-      thread_ion_counter_(0),
       abort_flag_(s.abort_flag_),
+      thread_ion_counter_(0),
       tally_mutex_(s.tally_mutex_),
       dedx_calc_(s.dedx_calc_),
       flight_path_calc_(s.flight_path_calc_),
@@ -182,12 +182,12 @@ int mccore::reset()
     return 0;
 }
 
-void mccore::arm(size_t nions, size_t id0, size_t id_stride)
+void mccore::arm(size_t N, size_t id1, size_t id_stride)
 {
-    thread_ion_id_ = id0;
+    next_ion_id_ = id1;
     ion_id_stride_ = id_stride;
     thread_ion_counter_ = 0;
-    thread_max_no_ions_ = nions;
+    thread_max_no_ions_ = N;
     *abort_flag_ = false;
 }
 
@@ -205,15 +205,15 @@ int mccore::run()
     while (!(*abort_flag_) && thread_ion_counter_ < thread_max_no_ions_) {
 
         // get the ion id = 1-based index
-        size_t ion_id = thread_ion_id_ + 1;
+        size_t ion_id = next_ion_id_;
 
         // prepare id for the next ion
-        thread_ion_id_ += ion_id_stride_;
+        next_ion_id_ += ion_id_stride_;
 
         // increment thread counter
         thread_ion_counter_++;
 
-        // increment total ion counter
+        // increment shared total ion counter
         (*ion_counter_)++;
 
         // generate ion

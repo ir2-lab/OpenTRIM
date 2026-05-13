@@ -168,9 +168,9 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // arm the clones
     // each clone runs N/nthread ions +1 if i < N % nthread
     for (size_t i = 0; i < nthreads; i++) {
-        size_t id0 = s_->ion_count() + i;
+        size_t id1 = n_start + i + 1;
         size_t n_thread = (n_run / nthreads) + (i < (n_run % nthreads) ? 1 : 0);
-        sim_clones_[i]->arm(n_thread, id0, nthreads);
+        sim_clones_[i]->arm(n_thread, id1, nthreads);
     }
 
     // create & start worker threads
@@ -205,6 +205,61 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // wait for threads to finish...
     for (size_t i = 0; i < nthreads; i++)
         thread_pool_[i].join();
+
+    // if the actual total ion count is less than the expected
+    // (due to the simulation being aborted by the user or due to
+    // the time limit reached)
+    // we have to check if we have all consequtive ion history ids
+    if (s_->ion_count() < n_end) {
+
+        // update the last ion count (n_end) and
+        // the # of ions run in this exec()
+        n_end = s_->ion_count();
+        n_run = n_end - n_start;
+
+        // get the last ion ID in each thread
+        std::vector<size_t> ids(nthreads);
+        for (size_t i = 0; i < nthreads; i++)
+            ids[i] = sim_clones_[i]->thread_ion_count() ? sim_clones_[i]->next_ion_id() - nthreads
+                                                        : size_t(-1);
+
+        // get the max ID and the thread index where it occured
+        auto max_it = std::max_element(ids.begin(), ids.end());
+        int i = std::distance(ids.begin(), max_it);
+        size_t maxId = *max_it;
+
+        // if maxID > n_end => missing IDs
+        if (maxId > n_end) {
+            // how many
+            size_t n_missing = maxId - n_end;
+            // check all other threads (except the one with maxID) to find the missing
+            // traverse the threads from i(maxID) backwards
+            for (int k = 0; k < nthreads - 1; ++k) {
+                // update the thread index
+                i--;
+                if (i < 0)
+                    i += nthreads;
+                // this should be the i-th thread maxID
+                maxId--;
+                // check if the last id is below that
+                while ((ids[i] < maxId || ids[i] == size_t(-1)) && n_missing) {
+                    if (ids[i] == size_t(-1)) {
+                        ids[i] = n_start + i + 1;
+                    } else
+                        ids[i] += nthreads;
+                    // simulate 1 missing ion
+                    sim_clones_[i]->arm(1, ids[i], nthreads);
+                    sim_clones_[i]->run();
+                    n_missing--;
+                }
+                if (!n_missing)
+                    break;
+            }
+            assert(!n_missing);
+        } else {
+            assert(maxId == n_end);
+        }
+    }
 
     // consolidate tallies
     for (size_t i = 0; i < nthreads; i++) {
