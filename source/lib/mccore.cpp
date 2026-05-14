@@ -9,8 +9,8 @@ mccore::mccore()
       target_(new target),
       ref_count_(new int(0)),
       ion_counter_(new std::atomic_size_t(0)),
-      thread_ion_counter_(0),
       abort_flag_(new std::atomic_bool()),
+      thread_ion_counter_(0),
       tally_mutex_(new std::mutex)
 {
 }
@@ -22,8 +22,8 @@ mccore::mccore(const parameters &p, const transport_options &t)
       target_(new target),
       ref_count_(new int(0)),
       ion_counter_(new std::atomic_size_t(0)),
-      thread_ion_counter_(0),
       abort_flag_(new std::atomic_bool()),
+      thread_ion_counter_(0),
       tally_mutex_(new std::mutex)
 {
 }
@@ -38,8 +38,8 @@ mccore::mccore(const mccore &s)
       tion_(s.tion_),
       ref_count_(s.ref_count_),
       ion_counter_(s.ion_counter_),
-      thread_ion_counter_(0),
       abort_flag_(s.abort_flag_),
+      thread_ion_counter_(0),
       tally_mutex_(s.tally_mutex_),
       dedx_calc_(s.dedx_calc_),
       flight_path_calc_(s.flight_path_calc_),
@@ -182,6 +182,15 @@ int mccore::reset()
     return 0;
 }
 
+void mccore::arm(size_t N, size_t id1, size_t id_stride)
+{
+    next_ion_id_ = id1;
+    ion_id_stride_ = id_stride;
+    thread_ion_counter_ = 0;
+    thread_max_no_ions_ = N;
+    *abort_flag_ = false;
+}
+
 int mccore::run()
 {
     abstract_cascade *cscd = nullptr;
@@ -193,13 +202,19 @@ int mccore::run()
 
     bool cascadesOnly = par_.simulation_type == CascadesOnly;
 
-    while (!(*abort_flag_)) {
-        // get the next ion id
-        size_t ion_id = ion_counter_->fetch_add(1) + 1;
-        if (ion_id > max_no_ions_) {
-            (*ion_counter_)--;
-            break;
-        }
+    while (!(*abort_flag_) && thread_ion_counter_ < thread_max_no_ions_) {
+
+        // get the ion id = 1-based index
+        size_t ion_id = next_ion_id_;
+
+        // prepare id for the next ion
+        next_ion_id_ += ion_id_stride_;
+
+        // increment thread counter
+        thread_ion_counter_++;
+
+        // increment shared total ion counter
+        (*ion_counter_)++;
 
         // generate ion
         ion *i = ion_queue_.create_ion();
@@ -323,9 +338,6 @@ int mccore::run()
         tion_.clear();
         for (int i = 0; i < utally_.size(); ++i)
             ution_[i]->clear();
-
-        // update thread counter
-        thread_ion_counter_++;
 
     } // ion loop
 
@@ -573,6 +585,21 @@ void mccore::mergeEvents(mccore &other)
     other.exit_stream_.clear();
     damage_stream_.merge(other.damage_stream_);
     other.damage_stream_.clear();
+}
+
+void mccore::mergeEvents(std::vector<mccore *> &other)
+{
+    int n = other.size();
+    std::vector<event_stream *> streams(other.size());
+    for (int i = 0; i < n; ++i)
+        streams[i] = &(other[i]->pka_stream_);
+    pka_stream_.merge(streams);
+    for (int i = 0; i < n; ++i)
+        streams[i] = &(other[i]->exit_stream_);
+    exit_stream_.merge(streams);
+    for (int i = 0; i < n; ++i)
+        streams[i] = &(other[i]->damage_stream_);
+    damage_stream_.merge(streams);
 }
 
 ArrayNDd mccore::getTallyTable(int i) const

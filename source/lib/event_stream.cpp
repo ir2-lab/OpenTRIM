@@ -165,6 +165,50 @@ int event_stream::merge(event_stream &ev)
     return 0; // successfully terminated
 }
 
+int event_stream::merge(std::vector<event_stream *> &v)
+{
+    if (!is_open())
+        return -1;
+    for (auto *p : v)
+        if (!p->is_open() || p->cols() != cols_)
+            return -1;
+
+    for (auto *p : v)
+        p->rewind();
+
+    std::vector<float> buff(cols_);
+
+    for (;;) {
+        // find the stream with the smallest peekid (loop A)
+        uint32_t min_id;
+        int min_idx = -1;
+        for (int i = 0; i < (int)v.size(); i++) {
+            uint32_t id;
+            if (v[i]->peekid(id) && (min_idx == -1 || id < min_id)) {
+                min_id = id;
+                min_idx = i;
+            }
+        }
+
+        if (min_idx == -1)
+            break;
+
+        // copy all consecutive events with min_id from that stream (loop B)
+        event_stream *src = v[min_idx];
+        uint32_t cur_id;
+        while (src->read(buff.data(), 1) == cols_) {
+            std::memcpy(&cur_id, buff.data(), sizeof(uint32_t));
+            if (cur_id != min_id) {
+                std::fseek(src->fs_, -(long)(cols_ * sizeof(float)), SEEK_CUR);
+                break;
+            }
+            write(buff.data(), 1);
+        }
+    }
+
+    return 0;
+}
+
 bool event_stream::set_event_prototype(const event_buffer &ev)
 {
     close_();
@@ -190,6 +234,16 @@ void event_stream::clear()
 size_t event_stream::read(float *buff, size_t nevents)
 {
     return is_open() ? std::fread(buff, sizeof(float), nevents * cols_, fs_) : 0;
+}
+
+bool event_stream::peekid(uint32_t &id)
+{
+    if (!is_open())
+        return false;
+    if (std::fread(&id, sizeof(uint32_t), 1, fs_) != 1)
+        return false;
+    std::fseek(fs_, -(long)sizeof(uint32_t), SEEK_CUR);
+    return true;
 }
 
 size_t event_stream::write(const float *buff, size_t nevents)
