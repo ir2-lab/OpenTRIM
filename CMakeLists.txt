@@ -68,6 +68,8 @@ if (OPENTRIM_BUILD_TESTS)
     add_subdirectory(test/scattering_calc)
 endif () ## Tests
 
+add_subdirectory(test/post-build)
+
 include(CMakeSummary)
 
 
