@@ -1,5 +1,4 @@
 %global         debug_package     %{nil}
-%global         __strip           /bin/true
 
 Name:           opentrim
 Version:	       0
@@ -43,6 +42,7 @@ BuildRequires:  libqwt-qt5-dev
 BuildRequires:  libqt5svg5-dev
 BuildRequires:	 libeigen3-dev >= 3.4
 BuildRequires:	 libhdf5-dev
+BuildRequires:	 hdf5-tools
 
 %else
 
@@ -134,6 +134,9 @@ strip --strip-unneeded %{buildroot}%{_libdir}/lib*.so
 install -d %{buildroot}/%{_datadir}/%{name}/tests
 
 cp -r test/%{name}/* %{buildroot}/%{_datadir}/%{name}/tests/
+
+%check
+%ctest "-V" "-j1"
 
 %post libs -p /sbin/ldconfig
 
