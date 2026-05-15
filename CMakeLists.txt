@@ -16,7 +16,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 option (OPENTRIM_BUILD_GUI "build gui" ON)
 option (OPENTRIM_BUILD_TESTS "build tests" ON)
-option (OPENTRIM_POST_BUILD_TESTS "enable post-build validation tests" OFF)
 
 string(TIMESTAMP CMAKE_BUILD_TIME UTC)
 
@@ -68,10 +67,6 @@ add_subdirectory(source)
 if (OPENTRIM_BUILD_TESTS)
     add_subdirectory(test/scattering_calc)
 endif () ## Tests
-
-if (OPENTRIM_POST_BUILD_TESTS)
-    add_subdirectory(test/post-build)
-endif () ## Post-build tests
 
 include(CMakeSummary)
 

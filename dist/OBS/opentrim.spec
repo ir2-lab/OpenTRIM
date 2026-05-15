@@ -135,6 +135,9 @@ install -d %{buildroot}/%{_datadir}/%{name}/tests
 
 cp -r test/%{name}/* %{buildroot}/%{_datadir}/%{name}/tests/
 
+%check
+%ctest "-V" "-j1"
+
 %post libs -p /sbin/ldconfig
 
 %postun libs -p /sbin/ldconfig
