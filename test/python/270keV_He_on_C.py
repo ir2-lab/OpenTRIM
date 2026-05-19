@@ -72,7 +72,9 @@ Config["Target"]["regions"][0]["id"] = "R1"
 Config["Target"]["regions"][0]["material_id"] = "Carbon foil"
 Config["Target"]["regions"][0]["size"] = [1000.0, 10000.0, 10000.0]
 
-nx_bins = np.linspace(0.980, 1.000, 21)
+theta_deg = np.linspace(10,0,20) # scattering θ bins
+theta = np.deg2rad(theta_deg)
+nx_bins = np.cos(theta)
 
 Config["UserTally"] = [
     {
@@ -116,18 +118,15 @@ if not h5_path.exists():
 
 with h5py.File(h5_path, "r") as f:
     data = np.asarray(f["/user_tally/AngularDistribution/data"][...])  # (1,20,1)
-    nx_bins = np.asarray(f["/user_tally/AngularDistribution/bins/1"][...])  # length 21
-
-    nx_centers = 0.5 * (nx_bins[:-1] + nx_bins[1:])
-    theta = 2.0 * np.sqrt(1.0 - nx_centers)
-    theta_deg = np.degrees(theta)
     delta_cos = nx_bins[1:] - nx_bins[:-1]
-    S = data[0, :, 0] / delta_cos / (4.0 * np.pi)
+    S = data[0, :, 0] / delta_cos / (4.0 * np.pi) # scattering per solid angle
 
 # 6. Plot angular distribution
 plt.figure()
-plt.plot(theta_deg, S, marker="o")
+plt.semilogy(0.5*(theta_deg[0:-1]+theta_deg[1:]), S, marker="o")
 plt.xlabel("Scattering angle (deg)")
 plt.ylabel("Particles per solid angle (srad$^{-1}$)")
 plt.tight_layout()
+plt.xlim(0,10)
+plt.title("Scattering of 270keV He by 100μg/cm^2 C foil")
 plt.show()
