@@ -1,0 +1,60 @@
+name: Windows Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version string (e.g. 1.1.5)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2 (UCRT64)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-hdf5
+
+      # Eigen3 3.4.0 must be installed manually; the current MSYS2 package
+      # is v5.x which is not supported. Download from the MSYS2 archive.
+      - name: Install Eigen3 3.4.0
+        run: |
+          curl -L -o eigen3.pkg.tar.zst \
+            "https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-eigen3-3.4.0-1-any.pkg.tar.zst"
+          pacman -U --noconfirm eigen3.pkg.tar.zst
+
+      # TODO: build and install libdedx, QtDataBrowser, QMatPlotWidget
+      # before enabling the GUI. See dist/mingw64/win_build_recipe.md.
+
+      - name: Configure
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOPENTRIM_BUILD_GUI=OFF \
+            -DOPENTRIM_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Install
+        run: cmake --install build
