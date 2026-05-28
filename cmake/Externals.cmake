@@ -115,4 +115,15 @@ if(PACKAGE_BUILD)
 endif()
 FetchContent_MakeAvailable(external_ieee754_seq)
 
-
+if(OPENTRIM_BUILD_PYTHON)
+   FetchContent_Declare(external_pybind11
+      GIT_REPOSITORY https://github.com/pybind/pybind11.git
+      GIT_TAG        v3.0.4
+      GIT_SUBMODULES_RECURSE FALSE
+      GIT_SHALLOW    TRUE
+   )
+   if(PACKAGE_BUILD)
+      set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_PYBIND11 ${PROJECT_SOURCE_DIR}/external/ext10)
+   endif()
+   FetchContent_MakeAvailable(external_pybind11)
+endif()
