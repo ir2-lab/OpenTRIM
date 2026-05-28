@@ -60,11 +60,15 @@ if(OPENTRIM_BUILD_GUI)
     find_package(QtDataBrowser REQUIRED)
 endif () ## BUILD GUI
 
+include(CTest)
+
 add_subdirectory(source)
 
 if (OPENTRIM_BUILD_TESTS)
     add_subdirectory(test/scattering_calc)
 endif () ## Tests
+
+add_subdirectory(test/post-build)
 
 include(CMakeSummary)
 
