@@ -24,6 +24,7 @@ opentrim_print_var(CMAKE_INSTALL_PREFIX)
 opentrim_print_var(CMAKE_INSTALL_RPATH)
 opentrim_print_var(OPENTRIM_BUILD_GUI)
 opentrim_print_var(OPENTRIM_BUILD_TESTS)
+opentrim_print_var(OPENTRIM_BUILD_PYTHON)
 
 message(STATUS "Found dependencies:")
 
