@@ -3,8 +3,10 @@
 
 #include <cmath>
 #include <queue>
+#include <stdexcept>
 
 #include "geometry.h"
+#include "periodic_table.h"
 
 #define S_ERG_TO_TIME_CONST 7.198712007850257e-02 // ps/nm-eV^(1/2)
 
@@ -21,6 +23,41 @@ struct element_t
     int atomic_number{ 0 };
     /// Atomic mass
     float atomic_mass{ 0.f };
+
+    /// Default constructor
+    element_t() = default;
+
+    /// Construct from symbol, Z, and M
+    element_t(const std::string& sym, int Z, float M)
+        : symbol(sym), atomic_number(Z), atomic_mass(M)
+    {}
+
+    /// Construct from element symbol.  Throws std::invalid_argument for unknown symbols.
+    explicit element_t(const std::string& sym)
+    {
+        const auto& e = periodic_table::at(sym);
+        if (!e.is_valid())
+            throw std::invalid_argument("element_t: unknown symbol \"" + sym + "\"");
+        symbol       = e.symbol;
+        atomic_number = e.Z;
+        atomic_mass   = static_cast<float>(e.mass);
+    }
+
+    /// Construct from atomic number Z (1-based, 1=H..92=U).
+    /// Throws std::invalid_argument for Z <= 0 or Z > 92.
+    explicit element_t(int Z)
+    {
+        if (Z <= 0)
+            throw std::invalid_argument("element_t: atomic number must be >= 1 (got "
+                                        + std::to_string(Z) + ")");
+        const auto& e = periodic_table::at(Z);
+        if (!e.is_valid())
+            throw std::invalid_argument("element_t: atomic number " + std::to_string(Z)
+                                        + " is out of range (max 92)");
+        symbol        = e.symbol;
+        atomic_number = e.Z;
+        atomic_mass   = static_cast<float>(e.mass);
+    }
 };
 
 /**
