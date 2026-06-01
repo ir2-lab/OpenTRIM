@@ -1,5 +1,62 @@
 #include "ion.h"
 #include "target.h"
+#include "periodic_table.h"
+
+#include <stdexcept>
+
+element_t::element_t(const std::string &sym)
+{
+    const auto &e = periodic_table::at(sym);
+    if (!e.is_valid())
+        throw std::invalid_argument("element_t: unknown symbol \"" + sym + "\"");
+    symbol = e.symbol;
+    atomic_number = e.Z;
+    atomic_mass = static_cast<float>(e.mass);
+}
+
+element_t::element_t(const std::string &sym, float M) : element_t(sym)
+{
+    if (M <= 0.0f)
+        throw std::invalid_argument("element_t: atomic mass must be positive (got "
+                                    + std::to_string(M) + ")");
+    atomic_mass = M;
+}
+
+element_t::element_t(int Z)
+{
+    if (Z <= 0)
+        throw std::invalid_argument("element_t: atomic number must be >= 1 (got "
+                                    + std::to_string(Z) + ")");
+    const auto &e = periodic_table::at(Z);
+    if (!e.is_valid())
+        throw std::invalid_argument("element_t: atomic number " + std::to_string(Z)
+                                    + " is out of range (max 92)");
+    symbol = e.symbol;
+    atomic_number = e.Z;
+    atomic_mass = static_cast<float>(e.mass);
+}
+
+element_t::element_t(int Z, float M) : element_t(Z)
+{
+    if (M <= 0.0f)
+        throw std::invalid_argument("element_t: atomic mass must be positive (got "
+                                    + std::to_string(M) + ")");
+    atomic_mass = M;
+}
+
+bool element_t::is_valid() const
+{
+    if (atomic_number < 1 || atomic_number > 92)
+        return false;
+    if (symbol.empty())
+        return false;
+    const auto &e = periodic_table::at(atomic_number);
+    if (e.symbol != symbol)
+        return false;
+    if (atomic_mass <= 0.f)
+        return false;
+    return true;
+}
 
 ion::ion()
     : pos_(0.f, 0.f, 0.f),
