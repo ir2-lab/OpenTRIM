@@ -11,7 +11,7 @@
 class atom;
 
 /**
- * @brief An basic atomic element definition struct
+ * @brief A basic atomic element definition struct
  */
 struct element_t
 {
@@ -21,6 +21,31 @@ struct element_t
     int atomic_number{ 0 };
     /// Atomic mass
     float atomic_mass{ 0.f };
+
+    /// Default constructor
+    element_t() = default;
+
+    /// Construct from element symbol.
+    /// Throws std::invalid_argument for unknown symbols.
+    explicit element_t(const std::string &sym);
+
+    /// Construct from element symbol and mass M.
+    /// Throws std::invalid_argument for unknown symbols or M <= 0..
+    explicit element_t(const std::string &sym, float M);
+
+    /// Construct from atomic number Z (1-based, 1=H..92=U).
+    /// Throws std::invalid_argument for Z <= 0 or Z > 92.
+    explicit element_t(int Z);
+
+    /// Construct from atomic number Z (1-based, 1=H..92=U) and mass M.
+    /// Throws std::invalid_argument for Z <= 0 or Z > 92 or M <= 0.
+    explicit element_t(int Z, float M);
+
+    /// check if the element is valid:
+    /// - 1 <= Z <= 92
+    /// - symbol is non-empty and matches the symbol for Z
+    /// - atomic mass is positive
+    bool is_valid() const;
 };
 
 /**

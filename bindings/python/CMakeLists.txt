@@ -4,10 +4,13 @@
 
 pybind11_add_module(_opentrim_core MODULE
     bindings.cpp
+    enums_bind.cpp
+    config_bind.cpp
 )
 
 target_link_libraries(_opentrim_core PRIVATE
     opentrim
+    nlohmann_json::nlohmann_json
 )
 
 target_include_directories(_opentrim_core PRIVATE

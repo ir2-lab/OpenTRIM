@@ -263,6 +263,8 @@ Wraps `mccore::parameters`
 | `move_recoil` | `bool` | `False` | Move recoil below Ed (experimental) |
 | `recoil_sub_ed` | `bool` | `False` | Follow recoils below Ed (experimental) |
 
+> Note: the four experimental fields above are not exposed in the binding.  `toJSON()` serialises them but `parseJSON()` rejects them as unknown keys, breaking `from_json` round-trip.
+
 ```python
 config.Simulation.electronic_stopping = opentrim.Stopping.SRIM13
 config.Simulation.simulation_type     = opentrim.SimulationType.FullCascade
