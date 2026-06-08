@@ -473,7 +473,7 @@ mccore *mcconfig::createSimulation() const
     S->getSource().setParameters(IonBeam);
 
     target &T = S->getTarget();
-    T.createGrid(Target.size, Target.cell_count, Target.periodic_bc);
+    T.createGrid(Target.origin, Target.size, Target.cell_count, Target.periodic_bc);
 
     for (auto md : Target.materials)
         T.addMaterial(md);
