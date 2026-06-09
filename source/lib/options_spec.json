@@ -70,20 +70,20 @@
                         "Off",
                         "SRIM96",
                         "SRIM13",
-                        "DPASS22"
+                        "DPASS"
                     ],
                     "valueLabels": [
                         "Off",
                         "SRIM96",
                         "SRIM13",
-                        "DPASS22"
+                        "DPASS"
                     ],
                     "toolTip": "Calculation of electronic stopping.",
                     "whatsThis": [
                         "- Off: No electronic stopping",
                         "- SRIM96: Using the SRIM parametrization, v. 1996",
                         "- SRIM13: Using the SRIM parametrization, v. 2013",
-                        "- DPASS22: Using the DPASS parametrization, v. 21.06"
+                        "- DPASS: Using the DPASS parametrization, v. 21.06"
                     ]
                 },
                 {
