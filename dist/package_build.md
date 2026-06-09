@@ -13,34 +13,30 @@ Mutual dependencies or external dependencies are also given.
 ---
 ## Packages
 
-1. **libdedx** — Shared Lib
+1. **libdedx / libdedx-devel** — Shared Lib and dev files
    - Requires: —
    - BuildRequires: —
 
-2. **libdedx-devel** — Lib interface
-   - Requires: libdedx
-   - BuildRequires: —
-
-3. **qmatplotwidget-devel** — Static Lib
-   - Requires: qwt-qt5-devel
+2. **qmatplotwidget / qmatplotwidget-devel** — Shared Lib and dev files
+   - Requires: qwt-qt5
    - BuildRequires: qwt-qt5-devel
 
-4. **qtdatabrowser-devel** — Static Lib
-   - Requires: qmatplotwidget-devel
+3. **qtdatabrowser / qtdatabrowser-devel** — Shared Lib
+   - Requires: qmatplotwidget
    - BuildRequires: qmatplotwidget-devel
 
-5. **libopentrim** — Shared Lib
+4. **libopentrim** — Shared Lib and dev files
    - Requires: libdedx, hdf5
    - BuildRequires: libdedx-devel, eigen3-devel, hdf5-devel
 
-6. **libopentrim-devel** — Lib interface
+5. **libopentrim-devel** — Lib interface
    - Requires: libopentrim, libdedx-devel, eigen3-devel
    - BuildRequires: libopentrim, libdedx-devel, eigen3-devel, hdf5-devel
 
-7. **opentrim** — Executable
+6. **opentrim** — Executable
    - Requires: libopentrim
    - BuildRequires: libopentrim-devel
 
-8. **opentrim-gui** — Executable
-   - Requires: libopentrim, qwt-qt5
+7. **opentrim-gui** — Executable
+   - Requires: libopentrim, qtdatabrowser
    - BuildRequires: qtdatabrowser-devel, libopentrim-devel

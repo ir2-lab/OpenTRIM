@@ -2,8 +2,17 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 ; Non-commercial use only
 
-#define MyAppName "OpenTRIM"
+#ifndef MyAppVersion
 #define MyAppVersion "1.1.3"
+#endif
+#ifndef MyLicenseFile
+#define MyLicenseFile "..\..\LICENSE"
+#endif
+#ifndef MySourceDir
+#define MySourceDir "..\..\.winbuild\opentrim-" + MyAppVersion
+#endif
+
+#define MyAppName "OpenTRIM"
 #define MyAppPublisher "OpenTRIM Contributors"
 #define MyAppURL "https://github.com/ir2-lab/OpenTRIM"
 #define MyAppExeName "opentrim-gui.exe"
@@ -34,7 +43,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 ChangesAssociations=yes
 DisableProgramGroupPage=yes
-LicenseFile=Y:\Dev\ionsim\opentrim\LICENSE
+LicenseFile={#MyLicenseFile}
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
@@ -49,8 +58,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "Y:\Dev\ionsim\opentrim\.winbuild\opentrim-1.1.2\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "Y:\Dev\ionsim\opentrim\.winbuild\opentrim-1.1.2\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MySourceDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MySourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]

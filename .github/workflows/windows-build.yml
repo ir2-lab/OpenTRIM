@@ -3,7 +3,7 @@ name: Windows Build
 on:
   push:
     tags:
-      - 'v*'
+      - 'v[0-9]*'
   workflow_dispatch:
     inputs:
       version:
@@ -34,6 +34,11 @@ jobs:
             mingw-w64-ucrt-x86_64-cmake
             mingw-w64-ucrt-x86_64-ninja
             mingw-w64-ucrt-x86_64-hdf5
+            mingw-w64-ucrt-x86_64-qt5-base
+            mingw-w64-ucrt-x86_64-qt5-svg
+            mingw-w64-ucrt-x86_64-qwt-qt5
+            mingw-w64-ucrt-x86_64-qt5-tools
+            mingw-w64-ucrt-x86_64-angleproject
 
       # Eigen3 3.4.0 must be installed manually; the current MSYS2 package
       # is v5.x which is not supported. Download from the MSYS2 archive.
@@ -43,18 +48,84 @@ jobs:
             "https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-eigen3-3.4.0-1-any.pkg.tar.zst"
           pacman -U --noconfirm eigen3.pkg.tar.zst
 
-      # TODO: build and install libdedx, QtDataBrowser, QMatPlotWidget
-      # before enabling the GUI. See dist/mingw64/win_build_recipe.md.
+      - name: Download dependency packages
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = gh release list --repo gapost/qmatplotwidget --limit 1 --json tagName --jq '.[0].tagName'
+          gh release download $tag --repo gapost/qmatplotwidget `
+            --pattern "*.pkg.tar.zst" `
+            --dir C:\Temp\opentrim-pkgs
+          $tag = gh release list --repo ir2-lab/libdedx --limit 1 --json tagName --jq '.[0].tagName'
+          gh release download $tag --repo ir2-lab/libdedx `
+            --pattern "*.pkg.tar.zst" `
+            --dir C:\Temp\opentrim-pkgs
+          $tag = gh release list --repo ir2-lab/QtDataBrowser --limit 1 --json tagName --jq '.[0].tagName'
+          gh release download $tag --repo ir2-lab/QtDataBrowser `
+            --pattern "*.pkg.tar.zst" `
+            --dir C:\Temp\opentrim-pkgs
+
+      - name: Install dependency packages
+        run: pacman -U --noconfirm /c/Temp/opentrim-pkgs/*.pkg.tar.zst
 
       - name: Configure
         run: |
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DOPENTRIM_BUILD_GUI=OFF \
-            -DOPENTRIM_BUILD_TESTS=ON
+            -DOPENTRIM_BUILD_GUI=ON \
+            -DOPENTRIM_BUILD_TESTS=OFF
 
       - name: Build
         run: cmake --build build --parallel
 
       - name: Install
         run: cmake --install build
+
+      - name: Deploy
+        run: |
+          VERSION="${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}"
+          VERSION="${VERSION#v}"
+          bash dist/mingw64/mingw64-deploy.sh build/OpenTRIM "build/opentrim-${VERSION}"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Create zip package
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "build\opentrim-$env:VERSION" `
+            -DestinationPath "build\opentrim-$env:VERSION-win64.zip"
+
+      - name: Create installer
+        shell: cmd
+        run: >-
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          dist\mingw64\opentrim.iss
+          /DMyAppVersion=%VERSION%
+          /DMySourceDir=..\..\build\opentrim-%VERSION%
+          /Obuild
+          &&
+          move build\OpenTRIMSetup.exe build\OpenTRIM-%VERSION%-win64-installer.exe
+
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentrim-${{ env.VERSION }}-win64-zip
+          path: build/opentrim-${{ env.VERSION }}-win64.zip
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opentrim-${{ env.VERSION }}-win64-installer
+          path: build/OpenTRIM-${{ env.VERSION }}-win64-installer.exe
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $prerelease = if ($tag -match "[-_]") { "--prerelease" } else { $null }
+          $zip = "build/opentrim-$env:VERSION-win64.zip"
+          $installer = "build/OpenTRIM-$env:VERSION-win64-installer.exe"
+          gh release create $tag --title "OpenTRIM $tag" $prerelease $zip $installer

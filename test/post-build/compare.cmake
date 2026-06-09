@@ -42,7 +42,7 @@ set(error_datasets
 
 foreach(target IN LISTS physics_datasets)
     execute_process(
-        COMMAND "${H5DIFF}" -v --relative=1e-9 "${PRODUCED}" "${TEMPLATE}" "${target}"
+        COMMAND "${H5DIFF}" -v --relative=1e-9 "${FILE1}" "${FILE2}" "${target}"
         RESULT_VARIABLE result
         OUTPUT_VARIABLE output
         ERROR_VARIABLE error
@@ -53,7 +53,7 @@ foreach(target IN LISTS physics_datasets)
 endforeach()
 foreach(target IN LISTS error_datasets)
     execute_process(
-        COMMAND "${H5DIFF}" -v --relative=1e-6 "${PRODUCED}" "${TEMPLATE}" "${target}"
+        COMMAND "${H5DIFF}" -v --relative=1e-6 "${FILE1}" "${FILE2}" "${target}"
         RESULT_VARIABLE result
         OUTPUT_VARIABLE output
         ERROR_VARIABLE error
