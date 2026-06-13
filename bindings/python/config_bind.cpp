@@ -30,6 +30,26 @@ PYBIND11_MAKE_OPAQUE(std::vector<user_tally::parameters>)
 
 namespace py = pybind11;
 
+// formats a vector3 / ivector3 as "[x, y, z]" for __repr__ output
+static std::string vec3_str(const vector3& v)
+{
+    return "[" + std::to_string(v.x()) + ", " + std::to_string(v.y()) + ", "
+            + std::to_string(v.z()) + "]";
+}
+static std::string ivec3_str(const ivector3& v)
+{
+    return "[" + std::to_string(v.x()) + ", " + std::to_string(v.y()) + ", "
+            + std::to_string(v.z()) + "]";
+}
+
+// looks up the Python name of a bound enum value (e.g. FullCascade) so __repr__
+// prints the symbol rather than a raw integer.
+template <typename E>
+std::string enum_name(E value)
+{
+    return py::cast(value).attr("name").template cast<std::string>();
+}
+
 // adds __getitem__ / __setitem__ so any bound struct supports dict-style access
 template <typename T>
 void bind_dict_access(py::class_<T>& cls)
@@ -69,7 +89,11 @@ void bind_config(py::module_& m)
         .def_property("xzvector",
             [](const coord_sys& c) { return c.xzvector; },
             [](coord_sys& c, const vector3& v) { c.xzvector = v; },
-            "A vector in the xz-plane used to define the x-axis.");
+            "A vector in the xz-plane used to define the x-axis.")
+        .def("__repr__", [](const coord_sys& c) {
+            return "CoordSys(zaxis=" + vec3_str(c.zaxis)
+                   + ", origin=" + vec3_str(c.origin) + ")";
+        });
     bind_dict_access(cs_cls);
 
     py::class_<atom::parameters> atom_cls(m, "Atom",
@@ -171,7 +195,32 @@ void bind_config(py::module_& m)
         .def_readwrite("Tdam",     &user_tally::bin_var_t::Tdam,     "PKA damage energy bin edges [eV].")
         .def_readwrite("V",        &user_tally::bin_var_t::V,        "Vacancy count bin edges.")
         .def_readwrite("atom_id",  &user_tally::bin_var_t::atom_id,  "Atom species id bin edges.")
-        .def_readwrite("recoil_id",&user_tally::bin_var_t::recoil_id,"Recoil generation id bin edges.");
+        .def_readwrite("recoil_id",&user_tally::bin_var_t::recoil_id,"Recoil generation id bin edges.")
+        .def("__repr__", [](const user_tally::bin_var_t& b) {
+            // list only the axes that actually have bin edges defined
+            std::vector<std::string> ax;
+            if (!b.x.empty())         ax.push_back("x");
+            if (!b.y.empty())         ax.push_back("y");
+            if (!b.z.empty())         ax.push_back("z");
+            if (!b.r.empty())         ax.push_back("r");
+            if (!b.rho.empty())       ax.push_back("rho");
+            if (!b.cosTheta.empty())  ax.push_back("cosTheta");
+            if (!b.nx.empty())        ax.push_back("nx");
+            if (!b.ny.empty())        ax.push_back("ny");
+            if (!b.nz.empty())        ax.push_back("nz");
+            if (!b.E.empty())         ax.push_back("E");
+            if (!b.Tdam.empty())      ax.push_back("Tdam");
+            if (!b.V.empty())         ax.push_back("V");
+            if (!b.atom_id.empty())   ax.push_back("atom_id");
+            if (!b.recoil_id.empty()) ax.push_back("recoil_id");
+            std::string s = "UserTallyBins(";
+            if (ax.empty())
+                s += "empty";
+            else
+                for (size_t i = 0; i < ax.size(); ++i)
+                    s += (i ? ", " : "") + ax[i];
+            return s + ")";
+        });
     bind_dict_access(bins_cls);
 
     py::class_<user_tally::parameters> utally_cls(m, "UserTally",
@@ -219,7 +268,11 @@ void bind_config(py::module_& m)
                        "NRT vacancy method (NRT_Impl).")
         .def_readwrite("intra_cascade_recombination",
                        &mccore::parameters::intra_cascade_recombination,
-                       "Allow intra-cascade Frenkel pair recombination.");
+                       "Allow intra-cascade Frenkel pair recombination.")
+        .def("__repr__", [](const mccore::parameters& s) {
+            return "SimulationParams(simulation_type=" + enum_name(s.simulation_type)
+                   + ", electronic_stopping=" + enum_name(s.electronic_stopping) + ")";
+        });
     bind_dict_access(sim_cls);
 
     py::class_<mccore::transport_options> tr_cls(m, "TransportParams",
@@ -254,7 +307,11 @@ void bind_config(py::module_& m)
                 t.mfp_range[0] = v[0];
                 t.mfp_range[1] = v[1];
             },
-            "MFP limits [min, max] in atomic radii.");
+            "MFP limits [min, max] in atomic radii.")
+        .def("__repr__", [](const mccore::transport_options& t) {
+            return "TransportParams(flight_path_type=" + enum_name(t.flight_path_type)
+                   + ", min_energy=" + std::to_string(t.min_energy) + ")";
+        });
     bind_dict_access(tr_cls);
 
 
@@ -267,7 +324,11 @@ void bind_config(py::module_& m)
         .def_readwrite("center", &ion_beam::energy_distribution_t::center,
                        "Mean energy [eV].")
         .def_readwrite("fwhm",   &ion_beam::energy_distribution_t::fwhm,
-                       "FWHM of energy distribution [eV].");
+                       "FWHM of energy distribution [eV].")
+        .def("__repr__", [](const ion_beam::energy_distribution_t& e) {
+            return "EnergyDistribution(type=" + enum_name(e.type)
+                   + ", center=" + std::to_string(e.center) + " eV)";
+        });
     bind_dict_access(edist_cls);
 
     
@@ -284,7 +345,11 @@ void bind_config(py::module_& m)
         .def_property("center",
             [](const ion_beam::spatial_distribution_t& s) { return s.center; },
             [](ion_beam::spatial_distribution_t& s, const vector3& v) { s.center = v; },
-            "Mean starting position [x, y, z] in nm.");
+            "Mean starting position [x, y, z] in nm.")
+        .def("__repr__", [](const ion_beam::spatial_distribution_t& s) {
+            return "SpatialDistribution(geometry=" + enum_name(s.geometry)
+                   + ", type=" + enum_name(s.type) + ")";
+        });
     bind_dict_access(sdist_cls);
 
     py::class_<ion_beam::angular_distribution_t> adist_cls(m, "AngularDistribution",
@@ -298,7 +363,11 @@ void bind_config(py::module_& m)
             [](ion_beam::angular_distribution_t& a, const vector3& v) { a.center = v; },
             "Mean beam direction (unnormalized).  Default: [1, 0, 0] = along +x.")
         .def_readwrite("fwhm", &ion_beam::angular_distribution_t::fwhm,
-                       "Angular spread FWHM [sr].");
+                       "Angular spread FWHM [sr].")
+        .def("__repr__", [](const ion_beam::angular_distribution_t& a) {
+            return "AngularDistribution(type=" + enum_name(a.type)
+                   + ", center=" + vec3_str(a.center) + ")";
+        });
     bind_dict_access(adist_cls);
 
     py::class_<ion_beam::parameters> ib_cls(m, "IonBeamParams",
@@ -312,7 +381,11 @@ void bind_config(py::module_& m)
         .def_readwrite("spatial_distribution", &ion_beam::parameters::spatial_distribution,
                        "Spatial distribution (SpatialDistribution).")
         .def_readwrite("angular_distribution", &ion_beam::parameters::angular_distribution,
-                       "Angular distribution (AngularDistribution).");
+                       "Angular distribution (AngularDistribution).")
+        .def("__repr__", [](const ion_beam::parameters& p) {
+            return "IonBeamParams(ion=" + p.ion.symbol
+                   + ", E0=" + std::to_string(p.energy_distribution.center) + " eV)";
+        });
     bind_dict_access(ib_cls);
 
     py::class_<target::target_desc_t> tgt_cls(m, "TargetParams",
@@ -342,7 +415,13 @@ void bind_config(py::module_& m)
         .def_readwrite("materials", &target::target_desc_t::materials,
                        "List of Material objects (MaterialList).")
         .def_readwrite("regions",   &target::target_desc_t::regions,
-                       "List of Region objects (RegionList).");
+                       "List of Region objects (RegionList).")
+        .def("__repr__", [](const target::target_desc_t& t) {
+            return "TargetParams(size=" + vec3_str(t.size)
+                   + ", cell_count=" + ivec3_str(t.cell_count)
+                   + ", materials=" + std::to_string(t.materials.size())
+                   + ", regions=" + std::to_string(t.regions.size()) + ")";
+        });
     bind_dict_access(tgt_cls);
 
     py::class_<mcconfig::run_options> run_cls(m, "RunOptions",

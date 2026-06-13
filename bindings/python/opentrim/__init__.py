@@ -31,6 +31,7 @@ from ._opentrim_core import (
     OutputOptions,
     Config,
     Driver,
+    Info,
 )
 
 __all__ = [
@@ -66,4 +67,5 @@ __all__ = [
     "OutputOptions",
     "Config",
     "Driver",
+    "Info",
 ]
