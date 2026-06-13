@@ -8,7 +8,7 @@ namespace py = pybind11;
 void bind_enums(py::module_&);
 void bind_config(py::module_&);
 void bind_driver(py::module_&);
-// void bind_info(py::module_&);
+void bind_info(py::module_&);
 
 PYBIND11_MODULE(_opentrim_core, m)
 {
@@ -18,5 +18,5 @@ PYBIND11_MODULE(_opentrim_core, m)
     bind_enums(m);
     bind_config(m); // keep before bind_driver - Driver.init()/config() use Config
     bind_driver(m);
-    // bind_info(m);
+    bind_info(m); // keep after bind_driver - Info(driver) consumes a Driver
 }
