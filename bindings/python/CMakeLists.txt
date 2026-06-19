@@ -7,6 +7,7 @@ pybind11_add_module(_opentrim_core MODULE
     enums_bind.cpp
     config_bind.cpp
     driver_bind.cpp
+    info_bind.cpp
 )
 
 target_link_libraries(_opentrim_core PRIVATE
