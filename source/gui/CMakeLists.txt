@@ -24,10 +24,31 @@ set(GUI_HEADERS
     mcdatamodel.h
 )
 
+# Collect JSON examples from the top-level examples/json directory.
+# CONFIGURE_DEPENDS re-runs cmake if the glob result changes.
+file(GLOB _JSON_EXAMPLES CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/examples/json/*.json")
+
+# Copy files to the build dir so the generated QRC can reference them with
+# a simple relative path (examples/<name>.json).
+file(COPY ${_JSON_EXAMPLES}
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/examples/")
+
+# Build the QRC content and write it to the binary dir.
+set(_EXAMPLES_QRC "${CMAKE_CURRENT_BINARY_DIR}/opentrim_examples.qrc")
+set(_qrc "<RCC>\n    <qresource prefix=\"/\">\n")
+foreach(_f ${_JSON_EXAMPLES})
+    get_filename_component(_fname "${_f}" NAME)
+    string(APPEND _qrc "        <file>examples/${_fname}</file>\n")
+endforeach()
+string(APPEND _qrc "    </qresource>\n</RCC>\n")
+file(WRITE "${_EXAMPLES_QRC}" "${_qrc}")
+
 set(GUI_SOURCES
     main.cpp
     mainui.cpp
     opentrim.qrc
+    "${_EXAMPLES_QRC}"
     simulationoptionsview.cpp
     periodictablewidget.cpp
     materialsdefview.cpp

@@ -1,9 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>styles/default.qss</file>
-        <file>examples/1MeV_H_on_Fe.json</file>
-        <file>examples/2MeV_Fe_on_Fe.json</file>
-        <file>examples/3MeV_Xe_on_UO2.json</file>
         <file>assets/ionicons/play-circle-outline.svg</file>
         <file>assets/ionicons/refresh-circle-outline.svg</file>
         <file>assets/ionicons/pause-circle-outline.svg</file>
@@ -37,6 +34,5 @@
         <file>assets/ionicons/open-outline.svg</file>
         <file>assets/3d/cubeFlat.obj</file>
         <file>assets/ionicons/create-outline.svg</file>
-        <file>examples/270keV_He_on_C.json</file>
     </qresource>
 </RCC>
