@@ -3,6 +3,18 @@
 #include <screened_coulomb.h>
 #include "dedx.h"
 
+// PKG_ADD: autoload("__screened_coulomb_theta__","__opentrim_oct__.oct")
+// PKG_ADD: autoload("__screened_coulomb_ip__","__opentrim_oct__.oct")
+// PKG_ADD: autoload("__screened_coulomb_xs__","__opentrim_oct__.oct")
+// PKG_ADD: autoload("__screened_coulomb_sn__","__opentrim_oct__.oct")
+// PKG_ADD: autoload("__dedx__","__opentrim_oct__.oct")
+
+// PKG_DEL: autoload("__screened_coulomb_theta__","__opentrim_oct__.oct","remove")
+// PKG_DEL: autoload("__screened_coulomb_ip__","__opentrim_oct__.oct","remove")
+// PKG_DEL: autoload("__screened_coulomb_xs__","__opentrim_oct__.oct","remove")
+// PKG_DEL: autoload("__screened_coulomb_sn__","__opentrim_oct__.oct","remove")
+// PKG_DEL: autoload("__dedx__","__opentrim_oct__.oct","remove")
+
 template <class Functor>
 struct array_functor
 {
@@ -204,10 +216,10 @@ DEFUN_DLD(__dedx__, args, nargout, "Returns raw corteo tables of electronic ener
     StoppingModel model = static_cast<StoppingModel>(m);
     dedx_interp interp(model, Z1, z2, x2, N);
 
-    dedx_erange i;
-    octave_idx_type n = i.size;
+    dedx_erange::iterator i;
+    octave_idx_type n = dedx_erange::size();
     RowVector e(n), d(n);
-    const float *p = interp.data();
+    const float *p = interp.data().data();
     for (octave_idx_type k = 0; k < n; k++) {
         e(k) = *i++;
         d(k) = *p++;
