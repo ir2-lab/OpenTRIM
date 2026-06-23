@@ -10,7 +10,9 @@ description      = "Python bindings for the OpenTRIM Monte Carlo ion transport s
 dependencies     = ["numpy>=1.21"]
 
 [project.optional-dependencies]
-jupyter = ["ipython", "matplotlib"]
+jupyter = ["jupyterlab", "matplotlib"]
+test    = ["pytest"]
+docs    = ["sphinx"]
 
 [tool.scikit-build]
 cmake.args = [

@@ -69,6 +69,8 @@ py::array_t<T> make_array(const std::vector<T> &v, const mcinfo::dim_t &dim)
 // a future is_scalar flag on mcinfo would make this lookup unnecessary.
 bool is_scalar_string_key(const std::string &key)
 {
+    // "decription" / "event_decription" are spelled that way in mcinfo.cpp -
+    // these must match the source keys exactly, so do not "correct" them.
     static const std::unordered_set<std::string> scalar_keys = {
         "title", "json_config", "run_history", "version", "git_tag", "compiler",
         "compiler_version", "build_system", "build_time", "decription", "event",
@@ -153,6 +155,45 @@ std::string render_tree(const mcinfo &n)
     return out;
 }
 
+// escape the few characters that would otherwise break the HTML.  node names are
+// usually code identifiers, but user_tally ids come from user config.
+void html_escape(const std::string &in, std::string &out)
+{
+    for (char c : in) {
+        switch (c) {
+        case '&': out += "&amp;"; break;
+        case '<': out += "&lt;"; break;
+        case '>': out += "&gt;"; break;
+        default: out += c;
+        }
+    }
+}
+
+// render the tree as nested <details> so Jupyter shows a collapsible view.  like
+// repr_tree this reads metadata only and never calls a getter.
+void html_tree(const mcinfo &n, std::string &out)
+{
+    out += "<ul style=\"list-style:none;margin:0;padding-left:1.2em\">";
+    for (const auto &kv : n.children()) {
+        const mcinfo &child = kv.second;
+        out += "<li>";
+        if (child.type() == mcinfo::group) {
+            out += "<details><summary><b>";
+            html_escape(kv.first, out);
+            out += "</b> <span style=\"color:#888\">[group]</span></summary>";
+            html_tree(child, out);
+            out += "</details>";
+        } else {
+            html_escape(kv.first, out);
+            out += " <span style=\"color:#888\">[";
+            out += type_name(child.type());
+            out += "]</span>";
+        }
+        out += "</li>";
+    }
+    out += "</ul>";
+}
+
 } // namespace
 
 void bind_info(py::module_ &m)
@@ -233,4 +274,16 @@ void bind_info(py::module_ &m)
     // no side effects and is safe to print even while a simulation is running.
     info.def("__repr__", [](const mcinfo &n) { return render_tree(n); });
     info.def("__str__", [](const mcinfo &n) { return render_tree(n); });
+
+    // Jupyter rich display.  the protocol method is _repr_html_ (single
+    // underscores); same side-effect-free structural walk as __repr__.
+    info.def("_repr_html_", [](const mcinfo &n) {
+        std::string out = "<div style=\"font-family:monospace\"><b>Info</b> "
+                          "<span style=\"color:#888\">[";
+        out += type_name(n.type());
+        out += "]</span>";
+        html_tree(n, out);
+        out += "</div>";
+        return out;
+    });
 }

@@ -6,6 +6,7 @@
 #include <thread>
 #include <atomic>
 #include <exception>
+#include <string>
 
 #include "mcdriver.h"
 
@@ -47,6 +48,10 @@ public:
     void abort();
     void wait();
     void reset();
+
+    // HDF5 persistence - same file format as the CLI (mcdriver::save/load).
+    void save(const std::string &filename);
+    void load(const std::string &filename);
 
     long long max_ions() const;
     void set_max_ions(long long v);
