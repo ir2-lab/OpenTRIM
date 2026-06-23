@@ -105,7 +105,7 @@ mcplotinfo::mcplotinfo(const McDriverObj *d)
         const auto &labels = d->getSim()->getTarget().atom_labels();
 
         p1 = p->add_child("materials", new mcplotinfo);
-        {
+        if (!d->getSim()->getTarget().materials().empty()) {
 
             TextDataStore *t =
                     new TextDataStore(d, "name", "name of material", mat.size(),
@@ -131,7 +131,7 @@ mcplotinfo::mcplotinfo(const McDriverObj *d)
             p1->add_child("data", new mcplotinfo(n));
         }
         p1 = p->add_child("atoms", new mcplotinfo);
-        {
+        if (!d->getSim()->getTarget().atoms().empty()) {
             TextDataStore *t = new TextDataStore(
                     d, "label", "label = [Atom (Chemical symbol)] in [Material]", labels.size(),
                     [](const TextDataStore *t, AbstractDataStore::strvec_t &s) {
@@ -173,7 +173,7 @@ mcplotinfo::mcplotinfo(const McDriverObj *d)
         }
 
         p1 = p->add_child("Electronic effects", new mcplotinfo);
-        {
+        if (!d->getSim()->getTarget().materials().empty()) {
             size_t ne = dedx_erange::size();
 
             NumericDataStore *n = new NumericDataStore(
@@ -220,7 +220,7 @@ mcplotinfo::mcplotinfo(const McDriverObj *d)
         }
 
         p1 = p->add_child("flight_path", new mcplotinfo);
-        {
+        if (!d->getSim()->getTarget().materials().empty()) {
             size_t ne = flight_path_calc::fp_tbl_erange::size();
 
             NumericDataStore *n = new NumericDataStore(

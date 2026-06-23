@@ -39,18 +39,54 @@
                                     + AtomPar.element.symbol + " of material \"" + MatName \
                                     + "\"");
 
-mcdriver::mcdriver() : s_(nullptr) { }
+mcdriver::mcdriver(const mcconfig &cfg) : config_(cfg), s_(nullptr)
+{
+    config_.validate();
+
+    s_ = std::unique_ptr<mccore>(new mccore(cfg.Simulation, cfg.Transport));
+
+    s_->getSource().setParameters(cfg.IonBeam);
+
+    target &T = s_->getTarget();
+    T.createGrid(cfg.Target.origin, cfg.Target.size, cfg.Target.cell_count, cfg.Target.periodic_bc);
+
+    for (auto md : cfg.Target.materials)
+        T.addMaterial(md);
+
+    for (auto rd : cfg.Target.regions)
+        T.addRegion(rd);
+
+    for (int i = 0; i < cfg.UserTally.size(); ++i)
+        s_->addUserTally(cfg.UserTally[i]);
+
+    s_->init();
+}
+
+std::shared_ptr<mcdriver> mcdriver::create(const mcconfig &cfg, std::ostream *os)
+{
+    std::shared_ptr<mcdriver> D;
+
+    try {
+        D = std::shared_ptr<mcdriver>(new mcdriver(cfg));
+    } catch (std::invalid_argument &e) {
+        if (os)
+            (*os) << e.what() << std::endl;
+        return std::shared_ptr<mcdriver>();
+    } catch (std::exception &e) {
+        if (os)
+            (*os) << e.what() << std::endl;
+        return std::shared_ptr<mcdriver>();
+    }
+
+    return D;
+}
 
 mcdriver::~mcdriver()
 {
-    reset();
-}
-
-std::string mcdriver::outFileName() const
-{
-    std::string s(config_.Output.outfilename);
-    s += ".h5";
-    return s;
+    if (s_) {
+        abort();
+        wait();
+    }
 }
 
 void mcdriver::abort()
@@ -63,25 +99,6 @@ void mcdriver::wait()
 {
     for (int i = 0; i < thread_pool_.size(); ++i)
         thread_pool_[i].join();
-}
-
-void mcdriver::reset()
-{
-    if (s_) {
-        abort();
-        wait();
-        delete s_;
-        s_ = nullptr;
-        run_history_.clear();
-    }
-}
-
-void mcdriver::init(const mcconfig &config)
-{
-    reset();
-    config_ = config;
-    s_ = config_.createSimulation();
-    s_->init();
 }
 
 double elapsed_sec(const timespec &t0, const timespec &t1)
@@ -168,9 +185,11 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // arm the clones
     // each clone runs N/nthread ions +1 if i < N % nthread
     for (size_t i = 0; i < nthreads; i++) {
+        // 1st ion id for this thread
         size_t id1 = n_start + i + 1;
-        size_t n_thread = (n_run / nthreads) + (i < (n_run % nthreads) ? 1 : 0);
-        sim_clones_[i]->arm(n_thread, id1, nthreads);
+        // ions for this thread
+        size_t thread_n_ions = (n_run / nthreads) + (i < (n_run % nthreads) ? 1 : 0);
+        sim_clones_[i]->arm(thread_n_ions, id1, nthreads);
     }
 
     // create & start worker threads
@@ -197,7 +216,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
             for (size_t i = 0; i < nthreads; i++)
                 s_->mergeTallies(*(sim_clones_[i]));
             // callback
-            cb(*this, callback_user_data);
+            cb(this, callback_user_data);
         }
 
     } while ((s_->ion_count() < n_end) && !(s_->abort_flag()));
@@ -270,7 +289,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
     // report progress for the last time
     if (cb) {
-        cb(*this, callback_user_data);
+        cb(this, callback_user_data);
     }
 
     // mark cpu time and world clock time
@@ -312,7 +331,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     return 0;
 }
 
-int mcconfig::validate(bool AcceptIncomplete)
+int mcconfig::validate(bool AcceptIncomplete) const
 {
 
     // Simulation & Transport
@@ -464,25 +483,4 @@ int mcconfig::validate(bool AcceptIncomplete)
     }
 
     return 0;
-}
-
-mccore *mcconfig::createSimulation() const
-{
-    mccore *S = new mccore(Simulation, Transport);
-
-    S->getSource().setParameters(IonBeam);
-
-    target &T = S->getTarget();
-    T.createGrid(Target.origin, Target.size, Target.cell_count, Target.periodic_bc);
-
-    for (auto md : Target.materials)
-        T.addMaterial(md);
-
-    for (auto rd : Target.regions)
-        T.addRegion(rd);
-
-    for (int i = 0; i < UserTally.size(); ++i)
-        S->addUserTally(UserTally[i]);
-
-    return S;
 }

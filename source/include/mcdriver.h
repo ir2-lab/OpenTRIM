@@ -74,8 +74,8 @@ struct mcconfig
         std::string title{ "Ion Simulation" };
         /// Base name for the output file
         std::string outfilename{ "out" };
-        /// Interval in sec to store the output @todo
-        int storage_interval{ 1000 };
+        /// Interval in ms to backup simulation data @TODO
+        int storage_interval{ 60000 };
         /// Store ion exit events
         bool store_exit_events{ false };
         /// Store the pka events
@@ -211,13 +211,7 @@ struct mcconfig
      * @param AcceptIncomplete if true, empty values are accepted
      * @return
      */
-    int validate(bool AcceptIncomplete = false);
-
-    /**
-     * @brief Create a simulation object from the given mcconfig
-     * @return a pointer to a mccore object
-     */
-    mccore *createSimulation() const;
+    int validate(bool AcceptIncomplete = false) const;
 
 private:
     void set_impl_(const std::string &path, const std::string &json_str);
@@ -244,19 +238,18 @@ private:
  *
  * mcdriver::options opt;
  * opt.parseJSON(std::cin);
- * mcdriver d;
- * d.setOptions(opt);
- * d.exec();
- * d.save();
+ * auto d = mcdriver::create(opt);
+ * d->exec();
+ * d->save();
  * @endcode
  *
  * @ingroup Core
  */
-class mcdriver
+class mcdriver : public std::enable_shared_from_this<mcdriver>
 {
 public:
     /// Typedef for a function to be called during simulation execution
-    typedef void (*progress_callback)(const mcdriver &v, void *p);
+    typedef void (*progress_callback)(const mcdriver *v, void *p);
 
     struct run_data
     {
@@ -290,7 +283,7 @@ protected:
     mcconfig config_;
 
     // the simulation object
-    mccore *s_;
+    std::unique_ptr<mccore> s_;
 
     // The following 2 are populated when the
     // simulation runs
@@ -299,8 +292,23 @@ protected:
     // 2. simulation execution clones
     std::vector<mccore *> sim_clones_;
 
+    // No default constructor
+    mcdriver() = delete;
+    // Protected constructor. use either create() or load()
+    mcdriver(const mcconfig &cfg);
+
 public:
-    mcdriver();
+    /**
+     * @brief Create a simulation driver with the given options
+     *
+     * This function creates a driver object and initializes the
+     * simulation according to the options in @a cfg.
+     *
+     * @param cfg A \ref mcconfig struct with the required specs
+     * @return
+     */
+    static std::shared_ptr<mcdriver> create(const mcconfig &cfg, std::ostream *os = nullptr);
+
     ~mcdriver();
 
     static const version_info_t &version_info() { return version_info_; }
@@ -310,35 +318,95 @@ public:
      */
     const mcconfig &config() const { return config_; }
 
-    /**
-     * @brief Initialize the driver with the given options
-     *
-     * This functions first calls mcdriver::reset() to
-     * kill and delete the current simulation, if it exists.
-     *
-     * Then it creates a new simulation according to the
-     * options in @a config.
-     *
-     * @param config A \ref mcconfig struct with the required specs
-     */
-    void init(const mcconfig &config);
-
-    std::string outFileName() const;
-
     /// Set the output options.
-    void setOutputOptions(const mcconfig::output_options &opts) { config_.Output = opts; }
+    // void setOutputOptions(const mcconfig::output_options &opts) { config_.Output = opts; }
     /// Set the run options.
-    void setRunOptions(const mcconfig::run_options &opts) { config_.Run = opts; }
+    // void setRunOptions(const mcconfig::run_options &opts) { config_.Run = opts; }
+
     /// Returns a const pointer to the mccore simulation object
-    const mccore *getSim() const { return s_; }
+    const mccore *getSim() const { return s_.get(); }
+
+    /// Returns the current number of simulated ions
+    size_t ion_count() const { return s_->ion_count(); }
+
+    /// Return the max number of ions to simulate
+    size_t max_no_ions() const { return config_.Run.max_no_ions; }
+    /**
+     * @brief Set the max number of ions to simulate
+     *
+     * This should be set before calling exec().
+     *
+     * If the function is called while the simulation
+     * is running, the set value will be effective the
+     * next time that exec() is called.
+     *
+     * @param n the number of histories to run
+     */
+    void setMaxNoIons(size_t n) { config_.Run.max_no_ions = n; }
+
+    /**
+     * @brief Return the number of threads
+     *
+     * If the simulation is running, this function returns the
+     * actual number of active threads.
+     *
+     * Otherwise, it returns the configured number of threads
+     * that will be used in the next run.
+     *
+     * @return the number of threads
+     */
+    int threads() const { return is_running() ? thread_pool_.size() : config_.Run.threads; }
+    /**
+     * @brief Set the number threads
+     *
+     * Set the number of execution threads.
+     *
+     * A value of 0 means that OpenTRIM will use the optimum number
+     * of threads for the given system.
+     *
+     * This value should be set before calling exec().
+     *
+     * If the function is called while the simulation
+     * is running, the set value will be effective the
+     * next time that exec() is called.
+     *
+     * @param n the number of histories to run
+     */
+    void setNthreads(size_t n) { config_.Run.threads = n; }
+
+    /// Return the random number generator seed
+    unsigned int seed() const { return config_.Run.seed; }
+    /**
+     * @brief Set the random number generator seed
+     *
+     * The seed can be set before starting the simulation, i.e.,
+     * is_running() should return false and ion_count() should be 0.
+     *
+     * If these conditions are not satisfied the seed is
+     * not set and the function returns false.
+     *
+     * @param n The RNG seed value
+     * @return true if the seed has been set
+     */
+    bool setSeed(unsigned int n)
+    {
+        if (is_running() || ion_count())
+            return false;
+        config_.Run.seed = n;
+        return true;
+    }
+
+    /// Return the base name of the output file
+    const std::string &outFileName() const { return config_.Output.outfilename; }
+    /// Set the base name of the output file
+    void setOutFileName(const std::string &name) { config_.Output.outfilename = name; }
+
     /// Returns true if the simulation is running
     bool is_running() const { return thread_pool_.size() > 0; }
     /// Signal a running simulation to abort
     void abort();
     /// Wait for a running simulation to finish
     void wait();
-    /// Abort and delete the current simulation.
-    void reset();
     /// Returns a reference to the run history
     const std::vector<run_data> &run_history() const { return run_history_; }
 
@@ -354,12 +422,22 @@ public:
     int save(const std::string &h5filename, std::ostream *os = nullptr);
 
     /**
-     * @brief Load a simulation from a HDF5 file
+     * @brief Load a simulation from a HDF5 file and create a driver object
+     *
+     * This function attempts to load a simulation from a HDF5 file and
+     * return a shared_ptr to the driver object.
+     *
+     * The driver can be used to run more simulation histories.
+     *
+     * If the function fails, an empty shared_ptr is returned. Errors are
+     * reported in the optional stream pointer.
+     *
      * @param h5filename the name of the file
      * @param os optional stream pointer to write any error messages
-     * @return 0 if succesfull
+     * @return A shared_ptr to the mcdriver or an empty shared_ptr.
      */
-    int load(const std::string &h5filename, std::ostream *os = nullptr);
+    static std::shared_ptr<mcdriver> load(const std::string &h5filename,
+                                          std::ostream *os = nullptr);
 
     /**
      * @brief Execute the simulation

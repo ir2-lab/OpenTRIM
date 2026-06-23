@@ -70,7 +70,7 @@ public:
     // return options as json
     std::string json() const;
 
-    const mcdriver *get_mcdriver() const { return driver_; }
+    const mcdriver *get_mcdriver() const { return driver_.get(); }
 
     // get/set modified flag
     // modified = sim options or data have changed
@@ -95,9 +95,9 @@ public:
     bool validateOptions(QString *msg = nullptr) const;
 
     enum DriverStatus {
-        mcReset = 0, // reset state = mccore object does not exist,
+        mcReset = 0, // reset state = mcdriver object does not exist,
                      //               options can be changed
-        mcIdle = 1, // mccore created, not running
+        mcIdle = 1, // mcdriver created, not running
         mcRunning = 2, // simulation running
         mcMax = 3
     };
@@ -174,8 +174,8 @@ signals:
     void tallyUpdate();
 
 private:
-    mcdriver *driver_;
-    mcdriver *test_driver_;
+    std::shared_ptr<mcdriver> driver_;
+    std::shared_ptr<mcdriver> test_driver_;
     mcconfig options_;
     bool modified_;
     bool template_;
@@ -197,12 +197,12 @@ private:
     friend class running_sim_info;
 
     // tally totals - to be updated in regular intervals
-    void update_tally_totals_();
+    void update_tally_();
     ArrayNDd totals_, dtotals_;
 
     void setStatus(DriverStatus s);
 
-    static void mc_callback_(const mcdriver &d, void *p);
+    static void mc_callback_(const mcdriver *d, void *p);
 };
 
 #endif // MCDRIVEROBJ_H

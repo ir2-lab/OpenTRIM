@@ -167,9 +167,6 @@ protected:
     // ref counter
     std::shared_ptr<int> ref_count_;
 
-    // max # of ion histories to run
-    size_t max_no_ions_;
-
     /* variables for multi-threading */
 
     // shared total ion counter = total # of simulated ion histories
@@ -177,14 +174,14 @@ protected:
     // shared abort flag
     std::shared_ptr<std::atomic_bool> abort_flag_;
     // id of the next simulated ion
-    size_t next_ion_id_;
+    size_t next_ion_id_{ 1 };
     // id stride : next_id = id + stride
     // id stride = number of threads
-    size_t ion_id_stride_;
+    size_t ion_id_stride_{ 1 };
     // per thread simulated ion counter
-    size_t thread_ion_counter_;
+    size_t thread_ion_counter_{ 0 };
     // max ions to be simulated by this thread
-    size_t thread_max_no_ions_;
+    size_t thread_max_no_ions_{ 0 };
 
     // shared mutex for tally data
     std::shared_ptr<std::mutex> tally_mutex_;
@@ -204,19 +201,6 @@ public:
     mccore(const parameters &p, const transport_options &t);
     mccore(const mccore &S);
     ~mccore();
-
-    /**
-     * @brief Return the max number of ions to run
-     * This is the total number of histories to be run by all threads
-     * @return the max number of ions to run
-     */
-    size_t max_no_ions() const { return max_no_ions_; }
-    /**
-     * @brief Set the max number of ions to run
-     * This is the total number number of histories to be run by all threads
-     * @param n the number of histories to run
-     */
-    void setMaxIons(size_t n) { max_no_ions_ = n; }
 
     // Number of simulated ion histories
     // This number refers to all threads

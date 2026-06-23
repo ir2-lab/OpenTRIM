@@ -748,7 +748,7 @@
                     "type": "int",
                     "min": 100,
                     "max": 2147483647,
-                    "toolTip": "Time interval (ms) to update stored data.",
+                    "toolTip": "Time interval (ms) to update stored data. [Not Implemented]",
                     "whatsThis": ""
                 },
                 {

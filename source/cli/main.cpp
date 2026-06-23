@@ -45,9 +45,9 @@ class running_sim_info
 
 public:
     // init : called before simulation starts
-    void init(const mcdriver &D);
+    void init(const mcdriver *D);
     // update : called during simulation run
-    void update(const mcdriver &D);
+    void update(const mcdriver *D);
     // print cli progress bar
     void print();
     // getters
@@ -60,7 +60,7 @@ public:
 
 running_sim_info info;
 
-void progress_callback(const mcdriver &d, void *)
+void progress_callback(const mcdriver *d, void *)
 {
     info.update(d);
     info.print();
@@ -105,7 +105,8 @@ int main(int argc, char *argv[])
     }
     app.set_version_flag("-v,--version", version_string);
 
-    int n(-1), j(-1), s(-1);
+    size_t n(0);
+    int j(-1), s(-1);
     bool relaxed(false);
     std::string input_config_file, input_file, output_file;
 
@@ -114,7 +115,8 @@ int main(int argc, char *argv[])
     app.add_option("-s,--seed", s, "Random number generator seed (overrides config input)");
     app.add_option("-i,--input", input_file, "Input HDF5 file name");
     app.add_option("-f", input_config_file, "JSON config file");
-    app.add_option("-o,--output", output_file, "Output HDF5 file name (overrides config input)");
+    app.add_option("-o,--output", output_file,
+                   "Base name of the HDF5 output file name (overrides config input)");
     app.add_flag("-t,--template", "Print a template JSON config to stdout");
     app.add_flag("--relaxed", relaxed, "Allow unrecognized JSON config keys (relaxed validation)");
     CLI11_PARSE(app, argc, argv);
@@ -129,27 +131,30 @@ int main(int argc, char *argv[])
         input_config_file.clear();
     }
 
-    mcdriver D;
+    std::shared_ptr<mcdriver> D;
 
     if (!input_file.empty()) {
 
         cout << "Loading simulation from " << input_file << endl;
 
-        if (D.load(input_file, &cerr) != 0)
+        if (!(D = mcdriver::load(input_file, &cerr)))
             return -1;
 
         // cli overrides
-        mcconfig::run_options par = D.config().Run;
         if (n > 0)
-            par.max_no_ions = n;
-        if (j > 0)
-            par.threads = j;
-        D.setRunOptions(par);
+            D->setMaxNoIons(n);
+        if (j >= 0)
+            D->setNthreads(j);
+        if (s >= 0) {
+            if (D->ion_count()) {
+                cerr << "Warning: the seed value entered with -s is ignored. " << endl;
+                cerr << "The seed cannot be changed after simulation start." << endl;
+            } else
+                D->setSeed(s);
+        }
 
-        mcconfig::output_options opts = D.config().Output;
         if (!output_file.empty()) {
-            opts.outfilename = output_file;
-            D.setOutputOptions(opts);
+            D->setOutFileName(output_file);
         }
     } else {
 
@@ -185,24 +190,25 @@ int main(int argc, char *argv[])
         if (!output_file.empty())
             config.Output.outfilename = output_file;
 
-        D.init(config);
+        if (!(D = mcdriver::create(config, &cerr)))
+            return -1;
     }
 
-    cout << "Starting simulation '" << D.config().Output.title << "'..." << endl << endl;
+    cout << "Starting simulation '" << D->config().Output.title << "'..." << endl << endl;
 
-    info.init(D);
+    info.init(D.get());
     info.print();
 
     // Install handler: Ctrl-C calls abort() instead of killing the process immediately.
-    g_driver_ptr = &D;
+    g_driver_ptr = D.get();
     signal(SIGINT, sigint_handler);
 
-    D.exec(progress_callback, 200);
+    D->exec(progress_callback, 200);
 
     // Guard: run_history is empty only if exec() returned early (n_end <= n_start).
     // For all other exits including SIGINT abort, exec() pushes before returning.
-    if (!D.run_history().empty()) {
-        const mcdriver::run_data &rd = D.run_history().back();
+    if (!D->run_history().empty()) {
+        const mcdriver::run_data &rd = D->run_history().back();
         cout << endl << endl << "Completed " << rd.total_ion_count << " ion histories." << endl;
         cout << "Threads: " << rd.nthreads << endl;
         cout << "CPU time (s):  " << rd.cpu_time_s << ",\t" << "Ions/cpu-s:  " << rd.ions_per_cpu_s
@@ -211,30 +217,32 @@ int main(int argc, char *argv[])
              << endl;
     }
     // D.save() runs regardless and writes whatever was accumulated before abort.
-    cout << "Storing results in " << D.outFileName() << " ...";
+    std::string fname = D->outFileName();
+    fname += ".h5";
+    cout << "Storing results in " << fname << " ...";
     cout.flush();
-    D.save(D.outFileName(), &cerr);
+    D->save(fname, &cerr);
     cout << " OK." << endl;
 
     return 0;
 }
 
-void running_sim_info::init(const mcdriver &d)
+void running_sim_info::init(const mcdriver *d)
 {
     tstart_ = hr_clock_t::now();
-    nstart_ = d.getSim()->ion_count();
+    nstart_ = d->getSim()->ion_count();
     ncurr_ = nstart_;
-    ntarget_ = d.config().Run.max_no_ions;
+    ntarget_ = d->config().Run.max_no_ions;
     progress_ = int(1.0 * max_progress_ * ncurr_ / ntarget_);
     elapsed_ = 0.;
     etc_ = 0;
     ips_ = 0.;
 }
 
-void running_sim_info::update(const mcdriver &d)
+void running_sim_info::update(const mcdriver *d)
 {
     time_point t = hr_clock_t::now();
-    ncurr_ = d.getSim()->ion_count();
+    ncurr_ = d->getSim()->ion_count();
     // floating-point duration: no duration_cast needed
     const std::chrono::duration<double> fp_sec = t - tstart_;
     elapsed_ = fp_sec.count();

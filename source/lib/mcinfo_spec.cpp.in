@@ -1,5 +1,7 @@
 #include "mcinfo.h"
 
+#include "json_defs_p.h"
+
 #include <sstream>
 
 static const char* mcinfo_spec_str_ =
