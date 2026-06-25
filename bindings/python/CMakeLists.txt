@@ -42,7 +42,8 @@ if(SKBUILD)
     )
     install(FILES opentrim/__init__.py opentrim/py.typed DESTINATION opentrim)
     # ship the generated type stubs (PEP 561) so pip-installed wheels get
-    # IDE autocomplete - none present is fine
+    # IDE autocomplete.  regenerate after changing the bound API with:
+    #   pybind11-stubgen opentrim -o bindings/python
     install(DIRECTORY opentrim/ DESTINATION opentrim FILES_MATCHING PATTERN "*.pyi")
 else()
     # Plain CMake build: libopentrim and xs_* are installed by

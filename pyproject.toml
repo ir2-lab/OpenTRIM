@@ -13,6 +13,7 @@ dependencies     = ["numpy>=1.21"]
 jupyter = ["jupyterlab", "matplotlib"]
 test    = ["pytest"]
 docs    = ["sphinx"]
+# regenerate the .pyi type stubs:  pybind11-stubgen opentrim -o bindings/python
 stubs   = ["pybind11-stubgen"]
 
 [tool.scikit-build]
