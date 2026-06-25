@@ -22,3 +22,4 @@ extension was built under WSL, run JupyterLab from that same WSL environment
 | `basic_run.ipynb` | Configure a simulation, run it, read results, plot the vacancy depth profile. |
 | `live_plot.ipynb` | Mode B run with a callback that updates the plot during the run. |
 | `parametric_study.ipynb` | Sweep the beam energy and compare total damage. |
+| `usertally.ipynb` | Use a UserTally to score the angular distribution of scattered ions. |

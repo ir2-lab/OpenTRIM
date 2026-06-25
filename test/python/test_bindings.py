@@ -171,3 +171,132 @@ def test_hdf5_save_before_run_raises(config, tmp_path):
     sim.init(config)
     with pytest.raises(RuntimeError, match="nothing to save"):
         sim.save(str(tmp_path / "empty.h5"))
+
+
+# --------------------------------------------------------------------------- #
+# Introspection / API surface
+# --------------------------------------------------------------------------- #
+def test_config_substruct_reprs(config):
+    # every sub-struct must have a readable repr, not the default <object ...>
+    cases = [
+        (config.Simulation, "SimulationParams"),
+        (config.Transport, "TransportParams"),
+        (config.IonBeam, "IonBeamParams"),
+        (config.IonBeam.energy_distribution, "EnergyDistribution"),
+        (config.IonBeam.spatial_distribution, "SpatialDistribution"),
+        (config.IonBeam.angular_distribution, "AngularDistribution"),
+        (config.Target, "TargetParams"),
+        (config.Run, "RunOptions"),
+        (config.Output, "OutputOptions"),
+        (config.Target.materials[0], "Material"),
+        (config.Target.materials[0].composition[0], "Atom"),
+        (config.Target.regions[0], "Region"),
+    ]
+    for obj, prefix in cases:
+        assert repr(obj).startswith(prefix), repr(obj)
+
+
+def test_standalone_reprs():
+    assert repr(opentrim.CoordSys()).startswith("CoordSys")
+    assert repr(opentrim.UserTallyBins()).startswith("UserTallyBins")
+    assert repr(opentrim.UserTally()).startswith("UserTally")
+    assert repr(opentrim.Atom()).startswith("Atom")
+    assert repr(opentrim.Material()).startswith("Material")
+    assert repr(opentrim.Region()).startswith("Region")
+
+
+def test_config_dict_access(config):
+    config["Run"]["threads"] = 8
+    assert config.Run.threads == 8
+    config["Simulation"]["electronic_stopping"] = opentrim.Stopping.SRIM13
+    assert config.Simulation.electronic_stopping == opentrim.Stopping.SRIM13
+    with pytest.raises(KeyError):
+        config["NoSuchSection"]
+
+
+def test_config_nested_assignment(config):
+    config.IonBeam.energy_distribution.center = 3.0e6
+    assert config.IonBeam.energy_distribution.center == pytest.approx(3.0e6)
+
+
+def test_element_from_symbol_and_z():
+    assert opentrim.Element("Fe").symbol == "Fe"
+    assert opentrim.Element(26).symbol == "Fe"        # Z = 26 is iron
+    assert opentrim.Element("Fe") == opentrim.Element(26)
+
+
+def test_element_invalid_raises():
+    with pytest.raises(ValueError):
+        opentrim.Element("Xx")
+
+
+def test_element_hashable():
+    fe1 = opentrim.Element("Fe")
+    fe2 = opentrim.Element(26)
+    assert fe1 == fe2
+    assert fe1 != opentrim.Element("C")    # __ne__ derives from __eq__
+    assert hash(fe1) == hash(fe2)          # equal elements must hash equal
+    assert len({fe1, fe2, opentrim.Element("C")}) == 2   # usable in a set
+
+
+def test_info_repr_html(info):
+    html = info._repr_html_()
+    assert html.startswith("<div")
+    for key in ("run_info", "target", "tally"):
+        assert key in html
+
+
+def test_info_keys_and_contains(info):
+    keys = info.keys()
+    assert "tally" in keys and "target" in keys
+    assert "tally" in info
+    assert "does_not_exist" not in info
+
+
+def test_top_level_reprs(config):
+    assert repr(config).startswith("Config")
+    assert repr(opentrim.Driver()).startswith("Driver")
+    assert repr(opentrim.Element("Fe")).startswith("Element")
+
+
+def test_vector_fields_roundtrip(config):
+    config.Target.size = [10.0, 20.0, 30.0]
+    assert list(config.Target.size) == [10.0, 20.0, 30.0]
+    config.Target.cell_count = [4, 5, 6]
+    assert list(config.Target.cell_count) == [4, 5, 6]
+    config.IonBeam.spatial_distribution.center = [7.0, 8.0, 9.0]
+    assert list(config.IonBeam.spatial_distribution.center) == [7.0, 8.0, 9.0]
+    config.Target.regions[0].origin = [1.0, 2.0, 3.0]
+    assert list(config.Target.regions[0].origin) == [1.0, 2.0, 3.0]
+    with pytest.raises(TypeError):
+        config.Target.size = [1.0, 2.0]               # needs exactly 3 components
+
+
+def test_mfp_range_validation(config):
+    config.Transport.mfp_range = [0.1, 100.0]
+    assert list(config.Transport.mfp_range) == pytest.approx([0.1, 100.0])
+    with pytest.raises(ValueError):
+        config.Transport.mfp_range = [1.0]            # needs exactly 2 values
+
+
+def test_user_tally_end_to_end(config):
+    # define a user tally, run, and read it back through Info (data, sem) tuple
+    ut = opentrim.UserTally()
+    ut.id = "depth"
+    ut.description = "vacancy depth profile"
+    ut.event = opentrim.Event.Vacancy
+    ut.bins.x = list(range(0, 101, 10))
+    config.UserTally.append(ut)
+    config.validate()
+
+    sim = opentrim.Driver()
+    sim.init(config)
+    sim.run()
+    sim.wait()
+
+    info = opentrim.Info(sim)
+    assert "depth" in info["user_tally"].keys()
+    data, sem = info["user_tally"]["depth"]["data"]
+    assert data.shape == sem.shape
+    assert np.isfinite(data).all()
+    assert (sem >= 0).all()

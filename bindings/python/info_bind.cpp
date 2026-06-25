@@ -200,6 +200,7 @@ void bind_info(py::module_ &m)
 {
     py::class_<mcinfo> info(m, "Info",
         "Read-only view of simulation results.  Wraps the C++ mcinfo tree.\n\n"
+        "Example::\n\n"
         "    info = opentrim.Info(sim)            # sim is an initialized Driver\n"
         "    v, dv = info[\"tally\"][\"damage_events\"][\"Vacancies\"]\n\n"
         "Tally nodes return (values, sem) numpy tuples normalized per ion.\n"

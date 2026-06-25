@@ -228,6 +228,7 @@ void bind_driver(py::module_ &m)
 {
     py::class_<DriverWrapper> drv(m, "Driver",
         "Runs an OpenTRIM simulation.  Wraps the C++ mcdriver.\n\n"
+        "Example::\n\n"
         "    sim = opentrim.Driver()\n"
         "    sim.init(config)\n"
         "    sim.run()          # Mode A - non-blocking\n"

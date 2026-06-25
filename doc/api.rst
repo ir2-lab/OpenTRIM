@@ -42,6 +42,12 @@ Info
 .. autoclass:: opentrim.Info
    :members:
 
+Element
+-------
+
+.. autoclass:: opentrim.Element
+   :members:
+
 Enumerations
 ------------
 

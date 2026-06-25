@@ -13,6 +13,7 @@ dependencies     = ["numpy>=1.21"]
 jupyter = ["jupyterlab", "matplotlib"]
 test    = ["pytest"]
 docs    = ["sphinx"]
+stubs   = ["pybind11-stubgen"]
 
 [tool.scikit-build]
 cmake.args = [
