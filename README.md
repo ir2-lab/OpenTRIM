@@ -7,6 +7,7 @@ A C++ Monte-Carlo code for simulating ion transport in materials with an emphasi
 - `opentrim-gui`: A GUI tool to configure, run and evaluate simulations 
 - `opentrim`: A command line program for batch mode 
 - `libopentrim`: A C++ library with all the ion transport code, which can be linked to external applications
+- `opentrim` Python package: A Python module to configure, run and evaluate simulations
 
 Additionally, the following sub-projects are used internally
 - [screened_coulomb](https://github.com/ir2-lab/screened_coulomb): A header-only C++ library for screened Coulomb scattering calculations with various potentials (ZBL, Moliere, etc) 
@@ -76,6 +77,38 @@ Usage:
 
 The cli program first checks and validates the configuration input. 
 It then runs the simulation and saves the results into a HDF5 archive.
+
+### Python
+
+The Python bindings can be installed from the top source folder by running
+
+```
+pip install .
+```
+
+which requires the same build tools as [building from source](#building-from-source).
+
+A simulation is configured, run and evaluated as in the following example:
+
+```python
+import opentrim
+
+config = opentrim.Config()
+config.IonBeam.ion = opentrim.Element("He")
+config.IonBeam.energy_distribution.center = 2e6   # eV
+# ... define the target and run options ...
+config.validate()
+
+sim = opentrim.Driver()
+sim.init(config)
+sim.run()
+sim.wait()
+
+info = opentrim.Info(sim)
+vacancies, sem = info["tally"]["damage_events"]["Vacancies"]
+```
+
+Type information is included with the package, so editors such as VS Code provide auto-completion for the `Config`, `Driver` and `Info` classes. Some example notebooks are provided in the [`examples/python`](examples/python) folder.
 
 ## Testing
 
