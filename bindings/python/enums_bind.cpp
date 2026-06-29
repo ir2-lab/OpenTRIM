@@ -8,6 +8,7 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <functional>
 #include <stdexcept>
 
 #include "mccore.h"
@@ -100,11 +101,13 @@ void bind_enums(py::module_& m)
     py::class_<element_t>(m, "Element",
         R"(Atomic element used to specify ion beam species and target atom species.
 
-Construction:
-    opentrim.Element("He")  -- from symbol, auto-fills Z=2, M=4.003
-    opentrim.Element(2)     -- from atomic number, auto-fills symbol and M
+Construction::
 
-Attributes:
+    opentrim.Element("He")  # from symbol, auto-fills Z=2, M=4.003
+    opentrim.Element(2)     # from atomic number, auto-fills symbol and M
+
+Attributes::
+
     symbol        str   element symbol
     atomic_number int   atomic number Z
     atomic_mass   float mean atomic mass [amu]
@@ -140,5 +143,15 @@ Attributes:
             return a.symbol == b.symbol
                    && a.atomic_number == b.atomic_number
                    && a.atomic_mass   == b.atomic_mass;
+        })
+
+        // keep consistent with __eq__ so equal elements hash equal - otherwise
+        // defining __eq__ alone leaves Element unhashable (no sets / dict keys).
+        .def("__hash__", [](const element_t& e) {
+            size_t h = std::hash<std::string>{}(e.symbol);
+            auto mix = [&h](size_t v) { h ^= v + 0x9e3779b9 + (h << 6) + (h >> 2); };
+            mix(std::hash<int>{}(e.atomic_number));
+            mix(std::hash<float>{}(e.atomic_mass));
+            return (py::ssize_t)h;
         });
 }

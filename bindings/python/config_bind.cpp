@@ -68,10 +68,9 @@ void bind_dict_access(py::class_<T>& cls)
 
 void bind_config(py::module_& m)
 {
-    py::bind_vector<std::vector<atom::parameters>>(m,         "AtomList");
-    py::bind_vector<std::vector<material::material_desc_t>>(m, "MaterialList");
-    py::bind_vector<std::vector<target::region>>(m,            "RegionList");
-    py::bind_vector<std::vector<user_tally::parameters>>(m,    "UserTallyList");
+    // Each list is bound right after its element class (below), so pybind uses
+    // the Python name (Atom, Material, ...) in the container signatures instead
+    // of the raw C++ type - keeps the generated type stubs valid.
 
     py::class_<coord_sys> cs_cls(m, "CoordSys",
         "Coordinate system used to orient a UserTally.\n\n"
@@ -98,7 +97,7 @@ void bind_config(py::module_& m)
 
     py::class_<atom::parameters> atom_cls(m, "Atom",
         "Target atom species parameters.\n\n"
-        "Used in Material.composition to define each element in the material.\n\n"
+        "Used in Material.composition to define each element in the material::\n\n"
         "    atom = opentrim.Atom()\n"
         "    atom.element = opentrim.Element(\"Fe\")\n"
         "    atom.X  = 1.0    # atomic fraction\n"
@@ -122,9 +121,10 @@ void bind_config(py::module_& m)
                    + ", Ed=" + std::to_string(a.Ed) + ")";
         });
     bind_dict_access(atom_cls);
+    py::bind_vector<std::vector<atom::parameters>>(m, "AtomList");
 
     py::class_<material::material_desc_t> mat_cls(m, "Material",
-        "Target material descriptor.\n\n"
+        "Target material descriptor::\n\n"
         "    mat = opentrim.Material()\n"
         "    mat.id      = \"Iron\"\n"
         "    mat.density = 7.874   # g/cm3\n"
@@ -145,9 +145,10 @@ void bind_config(py::module_& m)
                    + ", natoms=" + std::to_string(m.composition.size()) + ")";
         });
     bind_dict_access(mat_cls);
+    py::bind_vector<std::vector<material::material_desc_t>>(m, "MaterialList");
 
     py::class_<target::region> region_cls(m, "Region",
-        "Rectangular target region filled with a specific material.\n\n"
+        "Rectangular target region filled with a specific material::\n\n"
         "    region = opentrim.Region()\n"
         "    region.id          = \"FeLayer\"\n"
         "    region.material_id = \"Iron\"\n"
@@ -172,11 +173,12 @@ void bind_config(py::module_& m)
             return "Region(id=\"" + r.id + "\", material_id=\"" + r.material_id + "\")";
         });
     bind_dict_access(region_cls);
+    py::bind_vector<std::vector<target::region>>(m, "RegionList");
 
     py::class_<user_tally::bin_var_t> bins_cls(m, "UserTallyBins",
         "Bin edge vectors for a user-defined tally.\n\n"
         "Use assignment to set bin edges -- do not use .append() on individual fields\n"
-        "because bin edge fields are plain std::vector<float> returned by value:\n\n"
+        "because bin edge fields are plain std::vector<float> returned by value::\n\n"
         "    tally.bins.x = list(range(0, 101))   # correct -- assignment persists\n"
         "    tally.bins.E = [0, 1e3, 1e4, 1e5]   # correct\n\n"
         "    tally.bins.x.append(101)             # wrong -- mutates a copy, silently lost\n");
@@ -224,7 +226,7 @@ void bind_config(py::module_& m)
     bind_dict_access(bins_cls);
 
     py::class_<user_tally::parameters> utally_cls(m, "UserTally",
-        "User-defined tally configuration.\n\n"
+        "User-defined tally configuration::\n\n"
         "    tally = opentrim.UserTally()\n"
         "    tally.id    = \"depth_profile\"\n"
         "    tally.event = opentrim.Event.Vacancy\n"
@@ -246,6 +248,7 @@ void bind_config(py::module_& m)
             return "UserTally(id=\"" + p.id + "\")";
         });
     bind_dict_access(utally_cls);
+    py::bind_vector<std::vector<user_tally::parameters>>(m, "UserTallyList");
 
     py::class_<mccore::parameters> sim_cls(m, "SimulationParams",
         "Physics model selection.  Access via config.Simulation.");
@@ -389,7 +392,7 @@ void bind_config(py::module_& m)
     bind_dict_access(ib_cls);
 
     py::class_<target::target_desc_t> tgt_cls(m, "TargetParams",
-        "Target geometry and composition.  Access via config.Target.\n\n"
+        "Target geometry and composition.  Access via config.Target::\n\n"
         "    config.Target.size       = [100.0, 100.0, 100.0]  # nm\n"
         "    config.Target.cell_count = [200, 1, 1]\n"
         "    config.Target.materials.append(mat)\n"
@@ -480,19 +483,23 @@ void bind_config(py::module_& m)
     py::class_<mcconfig> cfg_cls(m, "Config",
         R"(Full simulation configuration.
 
-Construction:
+Construction::
+
     config = opentrim.Config()            # all options at defaults
     config = opentrim.Config("sim.json")  # load from JSON file
 
-Attribute access (recommended -- IDE autocomplete works):
+Attribute access (recommended -- IDE autocomplete works)::
+
     config.Simulation.electronic_stopping = opentrim.Stopping.SRIM13
     config.Run.max_no_ions = 10000
 
-Dict-style access (same fields, useful for programmatic access):
+Dict-style access (same fields, useful for programmatic access)::
+
     config["Run"]["threads"] = 4
     config["Simulation"]["electronic_stopping"] = opentrim.Stopping.SRIM13
 
-Methods:
+Methods::
+
     config.validate()                # raises ValueError on invalid config
     config.to_json()                 # -> str, full config as JSON
     opentrim.Config.from_json(s)     # classmethod: construct from JSON string

@@ -1,7 +1,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/functional.h>
 
+#include <sstream>
 #include <stdexcept>
+#include <string>
 
 #include "driver_bind.h"
 
@@ -149,6 +151,47 @@ void DriverWrapper::reset()
     driver_.reset();
 }
 
+void DriverWrapper::save(const std::string &filename)
+{
+    if (exec_running_.load())
+        throw std::runtime_error("cannot save while a simulation is running; call wait() first");
+    // save() walks an mcinfo tree that normalizes tallies by ion_count
+    // (mcinfo.cpp:592); with zero ions that divides by zero and writes NaN, so
+    // require at least one simulated ion - not just an initialized driver.
+    const mccore *sim = driver_.getSim();
+    if (!sim || sim->ion_count() == 0)
+        throw std::runtime_error("nothing to save; run at least one ion before save()");
+
+    std::ostringstream err;
+    int rc;
+    {
+        // file i/o touches no Python - drop the GIL so other threads run.
+        py::gil_scoped_release release;
+        rc = driver_.save(filename, &err);
+    }
+    if (rc != 0)
+        throw std::runtime_error("save failed: " + err.str());
+}
+
+void DriverWrapper::load(const std::string &filename)
+{
+    if (exec_running_.load())
+        throw std::runtime_error("cannot load while a simulation is running; call wait() first");
+    // mcdriver::load refuses if a simulation already exists (h5serialize.cpp:303),
+    // so clear any current state first.  load() then rebuilds the sim through init(),
+    // leaving getSim() valid for Info(driver) and allowing run() to continue.
+    reset();
+
+    std::ostringstream err;
+    int rc;
+    {
+        py::gil_scoped_release release;
+        rc = driver_.load(filename, &err);
+    }
+    if (rc != 0)
+        throw std::runtime_error("load failed: " + err.str());
+}
+
 long long DriverWrapper::max_ions() const
 {
     return (long long)driver_.config().Run.max_no_ions;
@@ -185,6 +228,7 @@ void bind_driver(py::module_ &m)
 {
     py::class_<DriverWrapper> drv(m, "Driver",
         "Runs an OpenTRIM simulation.  Wraps the C++ mcdriver.\n\n"
+        "Example::\n\n"
         "    sim = opentrim.Driver()\n"
         "    sim.init(config)\n"
         "    sim.run()          # Mode A - non-blocking\n"
@@ -227,6 +271,16 @@ void bind_driver(py::module_ &m)
 
     drv.def("reset", &DriverWrapper::reset,
             "Abort the running simulation and clear all simulation state.");
+
+    drv.def("save", &DriverWrapper::save, py::arg("filename"),
+            "Save the simulation and all results to an HDF5 file.  Same format as\n"
+            "the CLI output; reload it with load().  Requires at least one\n"
+            "simulated ion (tallies are normalized per ion).");
+
+    drv.def("load", &DriverWrapper::load, py::arg("filename"),
+            "Load a simulation from an HDF5 file, replacing any current state.\n"
+            "Afterwards results are available via Info(sim) and the run can be\n"
+            "continued with run().");
 
     drv.def_property("max_ions", &DriverWrapper::max_ions, &DriverWrapper::set_max_ions,
                      "Maximum ions to simulate (config.Run.max_no_ions).  Read once at\n"

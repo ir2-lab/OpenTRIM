@@ -18,3 +18,9 @@ CTestTestfile.cmake
 _deps
 build_qt_debug/
 *.oct
+
+# Python bindings / tooling artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+doc/_build/

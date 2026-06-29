@@ -40,10 +40,16 @@ if(SKBUILD)
         $<TARGET_FILE:xs_moliere>
         DESTINATION opentrim
     )
-    install(FILES opentrim/__init__.py DESTINATION opentrim)
+    install(FILES opentrim/__init__.py opentrim/py.typed DESTINATION opentrim)
+    # ship the generated type stubs (PEP 561) so pip-installed wheels get
+    # IDE autocomplete.  regenerate after changing the bound API with:
+    #   pybind11-stubgen opentrim -o bindings/python
+    install(DIRECTORY opentrim/ DESTINATION opentrim FILES_MATCHING PATTERN "*.pyi")
 else()
     # Plain CMake build: libopentrim and xs_* are installed by
     # source/lib/CMakeLists.txt. _opentrim_core uses the global RPATH.
     install(TARGETS _opentrim_core DESTINATION opentrim)
-    install(FILES opentrim/__init__.py DESTINATION opentrim)
+    install(FILES opentrim/__init__.py opentrim/py.typed DESTINATION opentrim)
+    # ship any generated type stubs (PEP 561) - none present is fine
+    install(DIRECTORY opentrim/ DESTINATION opentrim FILES_MATCHING PATTERN "*.pyi")
 endif()
