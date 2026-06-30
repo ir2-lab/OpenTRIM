@@ -70,25 +70,22 @@ def test_config_round_trip_json(config):
 # Driver
 # --------------------------------------------------------------------------- #
 def test_driver_mode_a(config):
-    sim = opentrim.Driver()
-    sim.init(config)
-    sim.run()           # Mode A - returns immediately
+    sim = opentrim.Driver(config)
+    sim.run()           # Mode A: returns immediately
     sim.wait()
     assert not sim.is_running()
     assert sim.ion_count() == config.Run.max_no_ions
 
 
 def test_driver_wait(config):
-    sim = opentrim.Driver()
-    sim.init(config)
+    sim = opentrim.Driver(config)
     sim.run()
     sim.wait()          # blocks until the run thread finishes
     assert sim.ion_count() == config.Run.max_no_ions
 
 
 def test_driver_abort(big_config):
-    sim = opentrim.Driver()
-    sim.init(big_config)
+    sim = opentrim.Driver(big_config)
     sim.run()
     _wait_until_running(sim)   # ensure the run is under way, then stop it early
     sim.abort()
@@ -98,8 +95,7 @@ def test_driver_abort(big_config):
 
 
 def test_driver_ion_count(big_config):
-    sim = opentrim.Driver()
-    sim.init(big_config)
+    sim = opentrim.Driver(big_config)
     sim.run()
     _wait_until_running(sim)
     c1 = sim.ion_count()
@@ -150,27 +146,73 @@ def test_info_repr(info):
 def test_hdf5_round_trip(finished_sim, tmp_path):
     path = tmp_path / "round_trip.h5"
     finished_sim.save(str(path))
-    sim2 = opentrim.Driver()
-    sim2.load(str(path))
+    sim2 = opentrim.Driver.load(str(path))
     assert sim2.ion_count() == finished_sim.ion_count()
 
 
 def test_hdf5_tally_match(finished_sim, tmp_path):
     path = tmp_path / "tally_match.h5"
     finished_sim.save(str(path))
-    sim2 = opentrim.Driver()
-    sim2.load(str(path))
+    sim2 = opentrim.Driver.load(str(path))
     v1, _ = opentrim.Info(finished_sim)["tally"]["damage_events"]["Vacancies"]
     v2, _ = opentrim.Info(sim2)["tally"]["damage_events"]["Vacancies"]
     assert np.allclose(v1, v2)
 
 
 def test_hdf5_save_before_run_raises(config, tmp_path):
-    # saving with zero ions would write NaN tallies - must raise instead
-    sim = opentrim.Driver()
-    sim.init(config)
+    # zero ions would write NaN tallies; must refuse
+    sim = opentrim.Driver(config)
     with pytest.raises(RuntimeError, match="nothing to save"):
         sim.save(str(tmp_path / "empty.h5"))
+
+
+def test_load_missing_file_raises(tmp_path):
+    with pytest.raises(RuntimeError):
+        opentrim.Driver.load(str(tmp_path / "does_not_exist.h5"))
+
+
+# --------------------------------------------------------------------------- #
+# Driver lifetime and construction (reworked mcdriver/mcinfo)
+# --------------------------------------------------------------------------- #
+def test_driver_from_config(config):
+    # created ready-to-run from a config
+    sim = opentrim.Driver(config)
+    assert not sim.is_running()
+    assert sim.ion_count() == 0
+    assert sim.config().IonBeam.ion.symbol == "He"
+
+
+def test_driver_invalid_config_raises(config):
+    # invalid config must be rejected at construction
+    config.Output.outfilename = "bad name!"
+    with pytest.raises((ValueError, RuntimeError)):
+        opentrim.Driver(config)
+
+
+def test_max_cpu_time_read_only(config):
+    sim = opentrim.Driver(config)
+    assert sim.max_cpu_time == config.Run.max_cpu_time
+    with pytest.raises(AttributeError):
+        sim.max_cpu_time = 10            # read-only
+
+
+def test_max_ions_settable(config):
+    sim = opentrim.Driver(config)
+    sim.max_ions = 500
+    assert sim.max_ions == 500
+
+
+def test_info_outlives_driver(config):
+    # Info holds a shared_ptr to the driver, so it outlives the Driver
+    sim = opentrim.Driver(config)
+    sim.run()
+    sim.wait()
+    n = sim.ion_count()
+    info = opentrim.Info(sim)
+    del sim                              # drop the Driver; Info must stay valid
+    assert int(info["run_info"]["total_ion_count"][0]) == n
+    v, dv = info["tally"]["damage_events"]["Vacancies"]
+    assert np.isfinite(v).all()
 
 
 # --------------------------------------------------------------------------- #
@@ -255,7 +297,7 @@ def test_info_keys_and_contains(info):
 
 def test_top_level_reprs(config):
     assert repr(config).startswith("Config")
-    assert repr(opentrim.Driver()).startswith("Driver")
+    assert repr(opentrim.Driver(config)).startswith("Driver")
     assert repr(opentrim.Element("Fe")).startswith("Element")
 
 
@@ -280,7 +322,7 @@ def test_mfp_range_validation(config):
 
 
 def test_user_tally_end_to_end(config):
-    # define a user tally, run, and read it back through Info (data, sem) tuple
+    # define a user tally, run, read it back through Info
     ut = opentrim.UserTally()
     ut.id = "depth"
     ut.description = "vacancy depth profile"
@@ -289,8 +331,7 @@ def test_user_tally_end_to_end(config):
     config.UserTally.append(ut)
     config.validate()
 
-    sim = opentrim.Driver()
-    sim.init(config)
+    sim = opentrim.Driver(config)
     sim.run()
     sim.wait()
 

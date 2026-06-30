@@ -99,8 +99,7 @@ config.IonBeam.energy_distribution.center = 2e6   # eV
 # ... define the target and run options ...
 config.validate()
 
-sim = opentrim.Driver()
-sim.init(config)
+sim = opentrim.Driver(config)
 sim.run()
 sim.wait()
 
