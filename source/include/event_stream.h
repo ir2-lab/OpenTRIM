@@ -102,6 +102,8 @@ public:
     void write(const event_buffer *ev);
     /// Merge data from another stream into this one
     int merge(event_stream &ev);
+    /// Merge multiple streams into this one, preserving event id order
+    int merge(std::vector<event_stream *> &v);
     /// Return true if the stream is open
     bool is_open() const { return fs_ != NULL; }
     /// Set the event_buffer prototype. The stream must be in the closed state;
@@ -114,6 +116,7 @@ public:
     void rewind();
     void clear();
     size_t read(float *buff, size_t nevents);
+    bool peekid(uint32_t &id);
     size_t write(const float *buff, size_t nevents);
 
 private:

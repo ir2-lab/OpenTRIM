@@ -39,18 +39,54 @@
                                     + AtomPar.element.symbol + " of material \"" + MatName \
                                     + "\"");
 
-mcdriver::mcdriver() : s_(nullptr) { }
+mcdriver::mcdriver(const mcconfig &cfg) : config_(cfg), s_(nullptr)
+{
+    config_.validate();
+
+    s_ = std::unique_ptr<mccore>(new mccore(cfg.Simulation, cfg.Transport));
+
+    s_->getSource().setParameters(cfg.IonBeam);
+
+    target &T = s_->getTarget();
+    T.createGrid(cfg.Target.origin, cfg.Target.size, cfg.Target.cell_count, cfg.Target.periodic_bc);
+
+    for (auto md : cfg.Target.materials)
+        T.addMaterial(md);
+
+    for (auto rd : cfg.Target.regions)
+        T.addRegion(rd);
+
+    for (int i = 0; i < cfg.UserTally.size(); ++i)
+        s_->addUserTally(cfg.UserTally[i]);
+
+    s_->init();
+}
+
+std::shared_ptr<mcdriver> mcdriver::create(const mcconfig &cfg, std::ostream *os)
+{
+    std::shared_ptr<mcdriver> D;
+
+    try {
+        D = std::shared_ptr<mcdriver>(new mcdriver(cfg));
+    } catch (std::invalid_argument &e) {
+        if (os)
+            (*os) << e.what() << std::endl;
+        return std::shared_ptr<mcdriver>();
+    } catch (std::exception &e) {
+        if (os)
+            (*os) << e.what() << std::endl;
+        return std::shared_ptr<mcdriver>();
+    }
+
+    return D;
+}
 
 mcdriver::~mcdriver()
 {
-    reset();
-}
-
-std::string mcdriver::outFileName() const
-{
-    std::string s(config_.Output.outfilename);
-    s += ".h5";
-    return s;
+    if (s_) {
+        abort();
+        wait();
+    }
 }
 
 void mcdriver::abort()
@@ -63,25 +99,6 @@ void mcdriver::wait()
 {
     for (int i = 0; i < thread_pool_.size(); ++i)
         thread_pool_[i].join();
-}
-
-void mcdriver::reset()
-{
-    if (s_) {
-        abort();
-        wait();
-        delete s_;
-        s_ = nullptr;
-        run_history_.clear();
-    }
-}
-
-void mcdriver::init(const mcconfig &config)
-{
-    reset();
-    config_ = config;
-    s_ = config_.createSimulation();
-    s_->init();
 }
 
 double elapsed_sec(const timespec &t0, const timespec &t1)
@@ -102,9 +119,13 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // cpu time
     struct timespec t_start, t_end;
 
-    int nthreads = config_.Run.threads;
+    size_t nthreads = config_.Run.threads;
     if (nthreads < 1) {
         nthreads = std::thread::hardware_concurrency();
+        if (nthreads <= 3)
+            nthreads = 1;
+        else
+            nthreads >>= 1; // use half the available threads
     }
 
     // TIMING
@@ -117,12 +138,15 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     if (n_end <= n_start)
         return -1;
 
+    // ions to run
+    size_t n_run = n_end - n_start;
+
     // check cpu time limit
     double tlim = std::numeric_limits<double>::max();
     if (config_.Run.max_cpu_time) {
         tlim = config_.Run.max_cpu_time;
         for (auto &rd : run_history_)
-            tlim -= rd.cpu_time;
+            tlim -= rd.cpu_time_s;
     }
 
     // If ion_count == 0, i.e. simulation starts, seed the rng
@@ -131,12 +155,12 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
     // create simulation clones
     sim_clones_.resize(nthreads);
-    for (int i = 0; i < nthreads; i++)
+    for (size_t i = 0; i < nthreads; i++)
         sim_clones_[i] = new mccore(*s_);
 
     // jump the rng's of clones (except the 1st one)
-    for (int i = 1; i < nthreads; i++) {
-        for (int j = 0; j < i; ++j)
+    for (size_t i = 1; i < nthreads; i++) {
+        for (size_t j = 0; j < i; ++j)
             sim_clones_[i]->rngJump();
     }
 
@@ -150,7 +174,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
         ev_mask |= static_cast<uint32_t>(Event::Vacancy);
 
     // open clone streams
-    for (int i = 0; i < nthreads; i++)
+    for (size_t i = 0; i < nthreads; i++)
         sim_clones_[i]->init_streams(ev_mask);
 
     // If ion_count == 0, i.e. simulation starts,
@@ -158,15 +182,18 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     if (s_->ion_count() == 0)
         s_->init_streams(ev_mask);
 
-    // set max ions in each thread
-    for (int i = 0; i < nthreads; i++)
-        sim_clones_[i]->setMaxIons(n_end);
-
-    // clear the abort flag
-    s_->clear_abort_flag();
+    // arm the clones
+    // each clone runs N/nthread ions +1 if i < N % nthread
+    for (size_t i = 0; i < nthreads; i++) {
+        // 1st ion id for this thread
+        size_t id1 = n_start + i + 1;
+        // ions for this thread
+        size_t thread_n_ions = (n_run / nthreads) + (i < (n_run % nthreads) ? 1 : 0);
+        sim_clones_[i]->arm(thread_n_ions, id1, nthreads);
+    }
 
     // create & start worker threads
-    for (int i = 0; i < nthreads; i++)
+    for (size_t i = 0; i < nthreads; i++)
         thread_pool_.emplace_back(&mccore::run, sim_clones_[i]);
 
     // waiting loop
@@ -186,27 +213,83 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
         // report progress if callback function is given
         if (cb) {
             // consolidate results
-            for (int i = 0; i < nthreads; i++)
+            for (size_t i = 0; i < nthreads; i++)
                 s_->mergeTallies(*(sim_clones_[i]));
             // callback
-            cb(*this, callback_user_data);
+            cb(this, callback_user_data);
         }
 
     } while ((s_->ion_count() < n_end) && !(s_->abort_flag()));
 
     // wait for threads to finish...
-    for (int i = 0; i < nthreads; i++)
+    for (size_t i = 0; i < nthreads; i++)
         thread_pool_[i].join();
 
-    // consolidate tallies & events
-    for (int i = 0; i < nthreads; i++) {
-        s_->mergeTallies(*(sim_clones_[i]));
-        s_->mergeEvents(*(sim_clones_[i]));
+    // if the actual total ion count is less than the expected
+    // (due to the simulation being aborted by the user or due to
+    // the time limit reached)
+    // we have to check if we have all consequtive ion history ids
+    if (s_->ion_count() < n_end) {
+
+        // update the last ion count (n_end) and
+        // the # of ions run in this exec()
+        n_end = s_->ion_count();
+        n_run = n_end - n_start;
+
+        // get the last ion ID in each thread
+        std::vector<size_t> ids(nthreads);
+        for (size_t i = 0; i < nthreads; i++)
+            ids[i] = sim_clones_[i]->thread_ion_count() ? sim_clones_[i]->next_ion_id() - nthreads
+                                                        : size_t(-1);
+
+        // get the max ID and the thread index where it occured
+        auto max_it = std::max_element(ids.begin(), ids.end());
+        int i = std::distance(ids.begin(), max_it);
+        size_t maxId = *max_it;
+
+        // if maxID > n_end => missing IDs
+        if (maxId > n_end) {
+            // how many
+            size_t n_missing = maxId - n_end;
+            // check all other threads (except the one with maxID) to find the missing
+            // traverse the threads from i(maxID) backwards
+            for (int k = 0; k < nthreads - 1; ++k) {
+                // update the thread index
+                i--;
+                if (i < 0)
+                    i += nthreads;
+                // this should be the i-th thread maxID
+                maxId--;
+                // check if the last id is below that
+                while ((ids[i] < maxId || ids[i] == size_t(-1)) && n_missing) {
+                    if (ids[i] == size_t(-1)) {
+                        ids[i] = n_start + i + 1;
+                    } else
+                        ids[i] += nthreads;
+                    // simulate 1 missing ion
+                    sim_clones_[i]->arm(1, ids[i], nthreads);
+                    sim_clones_[i]->run();
+                    n_missing--;
+                }
+                if (!n_missing)
+                    break;
+            }
+            assert(!n_missing);
+        } else {
+            assert(maxId == n_end);
+        }
     }
+
+    // consolidate tallies
+    for (size_t i = 0; i < nthreads; i++) {
+        s_->mergeTallies(*(sim_clones_[i]));
+    }
+    // consolidate events, ordered per history id
+    s_->mergeEvents(sim_clones_);
 
     // report progress for the last time
     if (cb) {
-        cb(*this, callback_user_data);
+        cb(this, callback_user_data);
     }
 
     // mark cpu time and world clock time
@@ -215,19 +298,20 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
 
     // save run info
     run_data rd;
-    rd.cpu_time = elapsed_sec(t_start, t_end);
+    rd.cpu_time_s = elapsed_sec(t_start, t_end);
     rd.run_ion_count = s_->ion_count() - n_start;
     rd.total_ion_count = s_->ion_count();
-    rd.ips = rd.run_ion_count / rd.cpu_time;
+    rd.ions_per_cpu_s = rd.run_ion_count / rd.cpu_time_s;
     rd.nthreads = nthreads;
+    // store ISO 8601 timestamps %Y-%m-%dT%H:%M:%SZ
     {
         std::stringstream ss;
-        ss << std::put_time(std::localtime(&start_time_), "%c %Z");
+        ss << std::put_time(std::gmtime(&start_time_), "%Y-%m-%dT%H:%M:%SZ");
         rd.start_time = ss.str();
     }
     {
         std::stringstream ss;
-        ss << std::put_time(std::localtime(&end_time_), "%c %Z");
+        ss << std::put_time(std::gmtime(&end_time_), "%Y-%m-%dT%H:%M:%SZ");
         rd.end_time = ss.str();
     }
     run_history_.push_back(rd);
@@ -247,7 +331,7 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     return 0;
 }
 
-int mcconfig::validate(bool AcceptIncomplete)
+int mcconfig::validate(bool AcceptIncomplete) const
 {
 
     // Simulation & Transport
@@ -272,12 +356,12 @@ int mcconfig::validate(bool AcceptIncomplete)
     // Output
     const std::string &fname = Output.outfilename;
     if (fname.empty() && !AcceptIncomplete)
-        throw std::invalid_argument("Output.OutputFileBaseName is empty.");
+        throw std::invalid_argument("Output.outfilename is empty.");
 
     if (!fname.empty() && std::any_of(fname.begin(), fname.end(), [](unsigned char c) {
             return !(std::isalnum(c) || c == '_');
         })) {
-        std::string msg = "Output.OutputFileBaseName=\"";
+        std::string msg = "Output.outfilename=\"";
         msg += fname;
         msg += "\" contains invalid characters. Valid chars=[0-9a-zA-Z_].";
         throw std::invalid_argument(msg);
@@ -399,25 +483,4 @@ int mcconfig::validate(bool AcceptIncomplete)
     }
 
     return 0;
-}
-
-mccore *mcconfig::createSimulation() const
-{
-    mccore *S = new mccore(Simulation, Transport);
-
-    S->getSource().setParameters(IonBeam);
-
-    target &T = S->getTarget();
-    T.createGrid(Target.size, Target.cell_count, Target.periodic_bc);
-
-    for (auto md : Target.materials)
-        T.addMaterial(md);
-
-    for (auto rd : Target.regions)
-        T.addRegion(rd);
-
-    for (int i = 0; i < UserTally.size(); ++i)
-        S->addUserTally(UserTally[i]);
-
-    return S;
 }

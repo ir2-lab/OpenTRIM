@@ -25,7 +25,6 @@ GUI_NAME="opentrim-gui.exe"
 mkdir $DISTNAME
 cp $INSTALLPATH/bin/*.* $DISTNAME
 cp $INSTALLPATH/lib/*.dll $DISTNAME
-cp $HOME/.local/bin/libdedx.dll $DISTNAME
 
 cd $DISTNAME 
 
@@ -59,9 +58,8 @@ do
   cp $dll .
 done
 
-windeployqt .
+windeployqt-qt5 .
 
 cd $CURFLDR
 
-tar -a -cf $DISTNAME.zip $DISTNAME
 

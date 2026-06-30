@@ -98,16 +98,17 @@ public:
     Xoshiro256Plus(const Xoshiro256Plus &other) noexcept : m_state(other.m_state) { }
 
     /**
-     * @brief Set the internal state by a seed s
+     * @brief Set the internal state to a random value
      *
-     * s is used to initialize a std::mt19937_64 object, which is
+     * std::random_device is used to seed a std::mt19937_64 object,
+     * which is
      * then used to produce the internal state data.
      *
-     * @param s the seed used initialize the state
      */
-    void randomize(result_type s)
+    void randomize()
     {
-        std::mt19937_64 mt(s);
+        std::random_device rd;
+        std::mt19937_64 mt(rd());
 
         for (auto &state : m_state) {
             state = static_cast<std::uint64_t>(mt());

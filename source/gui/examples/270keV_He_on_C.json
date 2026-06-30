@@ -4,7 +4,7 @@
     },
     "Run": {
         "max_no_ions": 1000000,
-        "threads": 4
+        "threads": 0
     },
     "Simulation": {
         "simulation_type": "IonsOnly"

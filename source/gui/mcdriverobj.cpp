@@ -14,7 +14,6 @@
 // because it lives in a separate thread
 McDriverObj::McDriverObj()
     : QObject(),
-      driver_(new mcdriver),
       modified_(false),
       is_running_(false),
       status_(0),
@@ -33,7 +32,6 @@ McDriverObj::McDriverObj()
 
 McDriverObj::~McDriverObj()
 {
-    delete driver_;
 }
 
 const mcconfig &McDriverObj::options() const
@@ -48,7 +46,6 @@ void McDriverObj::setOptions(const mcconfig &opt, bool initFromFile)
         max_ions_ = opt.Run.max_no_ions;
         nThreads_ = opt.Run.threads;
         seed_ = opt.Run.seed;
-        updInterval_ = opt.Output.storage_interval;
     }
     emit configChanged();
     setModified(true);
@@ -60,7 +57,6 @@ std::string McDriverObj::json() const
     opt.Run.max_no_ions = max_ions_;
     opt.Run.seed = seed_;
     opt.Run.threads = nThreads_;
-    opt.Output.storage_interval = updInterval_;
     return opt.toJSON();
 }
 
@@ -109,29 +105,17 @@ QString McDriverObj::title() const
     return QString::fromStdString(options_.Output.title);
 }
 
-void McDriverObj::mc_callback_(const mcdriver &d, void *p)
+void McDriverObj::mc_callback_(const mcdriver *d, void *p)
 {
     McDriverObj *me = static_cast<McDriverObj *>(p);
 
-    me->update_tally_totals_();
+    me->update_tally_();
 }
 
-void McDriverObj::update_tally_totals_()
+void McDriverObj::update_tally_()
 {
     totals_ = driver_->getSim()->getTallyTable(0);
     dtotals_ = driver_->getSim()->getTallyTableVar(0);
-
-    //    if (totals_[0] > 1.) {
-    //        double f = 1. / totals_[0];
-    //        double f1 = 1. / (totals_[0] - 1.);
-    //        for (int i = 1; i < totals_.size(); ++i) {
-    //            totals_[i] *= f;
-    //            // error in the mean
-    //            // S[i] = std::sqrt((dA[i]/N-M[i]*M[i])/(N-1));
-    //            dtotals_[i] = std::sqrt((dtotals_[i] * f - totals_[i] * totals_[i]) * f1);
-    //        }
-    //    }
-
     emit tallyUpdate();
 }
 
@@ -142,7 +126,6 @@ bool McDriverObj::validateOptions(QString *msg) const
     opt.Run.max_no_ions = max_ions_;
     opt.Run.seed = seed_;
     opt.Run.threads = nThreads_;
-    opt.Output.storage_interval = updInterval_;
 
     bool isValid = true;
 
@@ -241,7 +224,6 @@ bool McDriverObj::loadH5File(const QString &path)
 
     reset();
 
-    delete driver_;
     driver_ = test_driver_;
     test_driver_ = nullptr;
 
@@ -253,7 +235,7 @@ bool McDriverObj::loadH5File(const QString &path)
     setModified(false);
 
     info_.init(*this);
-    update_tally_totals_();
+    update_tally_();
 
     emit configChanged();
     emit simulationCreated();
@@ -276,13 +258,12 @@ void McDriverObj::saveJson(const QString &fname)
     // get from our local json
     mcconfig opt(options_);
     // if there is an active sim
-    if (driver_->getSim())
+    if (driver_)
         opt = driver_->config(); // get options from mccore object
     else { // get my current driver options
         opt.Run.max_no_ions = max_ions_;
         opt.Run.seed = seed_;
         opt.Run.threads = nThreads_;
-        opt.Output.storage_interval = updInterval_;
     }
 
     opt.Output.outfilename = fileName().toStdString();
@@ -296,7 +277,7 @@ void McDriverObj::saveJson(const QString &fname)
 
 bool McDriverObj::saveH5(const QString &fname)
 {
-    if (!driver_->getSim())
+    if (!driver_)
         return false;
 
     setFileName(fname);
@@ -341,14 +322,13 @@ void McDriverObj::start(bool b)
             driver_->abort();
     } else if (b) {
 
-        if (driver_->getSim() == nullptr) {
+        if (!driver_) {
             mcconfig opt(options_);
             opt.Run.max_no_ions = max_ions_;
             opt.Run.seed = seed_;
             opt.Run.threads = nThreads_;
-            opt.Output.storage_interval = updInterval_;
 
-            driver_->init(opt);
+            driver_ = mcdriver::create(opt);
 
             info_.clear();
 
@@ -357,14 +337,8 @@ void McDriverObj::start(bool b)
             setStatus(mcIdle);
 
         } else {
-            mcconfig::run_options par = driver_->config().Run;
-            par.max_no_ions = max_ions_;
-            par.threads = nThreads_;
-            driver_->setRunOptions(par);
-
-            mcconfig::output_options opts = driver_->config().Output;
-            opts.storage_interval = updInterval_;
-            driver_->setOutputOptions(opts);
+            driver_->setMaxNoIons(max_ions_);
+            driver_->setNthreads(nThreads_);
         }
 
         setModified(true);
@@ -375,8 +349,6 @@ void McDriverObj::start(bool b)
 
 void McDriverObj::start_()
 {
-    size_t updInterval = driver_->config().Output.storage_interval;
-
     is_running_ = true;
     setStatus(mcRunning);
 
@@ -385,8 +357,8 @@ void McDriverObj::start_()
     emit simulationStarted(true);
 
     int ret = -1;
-    if (driver_->getSim())
-        ret = driver_->exec(mc_callback_, updInterval, this);
+    if (driver_)
+        ret = driver_->exec(mc_callback_, updInterval_, this);
 
     is_running_ = false;
 
@@ -399,19 +371,16 @@ void McDriverObj::start_()
 
 void McDriverObj::onLoadH5_(const QString &path)
 {
-    test_driver_ = new mcdriver;
     std::stringstream os;
-    io_ret_ = test_driver_->load(path.toStdString(), &os);
-    if (io_ret_ != 0)
+    test_driver_ = mcdriver::load(path.toStdString(), &os);
+    if (!test_driver_)
         io_err_ = os.str();
     io_op_active_ = false;
 }
 
 void McDriverObj::onSaveH5_()
 {
-    mcconfig::output_options opts = driver_->config().Output;
-    opts.outfilename = fileName_.toStdString();
-    driver_->setOutputOptions(opts);
+    driver_->setOutFileName(fileName_.toStdString());
 
     std::stringstream os;
     io_ret_ = driver_->save(filePath_.toStdString(), &os);
@@ -435,7 +404,7 @@ const tally &McDriverObj::getTally() const
 
 const mccore *McDriverObj::getSim() const
 {
-    return driver_->getSim();
+    return driver_ ? driver_->getSim() : nullptr;
 }
 
 void McDriverObj::reset()
@@ -446,7 +415,7 @@ void McDriverObj::reset()
             QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
     }
     if (status() == mcIdle) {
-        driver_->reset();
+        driver_.reset(); // delete mcdriver object
         setStatus(mcReset);
         emit simulationDestroyed();
         setModified(true);

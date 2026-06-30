@@ -1,11 +1,7 @@
 {
     "Run": {
-        "max_no_ions": 10000,
+        "max_no_ions": 100,
         "threads": 0
-    },
-    "Simulation": {
-        "simulation_type": "FullCascade",
-        "screening_type": "ZBL"
     },
     "Transport": {
         "flight_path_type": "Variable"
@@ -55,7 +51,8 @@
                         "Ed": 40,
                         "El": 3,
                         "Es": 3,
-                        "Er": 40
+                        "Er": 40,
+                        "Rc": 0.8
                     }
                 ]
             }
@@ -73,9 +70,7 @@
         ]
     },
     "Output": {
-        "title": "2MeV Fe on Fe example",
-        "store_pka_events": true,
-        "store_dedx": true,
-        "store_exit_events": true
+        "title": "2MeV Fe on Fe",
+        "outfilename": "out1"
     }
 }

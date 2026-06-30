@@ -3,34 +3,30 @@
         "max_no_ions": 10000,
         "threads": 0
     },
-    "Simulation": {
-        "simulation_type": "FullCascade",
-        "screening_type": "ZBL"
-    },
     "Transport": {
         "flight_path_type": "Variable"
     },
     "IonBeam": {
         "ion": {
-            "symbol": "Fe",
-            "atomic_mass": 55.935
+            "symbol": "H",
+            "atomic_mass": 1.00784
         },
         "energy_distribution": {
-            "center": 2e6
+            "center": 3e6
         },
         "spatial_distribution": {
             "center": [
                 0,
-                600,
-                600
+                5000,
+                5000
             ]
         }
     },
     "Target": {
         "size": [
-            1200,
-            1200,
-            1200
+            50000,
+            10000,
+            10000
         ],
         "cell_count": [
             100,
@@ -45,7 +41,7 @@
         "materials": [
             {
                 "id": "Fe",
-                "density": 7.8658,
+                "density": 7.8658, // g/cm^3
                 "composition": [
                     {
                         "element": {
@@ -65,17 +61,15 @@
                 "id": "R1",
                 "material_id": "Fe",
                 "size": [
-                    1200,
-                    1200,
-                    1200
+                    50000,
+                    10000,
+                    10000
                 ]
             }
         ]
     },
     "Output": {
-        "title": "2MeV Fe on Fe example",
-        "store_pka_events": true,
-        "store_dedx": true,
-        "store_exit_events": true
+        "title": "3 MeV H on Fe",
+        "outfilename": "out3"
     }
 }
