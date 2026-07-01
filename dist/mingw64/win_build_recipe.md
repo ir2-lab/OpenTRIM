@@ -1,6 +1,6 @@
 ## Windows Build
 
-OpenTRIM on windows is built with https://msys2.org
+OpenTRIM on windows is built with https://msys2.org in the UCRT64 environment
 
 ### Prepare the build environment
 
@@ -25,49 +25,42 @@ OpenTRIM on windows is built with https://msys2.org
   - `mingw-w64-ucrt-x86_64-qt5-base` 
   - `mingw-w64-ucrt-x86_64-qt5-svg`
   - `mingw-w64-ucrt-x86_64-qwt-qt5`
+  - `mingw-w64-ucrt-x86_64-qt5-tools`
+  - `mingw-w64-ucrt-x86_64-angleproject` (needed for some OpenGL dependencies of Qt5)
 
-   TODO: check this
 
-### Build dependencies
+### Install ir2-lab dependencies
 
 OpenTRIM depends on 3 projects of our own: 
 - [libdedx](https://github.com/ir2-lab/libdedx)
 - [QMatPlotWidget](https://github.com/gapost/qmatplotwidget)
 - [QtDataBrowser](https://github.com/ir2-lab/QtDataBrowser)
 
+These repos provide MSYS2/UCRT64 runtime+devel packages. Download all package files from the respective release pages and install them all together with, e.g.
 
-These have to be built and installed in $HOME/.local. For each of these projects, open a UCRT64 console and do:
-
-```
-cd %project_folder%
-mkdir .winbuild
-cd .winbuild
-cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --target install
+```bash
+pacman -U --noconfirm /path/to/folder/*.pkg.tar.zst
 ```
 
 ### Build OpenTRIM
 
-Get the source from https://github.com/ir2-lab/OpenTRIM.
-
-Do the cmake build as usual, specifying $HOME/.local as a search path for CMake's find_package
+Get the source from https://github.com/ir2-lab/OpenTRIM and do the cmake build as usual
 
 ```
 cd opentrim
 mkdir .winbuild
 cd .winbuild
-cmake .. -DCMAKE_BUILD_TYPE=Release  -DCMAKE_PREFIX_PATH=$HOME/.local
+cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . --target install
 ```
 
 The default install location is `${CMAKE_BIN_DIR}/${PROJECT_NAME}`, i.e.,
 `.winbuild/OpenTRIM`
 
-Run [`dist/mingw64/mingw64-deploy.sh`](mingw64-deploy.sh) to create a directory for distribution. 
-The tool must be run from the build folder (`.winbuild` in this example)
+Run [`dist/mingw64/mingw64-deploy.sh`](mingw64-deploy.sh) to create a directory for deployment. 
 
 ```
-../dist/mingw64/mingw64-deploy.sh ./OpenTRIM opentrim-1.1.0
+dist/mingw64/mingw64-deploy.sh .winbuild/OpenTRIM .winbuild/opentrim-1.1.0
 ```
 
 Now the `opentrim-1.1.0` folder contains a full windows distribution (program, dlls etc)
@@ -76,8 +69,13 @@ To check: open the `opentrim-1.0.0` folder in windows explorer and double-click 
 
 ### Create installer
 
-This can be done with the NSIS project.
+An installer can be generated with Inno Setup using the script file [`dist/mingw64/opentrim.iss`](mingw64-deploy.sh). The version and the folder containing the program deployment files (`opentrim-1.0.0` in the above example)
 
-Look for template code in inkscape & xournal++.
-
-TODO
+Run the following from the windows command prompt (`ISCC.exe` must be in the path)
+```
+ISCC.exe  dist\mingw64\opentrim.iss
+          /DMyAppVersion=1.0.0
+          /DMySourceDir=..\..\build\opentrim-1.0.0
+          /Obuild
+```
+This will create the installer executable `build\OpenTRIMSetup.exe`.  

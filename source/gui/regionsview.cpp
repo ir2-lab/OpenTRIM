@@ -43,8 +43,8 @@ RegionsModel::RegionsModel(OptionsModel *m, QObject *parent)
                             arr2[k]["min"].get_to(origin_lim_[0]);
                             arr2[k]["max"].get_to(origin_lim_[1]);
                         } else if (arr2[k]["name"] == "size") {
-                            arr2[k]["min"].get_to(origin_lim_[0]);
-                            arr2[k]["max"].get_to(origin_lim_[1]);
+                            arr2[k]["min"].get_to(size_lim_[0]);
+                            arr2[k]["max"].get_to(size_lim_[1]);
                         }
                     }
                 }

@@ -6,6 +6,7 @@
 #include <thread>
 #include <atomic>
 #include <exception>
+#include <memory>
 #include <string>
 
 #include "mcdriver.h"
@@ -14,63 +15,67 @@ namespace py = pybind11;
 
 // Python-side wrapper around mcdriver.
 //
+// mcdriver is created from a config and is always in a valid, initialized state
+// (mcdriver::create()).  It is used only through a shared_ptr, which mcinfo also
+// holds, so an Info view keeps the driver alive on its own.
+//
 // mcdriver::exec() is a blocking call that spawns its own worker pool and joins
-// it before returning.  The wrapper adds the state the Python API needs on top:
+// it before returning.  The wrapper adds the state the Python API needs:
 //
 //  - exec_thread_   runs exec() off the calling thread so Mode A run() can return
 //                   immediately.
 //  - exec_running_  reliable run flag.  mcdriver::is_running() reads
-//                   thread_pool_.size(), which is still 0 during setup (the pool
-//                   is filled at mcdriver.cpp:170) and reports false negatives.
-//
-// opentrim.Info (A-4) reads results through driver() once a run has finished.
+//                   thread_pool_.size(), which is still 0 during setup and would
+//                   report false negatives.
 class DriverWrapper
 {
 public:
-    DriverWrapper() = default;
+    // Create a driver from a configuration.  Throws if the config is invalid.
+    explicit DriverWrapper(const mcconfig &config);
     ~DriverWrapper();
 
     DriverWrapper(const DriverWrapper &) = delete;
     DriverWrapper &operator=(const DriverWrapper &) = delete;
 
-    void init(const mcconfig &config);
-    mcconfig config() const { return driver_.config(); }
+    // Load a saved simulation from an HDF5 file into a new driver.
+    static DriverWrapper *from_file(const std::string &filename);
 
-    // Mode A - launch exec() on exec_thread_ and return immediately.
+    mcconfig config() const { return driver_->config(); }
+
+    // Mode A: launch exec() on exec_thread_ and return immediately.
     void run_mode_a();
-    // Mode B - run exec() on the calling thread, release the GIL, and call back
+    // Mode B: run exec() on the calling thread, release the GIL, and call back
     // into Python every interval_ms.
     void run_mode_b(py::function cb, size_t interval_ms);
 
     bool is_running() const { return exec_running_.load(); }
-    size_t ion_count() const;
+    size_t ion_count() const { return driver_->ion_count(); }
 
     void abort();
     void wait();
-    void reset();
 
-    // HDF5 persistence - same file format as the CLI (mcdriver::save/load).
+    // Save the simulation and results to an HDF5 file.
     void save(const std::string &filename);
-    void load(const std::string &filename);
 
     long long max_ions() const;
     void set_max_ions(long long v);
     long long max_cpu_time() const;
-    void set_max_cpu_time(long long v);
 
-    // Underlying driver - used by opentrim.Info (A-4) to build mcinfo.
-    const mcdriver &driver() const { return driver_; }
-    mcdriver &driver() { return driver_; }
+    // Shared driver, used by opentrim.Info to build the mcinfo tree.  mcinfo
+    // takes a shared_ptr, so the driver outlives this wrapper if an Info exists.
+    std::shared_ptr<mcdriver> driver() const { return driver_; }
 
 private:
     struct CallbackContext;
-    static void progress_trampoline(const mcdriver &d, void *user_data);
+    static void progress_trampoline(const mcdriver *d, void *user_data);
 
     void join_exec_thread();
     void raise_exec_error_if_any();
-    void ensure_initialized() const;
 
-    mcdriver driver_;
+    // Adopt an already-created driver (used by from_file()).
+    explicit DriverWrapper(std::shared_ptr<mcdriver> d) : driver_(std::move(d)) { }
+
+    std::shared_ptr<mcdriver> driver_;
     std::thread exec_thread_;
     std::atomic<bool> exec_running_{ false };
     // exception thrown by exec() on the Mode A thread, re-raised by wait()

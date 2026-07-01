@@ -33,4 +33,4 @@ from opentrim._opentrim_core import UserTallyBins
 from opentrim._opentrim_core import UserTallyList
 from . import _opentrim_core
 __all__: list = ['__version__', 'SimulationType', 'ScreeningType', 'Stopping', 'Straggling', 'NRT_Impl', 'FlightPath', 'Distribution', 'Geometry', 'Event', 'Element', 'CoordSys', 'Atom', 'Material', 'Region', 'UserTallyBins', 'UserTally', 'AtomList', 'MaterialList', 'RegionList', 'UserTallyList', 'SimulationParams', 'TransportParams', 'EnergyDistribution', 'SpatialDistribution', 'AngularDistribution', 'IonBeamParams', 'TargetParams', 'RunOptions', 'OutputOptions', 'Config', 'Driver', 'Info']
-__version__: str = '1.1.2'
+__version__: str = '1.1.6'

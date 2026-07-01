@@ -464,11 +464,13 @@ public:
      *
      * Should be called before adding materials and regions.
      *
+     * @param origin The origin of the simulation box
      * @param sz The size of the simulation box
      * @param n Cell count in x, y, z dimensions
      * @param pbc 3d int vector. A 1 means periodic boundary conditions
      */
-    void createGrid(const vector3 &sz, const ivector3 &n, const ivector3 &pbc);
+    void createGrid(const vector3 &origin, const vector3 &sz, const ivector3 &n,
+                    const ivector3 &pbc);
 };
 
 #endif // TARGET_H

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
     
 project(OpenTRIM 
-        VERSION 1.1.2
+        VERSION 1.1.6
         DESCRIPTION "Monte-Carlo simulation of ion transport in materials"
         HOMEPAGE_URL https://gitlab.com/ir2-lab/
         LANGUAGES C CXX)
@@ -61,6 +61,8 @@ if(OPENTRIM_BUILD_GUI)
     find_package(QtDataBrowser REQUIRED)
 endif () ## BUILD GUI
 
+include(CTest)
+
 add_subdirectory(source)
 
 if (OPENTRIM_BUILD_PYTHON)
@@ -69,6 +71,7 @@ endif()
 
 if (OPENTRIM_BUILD_TESTS)
     add_subdirectory(test/scattering_calc)
+    add_subdirectory(test/post-build) # needs h5diff; keep it under the tests option
 endif () ## Tests
 
 include(CMakeSummary)

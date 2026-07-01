@@ -70,20 +70,20 @@
                         "Off",
                         "SRIM96",
                         "SRIM13",
-                        "DPASS22"
+                        "DPASS"
                     ],
                     "valueLabels": [
                         "Off",
                         "SRIM96",
                         "SRIM13",
-                        "DPASS22"
+                        "DPASS"
                     ],
                     "toolTip": "Calculation of electronic stopping.",
                     "whatsThis": [
                         "- Off: No electronic stopping",
                         "- SRIM96: Using the SRIM parametrization, v. 1996",
                         "- SRIM13: Using the SRIM parametrization, v. 2013",
-                        "- DPASS22: Using the DPASS parametrization, v. 21.06"
+                        "- DPASS: Using the DPASS parametrization, v. 21.06"
                     ]
                 },
                 {
@@ -133,6 +133,34 @@
                     "label": "Intra-cascade recombination",
                     "type": "bool",
                     "toolTip": "Enable intra-cascade recombination of Frenkel pairs.",
+                    "whatsThis": ""
+                },
+                {
+                    "name": "time_ordered_cascades",
+                    "label": "Time ordered recombinations in cascades  [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Time ordered recombinations in cascades  [Experimental]",
+                    "whatsThis": ""
+                },
+                {
+                    "name": "correlated_recombination",
+                    "label": "Allow same Frenkel pair recombination [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Allow same Frenkel pair recombination [Experimental]",
+                    "whatsThis": ""
+                },
+                {
+                    "name": "move_recoil",
+                    "label": "Move recoil atom to Rc [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Move recoil atom to Rc [Experimental]",
+                    "whatsThis": ""
+                },
+                {
+                    "name": "recoil_sub_ed",
+                    "label": "Subtract Ed from recoil energy [Experimental]",
+                    "type": "bool",
+                    "toolTip": "Subtract Ed from recoil energy [Experimental]",
                     "whatsThis": ""
                 }
             ]
@@ -720,7 +748,7 @@
                     "type": "int",
                     "min": 100,
                     "max": 2147483647,
-                    "toolTip": "Time interval (ms) to update stored data.",
+                    "toolTip": "Time interval (ms) to update stored data. [Not Implemented]",
                     "whatsThis": ""
                 },
                 {
@@ -766,6 +794,18 @@
                     "max": 2147483647,
                     "toolTip": "Maximum number of ion histories to simulate.",
                     "whatsThis": "The simulation will stop when the maximum number of histories has been reached."
+                },
+                {
+                    "name": "max_cpu_time",
+                    "label": "Max cpu time in s",
+                    "type": "int",
+                    "min": 0,
+                    "max": 2147483647,
+                    "toolTip": "Maximum cpu time for the simulation in s.",
+                    "whatsThis": [
+                        "The simulation will stop when the maximum cpu time has been reached.",
+                        "A value of 0 disables the cpu time limit."
+                    ]
                 },
                 {
                     "name": "threads",

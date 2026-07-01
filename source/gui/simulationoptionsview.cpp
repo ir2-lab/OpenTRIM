@@ -276,9 +276,8 @@ void SimulationOptionsView::drawSimBox()
         auto it = mmap.find(r.material_id);
         QColor clr = (it == mmap.end()) ? Qt::transparent
                                         : QColor(t.materials[it->second].color.c_str());
-        QVector3D O = qV3(r.origin - t.origin);
         QString s = QString("Region: %1|Material: %2").arg(r.id.c_str()).arg(r.material_id.c_str());
-        simBoxView->addRegion(O, O + qV3(r.size), clr.rgba(), s);
+        simBoxView->addRegion(qV3(r.origin), qV3(r.origin + r.size), clr.rgba(), s);
     }
 }
 
@@ -368,10 +367,16 @@ QWidget *SimulationOptionsView::createTargetTab(const QModelIndex &idx)
 
 QWidget *SimulationOptionsView::createTab(const QModelIndex &idx)
 {
+    // exclude experimental stuff
+    QStringList excludeKeys;
+    excludeKeys << "time_ordered_cascades"
+                << "correlated_recombination"
+                << "move_recoil"
+                << "recoil_sub_ed";
     QWidget *widget = new QWidget;
     QHBoxLayout *hbox = new QHBoxLayout;
     widget->setLayout(hbox);
-    hbox->addLayout(createForm(idx, widget));
+    hbox->addLayout(createForm(idx, widget, excludeKeys));
     hbox->addStretch();
     return widget;
 }

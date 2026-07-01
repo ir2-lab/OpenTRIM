@@ -220,50 +220,53 @@ int load_event_stream(h5::File &h5f, const std::string &grp_name, event_stream &
 }
 
 // save data from mcinfo, called recursively
-int dump(h5::File &h5f, const std::string &path, const mcinfo &i)
+int dump(h5::File &h5f, const std::string &path, const mcinfo_node &i)
 {
 
     std::vector<std::string> s;
     std::vector<double> x, dx;
     std::vector<float> f;
     std::vector<uint64_t> u;
-    std::vector<size_t> dim;
 
     std::string child_path;
 
-    switch (i.type()) {
-    case mcinfo::group:
-        for (auto &ch : i.children()) {
-            dump(h5f, path + '/' + ch.first, ch.second);
+    if (i.is_group()) {
+        const mcinfo &g = static_cast<const mcinfo &>(i);
+        for (const std::string &n : g.keys()) {
+            dump(h5f, path + '/' + n, g[n]);
         }
-        break;
-    case mcinfo::string:
-        i.get(s, dim);
-        dump(h5f, path, s, dim, i.description());
-        break;
-    case mcinfo::json:
-        i.get(s, dim);
-        dump(h5f, path, s, dim, i.description());
-        break;
-    case mcinfo::real64:
-        i.get(x, dim);
-        dump(h5f, path, x, dim, i.description());
-        break;
-    case mcinfo::real32:
-        i.get(f, dim);
-        dump(h5f, path, f, dim, i.description());
-        break;
-    case mcinfo::uint64:
-        i.get(u, dim);
-        dump(h5f, path, u, dim, i.description());
-        break;
-    case mcinfo::tally_score:
-        i.get(x, dx, dim);
-        dump(h5f, path, x, dim, i.description());
-        dump(h5f, path + "_sem", dx, dim, i.description() + " (SEM)");
-        break;
-    default:
-        break;
+    } else {
+        const mcinfo_data_node &d = static_cast<const mcinfo_data_node &>(i);
+
+        switch (d.type()) {
+        case mcinfo_data_node::string:
+            d.get(s);
+            dump(h5f, path, s, d.dim(), d.description());
+            break;
+        case mcinfo_data_node::json:
+            d.get(s);
+            dump(h5f, path, s, d.dim(), d.description());
+            break;
+        case mcinfo_data_node::real64:
+            d.get(x);
+            dump(h5f, path, x, d.dim(), d.description());
+            break;
+        case mcinfo_data_node::real32:
+            d.get(f);
+            dump(h5f, path, f, d.dim(), d.description());
+            break;
+        case mcinfo_data_node::uint64:
+            d.get(u);
+            dump(h5f, path, u, d.dim(), d.description());
+            break;
+        case mcinfo_data_node::tally_score:
+            d.get(x, dx);
+            dump(h5f, path, x, d.dim(), d.description());
+            dump(h5f, path + "_sem", dx, d.dim(), d.description() + " (SEM)");
+            break;
+        default:
+            break;
+        }
     }
 
     return 0;
@@ -277,7 +280,7 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
         if (writeFileHeader(h5f, os) != 0)
             return -1;
 
-        mcinfo mci(this);
+        mcinfo mci(shared_from_this());
         dump(h5f, "", mci);
 
         // events
@@ -298,20 +301,16 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
     return 0;
 }
 
-int mcdriver::load(const std::string &h5filename, std::ostream *os)
+std::shared_ptr<mcdriver> mcdriver::load(const std::string &h5filename, std::ostream *os)
 {
-    if (s_) {
-        if (os)
-            (*os) << "Reset the simulation object before calling load";
-        return -1;
-    }
+    std::shared_ptr<mcdriver> D;
 
     try {
         h5::File h5f(h5filename, h5::File::ReadOnly);
 
         int vMajor, vMinor;
         if (readFileHeader(h5f, vMajor, vMinor, os) != 0)
-            return -1;
+            return std::shared_ptr<mcdriver>();
         // TODO
         // In future versions check file version
 
@@ -321,31 +320,32 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
             std::string json = h5e::load<std::string>(h5f, "/run_info/json_config");
             std::stringstream is(json);
             if (opt.parseJSON(is, true, os, false) != 0)
-                return -1;
+                return std::shared_ptr<mcdriver>();
         }
 
         // set options in driver. simulation object is created
-        init(opt);
+        D = mcdriver::create(opt);
+        mccore *S = D->s_.get();
 
         // load run history
         {
             std::string json_str = h5e::load<std::string>(h5f, "/run_info/run_history");
             ojson j = ojson::parse(json_str);
-            run_history_ = j.template get<std::vector<mcdriver::run_data>>();
+            D->run_history_ = j.template get<std::vector<mcdriver::run_data>>();
         }
 
         // Load the rng state
         {
             // get a copy of the current state, as a std::array
-            auto rngstate = s_->rngState();
+            auto rngstate = S->rngState();
             // load a vector, because std::array is not supported
             std::vector<random_vars::result_type> state_cpy =
                     h5e::load<std::vector<random_vars::result_type>>(h5f, "/run_info/rng_state");
             // copy into std::array
-            for (int i = 0; i < state_cpy.size(); ++i)
+            for (uint i = 0; i < state_cpy.size(); ++i)
                 rngstate[i] = state_cpy[i];
             // set it in simulation object
-            s_->setRngState(rngstate);
+            S->setRngState(rngstate);
         }
 
         // load the tally data
@@ -357,8 +357,8 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
                 bool ret = true;
                 int k = 1;
 
-                tally &t = s_->getTally();
-                tally &dt = s_->getTallyVar();
+                tally &t = S->getTally();
+                tally &dt = S->getTallyVar();
 
                 while (ret && k < tally::std_tallies) {
                     std::string name("/tally/");
@@ -372,15 +372,15 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
                 ret = ret && load_array(h5f, "/tally/totals/data", t.at(0), dt.at(0), Nh) == 0;
 
                 if (!ret)
-                    return -1;
+                    return std::shared_ptr<mcdriver>();
             }
 
             // user tallies
             {
                 bool ret = true;
-                auto &t = s_->getUserTally();
-                auto &dt = s_->getUserTallyVar();
-                for (int i = 0; i < t.size(); ++i) {
+                auto &t = S->getUserTally();
+                auto &dt = S->getUserTallyVar();
+                for (uint i = 0; i < t.size(); ++i) {
                     std::string name("/user_tally/");
                     name += t[i]->id();
                     name += "/data";
@@ -389,39 +389,39 @@ int mcdriver::load(const std::string &h5filename, std::ostream *os)
             }
 
             // set the ion count
-            s_->setIonCount(Nh);
+            S->setIonCount(Nh);
         }
 
         // prepare to load events
         uint32_t ev_mask{ 0 };
-        if (config_.Output.store_pka_events)
+        if (D->config_.Output.store_pka_events)
             ev_mask |= static_cast<uint32_t>(Event::CascadeComplete);
-        if (config_.Output.store_exit_events)
+        if (D->config_.Output.store_exit_events)
             ev_mask |= static_cast<uint32_t>(Event::IonExit);
-        if (config_.Output.store_damage_events)
+        if (D->config_.Output.store_damage_events)
             ev_mask |= static_cast<uint32_t>(Event::Vacancy);
-        s_->init_streams(ev_mask);
+        S->init_streams(ev_mask);
 
         // load pka events
-        if (config_.Output.store_pka_events) {
-            load_event_stream(h5f, "/events/pka", s_->pka_stream());
+        if (D->config_.Output.store_pka_events) {
+            load_event_stream(h5f, "/events/pka", S->pka_stream());
         }
 
         // load exit events
-        if (config_.Output.store_exit_events) {
-            load_event_stream(h5f, "/events/exit", s_->exit_stream());
+        if (D->config_.Output.store_exit_events) {
+            load_event_stream(h5f, "/events/exit", S->exit_stream());
         }
 
         // load damage events
-        if (config_.Output.store_damage_events) {
-            load_event_stream(h5f, "/events/damage", s_->damage_stream());
+        if (D->config_.Output.store_damage_events) {
+            load_event_stream(h5f, "/events/damage", S->damage_stream());
         }
 
     } catch (h5::Exception &e) {
         if (os)
             (*os) << e.what() << endl;
-        return -1;
+        return std::shared_ptr<mcdriver>();
     }
 
-    return 0;
+    return D;
 }

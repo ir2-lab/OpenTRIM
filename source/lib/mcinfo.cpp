@@ -1,410 +1,436 @@
 #include "mcinfo.h"
 
-mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
+#include "json_defs_p.h"
+
+mcinfo::mcinfo(std::shared_ptr<mcdriver> d) : mcinfo_node({ }, nullptr), driver_(d)
 {
     // 1. run_info
-    (*this)["run_info"] = { driver_, mcinfo::group };
     {
-        mcinfo &p = children_.find("run_info")->second;
-        p["title"] = { driver_, mcinfo::string, "User supplied simulation title",
-                       [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                           s.resize(1);
-                           s[0] = i.driver()->config().Output.title;
-                           d = { 1 };
-                       } };
-
-        p["total_ion_count"] = { driver_, "Total number of simulated ions",
-                                 [](const mcinfo &i, std::vector<uint64_t> &s, dim_t &d) {
-                                     s.resize(1);
-                                     s[0] = i.driver()->getSim()->ion_count();
-                                     d = { 1 };
-                                 } };
-
-        p["json_config"] = { driver_, mcinfo::string, "JSON formatted simulation options",
-                             [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                 s.resize(1);
-                                 s[0] = i.driver()->config().toJSON();
-                                 d = { 1 };
-                             } };
-
-        p["version_info"] = { driver_, mcinfo::group };
+        mcinfo &run_info = add_group("run_info", "Run information");
+        run_info.add_data(
+                "title", "User supplied simulation title",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                    s[0] = i.parent()->driver()->config().Output.title;
+                });
+        run_info.add_data(
+                "total_ion_count", "Total number of simulated ions",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                [](const mcinfo_data_node &i, std::vector<uint64_t> &s) {
+                    s[0] = i.parent()->driver()->getSim()->ion_count();
+                });
+        run_info.add_data(
+                "json_config", "JSON formatted simulation options",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                    s[0] = i.parent()->driver()->config().toJSON();
+                },
+                true);
+        mcinfo &version_info = run_info.add_group("version_info", "opentrim version & build info");
         {
-            mcinfo &p1 = p.children_.find("version_info")->second;
-            p1["name"] = { driver_, mcinfo::string, "code name",
-                           [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                               s.resize(1);
-                               s[0] = std::string(mcdriver::version_info().project_name);
-                               d = { 1 };
-                           } };
-            p1["version"] = { driver_, mcinfo::string, "code version",
-                              [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                  s.resize(1);
-                                  s[0] = std::string(mcdriver::version_info().version);
-                                  d = { 1 };
-                              } };
-            p1["git_tag"] = { driver_, mcinfo::string, "git describe --tags output",
-                              [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                  s.resize(1);
-                                  s[0] = std::string(mcdriver::version_info().git_tag);
-                                  d = { 1 };
-                              } };
-            p1["compiler"] = { driver_, mcinfo::string, "C++ compiler",
-                               [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                   s.resize(1);
-                                   s[0] = std::string(mcdriver::version_info().compiler_id);
-                                   d = { 1 };
-                               } };
-            p1["compiler_version"] = { driver_, mcinfo::string, "C++ compiler_version",
-                                       [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                           s.resize(1);
-                                           s[0] = std::string(
-                                                   mcdriver::version_info().compiler_version);
-                                           d = { 1 };
-                                       } };
-            p1["build_system"] = { driver_, mcinfo::string, "System used for building the code",
-                                   [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                       s.resize(1);
-                                       s[0] = std::string(mcdriver::version_info().system_id);
-                                       d = { 1 };
-                                   } };
-            p1["build_time"] = { driver_, mcinfo::string, "build time",
-                                 [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                     s.resize(1);
-                                     s[0] = std::string(mcdriver::version_info().build_time);
-                                     d = { 1 };
-                                 } };
+            version_info.add_data(
+                    "name", "Executable name",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                    [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        s[0] = mcdriver::version_info().project_name;
+                    });
+            version_info.add_data(
+                    "version", "Executable version",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                    [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        s[0] = mcdriver::version_info().version;
+                    });
+            version_info.add_data(
+                    "git_tag", "git describe --tags output",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                    [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        s[0] = mcdriver::version_info().git_tag;
+                    });
+            version_info.add_data(
+                    "compiler", "C++ compiler",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                    [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        s[0] = mcdriver::version_info().compiler_id;
+                    });
+            version_info.add_data(
+                    "compiler_version", "C++ compiler_version",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                    [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        s[0] = mcdriver::version_info().compiler_version;
+                    });
+            version_info.add_data(
+                    "build_system", "System used for building the code",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                    [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        s[0] = mcdriver::version_info().system_id;
+                    });
+            version_info.add_data(
+                    "build_time", "Build timestamp",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                    [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        s[0] = mcdriver::version_info().build_time;
+                    });
         }
-        p["run_history"] = { driver_, mcinfo::json, "JSON formattet run history",
-                             [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                 s.resize(1);
-                                 ojson j = i.driver()->run_history();
-                                 std::ostringstream os;
-                                 os << j.dump(4) << std::endl;
-                                 s[0] = os.str();
-                                 d = { 1 };
-                             } };
-        p["rng_state"] = { driver_, "random generator state",
-                           [](const mcinfo &ii, std::vector<uint64_t> &s, dim_t &d) {
-                               const auto &rngstate = ii.driver()->getSim()->rngState();
-                               // make an element copy, because std::array is not supported
-                               s.resize(rngstate.size());
-                               for (int i = 0; i < rngstate.size(); ++i)
-                                   s[i] = rngstate[i];
-                               d.resize(1);
-                               d[0] = rngstate.size();
-                           } };
+        run_info.add_data(
+                "run_history", "JSON formattet run history",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                    ojson j = i.parent()->driver()->run_history();
+                    std::ostringstream os;
+                    os << j.dump(4) << std::endl;
+                    s[0] = os.str();
+                },
+                true);
+        run_info.add_data(
+                "rng_state", "random generator state",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                    d = { i.parent()->driver()->getSim()->rngState().size() };
+                },
+                [](const mcinfo_data_node &i, std::vector<uint64_t> &s) {
+                    const auto &rngstate = i.parent()->driver()->getSim()->rngState();
+                    // make an element copy, because std::array is not supported
+                    for (size_t i = 0; i < rngstate.size(); ++i)
+                        s[i] = rngstate[i];
+                });
     }
 
     // 2. target
-    (*this)["target"] = { driver_, mcinfo::group };
     {
-        mcinfo &p = children_.find("target")->second;
-        // target/grid
-        p["grid"] = { driver_, mcinfo::group };
+        mcinfo &target = add_group("target", "Target information");
         {
-            mcinfo &p1 = p.children_.find("grid")->second;
-            p1["X"] = { driver_, "x-axis grid",
-                        [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                            s = i.driver_->getSim()->getTarget().grid().x();
-                            d = { s.size() };
-                        } };
-            p1["Y"] = { driver_, "y-axis grid",
-                        [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                            s = i.driver_->getSim()->getTarget().grid().y();
-                            d = { s.size() };
-                        } };
-            p1["Z"] = { driver_, "z-axis grid",
-                        [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                            s = i.driver_->getSim()->getTarget().grid().z();
-                            d = { s.size() };
-                        } };
-            p1["cell_xyz"] = { driver_, "Cell center coordinates",
-                               [](const mcinfo &i, std::vector<float> &buff, dim_t &d) {
-                                   const auto &grid = i.driver_->getSim()->getTarget().grid();
-                                   int rows = grid.x().size() - 1;
-                                   int cols = grid.y().size() - 1;
-                                   int layers = grid.z().size() - 1;
-                                   buff.resize(3 * grid.ncells());
+            mcinfo &grid = target.add_group("grid", "Simulation spatial grid");
+            grid.add_data(
+                    "X", "x-axis grid",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().grid().x().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        s = i.parent()->driver()->getSim()->getTarget().grid().x();
+                    });
+            grid.add_data(
+                    "Y", "y-axis grid",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().grid().y().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        s = i.parent()->driver()->getSim()->getTarget().grid().y();
+                    });
+            grid.add_data(
+                    "Z", "z-axis grid",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().grid().z().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        s = i.parent()->driver()->getSim()->getTarget().grid().z();
+                    });
+            grid.add_data(
+                    "cell_xyz", "Cell center coordinates",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { 3,
+                              (size_t)i.parent()->driver()->getSim()->getTarget().grid().ncells() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        s = i.parent()->driver()->getSim()->getTarget().grid().z();
+                        const auto &grid = i.parent()->driver()->getSim()->getTarget().grid();
+                        int rows = grid.x().size() - 1;
+                        int cols = grid.y().size() - 1;
+                        int layers = grid.z().size() - 1;
 
-                                   for (int i = 0; i < rows; i++)
-                                       for (int j = 0; j < cols; j++)
-                                           for (int k = 0; k < layers; k++) {
-                                               int l = (i * cols + j) * layers + k;
-                                               int m = l;
-                                               buff[m] = 0.5f * (grid.x()[i] + grid.x()[i + 1]);
-                                               m += grid.ncells();
-                                               buff[m] = 0.5f * (grid.y()[j] + grid.y()[j + 1]);
-                                               m += grid.ncells();
-                                               buff[m] = 0.5f * (grid.z()[k] + grid.z()[k + 1]);
-                                           }
-                                   d = { 3, (size_t)grid.ncells() };
-                               } };
+                        for (int i = 0; i < rows; i++)
+                            for (int j = 0; j < cols; j++)
+                                for (int k = 0; k < layers; k++) {
+                                    int l = (i * cols + j) * layers + k;
+                                    int m = l;
+                                    s[m] = 0.5f * (grid.x()[i] + grid.x()[i + 1]);
+                                    m += grid.ncells();
+                                    s[m] = 0.5f * (grid.y()[j] + grid.y()[j + 1]);
+                                    m += grid.ncells();
+                                    s[m] = 0.5f * (grid.z()[k] + grid.z()[k + 1]);
+                                }
+                    });
         }
-
-        // target/materials
-        p["materials"] = { driver_, mcinfo::group };
         {
-            mcinfo &p1 = p.children_.find("materials")->second;
-            p1["name"] = { driver_, mcinfo::string, "name of material",
-                           [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                               const auto &mat = i.driver()->getSim()->getTarget().materials();
-                               s.resize(mat.size());
-                               for (int k = 0; k < mat.size(); ++k)
-                                   s[k] = mat[k]->name();
-                               d = { s.size() };
-                           } };
-            p1["atomic_density"] = { driver_, "atomic density [at/nm^3]",
-                                     [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                         const auto &mat =
-                                                 i.driver()->getSim()->getTarget().materials();
-                                         s.resize(mat.size());
-                                         for (int k = 0; k < mat.size(); ++k)
-                                             s[k] = mat[k]->atomicDensity();
-                                         d = { s.size() };
-                                     } };
-            p1["mass_density"] = { driver_, "mass density [g/cm^3]",
-                                   [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                       const auto &mat =
-                                               i.driver()->getSim()->getTarget().materials();
-                                       s.resize(mat.size());
-                                       for (int k = 0; k < mat.size(); ++k)
-                                           s[k] = mat[k]->massDensity();
-                                       d = { s.size() };
-                                   } };
-            p1["atomic_radius"] = { driver_, "atomic radius [nm]",
-                                    [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                        const auto &mat =
-                                                i.driver()->getSim()->getTarget().materials();
-                                        s.resize(mat.size());
-                                        for (int k = 0; k < mat.size(); ++k)
-                                            s[k] = mat[k]->atomicRadius();
-                                        d = { s.size() };
-                                    } };
+            mcinfo &materials = target.add_group("materials", "Materials of the simulation");
+            materials.add_data(
+                    "name", "Material name",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().materials().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        const auto &mat = i.parent()->driver()->getSim()->getTarget().materials();
+                        for (size_t k = 0; k < mat.size(); ++k)
+                            s[k] = mat[k]->name();
+                    });
+            materials.add_data(
+                    "atomic_density", "Material atomic density [at/nm^3]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().materials().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        const auto &mat = i.parent()->driver()->getSim()->getTarget().materials();
+                        for (size_t k = 0; k < mat.size(); ++k)
+                            s[k] = mat[k]->atomicDensity();
+                    });
+            materials.add_data(
+                    "mass_density", "Material mass density [g/cm^3]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().materials().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        const auto &mat = i.parent()->driver()->getSim()->getTarget().materials();
+                        for (size_t k = 0; k < mat.size(); ++k)
+                            s[k] = mat[k]->massDensity();
+                    });
+            materials.add_data(
+                    "atomic_radius", "Material atomic radius [nm]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().materials().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        const auto &mat = i.parent()->driver()->getSim()->getTarget().materials();
+                        for (size_t k = 0; k < mat.size(); ++k)
+                            s[k] = mat[k]->atomicRadius();
+                    });
         }
-
-        // target/atoms
-        p["atoms"] = { driver_, mcinfo::group };
         {
-            mcinfo &p1 = p.children_.find("atoms")->second;
-            p1["label"] = { driver_, mcinfo::string,
-                            "label = [Atom (Chemical symbol)] in [Material]",
-                            [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                s = i.driver()->getSim()->getTarget().atom_labels();
-                                d = { s.size() };
-                            } };
-            p1["symbol"] = { driver_, mcinfo::string, "Chemical symbol",
-                             [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                 const auto &atoms = i.driver()->getSim()->getTarget().atoms();
-                                 s.resize(atoms.size());
-                                 for (int k = 0; k < atoms.size(); ++k)
-                                     s[k] = atoms[k]->symbol();
-                                 d = { s.size() };
-                             } };
-            p1["Z"] = { driver_, "Atomic number",
-                        [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                            const auto &atoms = i.driver()->getSim()->getTarget().atoms();
-                            s.resize(atoms.size());
-                            for (int k = 0; k < atoms.size(); ++k)
-                                s[k] = atoms[k]->Z();
-                            d = { s.size() };
-                        } };
-            p1["M"] = { driver_, "Atomic mass",
-                        [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                            const auto &atoms = i.driver()->getSim()->getTarget().atoms();
-                            s.resize(atoms.size());
-                            for (int k = 0; k < atoms.size(); ++k)
-                                s[k] = atoms[k]->M();
-                            d = { s.size() };
-                        } };
-            p1["Ed"] = { driver_, "Displacement energy [eV]",
-                         [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                             const auto &atoms = i.driver()->getSim()->getTarget().atoms();
-                             s.resize(atoms.size());
-                             for (int k = 0; k < atoms.size(); ++k)
-                                 s[k] = atoms[k]->Ed();
-                             d = { s.size() };
-                         } };
-            p1["El"] = { driver_, "Lattice Binding energy [eV]",
-                         [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                             const auto &atoms = i.driver()->getSim()->getTarget().atoms();
-                             s.resize(atoms.size());
-                             for (int k = 0; k < atoms.size(); ++k)
-                                 s[k] = atoms[k]->El();
-                             d = { s.size() };
-                         } };
-            p1["Es"] = { driver_, "Surface binding energy [eV]",
-                         [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                             const auto &atoms = i.driver()->getSim()->getTarget().atoms();
-                             s.resize(atoms.size());
-                             for (int k = 0; k < atoms.size(); ++k)
-                                 s[k] = atoms[k]->Es();
-                             d = { s.size() };
-                         } };
-            p1["Er"] = { driver_, "Replacement energy [eV]",
-                         [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                             const auto &atoms = i.driver()->getSim()->getTarget().atoms();
-                             s.resize(atoms.size());
-                             for (int k = 0; k < atoms.size(); ++k)
-                                 s[k] = atoms[k]->Er();
-                             d = { s.size() };
-                         } };
-            p1["Rc"] = { driver_, "Recombination radius [nm]",
-                         [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                             const auto &atoms = i.driver()->getSim()->getTarget().atoms();
-                             s.resize(atoms.size());
-                             for (int k = 0; k < atoms.size(); ++k)
-                                 s[k] = atoms[k]->Rc();
-                             d = { s.size() };
-                         } };
+            mcinfo &atoms = target.add_group("atoms", "Atoms of the simulation");
+            atoms.add_data(
+                    "label", "Atom label = [Chemical symbol] in [Material]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().atoms().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        s = i.parent()->driver()->getSim()->getTarget().atom_labels();
+                    });
+            atoms.add_data(
+                    "symbol", "Chemical symbol",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().atoms().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        const auto &atoms = i.parent()->driver()->getSim()->getTarget().atoms();
+                        for (size_t k = 0; k < atoms.size(); ++k)
+                            s[k] = atoms[k]->symbol();
+                    });
+            atoms.add_data(
+                    "Z", "Atomic number",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().atoms().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        const auto &atoms = i.parent()->driver()->getSim()->getTarget().atoms();
+                        for (size_t k = 0; k < atoms.size(); ++k)
+                            s[k] = atoms[k]->Z();
+                    });
+            atoms.add_data(
+                    "M", "Atomic mass",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().atoms().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        const auto &atoms = i.parent()->driver()->getSim()->getTarget().atoms();
+                        for (size_t k = 0; k < atoms.size(); ++k)
+                            s[k] = atoms[k]->M();
+                    });
+            atoms.add_data(
+                    "Ed", "Displacement energy [eV]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().atoms().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        const auto &atoms = i.parent()->driver()->getSim()->getTarget().atoms();
+                        for (size_t k = 0; k < atoms.size(); ++k)
+                            s[k] = atoms[k]->Ed();
+                    });
+            atoms.add_data(
+                    "El", "Lattice binding energy [eV]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().atoms().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        const auto &atoms = i.parent()->driver()->getSim()->getTarget().atoms();
+                        for (size_t k = 0; k < atoms.size(); ++k)
+                            s[k] = atoms[k]->El();
+                    });
+            atoms.add_data(
+                    "Es", "Surface binding energy [eV]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().atoms().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        const auto &atoms = i.parent()->driver()->getSim()->getTarget().atoms();
+                        for (size_t k = 0; k < atoms.size(); ++k)
+                            s[k] = atoms[k]->Es();
+                    });
+            atoms.add_data(
+                    "Er", "Replacement energy [eV]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().atoms().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        const auto &atoms = i.parent()->driver()->getSim()->getTarget().atoms();
+                        for (size_t k = 0; k < atoms.size(); ++k)
+                            s[k] = atoms[k]->Er();
+                    });
+            atoms.add_data(
+                    "Rc", "Recombination radius [nm]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { i.parent()->driver()->getSim()->getTarget().atoms().size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        const auto &atoms = i.parent()->driver()->getSim()->getTarget().atoms();
+                        for (size_t k = 0; k < atoms.size(); ++k)
+                            s[k] = atoms[k]->Rc();
+                    });
         }
-
         if (driver()->config().Output.store_dedx) {
             // target/dedx
-
-            p["dedx"] = { driver_, mcinfo::group };
-            {
-                mcinfo &p1 = p.children_.find("dedx")->second;
-                p1["erg"] = { driver_, "dEdx table energy grid [eV]",
-                              [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                  s.resize(dedx_erange::size());
-                                  for (dedx_iterator k; k < k.end(); k++)
-                                      s[k] = *k;
-                                  d = { s.size() };
-                              } };
-                p1["eloss"] = {
-                    driver_, "electronic dEdx values [eV/nm], array [ions x materials x energy]",
-                    [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                        ArrayND<dedx_interp *> D = i.driver()->getSim()->get_dedx_calc().dedx();
-                        d.resize(3);
-                        d[0] = D.dim()[0];
-                        d[1] = D.dim()[1];
-                        d[2] = dedx_erange::size();
-                        size_t n = d[0] * d[1] * d[2];
-                        s.resize(n);
-                        for (int i = 0; i < d[0]; ++i)
-                            for (int j = 0; j < d[1]; ++j) {
+            mcinfo &dedx = target.add_group("dedx", "Stopping & Straggling data");
+            dedx.add_data(
+                    "erg", "dEdx table energy grid [eV]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { dedx_erange::size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        for (dedx_iterator k; k < k.end(); k++)
+                            s[k] = *k;
+                    });
+            dedx.add_data(
+                    "eloss", "electronic dEdx values [eV/nm], array [ions x materials x energy]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        auto &dim = i.parent()->driver()->getSim()->get_dedx_calc().dedx().dim();
+                        d = { dim[0], dim[1], dedx_erange::size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        auto D = i.parent()->driver()->getSim()->get_dedx_calc().dedx();
+                        mcinfo_data_node::dim_t d = { D.dim()[0], D.dim()[1], dedx_erange::size() };
+                        for (uint i = 0; i < d[0]; ++i)
+                            for (uint j = 0; j < d[1]; ++j) {
                                 if (D(i, j)) {
                                     memcpy(s.data() + (i * d[1] + j) * d[2], D(i, j)->data().data(),
                                            dedx_erange::size() * sizeof(float));
                                 }
                             }
-                    }
-                };
-                p1["strag"] = { driver_,
-                                "electronic straggling [eV], array [ions x materials x energy]",
-                                [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                    ArrayND<straggling_interp *> D =
-                                            i.driver()->getSim()->get_dedx_calc().de_strag();
-                                    d.resize(3);
-                                    d[0] = D.dim()[0];
-                                    d[1] = D.dim()[1];
-                                    d[2] = dedx_erange::size();
-                                    size_t n = d[0] * d[1] * d[2];
-                                    s.resize(n, 0.f);
-                                    for (int i = 0; i < d[0]; ++i)
-                                        for (int j = 0; j < d[1]; ++j) {
-                                            if (D(i, j)) {
-                                                memcpy(s.data() + (i * d[1] + j) * d[2],
-                                                       D(i, j)->data().data(),
-                                                       dedx_erange::size() * sizeof(float));
-                                            }
-                                        }
-                                } };
-            }
+                    });
 
-            // target/flight_path
-            p["flight_path"] = { driver_, mcinfo::group };
-            {
-                mcinfo &p1 = p.children_.find("flight_path")->second;
-                p1["erg"] = { driver_, "flight path table energy grid [eV]",
-                              [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                  s.resize(flight_path_calc::fp_tbl_erange::size());
-                                  for (flight_path_calc::fp_tbl_iterator k; k < k.end(); k++)
-                                      s[k] = *k;
-                                  d = { s.size() };
-                              } };
+            dedx.add_data(
+                    "strag", "electronic straggling [eV], array [ions x materials x energy]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        auto &dim =
+                                i.parent()->driver()->getSim()->get_dedx_calc().de_strag().dim();
+                        d = { dim[0], dim[1], dedx_erange::size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        auto D = i.parent()->driver()->getSim()->get_dedx_calc().de_strag();
+                        mcinfo_data_node::dim_t d = { D.dim()[0], D.dim()[1], dedx_erange::size() };
+                        for (uint i = 0; i < d[0]; ++i)
+                            for (uint j = 0; j < d[1]; ++j) {
+                                if (D(i, j)) {
+                                    memcpy(s.data() + (i * d[1] + j) * d[2], D(i, j)->data().data(),
+                                           dedx_erange::size() * sizeof(float));
+                                }
+                            }
+                    });
 
-                p1["mfp"] = { driver_, "mean free path [nm], array [ions x materials x energy]",
-                              [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                  ArrayNDf D = i.driver()->getSim()->get_fp_calc().mfp();
-                                  d = D.dim();
-                                  size_t n = D.size();
-                                  s.resize(n);
-                                  memcpy(&s[0], D.data(), n * sizeof(float));
-                              } };
-
-                p1["ipmax"] = { driver_,
-                                "max impact parameter [nm], array [ions x materials x energy]",
-                                [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                    ArrayNDf D = i.driver()->getSim()->get_fp_calc().ipmax();
-                                    d = D.dim();
-                                    size_t n = D.size();
-                                    s.resize(n);
-                                    memcpy(&s[0], D.data(), n * sizeof(float));
-                                } };
-
-                p1["fpmax"] = { driver_, "max flight path [nm], array [ions x materials x energy]",
-                                [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                    ArrayNDf D = i.driver()->getSim()->get_fp_calc().fpmax();
-                                    d = D.dim();
-                                    size_t n = D.size();
-                                    s.resize(n);
-                                    memcpy(&s[0], D.data(), n * sizeof(float));
-                                } };
-            }
+            mcinfo &flight_path = target.add_group("flight_path", "Flight path data");
+            flight_path.add_data(
+                    "erg", "flight path table energy grid [eV]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = { flight_path_calc::fp_tbl_erange::size() };
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        for (flight_path_calc::fp_tbl_iterator k; k < k.end(); k++)
+                            s[k] = *k;
+                    });
+            flight_path.add_data(
+                    "mfp", "mean free path [nm], array [ions x materials x energy]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = i.parent()->driver()->getSim()->get_fp_calc().mfp().dim();
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        ArrayNDf D = i.parent()->driver()->getSim()->get_fp_calc().mfp();
+                        s.assign(D.data(), D.data() + D.size());
+                    });
+            flight_path.add_data(
+                    "ipmax", "max impact parameter [nm], array [ions x materials x energy]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = i.parent()->driver()->getSim()->get_fp_calc().ipmax().dim();
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        ArrayNDf D = i.parent()->driver()->getSim()->get_fp_calc().ipmax();
+                        s.assign(D.data(), D.data() + D.size());
+                    });
+            flight_path.add_data(
+                    "fpmax", "max flight path [nm], array [ions x materials x energy]",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        d = i.parent()->driver()->getSim()->get_fp_calc().fpmax().dim();
+                    },
+                    [](const mcinfo_data_node &i, std::vector<float> &s) {
+                        ArrayNDf D = i.parent()->driver()->getSim()->get_fp_calc().fpmax();
+                        s.assign(D.data(), D.data() + D.size());
+                    });
         }
     }
 
-    // 3. ion beam
-    (*this)["ion_beam"] = { driver_, mcinfo::group };
+    // 3. ion_beam
     {
-        mcinfo &p = children_.find("ion_beam")->second;
-        p["E0"] = {
-            driver_, "Mean energy [eV]",
-            [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                s.resize(1);
-                s[0] = i.driver_->getSim()->getSource().getParameters().energy_distribution.center;
-                d = { 1 };
-            }
-        };
-
-        p["Z"] = { driver_, "Atomic number", [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                      s.resize(1);
-                      s[0] = i.driver_->getSim()->getSource().getParameters().ion.atomic_number;
-                      d = { 1 };
-                  } };
-
-        p["M"] = { driver_, "Atomic mass [emu]",
-                   [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                       s.resize(1);
-                       s[0] = i.driver_->getSim()->getSource().getParameters().ion.atomic_mass;
-                       d = { 1 };
-                   } };
-
-        p["dir0"] = { driver_, "Mean direction",
-                      [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                          s.resize(3);
-                          const auto &p = i.driver_->getSim()->getSource().getParameters();
-                          s[0] = p.angular_distribution.center.x();
-                          s[1] = p.angular_distribution.center.y();
-                          s[2] = p.angular_distribution.center.z();
-                          d = { 3 };
-                      } };
-
-        p["x0"] = { driver_, "Mean position", [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                       s.resize(3);
-                       const auto &p = i.driver_->getSim()->getSource().getParameters();
-                       s[0] = p.spatial_distribution.center.x();
-                       s[1] = p.spatial_distribution.center.y();
-                       s[2] = p.spatial_distribution.center.z();
-                       d = { 3 };
-                   } };
+        mcinfo &ion_beam = add_group("ion_beam", "Ion beam parameters");
+        ion_beam.add_data(
+                "E0", "Mean energy [eV]",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                [](const mcinfo_data_node &i, std::vector<float> &s) {
+                    s[0] = i.parent()
+                                   ->driver()
+                                   ->getSim()
+                                   ->getSource()
+                                   .getParameters()
+                                   .energy_distribution.center;
+                });
+        ion_beam.add_data(
+                "Z", "Atomic number",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                [](const mcinfo_data_node &i, std::vector<float> &s) {
+                    s[0] = i.parent()
+                                   ->driver()
+                                   ->getSim()
+                                   ->getSource()
+                                   .getParameters()
+                                   .ion.atomic_number;
+                });
+        ion_beam.add_data(
+                "M", "Atomic mass [emu]",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                [](const mcinfo_data_node &i, std::vector<float> &s) {
+                    s[0] = i.parent()
+                                   ->driver()
+                                   ->getSim()
+                                   ->getSource()
+                                   .getParameters()
+                                   .ion.atomic_mass;
+                });
+        ion_beam.add_data(
+                "dir0", "Mean direction",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 3 }; },
+                [](const mcinfo_data_node &i, std::vector<float> &s) {
+                    const auto &p = i.parent()->driver()->getSim()->getSource().getParameters();
+                    s[0] = p.angular_distribution.center.x();
+                    s[1] = p.angular_distribution.center.y();
+                    s[2] = p.angular_distribution.center.z();
+                });
+        ion_beam.add_data(
+                "x0", "Mean position",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 3 }; },
+                [](const mcinfo_data_node &i, std::vector<float> &s) {
+                    const auto &p = i.parent()->driver()->getSim()->getSource().getParameters();
+                    s[0] = p.spatial_distribution.center.x();
+                    s[1] = p.spatial_distribution.center.y();
+                    s[2] = p.spatial_distribution.center.z();
+                });
     }
 
     // 4. tally
-    (*this)["tally"] = { driver_, mcinfo::group };
     {
-        mcinfo &p = children_.find("tally")->second;
+        mcinfo &tally_grp = add_group("tally", "Tally data");
 
         std::map<std::string, std::map<std::string, int>> tmap;
         int k = 1;
@@ -414,185 +440,187 @@ mcinfo::mcinfo(const mcdriver *d) : driver_(d), type_(mcinfo::group)
         }
 
         for (const auto &tgroup : tmap) {
-            p[tgroup.first] = { driver_, mcinfo::group };
-            mcinfo &p1 = p.children_.find(tgroup.first)->second;
+            mcinfo &tg = tally_grp.add_group(tgroup.first, "");
             for (const auto &tname : tgroup.second) {
                 int it = tname.second;
-                p1[tname.first] = { driver_, tally::arrayDescription(it), it };
+                tg.add_data(
+                        tname.first, tally::arrayDescription(it),
+                        [it](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                            d = i.parent()->driver()->getSim()->getTally().at(it).dim();
+                        },
+                        it);
             }
         }
 
-        p["totals"] = { driver_, mcinfo::group };
-        {
-            mcinfo &p1 = p.children_.find("totals")->second;
-            p1["data"] = { driver_, "tally totals per atom", 0 };
-            p1["column_names"] = { driver_, mcinfo::string, "names of totals",
-                                   [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                       s = i.driver_->getSim()->getTally().arrayNames();
-                                       d = { s.size() };
-                                   } };
-        }
+        mcinfo &totals = tally_grp.add_group("totals", "Tally totals");
+        totals.add_data(
+                "data", "tally totals per atom",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                    d = i.parent()->driver()->getSim()->getTally().at(0).dim();
+                },
+                0);
+        totals.add_data(
+                "column_names", "names of totals",
+                [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                    d = { i.parent()->driver()->getSim()->getTally().arrayNames().size() };
+                },
+                [](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                    s = i.parent()->driver()->getSim()->getTally().arrayNames();
+                });
     }
 
     // 5. user_tally
-    (*this)["user_tally"] = { driver_, mcinfo::group };
     {
-        mcinfo &p = children_.find("user_tally")->second;
-
+        mcinfo &ut_root = add_group("user_tally", "User-defined tallies");
         const auto &utv = driver_->getSim()->getUserTally();
 
-        for (int iut = 0; iut < utv.size(); ++iut) { // only if a user tally has been defined
-
+        for (int iut = 0; iut < (int)utv.size(); ++iut) {
             const user_tally *ut = utv[iut];
+            mcinfo &utg = ut_root.add_group(ut->id(), "");
 
-            p[ut->id()] = { driver_, mcinfo::group };
+            utg.add_data(
+                    "data", "bin data per ion",
+                    [iut](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        const user_tally *ut = i.parent()->driver()->getSim()->getUserTally()[iut];
+                        if (ut)
+                            d = ut->data().dim();
+                    },
+                    -1, iut);
+
+            utg.add_data(
+                    "description", "Tally description",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                    [iut](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        const user_tally *ut = i.parent()->driver()->getSim()->getUserTally()[iut];
+                        s[0] = ut->description();
+                    });
+
             {
-                mcinfo &p1 = p.children_.find(ut->id())->second;
-
-                p1["data"] = { driver_, "bin data per ion", -1, iut };
-
-                p1["decription"] = { driver_, mcinfo::string, "Tally description",
-                                     [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                         const user_tally *ut =
-                                                 i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                                         s.resize(1);
-                                         s[0] = ut->description();
-                                         d = { 1 };
-                                     },
-                                     iut };
-
-                p1["coordinate_system"] = { driver_, mcinfo::group };
-                {
-                    mcinfo &p2 = p1.children_.find("coordinate_system")->second;
-
-                    // 3 x 3D vectors that define the coordinate system of the user_tally
-                    p2["zaxis"] = { driver_, "Vector parallel to the z-axis direction",
-                                    [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                        const user_tally *ut =
-                                                i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                                        const vector3 &v = ut->cs().zaxis;
-                                        s = { v.x(), v.y(), v.z() };
-                                        d = { 3 };
-                                    },
-                                    iut };
-
-                    p2["xzvector"] = {
-                        driver_, "Vector on the xz-plane",
-                        [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                mcinfo &cs =
+                        utg.add_group("coordinate_system", "Coordinate system of the user tally");
+                cs.add_data(
+                        "zaxis", "Vector parallel to the z-axis direction",
+                        [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 3 }; },
+                        [iut](const mcinfo_data_node &i, std::vector<float> &s) {
                             const user_tally *ut =
-                                    i.driver_->getSim()->getUserTally()[i.extra_idx1_];
+                                    i.parent()->driver()->getSim()->getUserTally()[iut];
+                            const vector3 &v = ut->cs().zaxis;
+                            s = { v.x(), v.y(), v.z() };
+                        });
+                cs.add_data(
+                        "xzvector", "Vector on the xz-plane",
+                        [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 3 }; },
+                        [iut](const mcinfo_data_node &i, std::vector<float> &s) {
+                            const user_tally *ut =
+                                    i.parent()->driver()->getSim()->getUserTally()[iut];
                             const vector3 &v = ut->cs().xzvector;
                             s = { v.x(), v.y(), v.z() };
-                            d = { 3 };
-                        },
-                        iut
-                    };
-
-                    p2["origin"] = { driver_, "Coordinate system origin",
-                                     [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
-                                         const user_tally *ut =
-                                                 i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                                         const vector3 &v = ut->cs().origin;
-                                         s = { v.x(), v.y(), v.z() };
-                                         d = { 3 };
-                                     },
-                                     iut };
-                }
-
-                // Event
-                p1["event"] = { driver_, mcinfo::string, "Tally event",
-                                [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                    const user_tally *ut =
-                                            i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                                    s.resize(1);
-                                    s[0] = event_name(ut->event());
-                                    d = { 1 };
-                                },
-                                iut };
-
-                p1["event_decription"] = {
-                    driver_, mcinfo::string, "Tally event description",
-                    [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                        const user_tally *ut = i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                        s.resize(1);
-                        s[0] = event_description(ut->event());
-                        d = { 1 };
-                    },
-                    iut
-                };
-
-                // Bin names
-                p1["bin_names"] = { driver_, mcinfo::string, "Bin names",
-                                    [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                                        const user_tally *ut =
-                                                i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                                        s = ut->bin_names();
-                                        d = { s.size() };
-                                    },
-                                    iut };
-                p1["bin_descriptions"] = {
-                    driver_, mcinfo::string, "Bin descriptions",
-                    [](const mcinfo &i, std::vector<std::string> &s, dim_t &d) {
-                        const user_tally *ut = i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                        s = ut->bin_descriptions();
-                        d = { s.size() };
-                    },
-                    iut
-                };
-
-                // Save bins
-                p1["bins"] = { driver_, mcinfo::group, "Bin edges" };
-                std::vector<std::string> names = ut->bin_names();
-                std::vector<std::string> desc = ut->bin_descriptions();
-                mcinfo &p2 = p1.children_.find("bins")->second;
-                for (int j = 0; j < names.size(); ++j) {
-                    std::ostringstream os;
-                    os << "Bin edges of dim " << j << " : [" << names[j] << "]";
-
-                    p2[std::to_string(j)] = {
-                        driver_, os.str(),
-                        [](const mcinfo &i, std::vector<float> &s, dim_t &d) {
+                        });
+                cs.add_data(
+                        "origin", "Coordinate system origin",
+                        [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 3 }; },
+                        [iut](const mcinfo_data_node &i, std::vector<float> &s) {
                             const user_tally *ut =
-                                    i.driver_->getSim()->getUserTally()[i.extra_idx1_];
-                            s = ut->bin_edges(i.extra_idx0_);
-                            d = { s.size() };
-                        },
-                        iut
-                    };
-                    p2.children_.find(std::to_string(j))->second.extra_idx0_ = j;
+                                    i.parent()->driver()->getSim()->getUserTally()[iut];
+                            const vector3 &v = ut->cs().origin;
+                            s = { v.x(), v.y(), v.z() };
+                        });
+            }
+
+            utg.add_data(
+                    "event", "Tally event",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                    [iut](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        const user_tally *ut = i.parent()->driver()->getSim()->getUserTally()[iut];
+                        s[0] = event_name(ut->event());
+                    });
+
+            utg.add_data(
+                    "event_description", "Tally event description",
+                    [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) { d = { 1 }; },
+                    [iut](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        const user_tally *ut = i.parent()->driver()->getSim()->getUserTally()[iut];
+                        s[0] = event_description(ut->event());
+                    });
+
+            utg.add_data(
+                    "bin_names", "Bin names",
+                    [iut](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        const user_tally *ut = i.parent()->driver()->getSim()->getUserTally()[iut];
+                        d = { ut->bin_names().size() };
+                    },
+                    [iut](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        const user_tally *ut = i.parent()->driver()->getSim()->getUserTally()[iut];
+                        s = ut->bin_names();
+                    });
+
+            utg.add_data(
+                    "bin_descriptions", "Bin descriptions",
+                    [iut](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                        const user_tally *ut = i.parent()->driver()->getSim()->getUserTally()[iut];
+                        d = { ut->bin_descriptions().size() };
+                    },
+                    [iut](const mcinfo_data_node &i, std::vector<std::string> &s) {
+                        const user_tally *ut = i.parent()->driver()->getSim()->getUserTally()[iut];
+                        s = ut->bin_descriptions();
+                    });
+
+            {
+                mcinfo &bins = utg.add_group("bins", "Bin edges");
+                std::vector<std::string> bin_names = ut->bin_names();
+                for (int j = 0; j < (int)bin_names.size(); ++j) {
+                    std::ostringstream os;
+                    os << "Bin edges of dim " << j << " : [" << bin_names[j] << "]";
+                    bins.add_data(
+                            std::to_string(j), os.str(),
+                            [iut, j](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
+                                const user_tally *ut =
+                                        i.parent()->driver()->getSim()->getUserTally()[iut];
+                                d = { ut->bin_edges(j).size() };
+                            },
+                            [iut, j](const mcinfo_data_node &i, std::vector<float> &s) {
+                                const user_tally *ut =
+                                        i.parent()->driver()->getSim()->getUserTally()[iut];
+                                s = ut->bin_edges(j);
+                            });
                 }
             }
         }
     }
 }
 
-bool mcinfo::get(std::vector<double> &s, std::vector<double> &ds, dim_t &dim) const
+bool mcinfo_data_node::get(std::vector<double> &s, std::vector<double> &ds) const
 {
-    if (driver_->getSim() == nullptr)
+    const mcdriver *D = parent()->driver();
+    if (D == nullptr || D->getSim() == nullptr)
         return false;
+
+    const mccore *S = D->getSim();
 
     ArrayNDd A;
     ArrayNDd dA;
     if (extra_idx0_ >= 0) {
-        A = driver_->getSim()->getTally().at(extra_idx0_);
-        dA = driver_->getSim()->getTallyVar().at(extra_idx0_);
+        A = S->getTally().at(extra_idx0_);
+        dA = S->getTallyVar().at(extra_idx0_);
     } else {
-        const user_tally *ut = driver_->getSim()->getUserTally()[extra_idx1_];
-        const user_tally *dut = driver_->getSim()->getUserTallyVar()[extra_idx1_];
+        const user_tally *ut = S->getUserTally()[extra_idx1_];
+        const user_tally *dut = S->getUserTallyVar()[extra_idx1_];
         if (!ut)
             return false;
         A = ut->data();
         dA = dut->data();
     }
 
-    const size_t &N = driver_->getSim()->ion_count();
+    const size_t &N = S->ion_count();
     s.resize(A.size(), 0.0);
     ds.resize(A.size(), 0.0);
+    if (N == 0)
+        return true;
+
     for (int i = 0; i < A.size(); i++) {
         s[i] = A[i] / N;
         // error in the mean
         ds[i] = (N > 1) ? std::sqrt((dA[i] / N - s[i] * s[i]) / (N - 1)) : 0;
     }
-    dim = A.dim();
     return true;
 }

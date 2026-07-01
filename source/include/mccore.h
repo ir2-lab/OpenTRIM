@@ -167,15 +167,21 @@ protected:
     // ref counter
     std::shared_ptr<int> ref_count_;
 
-    // max # of ion histories to run
-    size_t max_no_ions_;
+    /* variables for multi-threading */
 
-    // shared ion counter
-    std::shared_ptr<std::atomic_size_t> ion_counter_; // shared ion counter
-    std::atomic_size_t thread_ion_counter_; // per thread ion counter
-
+    // shared total ion counter = total # of simulated ion histories
+    std::shared_ptr<std::atomic_size_t> ion_counter_;
     // shared abort flag
-    std::shared_ptr<std::atomic_bool> abort_flag_; // thread safe abort simulation flag
+    std::shared_ptr<std::atomic_bool> abort_flag_;
+    // id of the next simulated ion
+    size_t next_ion_id_{ 1 };
+    // id stride : next_id = id + stride
+    // id stride = number of threads
+    size_t ion_id_stride_{ 1 };
+    // per thread simulated ion counter
+    size_t thread_ion_counter_{ 0 };
+    // max ions to be simulated by this thread
+    size_t thread_max_no_ions_{ 0 };
 
     // shared mutex for tally data
     std::shared_ptr<std::mutex> tally_mutex_;
@@ -196,24 +202,11 @@ public:
     mccore(const mccore &S);
     ~mccore();
 
-    /**
-     * @brief Return the max number of ions to run
-     * This is the total number of histories to be run by all threads
-     * @return the max number of ions to run
-     */
-    size_t max_no_ions() const { return max_no_ions_; }
-    /**
-     * @brief Set the max number of ions to run
-     * This is the total number number of histories to be run by all threads
-     * @param n the number of histories to run
-     */
-    void setMaxIons(size_t n) { max_no_ions_ = n; }
-
     // Number of simulated ion histories
     // This number refers to all threads
     size_t ion_count() const { return *ion_counter_; }
     void setIonCount(size_t n) { *ion_counter_ = n; }
-    // Number of ions run in the current tread
+    size_t next_ion_id() const { return next_ion_id_; }
     size_t thread_ion_count() const { return thread_ion_counter_; }
 
     /// Returns the core simulation parameters
@@ -320,6 +313,40 @@ public:
     void mergeEvents(mccore &other);
 
     /**
+     * @brief Merge the events from a vector of simulation objects
+     *
+     * The streamed events from all objects in @p other are
+     * added to this object's event streams.
+     *
+     * The events in all objects in @p other are cleared.
+     *
+     * @param other a vector of simulation objects
+     */
+    void mergeEvents(std::vector<mccore *> &other);
+
+    /**
+     * @brief Prepare for simulating @p N ion histories
+     *
+     * Initialize internal counters so that the next call
+     * to run() will simulate @p N histories.
+     *
+     * The id of each simulated ion is
+     *
+     *   id = id1 + k * id_stride, k=0,1,...,N-1
+     *
+     * In multi-threaded runs, @p id_stride is set equal to
+     * the number of threads.
+     *
+     * Ion history id is a 1-based index. The 1st simulated ion
+     * has id=1, etc
+     *
+     * @param N # of ions to simulate
+     * @param id1 id of the 1st ion
+     * @param id_stride id allocation stride
+     */
+    void arm(size_t N, size_t id1 = 1, size_t id_stride = 1);
+
+    /**
      * @brief Run the ion transport simulation
      *
      * This function runs the actual Monte-Carlo loop, repeating
@@ -336,7 +363,6 @@ public:
      */
     int run();
 
-    void clear_abort_flag() { *abort_flag_ = false; }
     void abort() { *abort_flag_ = true; }
     bool abort_flag() const { return *abort_flag_; }
 

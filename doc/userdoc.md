@@ -6,6 +6,7 @@
 - \subpage json_config "The JSON configuration file"
 - \subpage out_file "The HDF5 output archive"
 - \subpage tallies
+- \subpage reproducibility
 
 \page cliapp Using the command line application 
 

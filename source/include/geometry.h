@@ -96,8 +96,13 @@ class grid1D : public std::vector<float>
 
     typedef std::vector<float> vec_t;
 
-    float w_, dx_;
+    // total width x(n-1) - x(0)
+    float w_;
+    // if equispaced==true, dx_ is the spacing
+    float dx_;
+    // true if the grid is composed of equally spaced cells
     bool equispaced_;
+    // true for periodic boundary conditions
     bool periodic_;
 
 public:
@@ -126,28 +131,23 @@ public:
         vec_t::assign(x.begin(), x.end());
         w_ = back() - front();
         dx_ = 0;
-        float x0 = front();
-        front() = 0.f;
-        for (int i = 1; i < size(); i++)
-            at(i) += x0;
-        back() = w_;
         equispaced_ = false;
     }
-    /// Create an equidistant grid from x0 to x1 divided in n cells
-    void set(float w, int n)
+    /// Create an equidistant grid from x0 to x0+w divided in n cells
+    void set(float x0, float w, int n)
     {
         resize(n + 1);
-        front() = 0.f;
-        w_ = w;
-        dx_ = w / n;
-        for (int i = 1; i <= n; i++)
-            at(i) = i * dx_;
-        back() = w;
+        front() = x0;
+        back() = x0 + w;
+        w_ = back() - front();
+        dx_ = w_ / n;
+        for (int i = 1; i < n; i++)
+            at(i) = front() + i * dx_;
         equispaced_ = true;
     }
 
     /// Returns true if x is within the grid region
-    bool contains(const float &x) const { return (x >= 0.f) && (x < w_); }
+    bool contains(const float &x) const { return (x >= front()) && (x < back()); }
 
     /**
      * @brief Returns true if x is within the grid region, anticipating periodic boundary conditions
@@ -162,44 +162,28 @@ public:
      */
     bool contains_with_bc(float &x) const
     {
-        if (x < 0.f) {
-            if (periodic_) {
-                do
-                    x += w_;
-                while (x < 0.f);
-                if (x == w_)
-                    x = std::nextafter(w_, std::numeric_limits<float>::lowest());
-                assert(x < w_);
-                return true;
-            } else
-                return false;
-        } else if (x >= w_) {
-            if (periodic_) {
-                do
-                    x -= w_;
-                while (x >= w_);
-                assert(x >= 0.f);
-                return true;
-            } else
-                return false;
-        } else
+        if (periodic_) {
+            apply_bc(x);
             return true;
+        } else
+            return (x >= front()) && (x < back());
     }
+
     void apply_bc(float &x) const
     {
         if (periodic_) {
-            if (x < 0.f) {
+            if (x < front()) {
                 do
                     x += w_;
-                while (x < 0.f);
-                if (x == w_)
-                    x = std::nextafter(w_, std::numeric_limits<float>::lowest());
-                assert(x < w_);
-            } else if (x >= w_) {
+                while (x < front());
+                if (x == back())
+                    x = std::nextafter(back(), std::numeric_limits<float>::lowest());
+                assert(x < back());
+            } else if (x >= back()) {
                 do
                     x -= w_;
-                while (x >= w_);
-                assert(x >= 0.f);
+                while (x >= back());
+                assert(x >= front());
             }
         }
     }
@@ -215,17 +199,17 @@ public:
         if (size() == 2)
             return 0;
         if (equispaced_) {
-            int i = std::floor(x / dx_);
-            if (x < i * dx_)
+            int i = std::floor((x - front()) / dx_);
+            if (x < at(i))
                 i--;
             /*
              * Rounding problem here:
              *
-             * if x is slightly below a boundary xi = i*dx_
-             * then floor(x/dx_) may return i while
+             * if x is slightly below a boundary xi = x0 + i*dx_
+             * then floor((x-x0)/dx_) may return i while
              * the correct would be i-1
              *
-             * The "if (x<i*dx) i--;" statement corrects
+             * The "if (x<xi) i--;" statement corrects
              * that. However it may not be stable/portable
              *
              * Check also:
@@ -283,7 +267,8 @@ public:
     float distance(float x1, float x2) const
     {
         float d = std::abs(x1 - x2);
-        if (periodic_) d = std::min(d, w_ - d);
+        if (periodic_)
+            d = std::min(d, w_ - d);
         return d;
     }
 };
@@ -304,8 +289,8 @@ class grid3D
 
     void calcBox()
     {
-        box_.min() = box3D::VectorType(0.f, 0.f, 0.f);
-        box_.max() = box3D::VectorType(x_.w(), y_.w(), z_.w());
+        box_.min() = box3D::VectorType(x_.front(), y_.front(), z_.front());
+        box_.max() = box3D::VectorType(x_.back(), y_.back(), z_.back());
     }
 
 public:
@@ -314,32 +299,32 @@ public:
     /// Default constructor creates empty grid
     grid3D()
     {
-        x_.set(1.f, 2);
-        y_.set(1.f, 2);
-        z_.set(1.f, 2);
+        x_.set(0.f, 1.f, 2);
+        y_.set(0.f, 1.f, 2);
+        z_.set(0.f, 1.f, 2);
         calcBox();
     }
     /// Copy constructor
     grid3D(const grid3D &g) : x_(g.x_), y_(g.y_), z_(g.z_), box_(g.box_) { }
 
     /// Set the x-axis grid to an equidistant partition of n cells
-    void setX(float w, int n, bool periodic)
+    void setX(float x0, float w, int n, bool periodic)
     {
-        x_.set(w, n);
+        x_.set(x0, w, n);
         calcBox();
         x_.setPeriodic(periodic);
     }
     /// Set the y-axis grid to an equidistant partition of n cells
-    void setY(float w, int n, bool periodic)
+    void setY(float y0, float w, int n, bool periodic)
     {
-        y_.set(w, n);
+        y_.set(y0, w, n);
         calcBox();
         y_.setPeriodic(periodic);
     }
     /// Set the z-axis grid to an equidistant partition of n cells
-    void setZ(float w, int n, bool periodic)
+    void setZ(float z0, float w, int n, bool periodic)
     {
-        z_.set(w, n);
+        z_.set(z0, w, n);
         calcBox();
         z_.setPeriodic(periodic);
     }

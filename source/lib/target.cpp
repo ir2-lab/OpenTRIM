@@ -152,11 +152,12 @@ void target::init()
         m->init();
 }
 
-void target::createGrid(const vector3 &size, const ivector3 &cell_count, const ivector3 &pbc)
+void target::createGrid(const vector3 &origin, const vector3 &size, const ivector3 &cell_count,
+                        const ivector3 &pbc)
 {
-    grid_.setX(size.x(), cell_count.x(), pbc.x());
-    grid_.setY(size.y(), cell_count.y(), pbc.y());
-    grid_.setZ(size.z(), cell_count.z(), pbc.z());
+    grid_.setX(origin.x(), size.x(), cell_count.x(), pbc.x());
+    grid_.setY(origin.y(), size.y(), cell_count.y(), pbc.y());
+    grid_.setZ(origin.z(), size.z(), cell_count.z(), pbc.z());
 
     cells_ = ArrayND<const material *>(grid_.x().size() - 1, grid_.y().size() - 1,
                                        grid_.z().size() - 1);

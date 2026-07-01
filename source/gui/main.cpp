@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    QDataBrowser::initResources();
+    // QDataBrowser::initResources();
 
     // select fusion style if available
     // for consistent look among different platforms

@@ -1,13 +1,17 @@
 /*
  * info_bind.cpp
  *
- * Binds opentrim.Info - the read side of the API.
+ * Binds opentrim.Info, the read side of the API.
  *
- * mcinfo is a self-describing tree: every node carries a type, a description,
- * child nodes, and typed getter lambdas that pull live data from the driver at
- * query time.  Rather than bind one Python attribute per result, we bind the
- * generic node once.  keys() / __getitem__ then walk the whole tree, so any
- * key mcinfo.cpp adds in the future shows up in Python with no change here.
+ * mcinfo is a self-describing tree of nodes: group nodes (mcinfo) hold children,
+ * data nodes (mcinfo_data_node) hold a typed value pulled from the driver at
+ * query time.  We bind one generic Info view over a node, so keys()/__getitem__
+ * walk the whole tree and any key mcinfo.cpp adds later shows up with no change
+ * here.
+ *
+ * mcinfo holds a shared_ptr to the driver, so an Info keeps the driver alive on
+ * its own.  The Python Info view holds a shared_ptr to the root group (which
+ * owns the tree and the driver), so a sub-view stays valid as long as it lives.
  */
 
 #include <pybind11/pybind11.h>
@@ -15,6 +19,7 @@
 #include <pybind11/stl.h>
 
 #include <cstring>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -27,16 +32,17 @@ namespace py = pybind11;
 
 namespace {
 
-const char *type_name(mcinfo::info_t t)
+const char *type_name(const mcinfo_node &n)
 {
-    switch (t) {
-    case mcinfo::group: return "group";
-    case mcinfo::string: return "string";
-    case mcinfo::json: return "json";
-    case mcinfo::real64: return "real64";
-    case mcinfo::real32: return "real32";
-    case mcinfo::uint64: return "uint64";
-    case mcinfo::tally_score: return "tally_score";
+    if (n.is_group())
+        return "group";
+    switch (static_cast<const mcinfo_data_node &>(n).type()) {
+    case mcinfo_data_node::string: return "string";
+    case mcinfo_data_node::json: return "json";
+    case mcinfo_data_node::real64: return "real64";
+    case mcinfo_data_node::real32: return "real32";
+    case mcinfo_data_node::uint64: return "uint64";
+    case mcinfo_data_node::tally_score: return "tally_score";
     default: return "invalid";
     }
 }
@@ -44,7 +50,7 @@ const char *type_name(mcinfo::info_t t)
 // build an owning numpy array shaped by dim.  mcinfo returns copies, so Python
 // never holds a pointer into C++ memory.
 template <class T>
-py::array_t<T> make_array(const std::vector<T> &v, const mcinfo::dim_t &dim)
+py::array_t<T> make_array(const std::vector<T> &v, const std::vector<size_t> &dim)
 {
     std::vector<py::ssize_t> shape(dim.begin(), dim.end());
 
@@ -66,7 +72,6 @@ py::array_t<T> make_array(const std::vector<T> &v, const mcinfo::dim_t &dim)
 // single-element list looks identical to a scalar (both report dim {1}).  these
 // are the string leaves that are genuinely scalar in mcinfo.cpp; everything else
 // (material names, atom symbols, bin names, ...) is a list, even with one entry.
-// a future is_scalar flag on mcinfo would make this lookup unnecessary.
 bool is_scalar_string_key(const std::string &key)
 {
     // "decription" / "event_decription" are spelled that way in mcinfo.cpp -
@@ -79,44 +84,45 @@ bool is_scalar_string_key(const std::string &key)
     return scalar_keys.count(key) != 0;
 }
 
-// read a leaf node's value.  groups are handled by __getitem__ and never reach
-// here.  key is the node's own name, used only to tell scalar strings from lists.
-py::object leaf_value(const mcinfo &n, const std::string &key)
+// read a data node's value.  group nodes are handled by __getitem__ and never
+// reach here.  key is the node's own name, used only to tell scalar strings from
+// lists.
+py::object leaf_value(const mcinfo_data_node &d, const std::string &key)
 {
-    mcinfo::dim_t dim;
-    switch (n.type()) {
-    case mcinfo::string:
-    case mcinfo::json: {
+    std::vector<size_t> dim = d.dim();
+    switch (d.type()) {
+    case mcinfo_data_node::string:
+    case mcinfo_data_node::json: {
         std::vector<std::string> s;
-        n.get(s, dim);
+        d.get(s);
         // json is always a single document; named scalar fields collapse to a
         // plain str.  list-valued fields stay a list even with one element.
-        if (n.type() == mcinfo::json || is_scalar_string_key(key))
+        if (d.type() == mcinfo_data_node::json || is_scalar_string_key(key))
             return py::str(s.empty() ? std::string() : s[0]);
         py::list out;
         for (const auto &x : s)
             out.append(py::str(x));
         return out;
     }
-    case mcinfo::real64: {
+    case mcinfo_data_node::real64: {
         std::vector<double> s;
-        n.get(s, dim);
+        d.get(s);
         return make_array(s, dim);
     }
-    case mcinfo::real32: {
+    case mcinfo_data_node::real32: {
         std::vector<float> s;
-        n.get(s, dim);
+        d.get(s);
         return make_array(s, dim);
     }
-    case mcinfo::uint64: {
+    case mcinfo_data_node::uint64: {
         std::vector<uint64_t> s;
-        n.get(s, dim);
+        d.get(s);
         return make_array(s, dim);
     }
-    case mcinfo::tally_score: {
-        // tally data is returned as (values, sem) - both normalized per ion.
+    case mcinfo_data_node::tally_score: {
+        // tally data is returned as (values, sem), both normalized per ion.
         std::vector<double> s, ds;
-        if (!n.get(s, ds, dim))
+        if (!d.get(s, ds))
             throw std::runtime_error("tally data unavailable; run the simulation first");
         return py::make_tuple(make_array(s, dim), make_array(ds, dim));
     }
@@ -126,32 +132,34 @@ py::object leaf_value(const mcinfo &n, const std::string &key)
 }
 
 // walk the static tree structure for __repr__.  this reads node metadata only
-// (type, name, children) and never calls a getter, so it has no side effects and
-// is safe to call even while a simulation is running.
-void repr_tree(const mcinfo &n, const std::string &prefix, std::string &out)
+// (name, type, children) and never calls a data getter, so it has no side
+// effects and is safe to call even while a simulation is running.
+void repr_tree(const mcinfo &g, const std::string &prefix, std::string &out)
 {
-    const auto &kids = n.children();
-    size_t i = 0, last = kids.size();
-    for (const auto &kv : kids) {
-        bool is_last = (++i == last);
+    std::vector<std::string> keys = g.keys();
+    for (size_t i = 0; i < keys.size(); ++i) {
+        bool is_last = (i + 1 == keys.size());
+        const mcinfo_node *child = g.at(keys[i]);
         out += prefix;
         out += is_last ? "\xe2\x94\x94\xe2\x94\x80\xe2\x94\x80 " // "└── "
                        : "\xe2\x94\x9c\xe2\x94\x80\xe2\x94\x80 "; // "├── "
-        out += kv.first;
+        out += keys[i];
         out += " [";
-        out += type_name(kv.second.type());
+        out += type_name(*child);
         out += "]\n";
-        if (kv.second.type() == mcinfo::group)
-            repr_tree(kv.second, prefix + (is_last ? "    " : "\xe2\x94\x82   "), out);
+        if (child->is_group())
+            repr_tree(static_cast<const mcinfo &>(*child),
+                      prefix + (is_last ? "    " : "\xe2\x94\x82   "), out);
     }
 }
 
-std::string render_tree(const mcinfo &n)
+std::string render_tree(const mcinfo_node &n)
 {
     std::string out = "Info [";
-    out += type_name(n.type());
+    out += type_name(n);
     out += "]\n";
-    repr_tree(n, "", out);
+    if (n.is_group())
+        repr_tree(static_cast<const mcinfo &>(n), "", out);
     return out;
 }
 
@@ -170,23 +178,23 @@ void html_escape(const std::string &in, std::string &out)
 }
 
 // render the tree as nested <details> so Jupyter shows a collapsible view.  like
-// repr_tree this reads metadata only and never calls a getter.
-void html_tree(const mcinfo &n, std::string &out)
+// repr_tree this reads metadata only and never calls a data getter.
+void html_tree(const mcinfo &g, std::string &out)
 {
     out += "<ul style=\"list-style:none;margin:0;padding-left:1.2em\">";
-    for (const auto &kv : n.children()) {
-        const mcinfo &child = kv.second;
+    for (const std::string &key : g.keys()) {
+        const mcinfo_node *child = g.at(key);
         out += "<li>";
-        if (child.type() == mcinfo::group) {
+        if (child->is_group()) {
             out += "<details><summary><b>";
-            html_escape(kv.first, out);
+            html_escape(key, out);
             out += "</b> <span style=\"color:#888\">[group]</span></summary>";
-            html_tree(child, out);
+            html_tree(static_cast<const mcinfo &>(*child), out);
             out += "</details>";
         } else {
-            html_escape(kv.first, out);
+            html_escape(key, out);
             out += " <span style=\"color:#888\">[";
-            out += type_name(child.type());
+            out += type_name(*child);
             out += "]</span>";
         }
         out += "</li>";
@@ -194,14 +202,30 @@ void html_tree(const mcinfo &n, std::string &out)
     out += "</ul>";
 }
 
+// Python-side Info view.  root owns the tree and the driver shared_ptr; node is
+// the position in that tree (root.get() or any descendant).  Copies of the view
+// share the same root, so every sub-view keeps the data alive.
+struct InfoView
+{
+    std::shared_ptr<mcinfo> root;
+    const mcinfo_node *node;
+};
+
+const mcinfo &as_group(const InfoView &self)
+{
+    if (!self.node->is_group())
+        throw py::type_error("this Info node is a value, not a group");
+    return static_cast<const mcinfo &>(*self.node);
+}
+
 } // namespace
 
 void bind_info(py::module_ &m)
 {
-    py::class_<mcinfo> info(m, "Info",
+    py::class_<InfoView> info(m, "Info",
         "Read-only view of simulation results.  Wraps the C++ mcinfo tree.\n\n"
         "Example::\n\n"
-        "    info = opentrim.Info(sim)            # sim is an initialized Driver\n"
+        "    info = opentrim.Info(sim)            # sim is a Driver\n"
         "    v, dv = info[\"tally\"][\"damage_events\"][\"Vacancies\"]\n\n"
         "Tally nodes return (values, sem) numpy tuples normalized per ion.\n"
         "Note: reading results while a Mode A run is in progress may race;\n"
@@ -209,81 +233,77 @@ void bind_info(py::module_ &m)
 
     info.def(py::init([](py::object driver_obj) {
                  DriverWrapper &w = driver_obj.cast<DriverWrapper &>();
-                 // mcinfo's constructor dereferences getSim() (mcinfo.cpp:442),
-                 // so the driver must be initialized before we build the tree.
-                 if (!w.driver().getSim())
-                     throw std::runtime_error(
-                             "driver not initialized; call init(config) before Info(driver)");
-                 return new mcinfo(&w.driver());
+                 // mcinfo holds a shared_ptr to the driver, so the Info keeps it
+                 // alive even if the Python Driver is dropped.
+                 auto root = std::make_shared<mcinfo>(w.driver());
+                 return InfoView{ root, root.get() };
              }),
              py::arg("driver"),
-             // keep the Driver alive as long as this Info exists - mcinfo holds a
-             // raw mcdriver* and reads through it on every access.
-             py::keep_alive<1, 2>(),
-             "Build an Info view over an initialized Driver.");
+             "Build an Info view over a Driver.");
 
     info.def("keys",
-             [](const mcinfo &n) {
-                 std::vector<std::string> k;
-                 for (const auto &kv : n.children())
-                     k.push_back(kv.first);
-                 return k;
-             },
+             [](const InfoView &self) { return as_group(self).keys(); },
              "Available keys at this level, in definition order.");
 
     info.def("__getitem__",
-             [](py::object self, const std::string &key) -> py::object {
-                 const mcinfo &node = self.cast<const mcinfo &>();
-                 // mcinfo::operator[] silently inserts on a missing key
-                 // (mcinfo.h:42), so look it up through children().at() instead.
-                 const mcinfo *child;
-                 try {
-                     child = &node.children().at(key);
-                 } catch (const std::out_of_range &) {
+             [](const InfoView &self, const std::string &key) -> py::object {
+                 const mcinfo &g = as_group(self);
+                 const mcinfo_node *child = g.at(key);
+                 if (!child)
                      throw py::key_error(key);
-                 }
-                 if (child->type() == mcinfo::group)
-                     // return the sub-node, tied to this Info's lifetime.
-                     return py::cast(child, py::return_value_policy::reference_internal, self);
-                 return leaf_value(*child, key);
+                 if (child->is_group())
+                     // sub-view shares this view's root, so it stays valid.
+                     return py::cast(InfoView{ self.root, child });
+                 return leaf_value(static_cast<const mcinfo_data_node &>(*child), key);
              },
              py::arg("key"),
-             "Return a sub-Info for a group, or the value for a leaf node.");
+             "Return a sub-Info for a group, or the value for a data node.");
 
     info.def("__contains__",
-             [](const mcinfo &n, const std::string &key) {
-                 return n.children().find(key) != n.children().end();
+             [](const InfoView &self, const std::string &key) {
+                 return self.node->is_group()
+                         && static_cast<const mcinfo &>(*self.node).contains(key);
              });
 
-    info.def("__len__", [](const mcinfo &n) { return n.children().size(); });
+    info.def("__len__",
+             [](const InfoView &self) {
+                 return self.node->is_group()
+                         ? static_cast<const mcinfo &>(*self.node).size()
+                         : (std::size_t)0;
+             });
 
     info.def("__iter__",
              [](py::object self) { return py::iter(self.attr("keys")()); });
 
     info.def_property_readonly(
-            "type", [](const mcinfo &n) { return std::string(type_name(n.type())); },
+            "type", [](const InfoView &self) { return std::string(type_name(*self.node)); },
             "Node type: group, string, json, real64, real32, uint64, or tally_score.");
 
     info.def_property_readonly(
-            "description", [](const mcinfo &n) { return n.description(); },
+            "description", [](const InfoView &self) { return self.node->description(); },
             "Human-readable description of this node.");
+
+    info.def_property_readonly(
+            "path", [](const InfoView &self) { return self.node->path(); },
+            "Path of this node in the tree, e.g. \"/tally/totals\".");
 
     info.def_static("info_spec", []() { return mcinfo::info_spec(); },
                     "Return the JSON spec of the full info tree structure.");
 
-    // structural tree only - reads node metadata, never calls a getter, so it has
-    // no side effects and is safe to print even while a simulation is running.
-    info.def("__repr__", [](const mcinfo &n) { return render_tree(n); });
-    info.def("__str__", [](const mcinfo &n) { return render_tree(n); });
+    // structural tree only: reads node metadata, never calls a data getter, so
+    // it has no side effects and is safe to print even while a run is active.
+    info.def("__repr__", [](const InfoView &self) { return render_tree(*self.node); });
+    info.def("__str__", [](const InfoView &self) { return render_tree(*self.node); });
 
     // Jupyter rich display.  the protocol method is _repr_html_ (single
     // underscores); same side-effect-free structural walk as __repr__.
-    info.def("_repr_html_", [](const mcinfo &n) {
+    info.def("_repr_html_", [](const InfoView &self) {
         std::string out = "<div style=\"font-family:monospace\"><b>Info</b> "
                           "<span style=\"color:#888\">[";
-        out += type_name(n.type());
+        out += type_name(*self.node);
         out += "]</span>";
-        html_tree(n, out);
+        if (self.node->is_group())
+            html_tree(static_cast<const mcinfo &>(*self.node), out);
         out += "</div>";
         return out;
     });

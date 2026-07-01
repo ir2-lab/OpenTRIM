@@ -16,7 +16,7 @@ PYBIND11_MODULE(_opentrim_core, m)
     m.attr("__version__") = mcdriver::version_info().version;
 
     bind_enums(m);
-    bind_config(m); // keep before bind_driver - Driver.init()/config() use Config
+    bind_config(m); // keep before bind_driver - Driver(config)/config() use Config
     bind_driver(m);
     bind_info(m); // keep after bind_driver - Info(driver) consumes a Driver
 }

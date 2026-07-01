@@ -63,8 +63,7 @@ def big_config():
 @pytest.fixture(scope="session")
 def finished_sim():
     """One completed simulation, shared read-only across tests."""
-    sim = opentrim.Driver()
-    sim.init(make_config())
+    sim = opentrim.Driver(make_config())
     sim.run()
     sim.wait()
     return sim

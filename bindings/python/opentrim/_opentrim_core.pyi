@@ -349,15 +349,25 @@ class Driver:
     """
     Runs an OpenTRIM simulation.  Wraps the C++ mcdriver.
     
+    A driver is created from a Config and is ready to run immediately.
+    
     Example::
     
-        sim = opentrim.Driver()
-        sim.init(config)
+        sim = opentrim.Driver(config)
         sim.run()          # Mode A - non-blocking
         sim.wait()
     """
-    def __init__(self) -> None:
-        ...
+    @staticmethod
+    def load(filename: str) -> Driver:
+        """
+        Load a saved simulation from an HDF5 file and return a new Driver.
+        The run can be continued with run() and read with Info(sim).
+        """
+    def __init__(self, config: Config) -> None:
+        """
+        Create a driver from a Config.  Raises ValueError if the config is
+        invalid.
+        """
     def __repr__(self) -> str:
         ...
     def abort(self) -> None:
@@ -368,29 +378,14 @@ class Driver:
         """
         Return a copy of the current configuration as a Config.
         """
-    def init(self, config: Config) -> None:
-        """
-        Initialize the driver from a Config.  Resets any current simulation.
-        """
     def ion_count(self) -> int:
         """
-        Ions simulated so far.  Delegates to mccore::ion_count(); 0 if no
-        simulation has been created yet.
+        Number of ions simulated so far.
         """
     def is_running(self) -> bool:
         """
         True while a simulation is active.  Tracked by the binding, not by
         mcdriver::is_running() (which is unreliable during setup).
-        """
-    def load(self, filename: str) -> None:
-        """
-        Load a simulation from an HDF5 file, replacing any current state.
-        Afterwards results are available via Info(sim) and the run can be
-        continued with run().
-        """
-    def reset(self) -> None:
-        """
-        Abort the running simulation and clear all simulation state.
         """
     @typing.overload
     def run(self) -> None:
@@ -408,7 +403,7 @@ class Driver:
     def save(self, filename: str) -> None:
         """
         Save the simulation and all results to an HDF5 file.  Same format as
-        the CLI output; reload it with load().  Requires at least one
+        the CLI output; reload it with Driver.load().  Requires at least one
         simulated ion (tallies are normalized per ion).
         """
     def wait(self) -> None:
@@ -418,16 +413,13 @@ class Driver:
     @property
     def max_cpu_time(self) -> int:
         """
-        Maximum wall-clock time [s].  0 = unlimited.
+        Maximum CPU time [s] from the config.  0 = unlimited.
         """
-    @max_cpu_time.setter
-    def max_cpu_time(self, arg1: typing.SupportsInt | typing.SupportsIndex) -> None:
-        ...
     @property
     def max_ions(self) -> int:
         """
-        Maximum ions to simulate (config.Run.max_no_ions).  Read once at
-        exec() start; changes take effect on the next run().
+        Maximum ions to simulate (config.Run.max_no_ions).  May be changed
+        between runs; takes effect on the next run().
         """
     @max_ions.setter
     def max_ions(self, arg1: typing.SupportsInt | typing.SupportsIndex) -> None:
@@ -665,7 +657,7 @@ class Info:
     
     Example::
     
-        info = opentrim.Info(sim)            # sim is an initialized Driver
+        info = opentrim.Info(sim)            # sim is a Driver
         v, dv = info["tally"]["damage_events"]["Vacancies"]
     
     Tally nodes return (values, sem) numpy tuples normalized per ion.
@@ -681,11 +673,11 @@ class Info:
         ...
     def __getitem__(self, key: str) -> typing.Any:
         """
-        Return a sub-Info for a group, or the value for a leaf node.
+        Return a sub-Info for a group, or the value for a data node.
         """
     def __init__(self, driver: typing.Any) -> None:
         """
-        Build an Info view over an initialized Driver.
+        Build an Info view over a Driver.
         """
     def __iter__(self) -> collections.abc.Iterator:
         ...
@@ -705,6 +697,11 @@ class Info:
     def description(self) -> str:
         """
         Human-readable description of this node.
+        """
+    @property
+    def path(self) -> str:
+        """
+        Path of this node in the tree, e.g. "/tally/totals".
         """
     @property
     def type(self) -> str:
@@ -1851,4 +1848,4 @@ class UserTallyList:
         """
         Remove and return the item at index ``i``
         """
-__version__: str = '1.1.2'
+__version__: str = '1.1.6'

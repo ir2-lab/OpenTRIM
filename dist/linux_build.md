@@ -24,7 +24,7 @@ sudo apt install qtbase5-dev libqt5svg5 libqwt-qt5-dev libqwt-qt5-6
 sudo dnf install eigen3-devel.noarch hdf5.x86_64 hdf5-devel.x86_64
 ```  
 
-## Subprojects
+## ir2-lab dependencies
 
 There are 3 subprojects of our own that OpenTRIM depends on:
 - [libdedx](https://github.com/ir2-lab/libdedx) for ion stopping data
@@ -62,6 +62,12 @@ find_package(libdedx REQUIRED PATHS /your/special/path)
 ```
 
 The default install location of OpenTRIM is again `$HOME/.local`. Add `$HOME/.local/bin` to the path.
+
+## Testing the build
+
+Run `ctest` from the build folder.
+
+This runs a number of simulations and checks the results.
 
 
 

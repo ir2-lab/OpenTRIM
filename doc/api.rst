@@ -16,8 +16,7 @@ results.
     # ... define target, run options ...
     config.validate()
 
-    sim = opentrim.Driver()
-    sim.init(config)
+    sim = opentrim.Driver(config)
     sim.run()
     sim.wait()
 
