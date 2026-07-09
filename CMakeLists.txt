@@ -70,7 +70,7 @@ if (OPENTRIM_BUILD_PYTHON)
 endif()
 
 if (OPENTRIM_BUILD_TESTS)
-    add_subdirectory(test/scattering_calc)
+    add_subdirectory(test/cpp)
     add_subdirectory(test/post-build) # needs h5diff; keep it under the tests option
 endif () ## Tests
 

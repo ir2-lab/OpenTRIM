@@ -24,3 +24,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 doc/_build/
+
+.venv/
+.qtcreator/
+.winvenv/

@@ -36,6 +36,8 @@ mccore::mccore(const mccore &s)
       tally_(s.tally_),
       dtally_(s.dtally_),
       tion_(s.tion_),
+      utallyMask_(s.utallyMask_),
+      globalEventMask_(s.globalEventMask_),
       ref_count_(s.ref_count_),
       ion_counter_(s.ion_counter_),
       abort_flag_(s.abort_flag_),
@@ -61,7 +63,6 @@ mccore::mccore(const mccore &s)
             dutally_.back()->clear();
             ution_.back()->clear();
         }
-        utallyMask_ = s.utallyMask_;
     }
 }
 
@@ -173,6 +174,10 @@ int mccore::init()
     atom_labels.erase(atom_labels.begin());
     pka.setNatoms(natoms - 1, atom_labels);
 
+    // setup global event mask
+    globalEventMask_ = tion_.eventMask();
+    globalEventMask_ |= utallyMask_;
+
     return 0;
 }
 
@@ -222,7 +227,6 @@ int mccore::run()
         i->setRecoilId(cascadesOnly ? 1 : 0);
         i->reset_counters();
         source_->source_ion(rng, *target_, *i);
-        tion_(Event::NewSourceIon, *i);
 
         /*
          * If it is a cascades-only simulation put the ion in the pka queue
@@ -365,6 +369,8 @@ int mccore::transport(ion *i)
         flight_path_calc_.preload(i, mat);
     }
 
+    handle_event(i->recoil_id() ? Event::NewRecoil : Event::NewSourceIon, *i);
+
     // transport loop
     while (1) {
 
@@ -486,9 +492,6 @@ int mccore::transport(ion *i)
 
 #endif
 
-        // register scattering event (before changing ion data)
-        // t(Event::Scattering,*i);
-
         // apply new ion direction & energy
         vector3 dir0 = i->dir(); // store initial dir
         i->deflect(vector3(nx * sintheta, ny * sintheta, costheta));
@@ -535,6 +538,9 @@ int mccore::transport(ion *i)
                 ion_queue_.push_vacancy(v);
             }
 
+            // register scattering of ion i
+            handle_event(Event::Scattering, *i);
+
             // subtract El from the recoil kinetic energy,
             // this accounts for the FP creation
             j->de_other(z2->El());
@@ -553,11 +559,58 @@ int mccore::transport(ion *i)
         } else { // T<E_d, recoil cannot be displaced
             // energy goes to phonons
             i->de_phonon(T);
+            // register scattering of ion i
+            handle_event(Event::Scattering, *i);
         }
 
     } // main ion transport loop
 
     return 0;
+}
+
+void mccore::handle_event_impl(Event ev, const ion &i, const void *pv)
+{
+    // send to tally for scoring
+    if (static_cast<uint32_t>(ev) & tion_.eventMask())
+        tion_(ev, i, pv);
+
+    // send to all user_tally objects
+    if (static_cast<uint32_t>(ev) & utallyMask_) {
+        for (int k = 0; k < ution_.size(); ++k)
+            (*(ution_[k]))(ev, i, pv);
+    }
+
+    // send to the event streams
+    if (static_cast<uint32_t>(ev) & damage_stream_mask_) {
+        damage_ev.set(i);
+        damage_stream_.write(&damage_ev);
+    }
+    if (static_cast<uint32_t>(ev) & exit_stream_mask_) {
+        exit_ev.set(&i);
+        exit_stream_.write(&exit_ev);
+    }
+    if (static_cast<uint32_t>(ev) & pka_stream_mask_) {
+        pka_stream_.write(&pka);
+    }
+
+    // call an installed event handler
+    if (static_cast<uint32_t>(ev) & event_handler_slot_.mask) {
+        event_handler_slot_.eh(ev, i, event_handler_slot_.user_data);
+    }
+}
+
+void mccore::set_event_handler(event_handler eh, uint32_t mask, void *p)
+{
+    if (eh) {
+        event_handler_slot_.eh = eh;
+        event_handler_slot_.mask = mask ? mask : static_cast<uint32_t>(Event::NEvent) - 1;
+        event_handler_slot_.user_data = p;
+        globalEventMask_ |= event_handler_slot_.mask;
+    } else {
+        event_handler_slot_.eh = nullptr;
+        event_handler_slot_.mask = 0;
+        event_handler_slot_.user_data = nullptr;
+    }
 }
 
 void mccore::mergeTallies(mccore &other)
@@ -671,5 +724,6 @@ int mccore::init_streams(uint32_t event_mask)
         exit_stream_.open();
         exit_stream_mask_ = exit_stream_.is_open() ? static_cast<uint32_t>(Event::IonExit) : 0;
     }
+    globalEventMask_ |= event_mask;
     return 0;
 }

@@ -1,5 +1,5 @@
 add_executable(test_scattering_calc 
-    main.cpp
+    test_scattering_calc.cpp
     ${CMAKE_SOURCE_DIR}/source/include/scattering.h
 )
 
@@ -16,4 +16,16 @@ target_link_libraries(test_scattering_calc
     xs_bohr
     xs_krc
     xs_moliere
+)
+
+add_executable(test_event_handling 
+    test_event_handling.cpp
+)
+
+target_include_directories(test_event_handling 
+PRIVATE
+    ${CMAKE_SOURCE_DIR}/source/include
+)
+target_link_libraries(test_event_handling
+    opentrim
 )
