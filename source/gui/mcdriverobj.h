@@ -90,6 +90,9 @@ public:
     // get sim title
     QString title() const;
 
+    // register a handler to install on the driver (see install_event_handler)
+    void setEventHandler(mccore::event_handler h, uint32_t mask, void *p);
+
     // validate sim options
     // error msgs are optionally returned in msg pointer
     bool validateOptions(QString *msg = nullptr) const;
@@ -177,6 +180,10 @@ private:
     std::shared_ptr<mcdriver> driver_;
     std::shared_ptr<mcdriver> test_driver_;
     mcconfig options_;
+
+    mccore::event_handler eventHandler_{ nullptr };
+    uint32_t eventMask_{ 0 };
+    void *eventHandlerData_{ nullptr };
     bool modified_;
     bool template_;
     QString fileName_;

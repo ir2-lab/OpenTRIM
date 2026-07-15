@@ -34,6 +34,13 @@ McDriverObj::~McDriverObj()
 {
 }
 
+void McDriverObj::setEventHandler(mccore::event_handler h, uint32_t mask, void *p)
+{
+    eventHandler_ = h;
+    eventMask_ = mask;
+    eventHandlerData_ = p;
+}
+
 const mcconfig &McDriverObj::options() const
 {
     return options_;
@@ -329,6 +336,10 @@ void McDriverObj::start(bool b)
             opt.Run.threads = nThreads_;
 
             driver_ = mcdriver::create(opt);
+
+            // install the track viewer handler, if one was registered
+            if (eventHandler_)
+                driver_->install_event_handler(eventHandler_, eventMask_, eventHandlerData_, 0);
 
             info_.clear();
 
