@@ -1,7 +1,9 @@
 // Event handler API + track assembly test (Feature B, B-1).
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <vector>
 
 #include "mcdriver.h"
@@ -16,8 +18,11 @@ struct counters
 struct probe
 {
     counters c;
+    std::set<uint64_t> ids; // distinct source-ion history ids
+    int disableAt{ -1 }; // event index at which to turn capture off (-1 = never)
+    int seen{ 0 };
     std::vector<Cascade> cascades;
-    CascadeAssembler assembler;
+    CascadeAssembler assembler; // last: joined before cascades/ids on destruction
 
     probe() : assembler([this](Cascade &&x) { cascades.push_back(std::move(x)); }) { }
 };
@@ -28,6 +33,7 @@ static void probe_handler(Event ev, const ion &i, void *p)
     switch (ev) {
     case Event::NewSourceIon:
         pr.c.source++;
+        pr.ids.insert(static_cast<uint64_t>(i.ion_id()));
         break;
     case Event::NewRecoil:
         pr.c.recoil++;
@@ -45,6 +51,8 @@ static void probe_handler(Event ev, const ion &i, void *p)
         break;
     }
     pr.assembler.feed(ev, i);
+    if (pr.disableAt >= 0 && ++pr.seen == pr.disableAt)
+        pr.assembler.setCapturing(false); // turn capture off mid-run
 }
 
 static std::shared_ptr<mcdriver> make_driver(size_t nions, int nthreads)
@@ -75,27 +83,36 @@ static int check_probe(const char *tag, probe &pr)
     pr.assembler.flush();
 
     size_t tracks = 0, verts = 0;
+    std::set<uint64_t> cids;
     for (const auto &cc : pr.cascades) {
-        CHECK(!cc.tracks.empty());
-        CHECK(!cc.tracks.front().verts.empty());
-        CHECK(cc.tracks.front().verts.front().rid == 0);
-        for (const auto &t : cc.tracks) {
-            CHECK(!t.verts.empty());
-            tracks += 1;
-            verts += t.verts.size();
+        CHECK(!cc.buff.empty());
+        CHECK(cc.start_pos.size() == cc.length.size());
+        CHECK(!cc.start_pos.empty());
+        int32_t prev_end = 0;
+        for (size_t k = 0; k < cc.start_pos.size(); ++k) {
+            CHECK(cc.length[k] > 0);
+            CHECK(cc.start_pos[k] == prev_end); // tracks tile buff with no gaps
+            prev_end = cc.start_pos[k] + cc.length[k];
         }
+        CHECK(static_cast<size_t>(prev_end) == cc.buff.size());
+        CHECK(cc.buff[cc.start_pos[0]].rid == 0); // first track is the source ion
+        cids.insert(cc.id);
+        tracks += cc.start_pos.size();
+        verts += cc.buff.size();
     }
     std::cout << tag << ": source=" << pr.c.source << " recoil=" << pr.c.recoil
               << " scatter=" << pr.c.scatter << " end=" << pr.c.ended << " other=" << pr.c.other
-              << " | cascades=" << pr.cascades.size() << " tracks=" << tracks << " verts=" << verts
-              << std::endl;
+              << " | histories=" << pr.ids.size() << " cascades=" << pr.cascades.size()
+              << " tracks=" << tracks << " verts=" << verts << std::endl;
 
     CHECK(pr.c.source > 0);
     CHECK(pr.c.recoil > 0);
     CHECK(pr.c.scatter > 0);
     CHECK(pr.c.other == 0);
     CHECK(pr.c.source + pr.c.recoil == pr.c.ended);
-    CHECK(pr.cascades.size() == (size_t)pr.c.source);
+    CHECK(pr.assembler.dropped() == 0); // consumer kept up: no events dropped
+    CHECK(cids.size() == pr.cascades.size()); // cascade ids are unique
+    CHECK(pr.cascades.size() == pr.ids.size()); // one cascade per source-ion history
     CHECK(tracks == (size_t)(pr.c.source + pr.c.recoil));
     CHECK(verts > 0);
     return 0;
@@ -103,18 +120,19 @@ static int check_probe(const char *tag, probe &pr)
 
 int main()
 {
-    // single thread
+    // 1. single thread
     {
         auto D = make_driver(30, 1);
         CHECK(D);
         probe pr;
+        pr.assembler.setCapturing(true);
         CHECK(D->install_event_handler(probe_handler, CascadeAssembler::eventMask(), &pr, 0));
         D->exec(nullptr, 200);
         if (check_probe("single", pr))
             return 1;
     }
 
-    // no handler: the run must be untouched
+    // 2. no handler: the run must be untouched
     {
         auto D = make_driver(30, 1);
         CHECK(D);
@@ -125,15 +143,61 @@ int main()
         CHECK(ran > 0);
     }
 
-    // 4 threads, more ions
+    // 3. 4 threads, more ions
     {
         auto D = make_driver(200, 4);
         CHECK(D);
         probe pr;
+        pr.assembler.setCapturing(true);
         CHECK(D->install_event_handler(probe_handler, CascadeAssembler::eventMask(), &pr, 0));
         D->exec(nullptr, 200);
         if (check_probe("stress", pr))
             return 1;
+    }
+
+    // 4. recording overhead: the same run with capture off vs on
+    {
+        typedef std::chrono::steady_clock clock;
+
+        probe off; // capture stays off (default)
+        auto D0 = make_driver(50, 1);
+        CHECK(D0);
+        CHECK(D0->install_event_handler(probe_handler, CascadeAssembler::eventMask(), &off, 0));
+        clock::time_point t0 = clock::now();
+        D0->exec(nullptr, 200);
+        double ms_off = std::chrono::duration<double, std::milli>(clock::now() - t0).count();
+
+        probe on;
+        on.assembler.setCapturing(true);
+        auto D1 = make_driver(50, 1);
+        CHECK(D1);
+        CHECK(D1->install_event_handler(probe_handler, CascadeAssembler::eventMask(), &on, 0));
+        t0 = clock::now();
+        D1->exec(nullptr, 200);
+        double ms_on = std::chrono::duration<double, std::milli>(clock::now() - t0).count();
+
+        off.assembler.flush();
+        on.assembler.flush();
+
+        std::cout << "timing(50 ions): off=" << ms_off << "ms on=" << ms_on
+                  << "ms overhead=" << (ms_on - ms_off) << "ms dropped=" << on.assembler.dropped()
+                  << std::endl;
+        CHECK(off.cascades.empty()); // capture off: nothing recorded
+        CHECK(!on.cascades.empty()); // capture on: cascades recorded
+    }
+
+    // 5. capture disabled mid-run: flush must not emit a partial cascade
+    {
+        probe pr;
+        pr.disableAt = 100; // turn capture off inside the first cascade
+        pr.assembler.setCapturing(true);
+        auto D = make_driver(50, 1);
+        CHECK(D);
+        CHECK(D->install_event_handler(probe_handler, CascadeAssembler::eventMask(), &pr, 0));
+        D->exec(nullptr, 200);
+        pr.assembler.flush();
+        std::cout << "capture-off: cascades=" << pr.cascades.size() << std::endl;
+        CHECK(pr.cascades.empty()); // interrupted cascade discarded, not emitted
     }
 
     std::cout << "ALL PASS" << std::endl;

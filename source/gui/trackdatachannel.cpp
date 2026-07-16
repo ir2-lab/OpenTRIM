@@ -7,19 +7,7 @@ TrackDataChannel::TrackDataChannel(QObject *parent)
 
 void TrackDataChannel::onEvent(Event ev, const ion &i, void *p)
 {
-    static_cast<TrackDataChannel *>(p)->dispatch(ev, i);
-}
-
-void TrackDataChannel::dispatch(Event ev, const ion &i)
-{
-    // reset on any change of the capture flag, so we start on a clean boundary
-    const bool want = capturing_.load(std::memory_order_relaxed);
-    if (want != active_) {
-        active_ = want;
-        assembler_.reset();
-    }
-    if (active_)
-        assembler_.feed(ev, i);
+    static_cast<TrackDataChannel *>(p)->assembler_.feed(ev, i);
 }
 
 void TrackDataChannel::enqueue(Cascade &&c)
@@ -42,6 +30,5 @@ std::vector<std::shared_ptr<const Cascade>> TrackDataChannel::takeCascades()
 
 void TrackDataChannel::flush()
 {
-    // called after the run stops, so the assembler is no longer in use
     assembler_.flush();
 }

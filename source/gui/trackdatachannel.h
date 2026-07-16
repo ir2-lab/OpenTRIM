@@ -1,7 +1,6 @@
 #ifndef TRACKDATACHANNEL_H
 #define TRACKDATACHANNEL_H
 
-#include <atomic>
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -11,8 +10,9 @@
 
 #include "cascadeassembler.h"
 
-// Carries ion track data from the simulation thread (thread-0 handler) to the
-// GUI thread: finished cascades are queued and drained with takeCascades().
+// Carries track data from the sim thread to the GUI thread. Finished cascades are
+// queued and cascadeReady() is emitted from the consumer thread (so B-2 must use a
+// queued connection); the GUI thread drains with takeCascades().
 class TrackDataChannel : public QObject
 {
     Q_OBJECT
@@ -26,26 +26,23 @@ public:
 
     std::vector<std::shared_ptr<const Cascade>> takeCascades();
 
-    bool isCapturing() const { return capturing_.load(std::memory_order_relaxed); }
+    bool isCapturing() const { return assembler_.isCapturing(); }
 
 public slots:
-    void setCapturing(bool on) { capturing_.store(on, std::memory_order_relaxed); }
+    void setCapturing(bool on) { assembler_.setCapturing(on); }
     void flush(); // call after the run has stopped
 
 signals:
     void cascadeReady();
 
 private:
-    void dispatch(Event ev, const ion &i); // simulation thread only
-    void enqueue(Cascade &&c); // simulation thread only
-
-    CascadeAssembler assembler_;
-    bool active_{ false }; // simulation-thread view of capturing_
-
-    std::atomic_bool capturing_{ false };
+    void enqueue(Cascade &&c); // runs on the assembler's consumer thread
 
     std::mutex mtx_;
     std::deque<std::shared_ptr<const Cascade>> ready_;
+
+    // declared last: its consumer thread is joined before ready_/mtx_ are destroyed
+    CascadeAssembler assembler_;
 };
 
 #endif // TRACKDATACHANNEL_H
