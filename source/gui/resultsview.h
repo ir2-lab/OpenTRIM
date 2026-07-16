@@ -3,8 +3,6 @@
 
 #include "qdatabrowser.h"
 
-class mcplotinfo;
-
 class QTreeWidget;
 class QTreeWidgetItem;
 class QToolButton;
@@ -33,8 +31,6 @@ public slots:
 
 private:
     MainUI *ionsui{ nullptr };
-
-    void addPlotItem(const QString &name, mcplotinfo *i, const QString loc = "");
 };
 
 #endif // RESULTSVIEW_H

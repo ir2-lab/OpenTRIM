@@ -113,8 +113,9 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     setWindowTitle(mcdriver::version_info().project_name);
     QPoint x0 = geometry().center();
     QScreen *scr = QGuiApplication::screenAt(x0);
-    // resize(1024, 768);
-    resize(600, 600);
+    // resize(1200, 900);
+    resize(1024, 768);
+    //  resize(600, 600);
 
     show();
 

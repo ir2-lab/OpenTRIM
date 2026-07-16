@@ -287,7 +287,7 @@ mcinfo::mcinfo(std::shared_ptr<mcdriver> d) : mcinfo_node({ }, nullptr), driver_
             // target/dedx
             mcinfo &dedx = target.add_group("dedx", "Stopping & Straggling data");
             dedx.add_data(
-                    "erg", "dEdx table energy grid [eV]",
+                    "erg", "energy grid [eV]",
                     [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
                         d = { dedx_erange::size() };
                     },
@@ -296,7 +296,7 @@ mcinfo::mcinfo(std::shared_ptr<mcdriver> d) : mcinfo_node({ }, nullptr), driver_
                             s[k] = *k;
                     });
             dedx.add_data(
-                    "eloss", "electronic dEdx values [eV/nm], array [ions x materials x energy]",
+                    "stopping", "electronic stopping [eV/nm], array [ions x materials x energy]",
                     [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
                         auto &dim = i.parent()->driver()->getSim()->get_dedx_calc().dedx().dim();
                         d = { dim[0], dim[1], dedx_erange::size() };
@@ -314,7 +314,7 @@ mcinfo::mcinfo(std::shared_ptr<mcdriver> d) : mcinfo_node({ }, nullptr), driver_
                     });
 
             dedx.add_data(
-                    "strag", "electronic straggling [eV], array [ions x materials x energy]",
+                    "straggling", "electronic straggling [eV], array [ions x materials x energy]",
                     [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
                         auto &dim =
                                 i.parent()->driver()->getSim()->get_dedx_calc().de_strag().dim();
@@ -334,7 +334,7 @@ mcinfo::mcinfo(std::shared_ptr<mcdriver> d) : mcinfo_node({ }, nullptr), driver_
 
             mcinfo &flight_path = target.add_group("flight_path", "Flight path data");
             flight_path.add_data(
-                    "erg", "flight path table energy grid [eV]",
+                    "erg", "energy grid [eV]",
                     [](const mcinfo_data_node &i, mcinfo_data_node::dim_t &d) {
                         d = { flight_path_calc::fp_tbl_erange::size() };
                     },

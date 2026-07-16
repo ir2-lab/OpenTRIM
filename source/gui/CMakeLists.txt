@@ -21,7 +21,7 @@ set(GUI_HEADERS
     value_with_error.h
     jsedit/jsedit.h 
     simboxview.h
-    mcplotinfo.h
+    mcdatamodel.h
 )
 
 set(GUI_SOURCES
@@ -42,7 +42,7 @@ set(GUI_SOURCES
     tabularview.cpp
     jsedit/jsedit.cpp
     simboxview.cpp
-    mcplotinfo.cpp
+    mcdatamodel.cpp
 )
 
 set (GUI_TARGET ${PROJECT_NAME_LOWERCASE}-gui)

@@ -18,3 +18,8 @@ CTestTestfile.cmake
 _deps
 build_qt_debug/
 *.oct
+.venv/
+.winvenv/
+.qtcreator/
+doc/_build/
+
