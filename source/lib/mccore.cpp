@@ -224,6 +224,7 @@ int mccore::run()
         // generate ion
         ion *i = ion_queue_.create_ion();
         i->setId(ion_id);
+        i->setSource();
         i->setRecoilId(cascadesOnly ? 1 : 0);
         i->reset_counters();
         source_->source_ion(rng, *target_, *i);
@@ -369,7 +370,7 @@ int mccore::transport(ion *i)
         flight_path_calc_.preload(i, mat);
     }
 
-    handle_event(i->recoil_id() ? Event::NewRecoil : Event::NewSourceIon, *i);
+    handle_event(i->source_test_and_reset() ? Event::NewSourceIon : Event::NewRecoil, *i);
 
     // transport loop
     while (1) {
