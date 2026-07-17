@@ -60,7 +60,7 @@ private:
     struct RawEvent
     {
         Event ev;
-        uint64_t ion_id; // source-ion history id, delimits cascades
+        uint64_t ion_id; // source-ion history id (becomes Cascade.id)
         TrackVertex v;
     };
     static_assert(sizeof(RawEvent) == 40, "RawEvent must stay 40 bytes");
@@ -115,7 +115,6 @@ private:
     State state_{ State::WaitForIon };
     Cascade current_;
     int32_t track_start_{ 0 }; // first index of the open track in current_.buff
-    uint64_t cascadeIonId_{ 0 }; // ion_id of the cascade being built
     sink_t sink_;
 
     // ---- shared ----

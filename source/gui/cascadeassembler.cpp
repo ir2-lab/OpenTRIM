@@ -216,16 +216,13 @@ void CascadeAssembler::applyEvent(const RawEvent &r)
 
     case State::InTrack:
         switch (r.ev) {
-        case Event::NewSourceIon:
-            // new ion_id = next history; same ion_id = replacement continuation
+        case Event::NewSourceIon: // fires once per source ion (core source flag)
             endTrack();
-            if (r.ion_id != cascadeIonId_) {
-                handoff();
-                beginCascade(r.ion_id);
-            }
+            handoff();
+            beginCascade(r.ion_id);
             beginTrack(r.v);
             break;
-        case Event::NewRecoil: // recoils share the history's ion_id
+        case Event::NewRecoil:
             endTrack();
             beginTrack(r.v);
             break;
@@ -247,10 +244,8 @@ void CascadeAssembler::applyEvent(const RawEvent &r)
     case State::BetweenTracks:
         switch (r.ev) {
         case Event::NewSourceIon:
-            if (r.ion_id != cascadeIonId_) {
-                handoff();
-                beginCascade(r.ion_id);
-            }
+            handoff();
+            beginCascade(r.ion_id);
             beginTrack(r.v);
             state_ = State::InTrack;
             break;
@@ -269,7 +264,6 @@ void CascadeAssembler::beginCascade(uint64_t id)
 {
     current_ = Cascade();
     current_.id = id;
-    cascadeIonId_ = id;
     track_start_ = 0;
     current_.buff.reserve(kCascadeReserve);
 }
