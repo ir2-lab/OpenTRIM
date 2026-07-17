@@ -70,12 +70,12 @@ static std::shared_ptr<mcdriver> make_driver(size_t nions, int nthreads)
     return mcdriver::create(cfg, &std::cerr);
 }
 
-#define CHECK(cond)                                                                                 \
-    do {                                                                                            \
-        if (!(cond)) {                                                                              \
-            std::cerr << "FAILED: " #cond " (line " << __LINE__ << ")" << std::endl;                \
-            return 1;                                                                               \
-        }                                                                                           \
+#define CHECK(cond)                                                                  \
+    do {                                                                             \
+        if (!(cond)) {                                                               \
+            std::cerr << "FAILED: " #cond " (line " << __LINE__ << ")" << std::endl; \
+            return 1;                                                                \
+        }                                                                            \
     } while (0)
 
 static int check_probe(const char *tag, probe &pr)
@@ -157,31 +157,51 @@ int main()
 
     // 4. recording overhead: the same run with capture off vs on
     {
-        typedef std::chrono::steady_clock clock;
+        int Nions = 1000; // enough to measure ms
+        std::cout << "Testing capture overhead: " << Nions << " ions, 1 thread" << std::endl;
 
+        // case 0 : no handler at all
+        std::cout << "  running without handler: ...";
+        std::cout.flush();
+        auto D00 = make_driver(Nions, 1);
+        CHECK(D00);
+        D00->exec(nullptr, 200);
+        double ms_none = D00->run_history().back().cpu_time_s * 1000.0 / Nions; // convert to ms/ion
+        std::cout << "done." << std::endl;
+
+        std::cout << "  running with handler, capture off: ...";
+        std::cout.flush();
         probe off; // capture stays off (default)
-        auto D0 = make_driver(50, 1);
+        auto D0 = make_driver(Nions, 1);
         CHECK(D0);
         CHECK(D0->install_event_handler(probe_handler, CascadeAssembler::eventMask(), &off, 0));
-        clock::time_point t0 = clock::now();
         D0->exec(nullptr, 200);
-        double ms_off = std::chrono::duration<double, std::milli>(clock::now() - t0).count();
+        double ms_off = D0->run_history().back().cpu_time_s * 1000.0 / Nions;
+        std::cout << "done." << std::endl;
 
+        std::cout << "  running with handler, capture on: ...";
+        std::cout.flush();
         probe on;
         on.assembler.setCapturing(true);
-        auto D1 = make_driver(50, 1);
+        auto D1 = make_driver(Nions, 1);
         CHECK(D1);
         CHECK(D1->install_event_handler(probe_handler, CascadeAssembler::eventMask(), &on, 0));
-        t0 = clock::now();
         D1->exec(nullptr, 200);
-        double ms_on = std::chrono::duration<double, std::milli>(clock::now() - t0).count();
+        double ms_on = D1->run_history().back().cpu_time_s * 1000.0 / Nions;
+        std::cout << "done." << std::endl;
 
         off.assembler.flush();
         on.assembler.flush();
 
-        std::cout << "timing(50 ions): off=" << ms_off << "ms on=" << ms_on
-                  << "ms overhead=" << (ms_on - ms_off) << "ms dropped=" << on.assembler.dropped()
+        double off_overhead = int((ms_off - ms_none) / ms_none * 1000) / 10.0; // round to 0.1%
+        double on_overhead = int((ms_on - ms_none) / ms_none * 1000) / 10.0; // round to 0.1%
+        std::cout << "timing(" << Nions << " ions):" << std::endl;
+        std::cout << "  no handler:  " << ms_none << " ms/ion" << std::endl;
+        std::cout << "  capture off: " << ms_off << " ms/ion, overhead=" << off_overhead << "%"
                   << std::endl;
+        std::cout << "  capture on:  " << ms_on << " ms/ion, overhead=" << on_overhead << "%"
+                  << std::endl;
+
         CHECK(off.cascades.empty()); // capture off: nothing recorded
         CHECK(!on.cascades.empty()); // capture on: cascades recorded
     }
