@@ -71,6 +71,7 @@ ion::ion()
       prev_cellid_(-1),
       ion_id_(0),
       recoil_id_(0),
+      source_ion_(false),
       atom_(nullptr),
       grid_(nullptr),
       ncoll_(0),

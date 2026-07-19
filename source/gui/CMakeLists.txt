@@ -19,9 +19,11 @@ set(GUI_HEADERS
     simcontrolwidget.h 
     tabularview.h
     value_with_error.h
-    jsedit/jsedit.h 
+    jsedit/jsedit.h
     simboxview.h
     mcplotinfo.h
+    cascadeassembler.h
+    trackdatachannel.h
 )
 
 set(GUI_SOURCES
@@ -43,6 +45,8 @@ set(GUI_SOURCES
     jsedit/jsedit.cpp
     simboxview.cpp
     mcplotinfo.cpp
+    cascadeassembler.cpp
+    trackdatachannel.cpp
 )
 
 set (GUI_TARGET ${PROJECT_NAME_LOWERCASE}-gui)

@@ -106,6 +106,7 @@ private:
     size_t ion_id_; // ion history id
     int recoil_id_; // recoil id (generation), 0=ion, 1=PKA, ...
     size_t uid_; // unique recoil id
+    bool source_ion_; // true for source generated ions
     const atom *atom_;
     const grid3D *grid_;
 
@@ -172,10 +173,21 @@ public:
     int prev_cellid() const { return prev_cellid_; }
 
     /// Returns the history id that the current ion belongs to
-    int ion_id() const { return ion_id_; }
+    size_t ion_id() const { return ion_id_; }
 
     /// set history id
     void setId(size_t id) { ion_id_ = id; }
+
+    /// set source flag
+    void setSource() { source_ion_ = true; }
+
+    /// reset source flag and return its value
+    bool source_test_and_reset()
+    {
+        bool ret = source_ion_;
+        source_ion_ = false;
+        return ret;
+    }
 
     /**
      * @brief Returns the recoil generation id of the current ion
