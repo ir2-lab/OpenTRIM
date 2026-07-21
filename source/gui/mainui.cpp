@@ -7,8 +7,10 @@
 #include "simcontrolwidget.h"
 #include "resultsview.h"
 #include "tabularview.h"
+#include "track3dviewport.h"
 
 #include <QVBoxLayout>
+#include <QPushButton>
 
 #include <QJsonDocument>
 #include <QStatusBar>
@@ -49,10 +51,10 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     pageButtonGrp = new QButtonGroup(this);
 
     QString iconFolder = ":/assets/ionicons/";
-    QStringList icons{ "grid-outline.png", "settings-outline.png", "list-outline.png",
-                       "bar-chart-outline.png" };
+    QStringList icons{ "grid-outline.png", "settings-outline.png", "cube-outline.svg",
+                       "list-outline.png", "bar-chart-outline.png" };
 
-    QStringList titles{ "Welcome", "Config", "Summary", "Data" };
+    QStringList titles{ "Welcome", "Config", "3D Vis", "Summary", "Data" };
     for (int i = 0; i < titles.count(); ++i) {
         pageButtonGrp->addButton(createSidebarButton(iconFolder + icons.at(i), titles.at(i)), i);
         sidebarLayout->addWidget(pageButtonGrp->button(i));
@@ -90,6 +92,8 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
 
     optionsView = new SimulationOptionsView(this);
     push(tr("Configuration"), optionsView);
+
+    push(tr("3D Visualization"), createTrackViewPage());
 
     // runView = new RunView(this);
     // push(tr("Run"), runView);
@@ -196,6 +200,48 @@ void MainUI::pop()
     _stackedWidget->removeWidget(currentWidget);
 
     // delete currentWidget; currentWidget = nullptr;
+}
+
+QWidget *MainUI::createTrackViewPage()
+{
+    trackView = new Track3DViewport(driverObj_, this);
+
+    // camera toolbar under the viewport
+    QWidget *bar = new QWidget;
+    QHBoxLayout *hbox = new QHBoxLayout(bar);
+    hbox->setContentsMargins(0, 0, 0, 0);
+
+    struct
+    {
+        const char *label;
+        int view;
+        bool home; // Home also fits the box
+    } btns[] = { { "Home", Track3DViewport::Iso, true },
+                 { "Front", Track3DViewport::Front, false },
+                 { "Top", Track3DViewport::Top, false },
+                 { "Left", Track3DViewport::Left, false },
+                 { "Iso", Track3DViewport::Iso, false } };
+
+    for (const auto &b : btns) {
+        QPushButton *bt = new QPushButton(tr(b.label));
+        const int v = b.view;
+        const bool home = b.home;
+        connect(bt, &QPushButton::clicked, trackView, [this, v, home]() {
+            if (home)
+                trackView->homeView();
+            else
+                trackView->setPresetView(v);
+        });
+        hbox->addWidget(bt);
+    }
+    hbox->addStretch();
+
+    QWidget *page = new QWidget;
+    QVBoxLayout *vbox = new QVBoxLayout(page);
+    vbox->setContentsMargins(0, 0, 0, 0);
+    vbox->addWidget(trackView, 1);
+    vbox->addWidget(bar);
+    return page;
 }
 
 QToolButton *MainUI::createSidebarButton(const QString &iconPath, const QString &title)
