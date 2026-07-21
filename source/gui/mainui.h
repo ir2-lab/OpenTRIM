@@ -18,6 +18,7 @@ class SimulationOptionsView;
 class RunView;
 class ResultsView;
 class TabularView;
+class Track3DViewport;
 
 #define V_SPACING 15
 
@@ -39,7 +40,13 @@ public:
     void push(const QString &title, QWidget *page);
     void pop();
 
-    enum PageId { idWelcomePage = 0, idConfigPage = 1, idRunPage = 2, idResultsPage = 3 };
+    enum PageId {
+        idWelcomePage = 0,
+        idConfigPage = 1,
+        idTrackViewPage = 2,
+        idSummaryPage = 3,
+        idResultsPage = 4
+    };
 
     PageId currentPage() const;
 
@@ -56,11 +63,13 @@ protected:
 
 private:
     QToolButton *createSidebarButton(const QString &iconPath, const QString &title);
+    QWidget *createTrackViewPage();
 
     McDriverObj *driverObj_;
 
     WelcomeView *welcomeView;
     // RunView *runView;
+    Track3DViewport *trackView;
     TabularView *tblView;
     ResultsView *resultsView;
     QStackedWidget *_stackedWidget;

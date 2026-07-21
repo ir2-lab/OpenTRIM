@@ -24,6 +24,7 @@ set(GUI_HEADERS
     mcplotinfo.h
     cascadeassembler.h
     trackdatachannel.h
+    track3dviewport.h
 )
 
 set(GUI_SOURCES
@@ -47,7 +48,11 @@ set(GUI_SOURCES
     mcplotinfo.cpp
     cascadeassembler.cpp
     trackdatachannel.cpp
+    track3dviewport.cpp
 )
+
+# OpenGL for the 3D viewport
+find_package(Qt5 REQUIRED COMPONENTS OpenGL)
 
 set (GUI_TARGET ${PROJECT_NAME_LOWERCASE}-gui)
 
@@ -60,6 +65,7 @@ target_link_libraries(${GUI_TARGET}
 PRIVATE
     Qt5::Widgets
     Qt5::Svg
+    Qt5::OpenGL
     Qwt::Qwt
     QtDataBrowser::QtDataBrowser
     ${LIB_TARGET}
