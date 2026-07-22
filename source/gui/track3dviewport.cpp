@@ -1,12 +1,17 @@
 #include "track3dviewport.h"
 
+#include "cascadeassembler.h"
 #include "mcdriverobj.h"
 #include "trackdatachannel.h"
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <limits>
 #include <unordered_map>
 
 #include <QDebug>
+#include <QHideEvent>
 #include <QMouseEvent>
 #include <QOpenGLShaderProgram>
 #include <QShowEvent>
@@ -14,8 +19,13 @@
 #include <QWheelEvent>
 #include <QtMath>
 
-// pos (loc 0) + rgba color (loc 1), interleaved, 7 floats/vertex
-static const int kStride = 7 * sizeof(float);
+// scene vertex: pos (loc 0) + rgba color (loc 1), interleaved
+static const int kSceneFloats = 7;
+static const int kStride = kSceneFloats * sizeof(float);
+
+static const int kTrackVboBytes = 96 * 1024 * 1024;
+static const int kTrackVboVerts = kTrackVboBytes / int(sizeof(TrackVertex));
+static const double kPlaybackSeconds = 2.0; // wall time for one 0->1 sweep
 
 static const char *kVertSrc = R"(#version 330 core
 layout(location = 0) in vec3 aPos;
@@ -102,10 +112,17 @@ Track3DViewport::Track3DViewport(McDriverObj *driver, QWidget *parent)
     setMinimumSize(320, 240);
     setFocusPolicy(Qt::StrongFocus);
 
-    // register the handler before the run starts; capture stays off until playback
+    // capture follows the 3D tab; flush publishes the tail cascade after a run
     channel_ = new TrackDataChannel(this);
     driver_->setEventHandler(TrackDataChannel::onEvent, TrackDataChannel::eventMask(), channel_);
     connect(channel_, &TrackDataChannel::cascadeReady, this, &Track3DViewport::onCascadeReady,
+            Qt::QueuedConnection);
+
+    connect(driver_, &McDriverObj::simulationStarted, this,
+            [this](bool running) {
+                if (!running)
+                    channel_->flush();
+            },
             Qt::QueuedConnection);
 
     connect(driver_, &McDriverObj::configChanged, this, &Track3DViewport::refreshScene);
@@ -114,17 +131,20 @@ Track3DViewport::Track3DViewport(McDriverObj *driver, QWidget *parent)
 
 Track3DViewport::~Track3DViewport()
 {
-    // Don't touch driver_: McDriverObj is deleteLater'd with the runner thread
-    // (~MainUI) before this widget dies, so it may already be gone. Nothing to
-    // unregister anyway - the sim is stopped and the driver is torn down with it.
+    // don't touch driver_: it is deleteLater'd with the runner thread before
+    // this widget dies, and the handler needs no unregistering (sim is stopped)
     if (prog_ || boxVbo_.isCreated()) {
         makeCurrent();
         delete prog_;
         prog_ = nullptr;
+        delete trackProg_;
+        trackProg_ = nullptr;
         boxVbo_.destroy();
         regVbo_.destroy();
         boxVao_.destroy();
         regVao_.destroy();
+        trackVbo_.destroy();
+        trackVao_.destroy();
         doneCurrent();
     }
 }
@@ -148,6 +168,33 @@ void Track3DViewport::initializeGL()
     boxVbo_.create();
     regVbo_.create();
 
+    trackProg_ = new QOpenGLShaderProgram(this);
+    if (!trackProg_->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/track.vert")
+        || !trackProg_->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/track.frag")
+        || !trackProg_->link())
+        qWarning() << "Track3DViewport: track shader build failed:" << trackProg_->log();
+
+    trackVao_.create();
+    trackVbo_.create();
+    trackVao_.bind();
+    trackVbo_.bind();
+    trackVbo_.allocate(kTrackVboBytes);
+    const int stride = int(sizeof(TrackVertex));
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride,
+                          reinterpret_cast<void *>(offsetof(TrackVertex, x)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, stride,
+                          reinterpret_cast<void *>(offsetof(TrackVertex, energy)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, stride,
+                          reinterpret_cast<void *>(offsetof(TrackVertex, t)));
+    glEnableVertexAttribArray(3);
+    glVertexAttribIPointer(3, 1, GL_SHORT, stride,
+                           reinterpret_cast<void *>(offsetof(TrackVertex, rid)));
+    trackVbo_.release();
+    trackVao_.release();
+
     readSceneFromConfig();
     sceneDirty_ = true;
 }
@@ -163,6 +210,10 @@ void Track3DViewport::paintGL()
 
     if (sceneDirty_)
         buildSceneBuffers();
+    if (tracksDirty_) {
+        rebuildTrackBuffer();
+        tracksDirty_ = false;
+    }
     if (!prog_ || !prog_->isLinked())
         return;
 
@@ -185,11 +236,26 @@ void Track3DViewport::paintGL()
     }
 
     prog_->release();
+
+    if (trackProg_ && trackProg_->isLinked() && !first_.empty()) {
+        trackProg_->bind();
+        trackProg_->setUniformValue("uMvp", mvp());
+        trackProg_->setUniformValue("uTime", playbackTime());
+        trackVao_.bind();
+        glMultiDrawArrays(GL_LINE_STRIP, first_.data(), count_.data(), int(first_.size()));
+        trackVao_.release();
+        trackProg_->release();
+    }
+
+    if (playing_)
+        update();
 }
 
 void Track3DViewport::showEvent(QShowEvent *e)
 {
     QOpenGLWidget::showEvent(e);
+    viewActive_ = true;
+    updateCapture();
     readSceneFromConfig();
     if (!viewInitialized_) {
         viewInitialized_ = true;
@@ -197,6 +263,20 @@ void Track3DViewport::showEvent(QShowEvent *e)
     } else {
         update();
     }
+}
+
+void Track3DViewport::hideEvent(QHideEvent *e)
+{
+    QOpenGLWidget::hideEvent(e);
+    viewActive_ = false;
+    updateCapture();
+}
+
+void Track3DViewport::updateCapture()
+{
+    // capture while the tab is visible, unless a fixed batch is already full
+    const bool full = mode_ == Batch && int(residents_.size()) >= nCascades_;
+    channel_->setCapturing(viewActive_ && !full);
 }
 
 void Track3DViewport::readSceneFromConfig()
@@ -261,8 +341,8 @@ void Track3DViewport::buildSceneBuffers()
 
     upload(boxVao_, boxVbo_, box);
     upload(regVao_, regVbo_, reg);
-    boxVertices_ = int(box.size()) / 7;
-    regVertices_ = int(reg.size()) / 7;
+    boxVertices_ = int(box.size()) / kSceneFloats;
+    regVertices_ = int(reg.size()) / kSceneFloats;
     sceneDirty_ = false;
 }
 
@@ -321,8 +401,138 @@ void Track3DViewport::refreshScene()
 
 void Track3DViewport::onCascadeReady()
 {
-    // drain finished cascades (rendering is added later)
-    channel_->takeCascades();
+    for (const auto &c : channel_->takeCascades())
+        addCascade(c);
+}
+
+void Track3DViewport::addCascade(const std::shared_ptr<const Cascade> &c)
+{
+    if (!c || c->buff.empty())
+        return;
+    if (int(c->buff.size()) > kTrackVboVerts) {
+        qWarning() << "Track3DViewport: cascade too large to draw:" << c->buff.size();
+        return;
+    }
+
+    residents_.push_back(c);
+
+    if (mode_ == Ring) {
+        while (int(residents_.size()) > nCascades_)
+            residents_.pop_front();
+    } else {
+        while (int(residents_.size()) > nCascades_)
+            residents_.pop_back();
+    }
+
+    // stay within the VBO capacity
+    int total = 0;
+    for (const auto &r : residents_)
+        total += int(r->buff.size());
+    while (total > kTrackVboVerts && residents_.size() > 1) {
+        total -= int(residents_.front()->buff.size());
+        residents_.pop_front();
+    }
+
+    updateCapture();
+    tracksDirty_ = true;
+    update();
+}
+
+void Track3DViewport::rebuildTrackBuffer()
+{
+    first_.clear();
+    count_.clear();
+    tMax_ = 0.f;
+
+    int total = 0;
+    for (const auto &c : residents_)
+        total += int(c->buff.size());
+
+    std::vector<TrackVertex> all;
+    all.reserve(total);
+    int base = 0;
+    for (const auto &c : residents_) {
+        for (size_t j = 0; j < c->start_pos.size(); ++j) {
+            first_.push_back(base + c->start_pos[j]);
+            count_.push_back(c->length[j]);
+        }
+        for (const TrackVertex &v : c->buff)
+            tMax_ = std::max(tMax_, v.t);
+        all.insert(all.end(), c->buff.begin(), c->buff.end());
+        base += int(c->buff.size());
+    }
+
+    if (!all.empty()) {
+        trackVbo_.bind();
+        trackVbo_.write(0, all.data(), int(all.size() * sizeof(TrackVertex)));
+        trackVbo_.release();
+    }
+}
+
+double Track3DViewport::currentPhase() const
+{
+    if (!playing_)
+        return phase_;
+    double p = phase_ + (clock_.elapsed() / 1000.0) / kPlaybackSeconds;
+    return p - std::floor(p); // loop 0..1
+}
+
+float Track3DViewport::playbackTime() const
+{
+    if (!playing_ || tMax_ <= 0.f) // paused or no time data: show full tracks
+        return std::numeric_limits<float>::max();
+    return float(currentPhase() * tMax_);
+}
+
+void Track3DViewport::play(bool on)
+{
+    if (on == playing_)
+        return;
+    if (on) {
+        phase_ = 0.0;
+        clock_.restart();
+        playing_ = true;
+    } else {
+        phase_ = currentPhase();
+        playing_ = false;
+    }
+    update();
+}
+
+void Track3DViewport::clear()
+{
+    residents_.clear();
+    first_.clear();
+    count_.clear();
+    tMax_ = 0.f;
+    phase_ = 0.0;
+    tracksDirty_ = false;
+    clock_.restart();
+    updateCapture();
+    update();
+}
+
+void Track3DViewport::setNCascades(int n)
+{
+    n = qBound(1, n, 20);
+    if (n == nCascades_)
+        return;
+    nCascades_ = n;
+    while (int(residents_.size()) > nCascades_) {
+        if (mode_ == Ring)
+            residents_.pop_front();
+        else
+            residents_.pop_back();
+    }
+    updateCapture();
+    tracksDirty_ = true;
+    update();
+}
+
+void Track3DViewport::setRingMode(bool on)
+{
+    mode_ = on ? Ring : Batch;
+    updateCapture();
 }
 
 void Track3DViewport::mousePressEvent(QMouseEvent *e)

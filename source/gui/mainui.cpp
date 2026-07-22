@@ -11,6 +11,8 @@
 
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QCheckBox>
+#include <QSpinBox>
 
 #include <QJsonDocument>
 #include <QStatusBar>
@@ -206,10 +208,37 @@ QWidget *MainUI::createTrackViewPage()
 {
     trackView = new Track3DViewport(driverObj_, this);
 
-    // camera toolbar under the viewport
+    // toolbar under the viewport
     QWidget *bar = new QWidget;
     QHBoxLayout *hbox = new QHBoxLayout(bar);
     hbox->setContentsMargins(0, 0, 0, 0);
+
+    QPushButton *playBt = new QPushButton(tr("Play"));
+    playBt->setCheckable(true);
+    connect(playBt, &QPushButton::toggled, trackView, [this, playBt](bool on) {
+        playBt->setText(on ? tr("Pause") : tr("Play"));
+        trackView->play(on);
+    });
+    hbox->addWidget(playBt);
+
+    QPushButton *clearBt = new QPushButton(tr("Clear"));
+    connect(clearBt, &QPushButton::clicked, trackView, &Track3DViewport::clear);
+    hbox->addWidget(clearBt);
+
+    QCheckBox *ringBox = new QCheckBox(tr("Ring"));
+    ringBox->setChecked(true);
+    connect(ringBox, &QCheckBox::toggled, trackView, &Track3DViewport::setRingMode);
+    hbox->addWidget(ringBox);
+
+    hbox->addWidget(new QLabel(tr("Cascades")));
+    QSpinBox *nBox = new QSpinBox;
+    nBox->setRange(1, 20);
+    nBox->setValue(trackView->nCascades());
+    connect(nBox, QOverload<int>::of(&QSpinBox::valueChanged), trackView,
+            &Track3DViewport::setNCascades);
+    hbox->addWidget(nBox);
+
+    hbox->addStretch();
 
     struct
     {
@@ -234,7 +263,6 @@ QWidget *MainUI::createTrackViewPage()
         });
         hbox->addWidget(bt);
     }
-    hbox->addStretch();
 
     QWidget *page = new QWidget;
     QVBoxLayout *vbox = new QVBoxLayout(page);
