@@ -13,6 +13,7 @@
 #include <QPushButton>
 #include <QCheckBox>
 #include <QSpinBox>
+#include <QDoubleSpinBox>
 #include <QLineEdit>
 
 #include <QJsonDocument>
@@ -214,13 +215,14 @@ QWidget *MainUI::createTrackViewPage()
     QHBoxLayout *hbox = new QHBoxLayout(bar);
     hbox->setContentsMargins(0, 0, 0, 0);
 
-    QPushButton *playBt = new QPushButton(tr("Play"));
-    playBt->setCheckable(true);
-    connect(playBt, &QPushButton::toggled, trackView, [this, playBt](bool on) {
-        playBt->setText(on ? tr("Pause") : tr("Play"));
-        trackView->play(on);
+    QPushButton *capBt = new QPushButton(tr("Capture on"));
+    capBt->setCheckable(true);
+    connect(capBt, &QPushButton::toggled, trackView, &Track3DViewport::setCapture);
+    connect(trackView, &Track3DViewport::captureChanged, capBt, [capBt](bool on) {
+        capBt->setChecked(on); // reflect auto-stop
+        capBt->setText(on ? tr("Capture off") : tr("Capture on"));
     });
-    hbox->addWidget(playBt);
+    hbox->addWidget(capBt);
 
     QPushButton *clearBt = new QPushButton(tr("Clear"));
     connect(clearBt, &QPushButton::clicked, trackView, &Track3DViewport::clear);
@@ -238,6 +240,15 @@ QWidget *MainUI::createTrackViewPage()
     connect(nBox, QOverload<int>::of(&QSpinBox::valueChanged), trackView,
             &Track3DViewport::setNCascades);
     hbox->addWidget(nBox);
+
+    hbox->addWidget(new QLabel(tr("Speed [ns/s]")));
+    QDoubleSpinBox *spdBox = new QDoubleSpinBox;
+    spdBox->setRange(0.1, 10.0);
+    spdBox->setSingleStep(0.1);
+    spdBox->setValue(1.0);
+    connect(spdBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), trackView,
+            &Track3DViewport::setSpeed);
+    hbox->addWidget(spdBox);
 
     QLineEdit *edtStatus = new QLineEdit;
     edtStatus->setReadOnly(true);

@@ -41,13 +41,15 @@ public slots:
     void setPresetView(int v);
     void refreshScene();
 
-    void play(bool on); // time-evolution animation only
+    void setCapture(bool on);
     void clear();
     void setNCascades(int n);
     void setRingMode(bool on);
+    void setSpeed(double f); // f [ns/s]
 
 signals:
     void statusUpdate(const QString &s);
+    void captureChanged(bool on);
 
 protected:
     void initializeGL() override;
@@ -77,18 +79,28 @@ private:
     QMatrix4x4 mvp() const;
     void fitView();
 
-    void addCascade(const std::shared_ptr<const Cascade> &c);
+    void admitCascade(const std::shared_ptr<const Cascade> &c);
+    void evictOldest_();
+    void drainPending_();
+    void recomputeTiming_(); // no GL
     void rebuildTrackBuffer();
-    void updateCapture(); // capture while the tab is visible
-    double currentPhase() const;
-    float playbackTime() const;
+    void appendTrackRuns_(const Cascade &c, int base, size_t j);
+    void updateCapture();
+    bool ringBehind() const;
+    void advancePlayback_();
+    void resetTracks_();
+    void resumeClock_();
+    void pauseClock_();
+    double worldTime() const; // [s]
+    float playbackTime() const; // [ns]
     void statusUpdate_();
 
     McDriverObj *driver_; // not owned
-    TrackDataChannel *channel_; // owned
+    TrackDataChannel *channel_;
 
     QVector3D boxMin_, boxMax_;
     std::vector<RegionBox> regions_;
+    float wrapThresh_[3]{ 1e30f, 1e30f, 1e30f }; // per-axis, periodic only
     bool sceneDirty_{ true };
 
     QOpenGLShaderProgram *prog_{ nullptr };
@@ -102,18 +114,25 @@ private:
     QOpenGLVertexArrayObject trackVao_;
     QOpenGLBuffer trackVbo_{ QOpenGLBuffer::VertexBuffer };
     std::deque<std::shared_ptr<const Cascade>> residents_;
-    std::vector<int> first_, count_; // glMultiDrawArrays first/count per track
-    bool tracksDirty_{ false }; // re-pack in paintGL (needs a GL context)
+    std::deque<float> resDur_; // [ns]
+    std::deque<std::shared_ptr<const Cascade>> pending_; // ring staging
+    std::vector<int> first_, count_; // glMultiDrawArrays args
+    std::vector<double> ends_; // cumulative end per resident [ns]
+    double tWindowStart_{ 0.0 }; // [ns]
+    bool tracksDirty_{ false };
 
     Mode mode_{ Ring };
     int nCascades_{ 5 };
-    bool playing_{ false };
     bool viewActive_{ false };
+    bool captureOn_{ false };
+    bool runEnded_{ false };
+    double speed_{ 1.0 }; // [ns/s]
     QElapsedTimer clock_;
-    double phase_{ 0.0 }; // [0,1], loops while playing
+    bool clockRunning_{ false };
+    double twOffset_{ 0.0 }; // [s]
     float tMax_{ 0.f }; // [ns]
 
-    QVector3D center_; // look-at point
+    QVector3D center_;
     float radius_{ 100.f };
     float dist_{ 300.f };
     float yaw_{ 45.f }, pitch_{ 30.f }; // degrees, +pitch = eye above
