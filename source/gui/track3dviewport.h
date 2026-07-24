@@ -46,6 +46,9 @@ public slots:
     void setNCascades(int n);
     void setRingMode(bool on);
 
+signals:
+    void statusUpdate(const QString &s);
+
 protected:
     void initializeGL() override;
     void resizeGL(int w, int h) override;
@@ -65,6 +68,7 @@ private:
     {
         QVector3D x0, x1;
         QColor color;
+        RegionBox intersection(const RegionBox &other);
     };
 
     void readSceneFromConfig();
@@ -78,6 +82,7 @@ private:
     void updateCapture(); // capture while the tab is visible
     double currentPhase() const;
     float playbackTime() const;
+    void statusUpdate_();
 
     McDriverObj *driver_; // not owned
     TrackDataChannel *channel_; // owned

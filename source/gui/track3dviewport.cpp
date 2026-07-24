@@ -25,7 +25,7 @@ static const int kStride = kSceneFloats * sizeof(float);
 
 static const int kTrackVboBytes = 96 * 1024 * 1024;
 static const int kTrackVboVerts = kTrackVboBytes / int(sizeof(TrackVertex));
-static const double kPlaybackSeconds = 2.0; // wall time for one 0->1 sweep
+static const double kPlaybackSeconds = 1.0; // wall time for one 0->1 sweep
 
 static const char *kVertSrc = R"(#version 330 core
 layout(location = 0) in vec3 aPos;
@@ -118,7 +118,8 @@ Track3DViewport::Track3DViewport(McDriverObj *driver, QWidget *parent)
     connect(channel_, &TrackDataChannel::cascadeReady, this, &Track3DViewport::onCascadeReady,
             Qt::QueuedConnection);
 
-    connect(driver_, &McDriverObj::simulationStarted, this,
+    connect(
+            driver_, &McDriverObj::simulationStarted, this,
             [this](bool running) {
                 if (!running)
                     channel_->flush();
@@ -159,8 +160,7 @@ void Track3DViewport::initializeGL()
 
     prog_ = new QOpenGLShaderProgram(this);
     if (!prog_->addShaderFromSourceCode(QOpenGLShader::Vertex, kVertSrc)
-        || !prog_->addShaderFromSourceCode(QOpenGLShader::Fragment, kFragSrc)
-        || !prog_->link())
+        || !prog_->addShaderFromSourceCode(QOpenGLShader::Fragment, kFragSrc) || !prog_->link())
         qWarning() << "Track3DViewport: shader build failed:" << prog_->log();
 
     boxVao_.create();
@@ -249,6 +249,8 @@ void Track3DViewport::paintGL()
 
     if (playing_)
         update();
+
+    statusUpdate_();
 }
 
 void Track3DViewport::showEvent(QShowEvent *e)
@@ -289,6 +291,7 @@ void Track3DViewport::readSceneFromConfig()
 
     boxMin_ = QVector3D(t.origin.x(), t.origin.y(), t.origin.z());
     boxMax_ = boxMin_ + QVector3D(t.size.x(), t.size.y(), t.size.z());
+    RegionBox simBox({ boxMin_, boxMax_, Qt::black });
 
     std::unordered_map<std::string, size_t> mmap; // material_id -> index
     for (size_t i = 0; i < t.materials.size(); ++i)
@@ -304,7 +307,10 @@ void Track3DViewport::readSceneFromConfig()
             c = QColor(Qt::gray);
         QVector3D x0(r.origin.x(), r.origin.y(), r.origin.z());
         QVector3D x1 = x0 + QVector3D(r.size.x(), r.size.y(), r.size.z());
-        regions_.push_back({ x0, x1, c });
+        RegionBox reg{ x0, x1, c };
+        // clip region to the simulation box
+        reg = reg.intersection(simBox);
+        regions_.push_back(reg);
     }
 
     center_ = 0.5f * (boxMin_ + boxMax_);
@@ -382,13 +388,35 @@ void Track3DViewport::homeView()
 void Track3DViewport::setPresetView(int v)
 {
     switch (v) {
-    case Front: yaw_ = 0.0f; pitch_ = 0.0f; break;
-    case Back: yaw_ = 180.0f; pitch_ = 0.0f; break;
-    case Top: yaw_ = 0.0f; pitch_ = 89.0f; break;
-    case Bottom: yaw_ = 0.0f; pitch_ = -89.0f; break;
-    case Left: yaw_ = -90.0f; pitch_ = 0.0f; break;
-    case Right: yaw_ = 90.0f; pitch_ = 0.0f; break;
-    case Iso: default: yaw_ = 45.0f; pitch_ = 30.0f; break;
+    case Front:
+        yaw_ = 0.0f;
+        pitch_ = 0.0f;
+        break;
+    case Back:
+        yaw_ = 180.0f;
+        pitch_ = 0.0f;
+        break;
+    case Top:
+        yaw_ = 0.0f;
+        pitch_ = 89.0f;
+        break;
+    case Bottom:
+        yaw_ = 0.0f;
+        pitch_ = -89.0f;
+        break;
+    case Left:
+        yaw_ = -90.0f;
+        pitch_ = 0.0f;
+        break;
+    case Right:
+        yaw_ = 90.0f;
+        pitch_ = 0.0f;
+        break;
+    case Iso:
+    default:
+        yaw_ = 45.0f;
+        pitch_ = 30.0f;
+        break;
     }
     update();
 }
@@ -456,9 +484,18 @@ void Track3DViewport::rebuildTrackBuffer()
             first_.push_back(base + c->start_pos[j]);
             count_.push_back(c->length[j]);
         }
-        for (const TrackVertex &v : c->buff)
-            tMax_ = std::max(tMax_, v.t);
+        float t0 = 0.0f;
+        for (const TrackVertex &v : c->buff) {
+            t0 = std::max(t0, v.t);
+        }
+        size_t i = all.size();
+        size_t n = c->buff.size() + i;
         all.insert(all.end(), c->buff.begin(), c->buff.end());
+        for (; i < n; ++i) {
+            all[i].t += tMax_;
+        }
+        tMax_ += t0;
+
         base += int(c->buff.size());
     }
 
@@ -473,7 +510,7 @@ double Track3DViewport::currentPhase() const
 {
     if (!playing_)
         return phase_;
-    double p = phase_ + (clock_.elapsed() / 1000.0) / kPlaybackSeconds;
+    double p = phase_ + (clock_.elapsed() / 1000.0) / kPlaybackSeconds / nCascades_;
     return p - std::floor(p); // loop 0..1
 }
 
@@ -482,6 +519,17 @@ float Track3DViewport::playbackTime() const
     if (!playing_ || tMax_ <= 0.f) // paused or no time data: show full tracks
         return std::numeric_limits<float>::max();
     return float(currentPhase() * tMax_);
+}
+
+void Track3DViewport::statusUpdate_()
+{
+    float t = 0, t1 = 0;
+    if (playing_ && tMax_ > 0.f) {
+        t = float(currentPhase() * tMax_);
+        t1 = tMax_;
+    }
+    QString s = QString("N: %1, t: %2/%3").arg(nCascades_).arg(t, 4, 'f', 2).arg(t1, 4, 'f', 2);
+    emit statusUpdate(s);
 }
 
 void Track3DViewport::play(bool on)
@@ -569,4 +617,17 @@ void Track3DViewport::wheelEvent(QWheelEvent *e)
     dist_ *= std::pow(0.9f, steps);
     dist_ = qBound(radius_ * 0.1f, dist_, radius_ * 30.0f);
     update();
+}
+
+// return the intersection of two axis-aligned boxes, which may be empty
+Track3DViewport::RegionBox Track3DViewport::RegionBox::intersection(const RegionBox &other)
+{
+    RegionBox b(*this);
+    b.x0.setX(std::max(b.x0.x(), other.x0.x()));
+    b.x0.setY(std::max(b.x0.y(), other.x0.y()));
+    b.x0.setZ(std::max(b.x0.z(), other.x0.z()));
+    b.x1.setX(std::min(b.x1.x(), other.x1.x()));
+    b.x1.setY(std::min(b.x1.y(), other.x1.y()));
+    b.x1.setZ(std::min(b.x1.z(), other.x1.z()));
+    return b;
 }

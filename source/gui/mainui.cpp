@@ -13,6 +13,7 @@
 #include <QPushButton>
 #include <QCheckBox>
 #include <QSpinBox>
+#include <QLineEdit>
 
 #include <QJsonDocument>
 #include <QStatusBar>
@@ -237,6 +238,11 @@ QWidget *MainUI::createTrackViewPage()
     connect(nBox, QOverload<int>::of(&QSpinBox::valueChanged), trackView,
             &Track3DViewport::setNCascades);
     hbox->addWidget(nBox);
+
+    QLineEdit *edtStatus = new QLineEdit;
+    edtStatus->setReadOnly(true);
+    connect(trackView, &Track3DViewport::statusUpdate, edtStatus, &QLineEdit::setText);
+    hbox->addWidget(edtStatus);
 
     hbox->addStretch();
 
