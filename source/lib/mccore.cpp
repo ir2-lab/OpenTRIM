@@ -291,7 +291,7 @@ int mccore::run()
                 {
                     float *p = &pka.Impl(0);
                     while (ion *k = ion_queue_.pop_interstitial()) {
-                        handle_event(Event::IonStop, *k);
+                        handle_event(Event::Interstitial, *k);
                         p[k->myAtom()->id() - 1]++;
                         ion_queue_.free_ion(k);
                     }
@@ -378,15 +378,19 @@ int mccore::transport(ion *i)
         // Check if ion has enough energy to continue
         if (i->erg() < tr_opt_.min_energy) {
             /*
-             * projectile has to stop.
-             * Recoils are stored to the interstitial queue
-             * Ions (recoil_id==0) produce an IonStop event - they are implanted
+             * The ion has to stop.
+             * Event::IonStop signals end of the track.
+             * Recoils are stored to the interstitial queue. If they survive
+             * cascade recombination, a Event::Interstitial is created
+             * Source Ions (recoil_id==0) produce both IonStop & Interstitial events
+             * because they do not take part in cascade recombination
              *
              */
+            handle_event(Event::IonStop, *i);
             if (i->recoil_id()) {
                 ion_queue_.push_interstitial(i); // recoil
             } else {
-                handle_event(Event::IonStop, *i);
+                handle_event(Event::Interstitial, *i);
                 ion_queue_.free_ion(i);
             }
             return 0; // history ends
@@ -706,24 +710,20 @@ void mccore::addUserTally(const user_tally::parameters &p)
 
 int mccore::init_streams(uint32_t event_mask)
 {
-    if (event_mask & static_cast<uint32_t>(Event::CascadeComplete)) {
+    if (event_mask & pka_buffer::event_mask) {
         pka_stream_.set_event_prototype(pka);
         pka_stream_.open();
-        pka_stream_mask_ =
-                pka_stream_.is_open() ? static_cast<uint32_t>(Event::CascadeComplete) : 0;
+        pka_stream_mask_ = pka_stream_.is_open() ? pka_buffer::event_mask : 0;
     }
-    if ((event_mask & static_cast<uint32_t>(Event::Vacancy))
-        || (event_mask & static_cast<uint32_t>(Event::IonStop))) {
+    if (event_mask & damage_event_buffer::event_mask) {
         damage_stream_.set_event_prototype(damage_ev);
         damage_stream_.open();
-        damage_stream_mask_ = damage_stream_.is_open()
-                ? static_cast<uint32_t>(Event::Vacancy) | static_cast<uint32_t>(Event::IonStop)
-                : 0;
+        damage_stream_mask_ = damage_stream_.is_open() ? damage_event_buffer::event_mask : 0;
     }
-    if (event_mask & static_cast<uint32_t>(Event::IonExit)) {
+    if (event_mask & exit_buffer::event_mask) {
         exit_stream_.set_event_prototype(exit_ev);
         exit_stream_.open();
-        exit_stream_mask_ = exit_stream_.is_open() ? static_cast<uint32_t>(Event::IonExit) : 0;
+        exit_stream_mask_ = exit_stream_.is_open() ? exit_buffer::event_mask : 0;
     }
     globalEventMask_ |= event_mask;
     return 0;

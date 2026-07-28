@@ -1,7 +1,8 @@
 #ifndef EVENT_STREAM_H
 #define EVENT_STREAM_H
 
-#include "geometry.h"
+#include "tally.h"
+
 #include <cassert>
 #include <cstring>
 #include <string>
@@ -167,6 +168,8 @@ class pka_buffer : public event_buffer
     float Tdam_LSS_, NRT_LSS_, NRT_;
 
 public:
+    static constexpr uint32_t event_mask = static_cast<uint32_t>(Event::CascadeComplete);
+
     pka_buffer();
 
     /**
@@ -235,6 +238,8 @@ class exit_buffer : public event_buffer
     // IonId AtomId CellId erg pos(3) dir(3) s
 
 public:
+    static constexpr uint32_t event_mask = static_cast<uint32_t>(Event::IonExit);
+
     exit_buffer();
     /// Set the event buffer to the data of the given \ref ion
     void set(const ion *i);
@@ -263,6 +268,9 @@ private:
     enum offset_t { ofHid = 0, ofRid = 1, ofIid = 2, ofDid = 3, ofPos = 4, ofEnd = 7 };
 
 public:
+    static constexpr uint32_t event_mask =
+            static_cast<uint32_t>(Event::Interstitial) | static_cast<uint32_t>(Event::Vacancy);
+
     damage_event_buffer();
 
     /// Set the event buffer to the data of the given \ref ion
