@@ -215,9 +215,11 @@ QWidget *MainUI::createTrackViewPage()
     QHBoxLayout *hbox = new QHBoxLayout(bar);
     hbox->setContentsMargins(0, 0, 0, 0);
 
+    CascadeRecorder *R = trackView->cascadeRecorder();
+
     QPushButton *capBt = new QPushButton(tr("Capture on"));
     capBt->setCheckable(true);
-    connect(capBt, &QPushButton::toggled, trackView, &Track3DViewport::setCapture);
+    connect(capBt, &QPushButton::toggled, R, &CascadeRecorder::capture);
     connect(trackView, &Track3DViewport::captureChanged, capBt, [capBt](bool on) {
         capBt->setChecked(on); // reflect auto-stop
         capBt->setText(on ? tr("Capture off") : tr("Capture on"));
@@ -225,20 +227,19 @@ QWidget *MainUI::createTrackViewPage()
     hbox->addWidget(capBt);
 
     QPushButton *clearBt = new QPushButton(tr("Clear"));
-    connect(clearBt, &QPushButton::clicked, trackView, &Track3DViewport::clear);
+    connect(clearBt, &QPushButton::clicked, R, &CascadeRecorder::clear);
     hbox->addWidget(clearBt);
 
     QCheckBox *ringBox = new QCheckBox(tr("Ring"));
     ringBox->setChecked(true);
-    connect(ringBox, &QCheckBox::toggled, trackView, &Track3DViewport::setRingMode);
+    connect(ringBox, &QCheckBox::toggled, R, &CascadeRecorder::setRingMode);
     hbox->addWidget(ringBox);
 
     hbox->addWidget(new QLabel(tr("Cascades")));
     QSpinBox *nBox = new QSpinBox;
     nBox->setRange(1, 20);
-    nBox->setValue(trackView->nCascades());
-    connect(nBox, QOverload<int>::of(&QSpinBox::valueChanged), trackView,
-            &Track3DViewport::setNCascades);
+    nBox->setValue(R->nCascades());
+    connect(nBox, QOverload<int>::of(&QSpinBox::valueChanged), R, &CascadeRecorder::setNCascades);
     hbox->addWidget(nBox);
 
     hbox->addWidget(new QLabel(tr("Speed [ns/s]")));
@@ -246,13 +247,13 @@ QWidget *MainUI::createTrackViewPage()
     spdBox->setRange(0.1, 10.0);
     spdBox->setSingleStep(0.1);
     spdBox->setValue(1.0);
-    connect(spdBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), trackView,
-            &Track3DViewport::setSpeed);
+    connect(spdBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), R,
+            &CascadeRecorder::setPlaybackSpeed);
     hbox->addWidget(spdBox);
 
     QLineEdit *edtStatus = new QLineEdit;
     edtStatus->setReadOnly(true);
-    connect(trackView, &Track3DViewport::statusUpdate, edtStatus, &QLineEdit::setText);
+    connect(R, &CascadeRecorder::statusUpdate, edtStatus, &QLineEdit::setText);
     hbox->addWidget(edtStatus);
 
     hbox->addStretch();

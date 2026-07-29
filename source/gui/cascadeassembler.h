@@ -33,6 +33,7 @@ struct Cascade
     std::vector<TrackVertex> buff;
     std::vector<int32_t> start_pos;
     std::vector<int32_t> length;
+    float duration;
 };
 
 // Builds cascades from the event stream. feed() (sim thread) copies events into a

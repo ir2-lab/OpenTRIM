@@ -20,35 +20,154 @@ class TrackDataChannel;
 class QOpenGLShaderProgram;
 struct Cascade;
 
-// 3D viewport (QOpenGLWidget): target box + material regions + orbit camera,
-// and the ion cascade tracks drawn as line strips with time-evolution playback.
+// specialized clock for world- & simulation(playback)- time
+// both times are monotonous, always advancing
+class CascadeRecorderClock
+{
+public:
+    bool isRunning() const { return clockRunning_; }
+    double speed() const { return speed_; }
+    void setSpeed(double s)
+    {
+        if (clockRunning_) {
+            pause();
+            speed_ = s;
+            resume();
+        } else
+            speed_ = s;
+    }
+    double worldTime() const
+    {
+        return twOffset_ + (clockRunning_ ? clock_.elapsed() / 1000.0 : 0.0);
+    }
+    double playbackTime() const
+    {
+        return tsOffset_ + (clockRunning_ ? clock_.elapsed() / 1000.0 * speed_ : 0.0);
+    }
+    void start()
+    {
+        twOffset_ = tsOffset_ = 0;
+        clock_.start();
+        clockRunning_ = true;
+    }
+    void reset()
+    {
+        twOffset_ = tsOffset_ = 0;
+        if (clockRunning_)
+            clock_.restart();
+    }
+    void pause()
+    {
+        if (!clockRunning_)
+            return;
+        double t = clock_.elapsed() / 1000.0;
+        twOffset_ += t;
+        tsOffset_ += t * speed_;
+        clockRunning_ = false;
+    }
+    void resume()
+    {
+        if (clockRunning_)
+            return;
+        clock_.restart();
+        clockRunning_ = true;
+    }
+
+private:
+    QElapsedTimer clock_;
+    bool clockRunning_{ false };
+    double twOffset_{ 0.0 }; // [s] world time offset
+    double tsOffset_{ 0.0 }; // [ns] simulation/playback time offset
+    double speed_{ 1.0 }; // [ns/s] playback speed
+};
+
+// Recorder object with internal state machine functionality
 // Owns the TrackDataChannel and installs the core event handler.
-class Track3DViewport : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core
+// Gets cascades from the TrackDataChannel
+// Stores and updates the buffer of displayed cascades
+class CascadeRecorder : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(int nCascades READ nCascades WRITE setNCascades)
+    Q_PROPERTY(double playbackSpeed READ playbackSpeed WRITE setPlaybackSpeed)
+
+public:
+    enum State { Idle, Capturing, Paused, Finishing };
+    enum Mode { Batch, Ring };
+
+    typedef std::deque<std::shared_ptr<const Cascade>> cascade_buffer_t;
+
+    explicit CascadeRecorder(McDriverObj *driver, QObject *parent);
+
+    int nCascades() const { return nCascades_; }
+    double playbackSpeed() const { return clock_.speed(); }
+    State state() const { return state_; }
+    bool dirty() const { return tracksDirty_; }
+    void clearDirtyFlag() { tracksDirty_ = false; }
+    TrackDataChannel *channel() { return channel_; }
+    const cascade_buffer_t &cascade_buffer() const { return cascade_buffer_; }
+    double playbackTime() const { return clock_.playbackTime(); }
+    bool isRunning() const { return clock_.isRunning(); }
+    double tMin() const { return tMin_; }
+    double tMax() const { return tMax_; }
+
+public slots:
+    void capture(bool on) { stateMachine(on ? Start : Stop); }
+    void pause(bool on) { stateMachine(on ? Pause : Resume); }
+    void clear() { stateMachine(Clear); }
+    void setNCascades(int n);
+    void setRingMode(bool on);
+    void setPlaybackSpeed(double f); // f [ns/s]
+    void update() { stateMachine(Update); }
+
+signals:
+    void stateChange(State from, State to);
+    void statusUpdate(const QString &s);
+    void needsUpdate();
+
+private slots:
+    void onCascadeReady();
+
+private:
+    TrackDataChannel *channel_;
+    enum Event { Start, Stop, Pause, Resume, Update, Clear };
+    State state_{ Idle };
+    std::deque<std::shared_ptr<const Cascade>> cascade_buffer_;
+    bool tracksDirty_{ false };
+    Mode mode_{ Ring };
+    int nCascades_{ 5 };
+    CascadeRecorderClock clock_;
+    double tMin_{ 0.f }; // [ns] start of 1st displayed cascade
+    double tMax_{ 0.f }; // [ns] end of last displayed cascade
+
+    void stateMachine(Event e);
+    bool admitCascade(const std::shared_ptr<const Cascade> &c);
+    void evictOldest();
+    void statusUpdate_();
+    void clear_();
+};
+
+// 3D viewport (QOpenGLWidget): target box + material regions + orbit camera,
+// and the ion cascade tracks drawn as line strips with time-evolution playback.
+// Owns a CascadeRecorder object
+class Track3DViewport : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core
+{
+    Q_OBJECT
+
 public:
     enum View { Front, Back, Top, Bottom, Left, Right, Iso };
-    enum Mode { Batch, Ring };
 
     explicit Track3DViewport(McDriverObj *driver, QWidget *parent = nullptr);
     ~Track3DViewport() override;
 
-    int nCascades() const { return nCascades_; }
+    CascadeRecorder *cascadeRecorder() { return recorder_; }
 
 public slots:
     void homeView();
     void setPresetView(int v);
     void refreshScene();
 
-    void setCapture(bool on);
-    void clear();
-    void setNCascades(int n);
-    void setRingMode(bool on);
-    void setSpeed(double f); // f [ns/s]
-
-signals:
-    void statusUpdate(const QString &s);
+signals:   
     void captureChanged(bool on);
 
 protected:
@@ -63,7 +182,7 @@ protected:
     void wheelEvent(QWheelEvent *e) override;
 
 private slots:
-    void onCascadeReady();
+    void onRecorderStateChange(CascadeRecorder::State from, CascadeRecorder::State to);
 
 private:
     struct RegionBox
@@ -79,24 +198,11 @@ private:
     QMatrix4x4 mvp() const;
     void fitView();
 
-    void admitCascade(const std::shared_ptr<const Cascade> &c);
-    void evictOldest_();
-    void drainPending_();
-    void recomputeTiming_(); // no GL
     void rebuildTrackBuffer();
     void appendTrackRuns_(const Cascade &c, int base, size_t j);
-    void updateCapture();
-    bool ringBehind() const;
-    void advancePlayback_();
-    void resetTracks_();
-    void resumeClock_();
-    void pauseClock_();
-    double worldTime() const; // [s]
-    float playbackTime() const; // [ns]
-    void statusUpdate_();
 
     McDriverObj *driver_; // not owned
-    TrackDataChannel *channel_;
+    CascadeRecorder *recorder_;
 
     QVector3D boxMin_, boxMax_;
     std::vector<RegionBox> regions_;
@@ -113,24 +219,7 @@ private:
     QOpenGLShaderProgram *trackProg_{ nullptr };
     QOpenGLVertexArrayObject trackVao_;
     QOpenGLBuffer trackVbo_{ QOpenGLBuffer::VertexBuffer };
-    std::deque<std::shared_ptr<const Cascade>> residents_;
-    std::deque<float> resDur_; // [ns]
-    std::deque<std::shared_ptr<const Cascade>> pending_; // ring staging
     std::vector<int> first_, count_; // glMultiDrawArrays args
-    std::vector<double> ends_; // cumulative end per resident [ns]
-    double tWindowStart_{ 0.0 }; // [ns]
-    bool tracksDirty_{ false };
-
-    Mode mode_{ Ring };
-    int nCascades_{ 5 };
-    bool viewActive_{ false };
-    bool captureOn_{ false };
-    bool runEnded_{ false };
-    double speed_{ 1.0 }; // [ns/s]
-    QElapsedTimer clock_;
-    bool clockRunning_{ false };
-    double twOffset_{ 0.0 }; // [s]
-    float tMax_{ 0.f }; // [ns]
 
     QVector3D center_;
     float radius_{ 100.f };

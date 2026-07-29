@@ -264,6 +264,7 @@ void CascadeAssembler::beginCascade(uint64_t id)
 {
     current_ = Cascade();
     current_.id = id;
+    current_.duration = 0.0f;
     track_start_ = 0;
     current_.buff.reserve(kCascadeReserve);
 }
@@ -280,6 +281,7 @@ void CascadeAssembler::endTrack()
     if (len > 0) {
         current_.start_pos.push_back(track_start_);
         current_.length.push_back(len);
+        current_.duration = std::max(current_.duration, current_.buff.back().t);
     }
 }
 

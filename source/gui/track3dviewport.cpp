@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <limits>
 #include <unordered_map>
 
 #include <QDebug>
@@ -106,6 +105,244 @@ static void appendBoxFaces(std::vector<float> &v, const QVector3D &lo, const QVe
     }
 }
 
+CascadeRecorder::CascadeRecorder(McDriverObj *driver, QObject *parent) : QObject(parent)
+{
+    // capture follows the 3D tab; flush publishes the tail cascade after a run
+    channel_ = new TrackDataChannel(this);
+    driver->setEventHandler(TrackDataChannel::onEvent, TrackDataChannel::eventMask(), channel_);
+    connect(channel_, &TrackDataChannel::cascadeReady, this, &CascadeRecorder::onCascadeReady,
+            Qt::QueuedConnection);
+    connect(
+            driver, &McDriverObj::simulationStarted, this,
+            [this](bool running) {
+                if (!running) {
+                    channel_->flush();
+                    capture(false);
+                }
+            },
+            Qt::QueuedConnection);
+    connect(driver, &McDriverObj::simulationCreated, this, &CascadeRecorder::clear);
+}
+
+void CascadeRecorder::setPlaybackSpeed(double f)
+{
+    f = qBound(0.1, f, 10.0);
+    if (f == clock_.speed())
+        return;
+    clock_.setSpeed(f);
+    emit needsUpdate();
+}
+
+void CascadeRecorder::setNCascades(int n)
+{
+    n = qBound(1, n, 20);
+    if (n == nCascades_)
+        return;
+    nCascades_ = n;
+    stateMachine(Clear);
+    emit needsUpdate();
+}
+
+void CascadeRecorder::setRingMode(bool on)
+{
+    mode_ = on ? Ring : Batch;
+    stateMachine(Clear);
+    emit needsUpdate();
+}
+
+void CascadeRecorder::stateMachine(Event e)
+{
+    State old_ = state_;
+    switch (state_) {
+    case Idle:
+        switch (e) {
+        case Start:
+            clear_();
+            clock_.start();
+            channel_->setCapturing(true);
+            state_ = Capturing;
+            break;
+        case Clear:
+            clear_();
+            clock_.reset();
+            break;
+        default:
+            break;
+        }
+        break;
+    case Capturing:
+        switch (e) {
+        case Stop:
+            channel_->setCapturing(false);
+            state_ = Finishing;
+            break;
+        case Pause:
+            channel_->setCapturing(false);
+            clock_.pause();
+            state_ = Paused;
+            break;
+        case Update:
+            if (mode_ == Batch) {
+                if (int(cascade_buffer_.size()) == nCascades_) {
+                    channel_->setCapturing(false);
+                    state_ = Finishing;
+                }
+            } else {
+                if (int(cascade_buffer_.size()) == nCascades_ + 1 && clock_.playbackTime() > tMax_)
+                    evictOldest();
+            }
+            break;
+        case Clear:
+            clear_();
+            clock_.reset();
+            break;
+        default:
+            break;
+        }
+        break;
+    case Paused:
+        switch (e) {
+        case Resume:
+            clock_.resume();
+            channel_->setCapturing(true);
+            state_ = Capturing;
+            break;
+        case Stop:
+            clock_.pause();
+            channel_->setCapturing(false);
+            state_ = Idle;
+            break;
+        case Clear:
+            clear_();
+            clock_.reset();
+            break;
+        default:
+            break;
+        }
+        break;
+    case Finishing:
+        switch (e) {
+        case Update:
+            if (clock_.playbackTime() > tMax_) {
+                clock_.pause();
+                state_ = Idle;
+            }
+            break;
+        case Clear:
+            clear_();
+            clock_.reset();
+            break;
+        default:
+            break;
+        }
+        break;
+    }
+    if (old_ != state_)
+        emit stateChange(old_, state_);
+    if (e == Update)
+        statusUpdate_();
+    emit needsUpdate();
+}
+
+void CascadeRecorder::clear_()
+{
+    int nresidents_ = cascade_buffer_.size();
+    cascade_buffer_.clear();
+    tMin_ = 0.f;
+    tMax_ = 0.f;
+    tracksDirty_ = nresidents_ > 0;
+}
+
+void CascadeRecorder::onCascadeReady()
+{
+    for (const auto &c : channel_->takeCascades()) {
+        if (!c || c->buff.empty())
+            continue;
+        if (int(c->buff.size()) > kTrackVboVerts) {
+            qWarning() << "Track3DViewport: cascade too large to draw:" << c->buff.size();
+            continue;
+        }
+        admitCascade(c);
+    }
+}
+
+bool CascadeRecorder::admitCascade(const std::shared_ptr<const Cascade> &c)
+{
+    if (!Capturing)
+        return false;
+
+    if (mode_ == Batch) {
+        // check if we already have N cascades
+        if (int(cascade_buffer_.size()) == nCascades_)
+            return false;
+
+        // check if it fits in the free space
+        int free = kTrackVboVerts;
+        for (const auto &r : cascade_buffer_)
+            free -= int(r->buff.size());
+        if (free < int(c->buff.size()))
+            return false;
+        // add cascade
+        cascade_buffer_.push_back(c);
+        // the 1st cascade initializes tMin, tMax
+        if (cascade_buffer_.size() == 1) {
+            tMin_ = tMax_ = clock_.playbackTime();
+        }
+        tMax_ += c->duration;
+        tracksDirty_ = true;
+        update();
+        return true;
+    } else {
+        // check if we already have N+1 cascades
+        // the last cascade is the one pending to be shown
+        if (int(cascade_buffer_.size()) == nCascades_ + 1)
+            return false;
+
+        // check if it fits in the free space
+        int free = kTrackVboVerts;
+        for (const auto &r : cascade_buffer_)
+            free -= int(r->buff.size());
+        if (free < int(c->buff.size()))
+            return false;
+
+        // add cascade
+        cascade_buffer_.push_back(c);
+        // the 1st cascade initializes tMin, tMax
+        if (cascade_buffer_.size() == 1) {
+            tMin_ = tMax_ = clock_.playbackTime();
+        }
+        if (int(cascade_buffer_.size()) <= nCascades_) {
+            tMax_ += c->duration;
+            tracksDirty_ = true;
+        }
+        update();
+        return true;
+    }
+}
+
+void CascadeRecorder::evictOldest()
+{
+    tMin_ += cascade_buffer_.front()->duration;
+    cascade_buffer_.pop_front();
+    tMax_ += cascade_buffer_.back()->duration;
+    tracksDirty_ = true;
+}
+
+void CascadeRecorder::statusUpdate_()
+{
+
+    int n = cascade_buffer_.size();
+    float ts = clock_.playbackTime();
+    double tw = clock_.worldTime();
+    QString s = QString("N: %1, tw: %2, tmin: %3, ts: %4, tmax: %5")
+                        .arg(n)
+                        .arg(tw, 0, 'f', 2)
+                        .arg(tMin_, 0, 'f', 2)
+                        .arg(ts, 0, 'f', 2)
+                        .arg(tMax_, 0, 'f', 2);
+    emit statusUpdate(s);
+}
+
 Track3DViewport::Track3DViewport(McDriverObj *driver, QWidget *parent)
     : QOpenGLWidget(parent), driver_(driver)
 {
@@ -119,25 +356,13 @@ Track3DViewport::Track3DViewport(McDriverObj *driver, QWidget *parent)
     setMinimumSize(320, 240);
     setFocusPolicy(Qt::StrongFocus);
 
-    // capture follows the 3D tab; flush publishes the tail cascade after a run
-    channel_ = new TrackDataChannel(this);
-    driver_->setEventHandler(TrackDataChannel::onEvent, TrackDataChannel::eventMask(), channel_);
-    connect(channel_, &TrackDataChannel::cascadeReady, this, &Track3DViewport::onCascadeReady,
-            Qt::QueuedConnection);
-
-    connect(
-            driver_, &McDriverObj::simulationStarted, this,
-            [this](bool running) {
-                if (!running) {
-                    channel_->flush();
-                    runEnded_ = true; // let the sweep finish first
-                }
-            },
-            Qt::QueuedConnection);
+    recorder_ = new CascadeRecorder(driver_, this);
+    connect(recorder_, &CascadeRecorder::stateChange, this,
+            &Track3DViewport::onRecorderStateChange);
+    connect(recorder_, &CascadeRecorder::needsUpdate, this, [this]() { update(); });
 
     connect(driver_, &McDriverObj::configChanged, this, &Track3DViewport::refreshScene);
     connect(driver_, &McDriverObj::simulationCreated, this, &Track3DViewport::refreshScene);
-    connect(driver_, &McDriverObj::simulationCreated, this, &Track3DViewport::clear);
 }
 
 Track3DViewport::~Track3DViewport()
@@ -220,11 +445,11 @@ void Track3DViewport::paintGL()
 
     if (sceneDirty_)
         buildSceneBuffers();
-    if (tracksDirty_) {
+    if (recorder_->dirty()) {
         rebuildTrackBuffer();
-        tracksDirty_ = false;
+        recorder_->clearDirtyFlag();
     }
-    advancePlayback_();
+
     if (!prog_ || !prog_->isLinked())
         return;
 
@@ -251,24 +476,23 @@ void Track3DViewport::paintGL()
     if (trackProg_ && trackProg_->isLinked() && !first_.empty()) {
         trackProg_->bind();
         trackProg_->setUniformValue("uMvp", mvp());
-        trackProg_->setUniformValue("uTime", playbackTime());
+        trackProg_->setUniformValue("uTime", static_cast<GLfloat>(recorder_->playbackTime()));
         trackVao_.bind();
         glMultiDrawArrays(GL_LINE_STRIP, first_.data(), count_.data(), int(first_.size()));
         trackVao_.release();
         trackProg_->release();
     }
 
-    if (clockRunning_ || tracksDirty_ || !pending_.empty())
-        update();
+    recorder_->update();
 
-    statusUpdate_();
+    if (recorder_->isRunning())
+        update();
 }
 
 void Track3DViewport::showEvent(QShowEvent *e)
 {
     QOpenGLWidget::showEvent(e);
-    viewActive_ = true;
-    updateCapture();
+    recorder_->pause(false);
     readSceneFromConfig();
     if (!viewInitialized_) {
         viewInitialized_ = true;
@@ -281,18 +505,7 @@ void Track3DViewport::showEvent(QShowEvent *e)
 void Track3DViewport::hideEvent(QHideEvent *e)
 {
     QOpenGLWidget::hideEvent(e);
-    viewActive_ = false;
-    setCapture(false); // capture goes off when the view is hidden
-}
-
-void Track3DViewport::updateCapture()
-{
-    bool want = captureOn_ && viewActive_;
-    if (mode_ == Batch && int(residents_.size()) >= nCascades_)
-        want = false; // batch has its N
-    if (mode_ == Ring && (ringBehind() || !pending_.empty()))
-        want = false; // acquire the next only when playback has caught up
-    channel_->setCapturing(want);
+    recorder_->pause(true); // capture pauses when the view is hidden
 }
 
 void Track3DViewport::readSceneFromConfig()
@@ -447,144 +660,6 @@ void Track3DViewport::refreshScene()
     update();
 }
 
-void Track3DViewport::onCascadeReady()
-{
-    for (const auto &c : channel_->takeCascades()) {
-        if (!c || c->buff.empty())
-            continue;
-        if (int(c->buff.size()) > kTrackVboVerts) {
-            qWarning() << "Track3DViewport: cascade too large to draw:" << c->buff.size();
-            continue;
-        }
-        if (mode_ == Ring) // ring admits via drainPending_
-            pending_.push_back(c);
-        else
-            admitCascade(c);
-    }
-    updateCapture();
-    update();
-}
-
-void Track3DViewport::admitCascade(const std::shared_ptr<const Cascade> &c)
-{
-    residents_.push_back(c);
-    resDur_.push_back(cascadeDuration(*c));
-
-    if (mode_ == Ring) {
-        while (int(residents_.size()) > nCascades_)
-            evictOldest_();
-    } else {
-        while (int(residents_.size()) > nCascades_) {
-            residents_.pop_back();
-            resDur_.pop_back();
-        }
-    }
-
-    // stay within the VBO capacity
-    int total = 0;
-    for (const auto &r : residents_)
-        total += int(r->buff.size());
-    while (total > kTrackVboVerts && residents_.size() > 1) {
-        total -= int(residents_.front()->buff.size());
-        evictOldest_();
-    }
-    recomputeTiming_();
-    tracksDirty_ = true;
-}
-
-void Track3DViewport::evictOldest_()
-{
-    tWindowStart_ += resDur_.front(); // its time is now in the past
-    residents_.pop_front();
-    resDur_.pop_front();
-}
-
-void Track3DViewport::recomputeTiming_()
-{
-    ends_.clear();
-    double t = 0.0;
-    for (float d : resDur_) {
-        t += d;
-        ends_.push_back(t);
-    }
-    tMax_ = float(t);
-}
-
-bool Track3DViewport::ringBehind() const
-{
-    if (mode_ != Ring || !captureOn_ || int(residents_.size()) < nCascades_ || ends_.empty())
-        return false;
-    return speed_ * worldTime() - tWindowStart_ < ends_.front(); // playhead not past the oldest
-}
-
-void Track3DViewport::drainPending_()
-{
-    if (pending_.empty() || ringBehind())
-        return; // hold: the oldest cascade is not fully shown yet
-    admitCascade(pending_.front());
-    pending_.pop_front();
-}
-
-void Track3DViewport::advancePlayback_()
-{
-    const bool run = viewActive_ && (captureOn_ || !pending_.empty());
-    if (run)
-        resumeClock_();
-    else
-        pauseClock_();
-
-    if (mode_ == Ring)
-        drainPending_();
-
-    if (captureOn_) {
-        const double rel = speed_ * worldTime() - tWindowStart_;
-        const bool swept = tMax_ <= 0.f || rel >= double(tMax_);
-        const bool full = int(residents_.size()) >= nCascades_;
-        if (mode_ == Ring) {
-            if (runEnded_ && pending_.empty() && swept)
-                setCapture(false); // ring: sweep done after the run ended
-        } else if ((full || runEnded_) && swept) {
-            setCapture(false); // batch: N captured (or run ended) and swept
-        }
-    }
-    updateCapture();
-}
-
-void Track3DViewport::resetTracks_()
-{
-    residents_.clear();
-    resDur_.clear();
-    pending_.clear();
-    first_.clear();
-    count_.clear();
-    ends_.clear();
-    tMax_ = 0.f;
-    tWindowStart_ = 0.0;
-    runEnded_ = false;
-    tracksDirty_ = false;
-}
-
-void Track3DViewport::resumeClock_()
-{
-    if (!clockRunning_) {
-        clock_.restart();
-        clockRunning_ = true;
-    }
-}
-
-void Track3DViewport::pauseClock_()
-{
-    if (clockRunning_) {
-        twOffset_ += clock_.elapsed() / 1000.0;
-        clockRunning_ = false;
-    }
-}
-
-double Track3DViewport::worldTime() const
-{
-    return twOffset_ + (clockRunning_ ? clock_.elapsed() / 1000.0 : 0.0);
-}
-
 void Track3DViewport::appendTrackRuns_(const Cascade &c, int base, size_t j)
 {
     const int s = c.start_pos[j], len = c.length[j];
@@ -593,6 +668,7 @@ void Track3DViewport::appendTrackRuns_(const Cascade &c, int base, size_t j)
         const TrackVertex &a = c.buff[s + k - 1], &b = c.buff[s + k];
         // split at recoil-id changes and periodic-boundary wraps
         const bool ridChange = a.rid != b.rid;
+        assert(!ridChange);
         const bool wrap = std::abs(a.x - b.x) > wrapThresh_[0]
                 || std::abs(a.y - b.y) > wrapThresh_[1] || std::abs(a.z - b.z) > wrapThresh_[2];
         if (ridChange || wrap) {
@@ -615,24 +691,26 @@ void Track3DViewport::rebuildTrackBuffer()
     count_.clear();
 
     int total = 0;
-    for (const auto &c : residents_)
-        total += int(c->buff.size());
+    const auto &cbuff = recorder_->cascade_buffer();
+    int N = std::min(recorder_->nCascades(), int(cbuff.size()));
+    for (int r = 0; r < N; ++r)
+        total += int(cbuff[r]->buff.size());
 
     std::vector<TrackVertex> all;
     all.reserve(total);
     int base = 0;
     size_t idx = 0;
-    float run = 0.f; // window-relative start of the cascade
-    for (const auto &c : residents_) {
-        for (size_t j = 0; j < c->start_pos.size(); ++j)
-            appendTrackRuns_(*c, base, j);
+    float t0 = recorder_->tMin(); // window-relative start of the cascade
+    for (int r = 0; r < N; ++r) {
+        for (size_t j = 0; j < cbuff[r]->start_pos.size(); ++j)
+            appendTrackRuns_(*cbuff[r], base, j);
         // lay this cascade end-to-end on the window-relative time axis
-        size_t i = all.size(), n = c->buff.size() + i;
-        all.insert(all.end(), c->buff.begin(), c->buff.end());
+        size_t i = all.size(), n = cbuff[r]->buff.size() + i;
+        all.insert(all.end(), cbuff[r]->buff.begin(), cbuff[r]->buff.end());
         for (; i < n; ++i)
-            all[i].t += run;
-        run += resDur_[idx];
-        base += int(c->buff.size());
+            all[i].t += t0;
+        t0 += cbuff[r]->duration;
+        base += int(cbuff[r]->buff.size());
         ++idx;
     }
 
@@ -643,95 +721,12 @@ void Track3DViewport::rebuildTrackBuffer()
     }
 }
 
-float Track3DViewport::playbackTime() const
+void Track3DViewport::onRecorderStateChange(CascadeRecorder::State from, CascadeRecorder::State to)
 {
-    if (tMax_ <= 0.f) // no data: show everything
-        return std::numeric_limits<float>::max();
-    const double rel = speed_ * worldTime() - tWindowStart_; // window-relative sweep
-    return float(qBound(0.0, rel, double(tMax_)));
-}
-
-void Track3DViewport::statusUpdate_()
-{
-    const double tmax = tMax_ > 0.f ? qBound(0.0, speed_ * worldTime() - tWindowStart_, double(tMax_))
-                                    : 0.0;
-    QString s = QString("N: %1  t: %2/%3 ns  f: %4 ns/s")
-                        .arg(nCascades_)
-                        .arg(tmax, 0, 'f', 2)
-                        .arg(double(tMax_), 0, 'f', 2)
-                        .arg(speed_, 0, 'f', 1);
-    emit statusUpdate(s);
-}
-
-void Track3DViewport::setCapture(bool on)
-{
-    if (on == captureOn_)
-        return;
-    captureOn_ = on;
-    if (on) { // start fresh
-        resetTracks_();
-        twOffset_ = 0.0;
-        clockRunning_ = false;
-        if (viewActive_)
-            resumeClock_();
-    } else { // stop: freeze, discard staged
-        pending_.clear();
-        pauseClock_();
-    }
-    updateCapture();
-    emit captureChanged(on);
-    update();
-}
-
-void Track3DViewport::setSpeed(double f)
-{
-    f = qBound(0.1, f, 10.0);
-    if (f == speed_)
-        return;
-    const double tmax = speed_ * worldTime(); // keep the playhead continuous
-    speed_ = f;
-    twOffset_ = tmax / speed_;
-    if (clockRunning_)
-        clock_.restart();
-    update();
-}
-
-void Track3DViewport::clear()
-{
-    resetTracks_();
-    twOffset_ = 0.0;
-    clockRunning_ = false;
-    if (captureOn_ && viewActive_)
-        resumeClock_();
-    updateCapture();
-    update();
-}
-
-void Track3DViewport::setNCascades(int n)
-{
-    n = qBound(1, n, 20);
-    if (n == nCascades_)
-        return;
-    nCascades_ = n;
-    while (int(residents_.size()) > nCascades_) {
-        if (mode_ == Ring) {
-            evictOldest_();
-        } else {
-            residents_.pop_back();
-            resDur_.pop_back();
-        }
-    }
-    recomputeTiming_();
-    tracksDirty_ = true;
-    updateCapture();
-    update();
-}
-
-void Track3DViewport::setRingMode(bool on)
-{
-    mode_ = on ? Ring : Batch;
-    pending_.clear();
-    updateCapture();
+    if (from == CascadeRecorder::Capturing)
+        emit captureChanged(false);
+    if (to == CascadeRecorder::Capturing)
+        emit captureChanged(true);
     update();
 }
 
