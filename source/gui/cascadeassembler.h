@@ -33,7 +33,7 @@ struct Cascade
     std::vector<TrackVertex> buff;
     std::vector<int32_t> start_pos;
     std::vector<int32_t> length;
-    float duration;
+    float duration{ 0.f };
 };
 
 // Builds cascades from the event stream. feed() (sim thread) copies events into a
@@ -56,6 +56,9 @@ public:
     void setCapturing(bool on) { capturing_.store(on, std::memory_order_relaxed); }
     bool isCapturing() const { return capturing_.load(std::memory_order_relaxed); }
     uint64_t dropped() const { return dropped_.load(std::memory_order_relaxed); }
+
+    // per-axis wrap threshold [nm]; 1e30 disables an axis
+    void setWrapThresholds(float tx, float ty, float tz);
 
 private:
     struct RawEvent
@@ -106,7 +109,7 @@ private:
     void applyEvent(const RawEvent &r);
     void beginCascade(uint64_t id);
     void beginTrack(const TrackVertex &v);
-    void addVertex(const TrackVertex &v) { current_.buff.push_back(v); }
+    void addVertex(const TrackVertex &v);
     void endTrack();
     void handoff();
 
@@ -117,6 +120,7 @@ private:
     Cascade current_;
     int32_t track_start_{ 0 }; // first index of the open track in current_.buff
     sink_t sink_;
+    float activeWrapThresh_[3]{ 1e30f, 1e30f, 1e30f }; // consumer snapshot, per buffer
 
     // ---- shared ----
     std::vector<std::unique_ptr<RawBuffer>> pool_;
@@ -128,6 +132,7 @@ private:
     std::atomic<bool> stop_{ false };
     std::atomic<bool> capturing_{ false }; // pass-through until the view is active
     std::atomic<uint64_t> dropped_{ 0 };
+    float wrapThresh_[3]{ 1e30f, 1e30f, 1e30f }; // [nm] wrap-split config, written under mtx_
     bool finalize_{ false };
     bool finalizeDone_{ false };
     bool finalizeDiscard_{ false }; // flush found capture off: drop the partial tail

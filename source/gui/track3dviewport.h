@@ -127,8 +127,10 @@ signals:
 
 private slots:
     void onCascadeReady();
+    void applyGeometry_();
 
 private:
+    McDriverObj *driver_; // not owned
     TrackDataChannel *channel_;
     enum Event { Start, Stop, Pause, Resume, Update, Clear };
     State state_{ Idle };
@@ -199,14 +201,12 @@ private:
     void fitView();
 
     void rebuildTrackBuffer();
-    void appendTrackRuns_(const Cascade &c, int base, size_t j);
 
     McDriverObj *driver_; // not owned
     CascadeRecorder *recorder_;
 
     QVector3D boxMin_, boxMax_;
     std::vector<RegionBox> regions_;
-    float wrapThresh_[3]{ 1e30f, 1e30f, 1e30f }; // per-axis, periodic only
     bool sceneDirty_{ true };
 
     QOpenGLShaderProgram *prog_{ nullptr };

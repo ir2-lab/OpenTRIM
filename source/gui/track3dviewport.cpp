@@ -25,14 +25,6 @@ static const int kStride = kSceneFloats * sizeof(float);
 static const int kTrackVboBytes = 96 * 1024 * 1024;
 static const int kTrackVboVerts = kTrackVboBytes / int(sizeof(TrackVertex));
 
-static float cascadeDuration(const Cascade &c)
-{
-    float t = 0.f;
-    for (const TrackVertex &v : c.buff)
-        t = std::max(t, v.t);
-    return t;
-}
-
 static const char *kVertSrc = R"(#version 330 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec4 aColor;
@@ -105,7 +97,8 @@ static void appendBoxFaces(std::vector<float> &v, const QVector3D &lo, const QVe
     }
 }
 
-CascadeRecorder::CascadeRecorder(McDriverObj *driver, QObject *parent) : QObject(parent)
+CascadeRecorder::CascadeRecorder(McDriverObj *driver, QObject *parent)
+    : QObject(parent), driver_(driver)
 {
     // capture follows the 3D tab; flush publishes the tail cascade after a run
     channel_ = new TrackDataChannel(this);
@@ -122,6 +115,19 @@ CascadeRecorder::CascadeRecorder(McDriverObj *driver, QObject *parent) : QObject
             },
             Qt::QueuedConnection);
     connect(driver, &McDriverObj::simulationCreated, this, &CascadeRecorder::clear);
+    connect(driver, &McDriverObj::configChanged, this, &CascadeRecorder::applyGeometry_);
+    connect(driver, &McDriverObj::simulationCreated, this, &CascadeRecorder::applyGeometry_);
+    applyGeometry_();
+}
+
+void CascadeRecorder::applyGeometry_()
+{
+    const auto &t = driver_->options().Target;
+    const float hx = 0.5f * static_cast<float>(t.size.x());
+    const float hy = 0.5f * static_cast<float>(t.size.y());
+    const float hz = 0.5f * static_cast<float>(t.size.z());
+    channel_->setWrapThresholds(t.periodic_bc.x() ? hx : 1e30f, t.periodic_bc.y() ? hy : 1e30f,
+                                t.periodic_bc.z() ? hz : 1e30f);
 }
 
 void CascadeRecorder::setPlaybackSpeed(double f)
@@ -268,7 +274,7 @@ void CascadeRecorder::onCascadeReady()
 
 bool CascadeRecorder::admitCascade(const std::shared_ptr<const Cascade> &c)
 {
-    if (!Capturing)
+    if (state_ != Capturing)
         return false;
 
     if (mode_ == Batch) {
@@ -520,12 +526,6 @@ void Track3DViewport::readSceneFromConfig()
     boxMax_ = boxMin_ + QVector3D(t.size.x(), t.size.y(), t.size.z());
     RegionBox simBox({ boxMin_, boxMax_, Qt::black });
 
-    // periodic axes wrap the ion; a jump > half the box is a wrap
-    const QVector3D len = boxMax_ - boxMin_;
-    wrapThresh_[0] = t.periodic_bc.x() ? 0.5f * len.x() : 1e30f;
-    wrapThresh_[1] = t.periodic_bc.y() ? 0.5f * len.y() : 1e30f;
-    wrapThresh_[2] = t.periodic_bc.z() ? 0.5f * len.z() : 1e30f;
-
     std::unordered_map<std::string, size_t> mmap; // material_id -> index
     for (size_t i = 0; i < t.materials.size(); ++i)
         mmap[t.materials[i].id] = i;
@@ -660,31 +660,6 @@ void Track3DViewport::refreshScene()
     update();
 }
 
-void Track3DViewport::appendTrackRuns_(const Cascade &c, int base, size_t j)
-{
-    const int s = c.start_pos[j], len = c.length[j];
-    int run = 0;
-    for (int k = 1; k < len; ++k) {
-        const TrackVertex &a = c.buff[s + k - 1], &b = c.buff[s + k];
-        // split at recoil-id changes and periodic-boundary wraps
-        const bool ridChange = a.rid != b.rid;
-        assert(!ridChange);
-        const bool wrap = std::abs(a.x - b.x) > wrapThresh_[0]
-                || std::abs(a.y - b.y) > wrapThresh_[1] || std::abs(a.z - b.z) > wrapThresh_[2];
-        if (ridChange || wrap) {
-            if (k - run >= 2) {
-                first_.push_back(base + s + run);
-                count_.push_back(k - run);
-            }
-            run = k; // drop the joining segment, start a new strip
-        }
-    }
-    if (len - run >= 2) {
-        first_.push_back(base + s + run);
-        count_.push_back(len - run);
-    }
-}
-
 void Track3DViewport::rebuildTrackBuffer()
 {
     first_.clear();
@@ -699,11 +674,12 @@ void Track3DViewport::rebuildTrackBuffer()
     std::vector<TrackVertex> all;
     all.reserve(total);
     int base = 0;
-    size_t idx = 0;
     float t0 = recorder_->tMin(); // window-relative start of the cascade
     for (int r = 0; r < N; ++r) {
-        for (size_t j = 0; j < cbuff[r]->start_pos.size(); ++j)
-            appendTrackRuns_(*cbuff[r], base, j);
+        for (size_t j = 0; j < cbuff[r]->start_pos.size(); ++j) {
+            first_.push_back(base + cbuff[r]->start_pos[j]);
+            count_.push_back(cbuff[r]->length[j]);
+        }
         // lay this cascade end-to-end on the window-relative time axis
         size_t i = all.size(), n = cbuff[r]->buff.size() + i;
         all.insert(all.end(), cbuff[r]->buff.begin(), cbuff[r]->buff.end());
@@ -711,7 +687,6 @@ void Track3DViewport::rebuildTrackBuffer()
             all[i].t += t0;
         t0 += cbuff[r]->duration;
         base += int(cbuff[r]->buff.size());
-        ++idx;
     }
 
     if (!all.empty()) {

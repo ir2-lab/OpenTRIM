@@ -27,6 +27,10 @@ public:
     std::vector<std::shared_ptr<const Cascade>> takeCascades();
 
     bool isCapturing() const { return assembler_.isCapturing(); }
+    void setWrapThresholds(float tx, float ty, float tz)
+    {
+        assembler_.setWrapThresholds(tx, ty, tz);
+    }
 
 public slots:
     void setCapturing(bool on) { assembler_.setCapturing(on); }
