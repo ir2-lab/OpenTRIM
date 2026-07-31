@@ -12,11 +12,14 @@ void TrackDataChannel::onEvent(Event ev, const ion &i, void *p)
 
 void TrackDataChannel::enqueue(Cascade &&c)
 {
+    bool notify;
     {
         std::lock_guard<std::mutex> lock(mtx_);
+        notify = ready_.empty();
         ready_.push_back(std::make_shared<const Cascade>(std::move(c)));
     }
-    emit cascadeReady();
+    if (notify)
+        emit cascadeReady();
 }
 
 std::vector<std::shared_ptr<const Cascade>> TrackDataChannel::takeCascades()

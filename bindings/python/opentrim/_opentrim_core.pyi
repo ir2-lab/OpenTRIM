@@ -525,28 +525,31 @@ class Event:
       Replacement
     
       Vacancy
-    
+
+      Interstitial
+
       CascadeComplete
-    
+
       NewFlightPath
-    
+
       NEvent : Sentinel -- total event count.
     
       Invalid
     """
     BoundaryCrossing: typing.ClassVar[Event]  # value = <Event.BoundaryCrossing: 32>
-    CascadeComplete: typing.ClassVar[Event]  # value = <Event.CascadeComplete: 256>
+    CascadeComplete: typing.ClassVar[Event]  # value = <Event.CascadeComplete: 512>
+    Interstitial: typing.ClassVar[Event]  # value = <Event.Interstitial: 256>
     Invalid: typing.ClassVar[Event]  # value = <Event.Invalid: -1>
     IonExit: typing.ClassVar[Event]  # value = <Event.IonExit: 8>
     IonStop: typing.ClassVar[Event]  # value = <Event.IonStop: 16>
-    NEvent: typing.ClassVar[Event]  # value = <Event.NEvent: 1024>
-    NewFlightPath: typing.ClassVar[Event]  # value = <Event.NewFlightPath: 512>
+    NEvent: typing.ClassVar[Event]  # value = <Event.NEvent: 2048>
+    NewFlightPath: typing.ClassVar[Event]  # value = <Event.NewFlightPath: 1024>
     NewRecoil: typing.ClassVar[Event]  # value = <Event.NewRecoil: 2>
     NewSourceIon: typing.ClassVar[Event]  # value = <Event.NewSourceIon: 1>
     Replacement: typing.ClassVar[Event]  # value = <Event.Replacement: 64>
     Scattering: typing.ClassVar[Event]  # value = <Event.Scattering: 4>
     Vacancy: typing.ClassVar[Event]  # value = <Event.Vacancy: 128>
-    __members__: typing.ClassVar[dict[str, Event]]  # value = {'NewSourceIon': <Event.NewSourceIon: 1>, 'NewRecoil': <Event.NewRecoil: 2>, 'Scattering': <Event.Scattering: 4>, 'IonExit': <Event.IonExit: 8>, 'IonStop': <Event.IonStop: 16>, 'BoundaryCrossing': <Event.BoundaryCrossing: 32>, 'Replacement': <Event.Replacement: 64>, 'Vacancy': <Event.Vacancy: 128>, 'CascadeComplete': <Event.CascadeComplete: 256>, 'NewFlightPath': <Event.NewFlightPath: 512>, 'NEvent': <Event.NEvent: 1024>, 'Invalid': <Event.Invalid: -1>}
+    __members__: typing.ClassVar[dict[str, Event]]  # value = {'NewSourceIon': <Event.NewSourceIon: 1>, 'NewRecoil': <Event.NewRecoil: 2>, 'Scattering': <Event.Scattering: 4>, 'IonExit': <Event.IonExit: 8>, 'IonStop': <Event.IonStop: 16>, 'BoundaryCrossing': <Event.BoundaryCrossing: 32>, 'Replacement': <Event.Replacement: 64>, 'Vacancy': <Event.Vacancy: 128>, 'Interstitial': <Event.Interstitial: 256>, 'CascadeComplete': <Event.CascadeComplete: 512>, 'NewFlightPath': <Event.NewFlightPath: 1024>, 'NEvent': <Event.NEvent: 2048>, 'Invalid': <Event.Invalid: -1>}
     def __eq__(self, other: typing.Any) -> bool:
         ...
     def __getstate__(self) -> int:

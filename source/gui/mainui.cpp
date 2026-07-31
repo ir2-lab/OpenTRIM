@@ -11,6 +11,10 @@
 
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QCheckBox>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
+#include <QLineEdit>
 
 #include <QJsonDocument>
 #include <QStatusBar>
@@ -206,10 +210,53 @@ QWidget *MainUI::createTrackViewPage()
 {
     trackView = new Track3DViewport(driverObj_, this);
 
-    // camera toolbar under the viewport
+    // toolbar under the viewport
     QWidget *bar = new QWidget;
     QHBoxLayout *hbox = new QHBoxLayout(bar);
     hbox->setContentsMargins(0, 0, 0, 0);
+
+    CascadeRecorder *R = trackView->cascadeRecorder();
+
+    QPushButton *capBt = new QPushButton(tr("Capture on"));
+    capBt->setCheckable(true);
+    connect(capBt, &QPushButton::toggled, R, &CascadeRecorder::capture);
+    connect(trackView, &Track3DViewport::captureChanged, capBt, [capBt](bool on) {
+        capBt->setChecked(on); // reflect auto-stop
+        capBt->setText(on ? tr("Capture off") : tr("Capture on"));
+    });
+    hbox->addWidget(capBt);
+
+    QPushButton *clearBt = new QPushButton(tr("Clear"));
+    connect(clearBt, &QPushButton::clicked, R, &CascadeRecorder::clear);
+    hbox->addWidget(clearBt);
+
+    QCheckBox *ringBox = new QCheckBox(tr("Ring"));
+    ringBox->setChecked(true);
+    connect(ringBox, &QCheckBox::toggled, R, &CascadeRecorder::setRingMode);
+    hbox->addWidget(ringBox);
+
+    hbox->addWidget(new QLabel(tr("Cascades")));
+    QSpinBox *nBox = new QSpinBox;
+    nBox->setRange(1, 20);
+    nBox->setValue(R->nCascades());
+    connect(nBox, QOverload<int>::of(&QSpinBox::valueChanged), R, &CascadeRecorder::setNCascades);
+    hbox->addWidget(nBox);
+
+    hbox->addWidget(new QLabel(tr("Speed [ns/s]")));
+    QDoubleSpinBox *spdBox = new QDoubleSpinBox;
+    spdBox->setRange(0.1, 10.0);
+    spdBox->setSingleStep(0.1);
+    spdBox->setValue(1.0);
+    connect(spdBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), R,
+            &CascadeRecorder::setPlaybackSpeed);
+    hbox->addWidget(spdBox);
+
+    QLineEdit *edtStatus = new QLineEdit;
+    edtStatus->setReadOnly(true);
+    connect(R, &CascadeRecorder::statusUpdate, edtStatus, &QLineEdit::setText);
+    hbox->addWidget(edtStatus);
+
+    hbox->addStretch();
 
     struct
     {
@@ -234,7 +281,6 @@ QWidget *MainUI::createTrackViewPage()
         });
         hbox->addWidget(bt);
     }
-    hbox->addStretch();
 
     QWidget *page = new QWidget;
     QVBoxLayout *vbox = new QVBoxLayout(page);

@@ -10,9 +10,7 @@
 
 namespace fs = std::filesystem;
 
-pka_buffer::pka_buffer() : event_buffer(static_cast<uint32_t>(Event::CascadeComplete)), natoms_(0)
-{
-}
+pka_buffer::pka_buffer() : event_buffer(event_mask), natoms_(0) { }
 
 void pka_buffer::calc_nrt(const ion &i, const material *m)
 {
@@ -256,8 +254,7 @@ size_t event_stream::write(const float *buff, size_t nevents)
 }
 
 exit_buffer::exit_buffer()
-    : event_buffer(static_cast<uint32_t>(Event::IonExit), ofEnd,
-                   { "hid", "iid", "cid", "E", "x", "y", "z", "nx", "ny", "nz" },
+    : event_buffer(event_mask, ofEnd, { "hid", "iid", "cid", "E", "x", "y", "z", "nx", "ny", "nz" },
                    { "history id", "ion species id", "ion's cell id before exiting",
                      "ion energy [eV]", "x position [nm]", "y position [nm]", "z position [nm]",
                      "x direction cosine", "y direction cosine", "z direction cosine" })
@@ -280,8 +277,7 @@ void exit_buffer::set(const ion *i) //, int cellid)
 
 // { ofHid = 0, ofRid = 1, ofIid = 2, ofCid = 3, ofDid = 4, ofPos = 5, ofEnd = 8 }
 damage_event_buffer::damage_event_buffer()
-    : event_buffer(static_cast<uint32_t>(Event::IonStop) | static_cast<uint32_t>(Event::Vacancy),
-                   ofEnd, { "hid", "rid", "iid", "did", "x", "y", "z" },
+    : event_buffer(event_mask, ofEnd, { "hid", "rid", "iid", "did", "x", "y", "z" },
                    { "history id", "recoil id", "ion species id",
                      "defect type id 0: vacancy, 1: interstitial", "x position [nm]",
                      "y position [nm]", "z position [nm]" })

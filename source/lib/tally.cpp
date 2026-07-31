@@ -29,6 +29,9 @@ const char *event_name(Event ev)
     case Event::Vacancy:
         return "Vacancy";
         break;
+    case Event::Interstitial:
+        return "Interstitial";
+        break;
     case Event::CascadeComplete:
         return "CascadeComplete";
         break;
@@ -193,7 +196,7 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         ionizationCounter_ += i.ioniz();
         break;
 
-    case Event::IonStop:
+    case Event::Interstitial:
         k = iid * ncells_ + i.cellid();
         A[cI](k)++; // add implantation at current pos
         if (i.recoil_id()) // if this is a recoil (not a beam ion)

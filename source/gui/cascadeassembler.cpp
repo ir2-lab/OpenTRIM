@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <climits>
+#include <cmath>
 
 #include <ion.h>
 #include <target.h>
@@ -45,6 +46,14 @@ CascadeAssembler::~CascadeAssembler()
     cvReady_.notify_all();
     if (consumer_.joinable())
         consumer_.join();
+}
+
+void CascadeAssembler::setWrapThresholds(float tx, float ty, float tz)
+{
+    std::lock_guard<std::mutex> lk(mtx_);
+    wrapThresh_[0] = tx;
+    wrapThresh_[1] = ty;
+    wrapThresh_[2] = tz;
 }
 
 // -------------------- producer (simulation thread) --------------------
@@ -194,6 +203,12 @@ void CascadeAssembler::consumeLoop()
 
 void CascadeAssembler::processBuffer(RawBuffer *b)
 {
+    { // snapshot once per buffer
+        std::lock_guard<std::mutex> lk(mtx_);
+        activeWrapThresh_[0] = wrapThresh_[0];
+        activeWrapThresh_[1] = wrapThresh_[1];
+        activeWrapThresh_[2] = wrapThresh_[2];
+    }
     if (b->resyncBefore) { // a gap in the stream: drop the partial cascade
         current_ = Cascade();
         track_start_ = 0;
@@ -264,6 +279,7 @@ void CascadeAssembler::beginCascade(uint64_t id)
 {
     current_ = Cascade();
     current_.id = id;
+    current_.duration = 0.0f;
     track_start_ = 0;
     current_.buff.reserve(kCascadeReserve);
 }
@@ -274,12 +290,27 @@ void CascadeAssembler::beginTrack(const TrackVertex &v)
     addVertex(v);
 }
 
+void CascadeAssembler::addVertex(const TrackVertex &v)
+{
+    // drop the segment crossing a periodic boundary
+    if (static_cast<int32_t>(current_.buff.size()) > track_start_) {
+        const TrackVertex &p = current_.buff.back();
+        if (std::abs(p.x - v.x) > activeWrapThresh_[0] || std::abs(p.y - v.y) > activeWrapThresh_[1]
+            || std::abs(p.z - v.z) > activeWrapThresh_[2]) {
+            endTrack();
+            track_start_ = static_cast<int32_t>(current_.buff.size());
+        }
+    }
+    current_.buff.push_back(v);
+}
+
 void CascadeAssembler::endTrack()
 {
     int32_t len = static_cast<int32_t>(current_.buff.size()) - track_start_;
     if (len > 0) {
         current_.start_pos.push_back(track_start_);
         current_.length.push_back(len);
+        current_.duration = std::max(current_.duration, current_.buff.back().t);
     }
 }
 

@@ -874,6 +874,7 @@
                             "The supported events are:",
                             "- IonExit: the ion exits the simulation volume",
                             "- IonStop: the ion stops inside the simulation volume",
+                            "- Interstitial: an interstitial atom is created",
                             "- Vacancy: a lattice vacancy is created",
                             "- Replacement: a replacement event occurs",
                             "- CascadeComplete: a PKA cascade is completed",
