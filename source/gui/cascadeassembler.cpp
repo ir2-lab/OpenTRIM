@@ -257,7 +257,7 @@ void CascadeAssembler::applyEvent(const RawEvent &r)
     switch (state_) {
     case State::WaitForIon:
         if (r.ev == Event::NewSourceIon) {
-            beginCascade(r.ion_id);
+            beginCascade(r);
             beginTrack(r.v);
             state_ = State::InTrack;
         }
@@ -268,7 +268,7 @@ void CascadeAssembler::applyEvent(const RawEvent &r)
         case Event::NewSourceIon: // fires once per source ion (core source flag)
             endTrack();
             handoff();
-            beginCascade(r.ion_id);
+            beginCascade(r);
             beginTrack(r.v);
             break;
         case Event::NewRecoil:
@@ -294,7 +294,7 @@ void CascadeAssembler::applyEvent(const RawEvent &r)
         switch (r.ev) {
         case Event::NewSourceIon:
             handoff();
-            beginCascade(r.ion_id);
+            beginCascade(r);
             beginTrack(r.v);
             state_ = State::InTrack;
             break;
@@ -309,11 +309,12 @@ void CascadeAssembler::applyEvent(const RawEvent &r)
     }
 }
 
-void CascadeAssembler::beginCascade(uint64_t id)
+void CascadeAssembler::beginCascade(const RawEvent &r)
 {
     current_ = Cascade();
-    current_.id = id;
+    current_.id = r.ion_id;
     current_.duration = 0.0f;
+    current_.energy_range = { r.v.energy, r.v.energy };
     current_.epoch = activeEpoch_;
     track_start_ = 0;
     current_.buff.reserve(kCascadeReserve);
@@ -358,6 +359,7 @@ void CascadeAssembler::endTrack()
         current_.start_pos.push_back(track_start_);
         current_.length.push_back(len);
         current_.duration = std::max(current_.duration, current_.buff.back().t);
+        current_.energy_range[0] = std::min(current_.energy_range[0], current_.buff.back().energy);
     }
 }
 

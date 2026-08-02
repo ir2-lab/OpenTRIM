@@ -304,10 +304,10 @@ QWidget *MainUI::createTrackViewPage()
 
     hbox2->addWidget(new QLabel(tr("E min [eV]")));
     QDoubleSpinBox *eThrBox = new QDoubleSpinBox;
-    eThrBox->setRange(0.0, 1e9);
-    eThrBox->setDecimals(0);
-    connect(eThrBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), R,
-            &CascadeRecorder::setEnergyThreshold);
+    eThrBox->setRange(0.001, 1e9);
+    eThrBox->setDecimals(3);
+    connect(eThrBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), trackView,
+            &Track3DViewport::setEnergyThreshold);
     hbox2->addWidget(eThrBox);
 
     hbox2->addWidget(new QLabel(tr("Max gen")));

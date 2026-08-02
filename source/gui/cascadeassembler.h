@@ -34,6 +34,7 @@ struct Cascade
     std::vector<int32_t> start_pos;
     std::vector<int32_t> length;
     float duration{ 0.f };
+    std::array<float, 2> energy_range{ 0.f, 0.f }; // min, max
     uint32_t epoch{ 0 };
 };
 
@@ -113,7 +114,7 @@ private:
     void consumeLoop();
     void processBuffer(RawBuffer *b);
     void applyEvent(const RawEvent &r);
-    void beginCascade(uint64_t id);
+    void beginCascade(const RawEvent &r);
     void beginTrack(const TrackVertex &v);
     void addVertex(const TrackVertex &v);
     void endTrack();

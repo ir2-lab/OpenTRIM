@@ -310,7 +310,7 @@ void CascadeRecorder::onCascadeReady()
     }
 }
 
-bool CascadeRecorder::admitCascade(const std::shared_ptr<const Cascade> &c)
+bool CascadeRecorder::admitCascade(const std::shared_ptr<Cascade> &c)
 {
     if (state_ != Capturing)
         return false;
@@ -333,12 +333,20 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<const Cascade> &c)
             free -= int(r->buff.size());
         if (free < int(c->buff.size()))
             return false;
-        // add cascade
-        cascade_buffer_.push_back(c);
+
         // the 1st cascade initializes tMin, tMax
-        if (cascade_buffer_.size() == 1) {
+        if (cascade_buffer_.empty()) {
             tMin_ = tMax_ = clock_.playbackTime();
         }
+
+        // update cascade timing
+        for (auto &v : c->buff)
+            v.t += tMax_;
+
+        // add cascade
+        cascade_buffer_.push_back(c);
+
+        // update state
         tMax_ += c->duration;
         tracksDirty_ = true;
         update();
@@ -356,12 +364,19 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<const Cascade> &c)
         if (free < int(c->buff.size()))
             return false;
 
-        // add cascade
-        cascade_buffer_.push_back(c);
         // the 1st cascade initializes tMin, tMax
-        if (cascade_buffer_.size() == 1) {
+        if (cascade_buffer_.empty()) {
             tMin_ = tMax_ = clock_.playbackTime();
         }
+
+        // update cascade timing
+        for (auto &v : c->buff)
+            v.t += tMax_;
+
+        // add cascade
+        cascade_buffer_.push_back(c);
+
+        // update state
         if (int(cascade_buffer_.size()) <= nCascades_) {
             tMax_ += c->duration;
             tracksDirty_ = true;
@@ -603,6 +618,10 @@ void Track3DViewport::readSceneFromConfig()
     if (radius_ < 1e-3f)
         radius_ = 1.0f;
     sceneDirty_ = true;
+
+    // get energy limits
+    energyDataMin_ = opt.Transport.min_energy;
+    energyDataMax_ = opt.IonBeam.energy_distribution.center;
 }
 
 void Track3DViewport::buildSceneBuffers()
@@ -717,53 +736,31 @@ void Track3DViewport::rebuildTrackBuffer()
     first_.clear();
     count_.clear();
 
-    int total = 0;
     const auto &cbuff = recorder_->cascade_buffer();
     int N = std::min(recorder_->nCascades(), int(cbuff.size()));
-    for (int r = 0; r < N; ++r)
-        total += int(cbuff[r]->buff.size());
 
-    std::vector<TrackVertex> all;
-    all.reserve(total);
-    int base = 0;
-    float t0 = recorder_->tMin(); // window-relative start of the cascade
-    float emin = 0.f, emax = 0.f; // [eV]
+    trackVbo_.bind();
+    int vbo_offset = 0;
+    int track_offset = 0;
+    // float emin = 1e12f, emax = 0.f; // [eV]
     for (int r = 0; r < N; ++r) {
         const Cascade &c = *cbuff[r];
+
         for (size_t j = 0; j < c.start_pos.size(); ++j) {
-            first_.push_back(base + c.start_pos[j]);
+            first_.push_back(track_offset + c.start_pos[j]);
             count_.push_back(c.length[j]);
         }
-        // lay this cascade end-to-end on the window-relative time axis
-        size_t i = all.size(), n = c.buff.size() + i;
-        all.insert(all.end(), c.buff.begin(), c.buff.end());
-        for (; i < n; ++i) {
-            all[i].t += t0;
-            const float e = all[i].energy;
-            if (e > 0.f) {
-                emin = (emin == 0.f) ? e : std::min(emin, e);
-                emax = std::max(emax, e);
-            }
-        }
-        t0 += c.duration;
-        base += int(c.buff.size());
-    }
+        track_offset += int(c.buff.size());
 
-    if (!all.empty()) {
-        trackVbo_.bind();
-        trackVbo_.write(0, all.data(), int(all.size() * sizeof(TrackVertex)));
-        trackVbo_.release();
-    }
+        int len = c.buff.size() * sizeof(TrackVertex);
+        trackVbo_.write(vbo_offset, c.buff.data(), len);
+        vbo_offset += len;
 
-    if (emin <= 0.f)
-        emin = 1.f;
-    if (emax <= emin)
-        emax = emin;
-    if (emin != energyDataMin_ || emax != energyDataMax_) {
-        energyDataMin_ = emin;
-        energyDataMax_ = emax;
-        emit colorConfigChanged();
+        // if needeed
+        // emax = std::max(emax, c.energy_range[1]);
+        // emin = std::min(emin, c.energy_range[0]);
     }
+    trackVbo_.release();
 }
 
 void Track3DViewport::setColorMode(int m)
@@ -780,6 +777,14 @@ void Track3DViewport::setEnergyLog(bool on)
     if (on == energyLog_)
         return;
     energyLog_ = on;
+    emit colorConfigChanged();
+    update();
+}
+
+void Track3DViewport::setEnergyThreshold(double eV)
+{
+    recorder_->setEnergyThreshold(eV);
+    energyDataMin_ = eV;
     emit colorConfigChanged();
     update();
 }

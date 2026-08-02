@@ -152,7 +152,7 @@ private:
     uint32_t filterEpoch_{ 0 };
 
     void stateMachine(Event e);
-    bool admitCascade(const std::shared_ptr<const Cascade> &c);
+    bool admitCascade(const std::shared_ptr<Cascade> &c);
     void evictOldest();
     void statusUpdate_();
     void clear_();
@@ -186,6 +186,7 @@ public slots:
     void refreshScene();
     void setColorMode(int m);
     void setEnergyLog(bool on);
+    void setEnergyThreshold(double eV);
 
 signals:
     void captureChanged(bool on);
