@@ -21,6 +21,9 @@ struct probe
     std::set<uint64_t> ids; // distinct source-ion history ids
     int disableAt{ -1 }; // event index at which to turn capture off (-1 = never)
     int seen{ 0 };
+    int bumpAt{ -1 }; // source-ion count at which to bump the epoch (-1 = never)
+    bool bumped{ false };
+    std::set<uint64_t> preBumpIds;
     std::vector<Cascade> cascades;
     CascadeAssembler assembler; // last: joined before cascades/ids on destruction
 
@@ -34,6 +37,8 @@ static void probe_handler(Event ev, const ion &i, void *p)
     case Event::NewSourceIon:
         pr.c.source++;
         pr.ids.insert(static_cast<uint64_t>(i.ion_id()));
+        if (pr.bumpAt >= 0 && !pr.bumped)
+            pr.preBumpIds.insert(static_cast<uint64_t>(i.ion_id()));
         break;
     case Event::NewRecoil:
         pr.c.recoil++;
@@ -53,6 +58,10 @@ static void probe_handler(Event ev, const ion &i, void *p)
     pr.assembler.feed(ev, i);
     if (pr.disableAt >= 0 && ++pr.seen == pr.disableAt)
         pr.assembler.setCapturing(false); // turn capture off mid-run
+    if (pr.bumpAt >= 0 && !pr.bumped && pr.c.source >= pr.bumpAt) {
+        pr.assembler.setFilterEpoch(1);
+        pr.bumped = true;
+    }
 }
 
 static std::shared_ptr<mcdriver> make_driver(size_t nions, int nthreads)
@@ -218,6 +227,87 @@ int main()
         pr.assembler.flush();
         std::cout << "capture-off: cascades=" << pr.cascades.size() << std::endl;
         CHECK(pr.cascades.empty()); // interrupted cascade discarded, not emitted
+    }
+
+    // 6. limits filter at the source: dropped tracks never stored, source ion kept
+    {
+        size_t tracks_ref = 0;
+        {
+            probe ref;
+            ref.assembler.setCapturing(true);
+            auto D = make_driver(50, 1);
+            CHECK(D);
+            CHECK(D->install_event_handler(probe_handler, CascadeAssembler::eventMask(), &ref, 0));
+            D->exec(nullptr, 200);
+            ref.assembler.flush();
+            for (const auto &cc : ref.cascades)
+                tracks_ref += cc.start_pos.size();
+        }
+
+        probe g; // generation cutoff
+        g.assembler.setCapturing(true);
+        g.assembler.setGenCutoff(1);
+        g.assembler.setFilterEpoch(7);
+        auto Dg = make_driver(50, 1);
+        CHECK(Dg);
+        CHECK(Dg->install_event_handler(probe_handler, CascadeAssembler::eventMask(), &g, 0));
+        Dg->exec(nullptr, 200);
+        g.assembler.flush();
+        size_t tracks_g = 0;
+        for (const auto &cc : g.cascades) {
+            CHECK(cc.epoch == 7);
+            CHECK(cc.buff[cc.start_pos[0]].rid == 0); // source ion kept
+            for (size_t k = 0; k < cc.start_pos.size(); ++k)
+                CHECK(cc.buff[cc.start_pos[k]].rid <= 1);
+            tracks_g += cc.start_pos.size();
+        }
+        CHECK(!g.cascades.empty());
+        CHECK(tracks_g < tracks_ref); // deeper generations dropped
+
+        probe e; // energy threshold
+        e.assembler.setCapturing(true);
+        e.assembler.setEnergyThreshold(1000.f);
+        auto De = make_driver(50, 1);
+        CHECK(De);
+        CHECK(De->install_event_handler(probe_handler, CascadeAssembler::eventMask(), &e, 0));
+        De->exec(nullptr, 200);
+        e.assembler.flush();
+        for (const auto &cc : e.cascades) {
+            CHECK(cc.buff[cc.start_pos[0]].rid == 0); // source ion kept
+            for (size_t k = 0; k < cc.start_pos.size(); ++k) {
+                const TrackVertex &v = cc.buff[cc.start_pos[k]];
+                if (v.rid > 0)
+                    CHECK(v.energy >= 1000.f); // recoils start at/above the threshold
+            }
+        }
+        CHECK(!e.cascades.empty());
+        std::cout << "limits: ref_tracks=" << tracks_ref << " gen<=1_tracks=" << tracks_g
+                  << " e>=1keV cascades=" << e.cascades.size() << std::endl;
+    }
+
+    // 7. filter change mid-capture: cascades captured before it keep the old epoch
+    //    (recorder rejects them), later ones get the new one (capture-time stamp)
+    {
+        probe pr;
+        pr.assembler.setCapturing(true);
+        pr.bumpAt = 5; // bump after the 5th source ion
+        auto D = make_driver(50, 1);
+        CHECK(D);
+        CHECK(D->install_event_handler(probe_handler, CascadeAssembler::eventMask(), &pr, 0));
+        D->exec(nullptr, 200);
+        pr.assembler.flush();
+        CHECK(pr.bumped);
+        bool sawNew = false;
+        for (const auto &cc : pr.cascades) {
+            CHECK(cc.epoch == 0 || cc.epoch == 1);
+            if (pr.preBumpIds.count(cc.id))
+                CHECK(cc.epoch == 0); // pre-change capture never gets the new epoch
+            if (cc.epoch == 1)
+                sawNew = true;
+        }
+        CHECK(sawNew); // post-change captures appear
+        std::cout << "active-change: cascades=" << pr.cascades.size()
+                  << " pre=" << pr.preBumpIds.size() << std::endl;
     }
 
     std::cout << "ALL PASS" << std::endl;

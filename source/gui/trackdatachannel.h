@@ -31,6 +31,9 @@ public:
     {
         assembler_.setWrapThresholds(tx, ty, tz);
     }
+    void setEnergyThreshold(float eV) { assembler_.setEnergyThreshold(eV); }
+    void setGenCutoff(int g) { assembler_.setGenCutoff(g); }
+    void setFilterEpoch(uint32_t e) { assembler_.setFilterEpoch(e); }
 
 public slots:
     void setCapturing(bool on) { assembler_.setCapturing(on); }

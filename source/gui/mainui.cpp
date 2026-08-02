@@ -12,6 +12,8 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QSignalBlocker>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QLineEdit>
@@ -221,6 +223,7 @@ QWidget *MainUI::createTrackViewPage()
     capBt->setCheckable(true);
     connect(capBt, &QPushButton::toggled, R, &CascadeRecorder::capture);
     connect(trackView, &Track3DViewport::captureChanged, capBt, [capBt](bool on) {
+        QSignalBlocker block(capBt); // don't let setChecked re-emit toggled()
         capBt->setChecked(on); // reflect auto-stop
         capBt->setText(on ? tr("Capture off") : tr("Capture on"));
     });
@@ -282,11 +285,62 @@ QWidget *MainUI::createTrackViewPage()
         hbox->addWidget(bt);
     }
 
+    // color & limits toolbar
+    QWidget *bar2 = new QWidget;
+    QHBoxLayout *hbox2 = new QHBoxLayout(bar2);
+    hbox2->setContentsMargins(0, 0, 0, 0);
+
+    hbox2->addWidget(new QLabel(tr("Color")));
+    QComboBox *colorBox = new QComboBox;
+    colorBox->addItems({ tr("Generation"), tr("Energy"), tr("Species") });
+    connect(colorBox, QOverload<int>::of(&QComboBox::currentIndexChanged), trackView,
+            &Track3DViewport::setColorMode);
+    hbox2->addWidget(colorBox);
+
+    QCheckBox *logBox = new QCheckBox(tr("Log E"));
+    logBox->setChecked(trackView->energyLog());
+    connect(logBox, &QCheckBox::toggled, trackView, &Track3DViewport::setEnergyLog);
+    hbox2->addWidget(logBox);
+
+    hbox2->addWidget(new QLabel(tr("E min [eV]")));
+    QDoubleSpinBox *eThrBox = new QDoubleSpinBox;
+    eThrBox->setRange(0.0, 1e9);
+    eThrBox->setDecimals(0);
+    connect(eThrBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), R,
+            &CascadeRecorder::setEnergyThreshold);
+    hbox2->addWidget(eThrBox);
+
+    hbox2->addWidget(new QLabel(tr("Max gen")));
+    QSpinBox *genBox = new QSpinBox;
+    genBox->setRange(-1, 20);
+    genBox->setValue(-1);
+    genBox->setSpecialValueText(tr("all"));
+    connect(genBox, QOverload<int>::of(&QSpinBox::valueChanged), R,
+            &CascadeRecorder::setGenCutoff);
+    hbox2->addWidget(genBox);
+
+    hbox2->addWidget(new QLabel(tr("Mem [MB]")));
+    QSpinBox *memBox = new QSpinBox;
+    memBox->setRange(0, 4096);
+    memBox->setSpecialValueText(tr("off"));
+    connect(memBox, QOverload<int>::of(&QSpinBox::valueChanged), R,
+            &CascadeRecorder::setMemoryCapMB);
+    hbox2->addWidget(memBox);
+
+    hbox2->addStretch();
+
+    TrackColorBar *colorBar = new TrackColorBar(trackView);
+
     QWidget *page = new QWidget;
     QVBoxLayout *vbox = new QVBoxLayout(page);
     vbox->setContentsMargins(0, 0, 0, 0);
-    vbox->addWidget(trackView, 1);
+    QHBoxLayout *center = new QHBoxLayout;
+    center->setContentsMargins(0, 0, 0, 0);
+    center->addWidget(trackView, 1);
+    center->addWidget(colorBar);
+    vbox->addLayout(center, 1);
     vbox->addWidget(bar);
+    vbox->addWidget(bar2);
     return page;
 }
 

@@ -1,6 +1,7 @@
 #ifndef TRACK3DVIEWPORT_H
 #define TRACK3DVIEWPORT_H
 
+#include <cstdint>
 #include <deque>
 #include <memory>
 #include <vector>
@@ -13,7 +14,9 @@
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLWidget>
 #include <QPoint>
+#include <QSize>
 #include <QVector3D>
+#include <QWidget>
 
 class McDriverObj;
 class TrackDataChannel;
@@ -110,6 +113,7 @@ public:
     bool isRunning() const { return clock_.isRunning(); }
     double tMin() const { return tMin_; }
     double tMax() const { return tMax_; }
+    int memoryCapMB() const { return memCapMB_; }
 
 public slots:
     void capture(bool on) { stateMachine(on ? Start : Stop); }
@@ -118,6 +122,9 @@ public slots:
     void setNCascades(int n);
     void setRingMode(bool on);
     void setPlaybackSpeed(double f); // f [ns/s]
+    void setMemoryCapMB(int mb);
+    void setEnergyThreshold(double eV);
+    void setGenCutoff(int g);
     void update() { stateMachine(Update); }
 
 signals:
@@ -141,12 +148,15 @@ private:
     CascadeRecorderClock clock_;
     double tMin_{ 0.f }; // [ns] start of 1st displayed cascade
     double tMax_{ 0.f }; // [ns] end of last displayed cascade
+    int memCapMB_{ 0 }; // 0 = no cap
+    uint32_t filterEpoch_{ 0 };
 
     void stateMachine(Event e);
     bool admitCascade(const std::shared_ptr<const Cascade> &c);
     void evictOldest();
     void statusUpdate_();
     void clear_();
+    void bumpFilterEpoch_();
 };
 
 // 3D viewport (QOpenGLWidget): target box + material regions + orbit camera,
@@ -158,19 +168,28 @@ class Track3DViewport : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Cor
 
 public:
     enum View { Front, Back, Top, Bottom, Left, Right, Iso };
+    enum ColorMode { Generation, Energy, Species };
 
     explicit Track3DViewport(McDriverObj *driver, QWidget *parent = nullptr);
     ~Track3DViewport() override;
 
     CascadeRecorder *cascadeRecorder() { return recorder_; }
 
+    int colorMode() const { return colorMode_; }
+    bool energyLog() const { return energyLog_; }
+    float energyMin() const { return energyDataMin_; } // [eV]
+    float energyMax() const { return energyDataMax_; }
+
 public slots:
     void homeView();
     void setPresetView(int v);
     void refreshScene();
+    void setColorMode(int m);
+    void setEnergyLog(bool on);
 
-signals:   
+signals:
     void captureChanged(bool on);
+    void colorConfigChanged();
 
 protected:
     void initializeGL() override;
@@ -221,12 +240,36 @@ private:
     QOpenGLBuffer trackVbo_{ QOpenGLBuffer::VertexBuffer };
     std::vector<int> first_, count_; // glMultiDrawArrays args
 
+    int colorMode_{ Generation };
+    bool energyLog_{ true };
+    float energyDataMin_{ 1.f }, energyDataMax_{ 1.f }; // [eV]
+
     QVector3D center_;
     float radius_{ 100.f };
     float dist_{ 300.f };
     float yaw_{ 45.f }, pitch_{ 30.f }; // degrees, +pitch = eye above
     QPoint lastPos_;
     bool viewInitialized_{ false };
+};
+
+// Legend next to the viewport: an energy gradient in Energy mode, else discrete
+// generation/species swatches. Repaints on the viewport's colorConfigChanged.
+class TrackColorBar : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit TrackColorBar(Track3DViewport *view, QWidget *parent = nullptr);
+    QSize sizeHint() const override { return QSize(84, 200); }
+
+    static QColor rampColor(float t); // mirrors track.frag ramp()
+    static QColor speciesColor(int aid); // mirrors track.frag speciesColor()
+
+protected:
+    void paintEvent(QPaintEvent *e) override;
+
+private:
+    Track3DViewport *view_; // not owned
 };
 
 #endif // TRACK3DVIEWPORT_H

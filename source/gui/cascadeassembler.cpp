@@ -56,6 +56,23 @@ void CascadeAssembler::setWrapThresholds(float tx, float ty, float tz)
     wrapThresh_[2] = tz;
 }
 
+void CascadeAssembler::setEnergyThreshold(float eV)
+{
+    std::lock_guard<std::mutex> lk(mtx_);
+    energyThresh_ = eV;
+}
+
+void CascadeAssembler::setGenCutoff(int g)
+{
+    std::lock_guard<std::mutex> lk(mtx_);
+    genCutoff_ = g;
+}
+
+void CascadeAssembler::setFilterEpoch(uint32_t e)
+{
+    captureEpoch_.store(e, std::memory_order_relaxed);
+}
+
 // -------------------- producer (simulation thread) --------------------
 
 CascadeAssembler::RawBuffer *CascadeAssembler::acquireFree()
@@ -87,6 +104,19 @@ void CascadeAssembler::feed(Event ev, const ion &i)
         return;
     }
 
+    const uint32_t ep = captureEpoch_.load(std::memory_order_relaxed);
+    if (cur_ != nullptr && cur_->epoch != ep) {
+        // filter changed: start a fresh-epoch buffer, drop any cascade open across it
+        if (cur_->count > 0) {
+            publishReady(cur_);
+            cur_ = nullptr;
+            sawGap_ = true;
+        } else {
+            cur_->epoch = ep;
+            cur_->resyncBefore = true;
+        }
+    }
+
     if (cur_ == nullptr) {
         cur_ = acquireFree();
         if (cur_ == nullptr) { // consumer behind: drop, resync at the next cascade
@@ -94,6 +124,7 @@ void CascadeAssembler::feed(Event ev, const ion &i)
             sawGap_ = true;
             return;
         }
+        cur_->epoch = ep;
         cur_->resyncBefore = sawGap_;
         sawGap_ = false;
     }
@@ -208,7 +239,10 @@ void CascadeAssembler::processBuffer(RawBuffer *b)
         activeWrapThresh_[0] = wrapThresh_[0];
         activeWrapThresh_[1] = wrapThresh_[1];
         activeWrapThresh_[2] = wrapThresh_[2];
+        activeEnergyThresh_ = energyThresh_;
+        activeGenCutoff_ = genCutoff_;
     }
+    activeEpoch_ = b->epoch;
     if (b->resyncBefore) { // a gap in the stream: drop the partial cascade
         current_ = Cascade();
         track_start_ = 0;
@@ -280,18 +314,27 @@ void CascadeAssembler::beginCascade(uint64_t id)
     current_ = Cascade();
     current_.id = id;
     current_.duration = 0.0f;
+    current_.epoch = activeEpoch_;
     track_start_ = 0;
     current_.buff.reserve(kCascadeReserve);
 }
 
 void CascadeAssembler::beginTrack(const TrackVertex &v)
 {
+    // keep the source ion (rid 0); filter recoils on their starting vertex
+    trackDropped_ = (v.rid > 0 && activeEnergyThresh_ > 0.f && v.energy < activeEnergyThresh_)
+            || (activeGenCutoff_ >= 0 && v.rid > activeGenCutoff_);
+    if (trackDropped_)
+        return;
     track_start_ = static_cast<int32_t>(current_.buff.size());
     addVertex(v);
 }
 
 void CascadeAssembler::addVertex(const TrackVertex &v)
 {
+    if (trackDropped_)
+        return;
+
     // drop the segment crossing a periodic boundary
     if (static_cast<int32_t>(current_.buff.size()) > track_start_) {
         const TrackVertex &p = current_.buff.back();
@@ -306,6 +349,10 @@ void CascadeAssembler::addVertex(const TrackVertex &v)
 
 void CascadeAssembler::endTrack()
 {
+    if (trackDropped_) {
+        trackDropped_ = false;
+        return;
+    }
     int32_t len = static_cast<int32_t>(current_.buff.size()) - track_start_;
     if (len > 0) {
         current_.start_pos.push_back(track_start_);
