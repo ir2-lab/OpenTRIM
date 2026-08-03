@@ -21,6 +21,7 @@
 class McDriverObj;
 class TrackDataChannel;
 class QOpenGLShaderProgram;
+class QImage;
 struct Cascade;
 
 // specialized clock for world- & simulation(playback)- time
@@ -171,10 +172,22 @@ public:
     enum View { Front, Back, Top, Bottom, Left, Right, Iso };
     enum ColorMode { Generation, Energy, Species };
 
+    struct CameraState
+    {
+        float yaw{ 45.f }, pitch{ 30.f };
+        float dist{ 300.f };
+        QVector3D center;
+    };
+
     explicit Track3DViewport(McDriverObj *driver, QWidget *parent = nullptr);
     ~Track3DViewport() override;
 
     CascadeRecorder *cascadeRecorder() { return recorder_; }
+
+    CameraState camera() const { return { yaw_, pitch_, dist_, center_ }; }
+    void setCamera(const CameraState &c);
+
+    QImage grabScreenshot(int scale = 2);
 
     int colorMode() const { return colorMode_; }
     bool energyLog() const { return energyLog_; }
@@ -227,6 +240,7 @@ private:
     void fitView();
 
     void rebuildTrackBuffer();
+    void drawScene_();
 
     McDriverObj *driver_; // not owned
     CascadeRecorder *recorder_;

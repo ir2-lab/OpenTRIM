@@ -11,8 +11,10 @@
 
 #include <QDebug>
 #include <QHideEvent>
+#include <QImage>
 #include <QLinearGradient>
 #include <QMouseEvent>
+#include <QOpenGLFramebufferObject>
 #include <QOpenGLShaderProgram>
 #include <QPainter>
 #include <QPalette>
@@ -518,14 +520,24 @@ void Track3DViewport::resizeGL(int w, int h)
 
 void Track3DViewport::paintGL()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     if (sceneDirty_)
         buildSceneBuffers();
     if (recorder_->dirty()) {
         rebuildTrackBuffer();
         recorder_->clearDirtyFlag();
     }
+
+    drawScene_();
+
+    recorder_->update();
+
+    if (recorder_->isRunning())
+        update();
+}
+
+void Track3DViewport::drawScene_()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if (!prog_ || !prog_->isLinked())
         return;
@@ -551,6 +563,7 @@ void Track3DViewport::paintGL()
     prog_->release();
 
     if (trackProg_ && trackProg_->isLinked() && !first_.empty()) {
+        glLineWidth(1.5f);
         trackProg_->bind();
         trackProg_->setUniformValue("uMvp", mvp());
         trackProg_->setUniformValue("uTime", static_cast<GLfloat>(recorder_->playbackTime()));
@@ -563,11 +576,43 @@ void Track3DViewport::paintGL()
         trackVao_.release();
         trackProg_->release();
     }
+}
 
-    recorder_->update();
+QImage Track3DViewport::grabScreenshot(int scale)
+{
+    makeCurrent();
 
-    if (recorder_->isRunning())
-        update();
+    if (sceneDirty_)
+        buildSceneBuffers();
+    if (recorder_->dirty()) {
+        rebuildTrackBuffer();
+        recorder_->clearDirtyFlag();
+    }
+
+    int s = qBound(1, scale, 4);
+    const int kMaxSide = 4096;
+    while (s > 1 && std::max(width(), height()) * s > kMaxSide)
+        --s;
+
+    QOpenGLFramebufferObjectFormat fmt;
+    fmt.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+    fmt.setSamples(4);
+    QOpenGLFramebufferObject fbo(width() * s, height() * s, fmt);
+    if (!fbo.isValid()) {
+        doneCurrent();
+        return grabFramebuffer();
+    }
+
+    fbo.bind();
+    glViewport(0, 0, fbo.width(), fbo.height());
+    drawScene_();
+    fbo.release();
+
+    QImage img = fbo.toImage();
+    glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
+    glViewport(0, 0, width(), height());
+    doneCurrent();
+    return img;
 }
 
 void Track3DViewport::showEvent(QShowEvent *e)
@@ -728,6 +773,19 @@ void Track3DViewport::setPresetView(int v)
         pitch_ = 30.0f;
         break;
     }
+    update();
+}
+
+void Track3DViewport::setCamera(const CameraState &c)
+{
+    if (std::isfinite(c.yaw))
+        yaw_ = c.yaw;
+    if (std::isfinite(c.pitch))
+        pitch_ = qBound(-89.0f, c.pitch, 89.0f);
+    if (std::isfinite(c.dist))
+        dist_ = qBound(radius_ * 0.1f, c.dist, radius_ * 30.0f);
+    if (std::isfinite(c.center.x()) && std::isfinite(c.center.y()) && std::isfinite(c.center.z()))
+        center_ = c.center;
     update();
 }
 

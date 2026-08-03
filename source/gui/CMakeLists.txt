@@ -25,6 +25,7 @@ set(GUI_HEADERS
     cascadeassembler.h
     trackdatachannel.h
     track3dviewport.h
+    trackviewwidget.h
 )
 
 set(GUI_SOURCES
@@ -49,6 +50,7 @@ set(GUI_SOURCES
     cascadeassembler.cpp
     trackdatachannel.cpp
     track3dviewport.cpp
+    trackviewwidget.cpp
 )
 
 # OpenGL for the 3D viewport
