@@ -16,15 +16,15 @@ void TrackDataChannel::enqueue(Cascade &&c)
     {
         std::lock_guard<std::mutex> lock(mtx_);
         notify = ready_.empty();
-        ready_.push_back(std::make_shared<const Cascade>(std::move(c)));
+        ready_.push_back(std::make_shared<Cascade>(std::move(c)));
     }
     if (notify)
         emit cascadeReady();
 }
 
-std::vector<std::shared_ptr<const Cascade>> TrackDataChannel::takeCascades()
+std::vector<std::shared_ptr<Cascade>> TrackDataChannel::takeCascades()
 {
-    std::vector<std::shared_ptr<const Cascade>> out;
+    std::vector<std::shared_ptr<Cascade>> out;
     std::lock_guard<std::mutex> lock(mtx_);
     out.assign(ready_.begin(), ready_.end());
     ready_.clear();

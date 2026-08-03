@@ -24,13 +24,16 @@ public:
 
     explicit TrackDataChannel(QObject *parent = nullptr);
 
-    std::vector<std::shared_ptr<const Cascade>> takeCascades();
+    std::vector<std::shared_ptr<Cascade>> takeCascades();
 
     bool isCapturing() const { return assembler_.isCapturing(); }
     void setWrapThresholds(float tx, float ty, float tz)
     {
         assembler_.setWrapThresholds(tx, ty, tz);
     }
+    void setEnergyThreshold(float eV) { assembler_.setEnergyThreshold(eV); }
+    void setGenCutoff(int g) { assembler_.setGenCutoff(g); }
+    void setFilterEpoch(uint32_t e) { assembler_.setFilterEpoch(e); }
 
 public slots:
     void setCapturing(bool on) { assembler_.setCapturing(on); }
@@ -43,7 +46,7 @@ private:
     void enqueue(Cascade &&c); // runs on the assembler's consumer thread
 
     std::mutex mtx_;
-    std::deque<std::shared_ptr<const Cascade>> ready_;
+    std::deque<std::shared_ptr<Cascade>> ready_;
 
     // declared last: its consumer thread is joined before ready_/mtx_ are destroyed
     CascadeAssembler assembler_;
