@@ -153,6 +153,7 @@ private:
 
     void stateMachine(Event e);
     bool admitCascade(const std::shared_ptr<Cascade> &c);
+    int capVerts() const;
     void evictOldest();
     void statusUpdate_();
     void clear_();
@@ -177,6 +178,7 @@ public:
 
     int colorMode() const { return colorMode_; }
     bool energyLog() const { return energyLog_; }
+    bool energyAuto() const { return energyAuto_; }
     float energyMin() const { return energyDataMin_; } // [eV]
     float energyMax() const { return energyDataMax_; }
 
@@ -187,6 +189,9 @@ public slots:
     void setColorMode(int m);
     void setEnergyLog(bool on);
     void setEnergyThreshold(double eV);
+    void setEnergyAuto(bool on);
+    void setEnergyUserMin(double eV);
+    void setEnergyUserMax(double eV);
 
 signals:
     void captureChanged(bool on);
@@ -215,6 +220,7 @@ private:
     };
 
     void readSceneFromConfig();
+    void updateEnergyRange_();
     void buildSceneBuffers();
     QVector3D eye() const;
     QMatrix4x4 mvp() const;
@@ -239,11 +245,15 @@ private:
     QOpenGLShaderProgram *trackProg_{ nullptr };
     QOpenGLVertexArrayObject trackVao_;
     QOpenGLBuffer trackVbo_{ QOpenGLBuffer::VertexBuffer };
+    int trackVboBytes_{ 0 };
     std::vector<int> first_, count_; // glMultiDrawArrays args
 
     int colorMode_{ Generation };
     bool energyLog_{ true };
-    float energyDataMin_{ 1.f }, energyDataMax_{ 1.f }; // [eV]
+    bool energyAuto_{ true };
+    float energyThreshold_{ 0.f }; // [eV]
+    float energyDataMin_{ 1.f }, energyDataMax_{ 1.e6f }; // [eV]
+    float energyUserMin_{ 1.f }, energyUserMax_{ 1.e6f }; // [eV]
 
     QVector3D center_;
     float radius_{ 100.f };

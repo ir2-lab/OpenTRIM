@@ -240,7 +240,7 @@ QWidget *MainUI::createTrackViewPage()
 
     hbox->addWidget(new QLabel(tr("Cascades")));
     QSpinBox *nBox = new QSpinBox;
-    nBox->setRange(1, 20);
+    nBox->setRange(1, 100);
     nBox->setValue(R->nCascades());
     connect(nBox, QOverload<int>::of(&QSpinBox::valueChanged), R, &CascadeRecorder::setNCascades);
     hbox->addWidget(nBox);
@@ -302,10 +302,45 @@ QWidget *MainUI::createTrackViewPage()
     connect(logBox, &QCheckBox::toggled, trackView, &Track3DViewport::setEnergyLog);
     hbox2->addWidget(logBox);
 
+    QCheckBox *autoBox = new QCheckBox(tr("Auto E"));
+    autoBox->setChecked(trackView->energyAuto());
+    hbox2->addWidget(autoBox);
+
+    hbox2->addWidget(new QLabel(tr("E scale [eV]")));
+    QDoubleSpinBox *escaleMin = new QDoubleSpinBox;
+    escaleMin->setRange(0.001, 1e9);
+    escaleMin->setDecimals(3);
+    escaleMin->setValue(trackView->energyMin());
+    escaleMin->setEnabled(!trackView->energyAuto());
+    connect(escaleMin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), trackView,
+            &Track3DViewport::setEnergyUserMin);
+    hbox2->addWidget(escaleMin);
+
+    QDoubleSpinBox *escaleMax = new QDoubleSpinBox;
+    escaleMax->setRange(0.001, 1e9);
+    escaleMax->setDecimals(3);
+    escaleMax->setValue(trackView->energyMax());
+    escaleMax->setEnabled(!trackView->energyAuto());
+    connect(escaleMax, QOverload<double>::of(&QDoubleSpinBox::valueChanged), trackView,
+            &Track3DViewport::setEnergyUserMax);
+    hbox2->addWidget(escaleMax);
+
+    connect(autoBox, &QCheckBox::toggled, trackView, &Track3DViewport::setEnergyAuto);
+    connect(autoBox, &QCheckBox::toggled, escaleMin, &QWidget::setDisabled);
+    connect(autoBox, &QCheckBox::toggled, escaleMax, &QWidget::setDisabled);
+    connect(autoBox, &QCheckBox::toggled, trackView, [this, escaleMin, escaleMax](bool on) {
+        if (!on) {
+            QSignalBlocker b1(escaleMin), b2(escaleMax);
+            escaleMin->setValue(trackView->energyMin());
+            escaleMax->setValue(trackView->energyMax());
+        }
+    });
+
     hbox2->addWidget(new QLabel(tr("E min [eV]")));
     QDoubleSpinBox *eThrBox = new QDoubleSpinBox;
     eThrBox->setRange(0.001, 1e9);
     eThrBox->setDecimals(3);
+    eThrBox->setValue(trackView->energyMin());
     connect(eThrBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), trackView,
             &Track3DViewport::setEnergyThreshold);
     hbox2->addWidget(eThrBox);
@@ -321,7 +356,7 @@ QWidget *MainUI::createTrackViewPage()
 
     hbox2->addWidget(new QLabel(tr("Mem [MB]")));
     QSpinBox *memBox = new QSpinBox;
-    memBox->setRange(0, 4096);
+    memBox->setRange(0, 2000);
     memBox->setSpecialValueText(tr("off"));
     connect(memBox, QOverload<int>::of(&QSpinBox::valueChanged), R,
             &CascadeRecorder::setMemoryCapMB);

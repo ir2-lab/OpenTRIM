@@ -1,6 +1,7 @@
 #ifndef CASCADEASSEMBLER_H
 #define CASCADEASSEMBLER_H
 
+#include <array>
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
