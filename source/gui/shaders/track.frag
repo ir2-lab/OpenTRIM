@@ -1,7 +1,7 @@
 #version 330 core
 
 in float vEnergy;
-in float vT;
+centroid in float vT;
 flat in int vRid;
 flat in int vAid;
 

@@ -30,8 +30,19 @@ static float jsonNumber(const nlohmann::json &j, const char *key, float fallback
 
 TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget(parent)
 {
+    QFrame *frm = new QFrame;
+    frm->setFrameShape(QFrame::StyledPanel);
+    frm->setFrameShadow(QFrame::Sunken);
+
     view_ = new Track3DViewport(driver, this);
     TrackColorBar *colorBar = new TrackColorBar(view_);
+
+    {
+        QHBoxLayout *center = new QHBoxLayout;
+        center->setContentsMargins(0, 0, 0, 0);
+        center->addWidget(view_);
+        frm->setLayout(center);
+    }
 
     QTabWidget *tabs = new QTabWidget;
     tabs->addTab(buildViewTab_(), tr("View"));
@@ -42,7 +53,7 @@ TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget
 
     QHBoxLayout *center = new QHBoxLayout;
     center->setContentsMargins(0, 0, 0, 0);
-    center->addWidget(view_, 1);
+    center->addWidget(frm, 1);
     center->addWidget(colorBar);
     center->addWidget(tabs);
 
@@ -288,8 +299,8 @@ void TrackViewWidget::loadCamera_()
     auto ctr = j.find("center");
     if (ctr != j.end() && ctr->is_array() && ctr->size() == 3 && (*ctr)[0].is_number()
         && (*ctr)[1].is_number() && (*ctr)[2].is_number())
-        c.center = QVector3D((*ctr)[0].get<float>(), (*ctr)[1].get<float>(),
-                             (*ctr)[2].get<float>());
+        c.center =
+                QVector3D((*ctr)[0].get<float>(), (*ctr)[1].get<float>(), (*ctr)[2].get<float>());
     view_->setCamera(c);
 }
 

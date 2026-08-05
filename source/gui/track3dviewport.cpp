@@ -295,7 +295,6 @@ void CascadeRecorder::stateMachine(Event e)
         emit stateChange(old_, state_);
     if (e == Update)
         statusUpdate_();
-    emit needsUpdate();
 }
 
 void CascadeRecorder::clear_()
@@ -463,7 +462,8 @@ Track3DViewport::~Track3DViewport()
 void Track3DViewport::initializeGL()
 {
     initializeOpenGLFunctions();
-    glClearColor(0.10f, 0.10f, 0.12f, 1.0f);
+    // glClearColor(0.10f, 0.10f, 0.12f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -805,9 +805,8 @@ void Track3DViewport::rebuildTrackBuffer()
 
     trackVbo_.bind();
 
-    const int want = recorder_->memoryCapMB() > 0
-            ? recorder_->memoryCapMB() * 1024 * 1024
-            : kTrackVboBytes;
+    const int want =
+            recorder_->memoryCapMB() > 0 ? recorder_->memoryCapMB() * 1024 * 1024 : kTrackVboBytes;
     if (want != trackVboBytes_) {
         trackVbo_.allocate(want);
         trackVboBytes_ = want;
@@ -981,19 +980,25 @@ static std::vector<double> axisTicks(double lo, double hi, bool log)
 static QColor genSwatch(int g)
 {
     switch (g) {
-    case 0: return QColor::fromRgbF(1.0, 0.85, 0.2);
-    case 1: return QColor::fromRgbF(1.0, 0.45, 0.1);
-    case 2: return QColor::fromRgbF(0.9, 0.2, 0.2);
-    case 3: return QColor::fromRgbF(0.6, 0.3, 0.8);
-    default: return QColor::fromRgbF(0.35, 0.6, 1.0);
+    case 0:
+        return QColor::fromRgbF(1.0, 0.85, 0.2);
+    case 1:
+        return QColor::fromRgbF(1.0, 0.45, 0.1);
+    case 2:
+        return QColor::fromRgbF(0.9, 0.2, 0.2);
+    case 3:
+        return QColor::fromRgbF(0.6, 0.3, 0.8);
+    default:
+        return QColor::fromRgbF(0.35, 0.6, 1.0);
     }
 }
 
 QColor TrackColorBar::rampColor(float t)
 {
     t = qBound(0.f, t, 1.f);
-    static const float c[5][3] = { { 0, 0, 1 }, { 0, 1, 1 }, { 0, 1, 0 },
-                                   { 1, 1, 0 }, { 1, 0, 0 } };
+    static const float c[5][3] = {
+        { 0, 0, 1 }, { 0, 1, 1 }, { 0, 1, 0 }, { 1, 1, 0 }, { 1, 0, 0 }
+    };
     const float f = t * 4.f;
     const int i = std::min(int(f), 3);
     const float u = f - i;
@@ -1009,8 +1014,7 @@ QColor TrackColorBar::speciesColor(int aid)
     return QColor::fromHsvF(h, 1.0, 1.0);
 }
 
-TrackColorBar::TrackColorBar(Track3DViewport *view, QWidget *parent)
-    : QWidget(parent), view_(view)
+TrackColorBar::TrackColorBar(Track3DViewport *view, QWidget *parent) : QWidget(parent), view_(view)
 {
     connect(view_, &Track3DViewport::colorConfigChanged, this, QOverload<>::of(&QWidget::update));
 }
