@@ -6,6 +6,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <QAction>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
@@ -13,13 +14,21 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
+#include <QFrame>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QImage>
-#include <QLineEdit>
+#include <QPainter>
+#include <QPixmap>
+#include <QPlainTextEdit>
+#include <QPolygonF>
 #include <QPushButton>
 #include <QSignalBlocker>
+#include <QSizePolicy>
 #include <QSpinBox>
+#include <QSplitter>
 #include <QTabWidget>
+#include <QToolBar>
 #include <QVBoxLayout>
 
 static float jsonNumber(const nlohmann::json &j, const char *key, float fallback)
@@ -28,114 +37,183 @@ static float jsonNumber(const nlohmann::json &j, const char *key, float fallback
     return (it != j.end() && it->is_number()) ? it->get<float>() : fallback;
 }
 
+static const float kCube[8][3] = { { 0, 0, 0 }, { 1, 0, 0 }, { 1, 1, 0 }, { 0, 1, 0 },
+                                   { 0, 0, 1 }, { 1, 0, 1 }, { 1, 1, 1 }, { 0, 1, 1 } };
+static const int kEdge[12][2] = { { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 0 }, { 4, 5 }, { 5, 6 },
+                                  { 6, 7 }, { 7, 4 }, { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 } };
+static const int kFace[6][4] = { { 0, 1, 2, 3 }, { 4, 5, 6, 7 }, { 3, 2, 6, 7 },
+                                 { 0, 1, 5, 4 }, { 0, 3, 7, 4 }, { 1, 2, 6, 5 } };
+
+static QPointF cubePt(int i)
+{
+    const float x = kCube[i][0], y = kCube[i][1], z = kCube[i][2];
+    return QPointF(13.0 + (x - z) * 8.0, 13.0 - y * 8.0 + (x + z) * 4.0);
+}
+
+static QIcon viewIcon(int face)
+{
+    QPixmap pm(26, 26);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing);
+    if (face >= Track3DViewport::Front && face <= Track3DViewport::Right) {
+        QPolygonF poly;
+        for (int k = 0; k < 4; ++k)
+            poly << cubePt(kFace[face][k]);
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(30, 30, 30));
+        p.drawPolygon(poly);
+    }
+    p.setBrush(Qt::NoBrush);
+    p.setPen(QPen(QColor(130, 130, 130), 1.0));
+    for (auto &e : kEdge)
+        p.drawLine(cubePt(e[0]), cubePt(e[1]));
+    return QIcon(pm);
+}
+
+static QIcon cameraIcon()
+{
+    QPixmap pm(26, 26);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing);
+    const QColor col(40, 40, 40);
+    p.setPen(QPen(col, 1.6));
+    p.setBrush(Qt::NoBrush);
+    p.drawRect(9, 5, 7, 4);
+    p.drawRoundedRect(4, 9, 18, 13, 2, 2);
+    p.setBrush(col);
+    p.drawEllipse(QPointF(13, 15.5), 4.0, 4.0);
+    return QIcon(pm);
+}
+
 TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget(parent)
 {
-    QFrame *frm = new QFrame;
-    frm->setFrameShape(QFrame::StyledPanel);
-    frm->setFrameShadow(QFrame::Sunken);
-
     view_ = new Track3DViewport(driver, this);
     TrackColorBar *colorBar = new TrackColorBar(view_);
 
-    {
-        QHBoxLayout *center = new QHBoxLayout;
-        center->setContentsMargins(0, 0, 0, 0);
-        center->addWidget(view_);
-        frm->setLayout(center);
-    }
+    QFrame *frm = new QFrame;
+    frm->setFrameShape(QFrame::StyledPanel);
+    frm->setFrameShadow(QFrame::Sunken);
+    QHBoxLayout *frmLay = new QHBoxLayout(frm);
+    frmLay->setContentsMargins(0, 0, 0, 0);
+    frmLay->addWidget(view_);
+
+    QWidget *viewArea = new QWidget;
+    QHBoxLayout *viewLay = new QHBoxLayout(viewArea);
+    viewLay->setContentsMargins(0, 0, 0, 0);
+    viewLay->addWidget(frm, 1);
+    viewLay->addWidget(colorBar);
+
+    QWidget *left = new QWidget;
+    QVBoxLayout *leftLay = new QVBoxLayout(left);
+    leftLay->setContentsMargins(0, 0, 0, 0);
+    leftLay->addWidget(viewArea, 1);
+    leftLay->addWidget(buildToolBar_());
 
     QTabWidget *tabs = new QTabWidget;
-    tabs->addTab(buildViewTab_(), tr("View"));
     tabs->addTab(buildPlaybackTab_(), tr("Playback"));
     tabs->addTab(buildColorTab_(), tr("Color"));
     tabs->addTab(buildLimitsTab_(), tr("Limits"));
-    tabs->setMaximumWidth(260);
 
-    QHBoxLayout *center = new QHBoxLayout;
-    center->setContentsMargins(0, 0, 0, 0);
-    center->addWidget(frm, 1);
-    center->addWidget(colorBar);
-    center->addWidget(tabs);
+    QPlainTextEdit *info = new QPlainTextEdit;
+    info->setReadOnly(true);
+    connect(view_->cascadeRecorder(), &CascadeRecorder::statusUpdate, info,
+            &QPlainTextEdit::setPlainText);
+
+    QSplitter *rightSplit = new QSplitter(Qt::Vertical);
+    rightSplit->addWidget(tabs);
+    rightSplit->addWidget(info);
+    rightSplit->setStretchFactor(0, 0);
+    rightSplit->setStretchFactor(1, 1);
+    rightSplit->setSizes({ 200, 300 });
+
+    QPushButton *saveCamBt = new QPushButton(tr("Save camera..."));
+    connect(saveCamBt, &QPushButton::clicked, this, &TrackViewWidget::saveCamera_);
+    QPushButton *loadCamBt = new QPushButton(tr("Load camera..."));
+    connect(loadCamBt, &QPushButton::clicked, this, &TrackViewWidget::loadCamera_);
+    QHBoxLayout *camRow = new QHBoxLayout;
+    camRow->setContentsMargins(0, 0, 0, 0);
+    camRow->addWidget(saveCamBt);
+    camRow->addWidget(loadCamBt);
+
+    QWidget *right = new QWidget;
+    QVBoxLayout *rightLay = new QVBoxLayout(right);
+    rightLay->setContentsMargins(0, 0, 0, 0);
+    rightLay->addWidget(rightSplit, 1);
+    rightLay->addLayout(camRow);
+
+    QSplitter *split = new QSplitter(Qt::Horizontal);
+    split->addWidget(left);
+    split->addWidget(right);
+    split->setStretchFactor(0, 1);
+    split->setSizes({ 720, 280 });
+
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    frm->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    viewArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    left->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    right->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    split->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     QVBoxLayout *root = new QVBoxLayout(this);
     root->setContentsMargins(0, 0, 0, 0);
-    root->addLayout(center, 1);
-    root->addWidget(buildPrimaryBar_());
+    root->addWidget(split);
 }
 
-QWidget *TrackViewWidget::buildPrimaryBar_()
+QToolBar *TrackViewWidget::buildToolBar_()
 {
     CascadeRecorder *R = view_->cascadeRecorder();
 
-    QWidget *bar = new QWidget;
-    QHBoxLayout *row = new QHBoxLayout(bar);
-    row->setContentsMargins(0, 0, 0, 0);
+    QToolBar *tb = new QToolBar;
+    tb->setMovable(false);
+    tb->setIconSize(QSize(24, 24));
+    tb->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-    QPushButton *capBt = new QPushButton(tr("Capture on"));
-    capBt->setCheckable(true);
-    connect(capBt, &QPushButton::toggled, R, &CascadeRecorder::capture);
-    connect(view_, &Track3DViewport::captureChanged, capBt, [capBt](bool on) {
-        QSignalBlocker block(capBt); // don't let setChecked re-emit toggled()
-        capBt->setChecked(on); // reflect auto-stop
-        capBt->setText(on ? tr("Capture off") : tr("Capture on"));
+    QAction *cap = tb->addAction(tr("Capture on"));
+    cap->setCheckable(true);
+    connect(cap, &QAction::toggled, R, &CascadeRecorder::capture);
+    connect(view_, &Track3DViewport::captureChanged, cap, [cap](bool on) {
+        QSignalBlocker block(cap); // don't let setChecked re-emit toggled()
+        cap->setChecked(on);
+        cap->setText(on ? tr("Capture off") : tr("Capture on"));
     });
-    row->addWidget(capBt);
 
-    QPushButton *clearBt = new QPushButton(tr("Clear"));
-    connect(clearBt, &QPushButton::clicked, R, &CascadeRecorder::clear);
-    row->addWidget(clearBt);
+    QAction *clr = tb->addAction(tr("Clear"));
+    connect(clr, &QAction::triggered, R, &CascadeRecorder::clear);
 
-    QPushButton *shotBt = new QPushButton(tr("Screenshot"));
-    connect(shotBt, &QPushButton::clicked, this, &TrackViewWidget::saveScreenshot_);
-    row->addWidget(shotBt);
+    tb->addSeparator();
 
-    QLineEdit *status = new QLineEdit;
-    status->setReadOnly(true);
-    connect(R, &CascadeRecorder::statusUpdate, status, &QLineEdit::setText);
-    row->addWidget(status, 1);
+    QAction *shot = tb->addAction(cameraIcon(), QString());
+    shot->setToolTip(tr("Screenshot"));
+    connect(shot, &QAction::triggered, this, &TrackViewWidget::saveScreenshot_);
 
-    return bar;
-}
-
-QWidget *TrackViewWidget::buildViewTab_()
-{
-    QWidget *w = new QWidget;
-    QVBoxLayout *col = new QVBoxLayout(w);
+    tb->addSeparator();
 
     struct
     {
-        const char *label;
+        const char *tip;
         int view;
-        bool home; // Home also fits the box
-    } btns[] = { { "Home", Track3DViewport::Iso, true },
-                 { "Front", Track3DViewport::Front, false },
-                 { "Top", Track3DViewport::Top, false },
-                 { "Left", Track3DViewport::Left, false },
-                 { "Iso", Track3DViewport::Iso, false } };
-
-    for (const auto &b : btns) {
-        QPushButton *bt = new QPushButton(tr(b.label));
-        const int v = b.view;
-        const bool home = b.home;
-        connect(bt, &QPushButton::clicked, view_, [this, v, home]() {
-            if (home)
+    } views[] = { { "Home", -1 },
+                  { "Top", Track3DViewport::Top },
+                  { "Bottom", Track3DViewport::Bottom },
+                  { "Front", Track3DViewport::Front },
+                  { "Back", Track3DViewport::Back },
+                  { "Left", Track3DViewport::Left },
+                  { "Right", Track3DViewport::Right } };
+    for (const auto &v : views) {
+        QAction *a = tb->addAction(viewIcon(v.view), QString());
+        a->setToolTip(tr(v.tip));
+        const int vw = v.view;
+        connect(a, &QAction::triggered, view_, [this, vw]() {
+            if (vw < 0)
                 view_->homeView();
             else
-                view_->setPresetView(v);
+                view_->setPresetView(vw);
         });
-        col->addWidget(bt);
     }
 
-    QPushButton *saveBt = new QPushButton(tr("Save camera..."));
-    connect(saveBt, &QPushButton::clicked, this, &TrackViewWidget::saveCamera_);
-    col->addWidget(saveBt);
-
-    QPushButton *loadBt = new QPushButton(tr("Load camera..."));
-    connect(loadBt, &QPushButton::clicked, this, &TrackViewWidget::loadCamera_);
-    col->addWidget(loadBt);
-
-    col->addStretch();
-    return w;
+    return tb;
 }
 
 QWidget *TrackViewWidget::buildPlaybackTab_()

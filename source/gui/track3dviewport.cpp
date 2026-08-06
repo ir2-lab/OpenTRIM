@@ -404,15 +404,17 @@ void CascadeRecorder::evictOldest()
 
 void CascadeRecorder::statusUpdate_()
 {
-
-    int n = cascade_buffer_.size();
-    float ts = clock_.playbackTime();
-    double tw = clock_.worldTime();
-    QString s = QString("N: %1, tw: %2, tmin: %3, ts: %4, tmax: %5")
-                        .arg(n)
-                        .arg(tw, 0, 'f', 2)
+    size_t verts = 0;
+    for (const auto &c : cascade_buffer_)
+        verts += c->buff.size();
+    const double mb = double(verts) * sizeof(TrackVertex) / (1024.0 * 1024.0);
+    QString s = QString("Cascades: %1\nMemory: %2 MB\nworld t: %3 s\nplay t: %4 ns\n"
+                        "span: %5 - %6 ns")
+                        .arg(int(cascade_buffer_.size()))
+                        .arg(mb, 0, 'f', 2)
+                        .arg(clock_.worldTime(), 0, 'f', 2)
+                        .arg(clock_.playbackTime(), 0, 'f', 2)
                         .arg(tMin_, 0, 'f', 2)
-                        .arg(ts, 0, 'f', 2)
                         .arg(tMax_, 0, 'f', 2);
     emit statusUpdate(s);
 }

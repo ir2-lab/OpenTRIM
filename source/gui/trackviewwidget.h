@@ -5,6 +5,7 @@
 
 class McDriverObj;
 class Track3DViewport;
+class QToolBar;
 
 class TrackViewWidget : public QWidget
 {
@@ -21,8 +22,7 @@ private slots:
     void saveScreenshot_();
 
 private:
-    QWidget *buildPrimaryBar_();
-    QWidget *buildViewTab_();
+    QToolBar *buildToolBar_();
     QWidget *buildPlaybackTab_();
     QWidget *buildColorTab_();
     QWidget *buildLimitsTab_();
