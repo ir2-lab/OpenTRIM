@@ -25,6 +25,7 @@ private:
     QToolBar *buildToolBar_();
     QWidget *buildCaptureTab_();
     QWidget *buildColorTab_();
+    QWidget *buildCameraTab_();
 
     Track3DViewport *view_;
 };

@@ -193,6 +193,7 @@ public:
     QImage grabScreenshot(int scale = 2);
 
     int colorMode() const { return colorMode_; }
+    int colorMap() const { return colorMap_; }
     bool energyLog() const { return energyLog_; }
     bool energyAuto() const { return energyAuto_; }
     float energyMin() const { return energyDataMin_; } // [eV]
@@ -203,6 +204,7 @@ public slots:
     void setPresetView(int v);
     void refreshScene();
     void setColorMode(int m);
+    void setColorMap(int m);
     void setEnergyLog(bool on);
     void setEnergyThreshold(double eV);
     void setEnergyAuto(bool on);
@@ -266,6 +268,7 @@ private:
     std::vector<int> first_, count_; // glMultiDrawArrays args
 
     int colorMode_{ Generation };
+    int colorMap_{ 0 };
     bool energyLog_{ true };
     bool energyAuto_{ true };
     float energyThreshold_{ 0.f }; // [eV]
@@ -291,7 +294,9 @@ public:
     QSize sizeHint() const override { return QSize(84, 200); }
 
     static QColor rampColor(float t); // mirrors track.frag ramp()
+    static QColor continuousColor(int map, float t); // mirrors track.frag continuousColor()
     static QColor speciesColor(int aid); // mirrors track.frag speciesColor()
+    static QColor tab10(int i); // mirrors track.frag tab10()
 
 protected:
     void paintEvent(QPaintEvent *e) override;

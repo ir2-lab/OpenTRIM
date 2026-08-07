@@ -56,7 +56,7 @@ const QPointF bbl{ FX0 + DX, FY1 + DY }, bbr{ FX1 + DX, FY1 + DY };
 
 QString polygonFor(Track3DViewport::View f)
 {
-    const QPointF *q[4] = { };
+    const QPointF *q[4] = {};
     switch (f) {
     case Track3DViewport::Front:
         q[0] = &ftl;
@@ -95,7 +95,7 @@ QString polygonFor(Track3DViewport::View f)
         q[3] = &bbl;
         break;
     default:
-        return { };
+        return {};
     }
     QString pts;
     for (int i = 0; i < 4; ++i)
@@ -183,6 +183,7 @@ TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget
     QTabWidget *tabs = new QTabWidget;
     tabs->addTab(buildCaptureTab_(), tr("Capture"));
     tabs->addTab(buildColorTab_(), tr("Color"));
+    tabs->addTab(buildCameraTab_(), tr("Camera"));
 
     QPlainTextEdit *info = new QPlainTextEdit;
     info->setReadOnly(true);
@@ -196,20 +197,10 @@ TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget
     rightSplit->setStretchFactor(1, 1);
     rightSplit->setSizes({ 200, 300 });
 
-    QPushButton *saveCamBt = new QPushButton(tr("Save camera..."));
-    connect(saveCamBt, &QPushButton::clicked, this, &TrackViewWidget::saveCamera_);
-    QPushButton *loadCamBt = new QPushButton(tr("Load camera..."));
-    connect(loadCamBt, &QPushButton::clicked, this, &TrackViewWidget::loadCamera_);
-    QHBoxLayout *camRow = new QHBoxLayout;
-    camRow->setContentsMargins(0, 0, 0, 0);
-    camRow->addWidget(saveCamBt);
-    camRow->addWidget(loadCamBt);
-
     QWidget *right = new QWidget;
     QVBoxLayout *rightLay = new QVBoxLayout(right);
     rightLay->setContentsMargins(0, 0, 0, 0);
     rightLay->addWidget(rightSplit, 1);
-    rightLay->addLayout(camRow);
 
     QSplitter *split = new QSplitter(Qt::Horizontal);
     split->addWidget(left);
@@ -465,8 +456,25 @@ QWidget *TrackViewWidget::buildColorTab_()
     form->addRow(tr("Mode"), colorBox);
 
     QComboBox *colorMap = new QComboBox;
-    colorMap->addItems({ tr("Ramp"), tr("Viridis"), tr("Turbo") });
+    connect(colorMap, QOverload<int>::of(&QComboBox::currentIndexChanged), view_,
+            &Track3DViewport::setColorMap);
     form->addRow(tr("Color Map"), colorMap);
+
+    // continuous maps for the energy scale, discrete ones for gen/species
+    auto fillMaps = [colorMap](int mode) {
+        QSignalBlocker block(colorMap);
+        colorMap->clear();
+        if (mode == Track3DViewport::Energy)
+            colorMap->addItems({ tr("Ramp"), tr("Viridis"), tr("Turbo") });
+        else
+            colorMap->addItems({ tr("Default"), tr("Tab10") });
+    };
+    fillMaps(view_->colorMode());
+    connect(colorBox, QOverload<int>::of(&QComboBox::currentIndexChanged), colorMap,
+            [this, fillMaps](int mode) {
+                fillMaps(mode);
+                view_->setColorMap(0);
+            });
 
     {
         QFrame *frm = new QFrame;
@@ -513,6 +521,27 @@ QWidget *TrackViewWidget::buildColorTab_()
             escaleMax->setValue(view_->energyMax());
         }
     });
+
+    return w;
+}
+
+QWidget *TrackViewWidget::buildCameraTab_()
+{
+    QWidget *w = new QWidget;
+    QFormLayout *form = new QFormLayout(w);
+
+    // preset views and Home live on the toolbar; this tab persists the view
+    form->addRow(new QLabel(tr("Camera state")));
+
+    QPushButton *saveBt = new QPushButton(tr("Save to file..."));
+    saveBt->setToolTip(tr("Save the current view to a JSON file"));
+    connect(saveBt, &QPushButton::clicked, this, &TrackViewWidget::saveCamera_);
+    form->addRow(saveBt);
+
+    QPushButton *loadBt = new QPushButton(tr("Load from file..."));
+    loadBt->setToolTip(tr("Restore a saved view from a JSON file"));
+    connect(loadBt, &QPushButton::clicked, this, &TrackViewWidget::loadCamera_);
+    form->addRow(loadBt);
 
     return w;
 }

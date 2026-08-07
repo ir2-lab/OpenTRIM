@@ -631,6 +631,7 @@ void Track3DViewport::drawScene_()
         trackProg_->setUniformValue("uMvp", mvp());
         trackProg_->setUniformValue("uTime", static_cast<GLfloat>(recorder_->playbackTime()));
         trackProg_->setUniformValue("uColorMode", colorMode_);
+        trackProg_->setUniformValue("uColorMap", colorMap_);
         trackProg_->setUniformValue("uEnergyMin", energyDataMin_);
         trackProg_->setUniformValue("uEnergyMax", energyDataMax_);
         trackProg_->setUniformValue("uEnergyLog", energyLog_ ? 1 : 0);
@@ -902,6 +903,15 @@ void Track3DViewport::setColorMode(int m)
     update();
 }
 
+void Track3DViewport::setColorMap(int m)
+{
+    if (m < 0 || m == colorMap_)
+        return;
+    colorMap_ = m;
+    emit colorConfigChanged();
+    update();
+}
+
 void Track3DViewport::setEnergyLog(bool on)
 {
     if (on == energyLog_)
@@ -1070,11 +1080,65 @@ QColor TrackColorBar::rampColor(float t)
                             c[i][2] * (1 - u) + c[i + 1][2] * u);
 }
 
+// viridis, 17-point LUT from the CC0 colormap data (BIDS); mirrors track.frag viridis()
+static QColor viridisLut(double t)
+{
+    static const double lut[17][3] = {
+        { 0.267004, 0.004874, 0.329415 }, { 0.282327, 0.094955, 0.417331 },
+        { 0.278826, 0.175490, 0.483397 }, { 0.257322, 0.256130, 0.526563 },
+        { 0.227802, 0.326594, 0.546532 }, { 0.195860, 0.395433, 0.555276 },
+        { 0.160665, 0.478540, 0.558115 }, { 0.127568, 0.566949, 0.551229 },
+        { 0.119483, 0.614817, 0.537692 }, { 0.150148, 0.676631, 0.506589 },
+        { 0.220124, 0.725509, 0.466226 }, { 0.311925, 0.767822, 0.415586 },
+        { 0.440137, 0.811138, 0.340967 }, { 0.575563, 0.844566, 0.256415 },
+        { 0.709898, 0.868751, 0.169257 }, { 0.835270, 0.886029, 0.102646 },
+        { 0.993248, 0.906157, 0.143936 }
+    };
+    const double x = std::min(std::max(t, 0.0), 1.0) * 16.0;
+    int i = int(x);
+    if (i >= 16)
+        return QColor::fromRgbF(lut[16][0], lut[16][1], lut[16][2]);
+    const double u = x - i;
+    return QColor::fromRgbF(lut[i][0] * (1 - u) + lut[i + 1][0] * u,
+                            lut[i][1] * (1 - u) + lut[i + 1][1] * u,
+                            lut[i][2] * (1 - u) + lut[i + 1][2] * u);
+}
+
+QColor TrackColorBar::continuousColor(int map, float t)
+{
+    if (map == 1)
+        return viridisLut(t);
+    if (map == 2) {
+        // turbo, (c) Google LLC, Apache-2.0 (A. Mikhailov / R. Du)
+        double x = std::min(std::max(double(t), 0.0), 1.0);
+        const double r = 0.13572138 + x * (4.61539260 + x * (-42.66032258 + x * 132.13108234))
+                + x * x * x * x * (-152.94239396 + x * 59.28637943);
+        const double g = 0.09140261 + x * (2.19418839 + x * (4.84296658 + x * -14.18503333))
+                + x * x * x * x * (4.27729857 + x * 2.82956604);
+        const double b = 0.10667330 + x * (12.64194608 + x * (-60.58204836 + x * 110.36276771))
+                + x * x * x * x * (-89.90310912 + x * 27.34824973);
+        return QColor::fromRgbF(std::min(std::max(r, 0.0), 1.0), std::min(std::max(g, 0.0), 1.0),
+                                std::min(std::max(b, 0.0), 1.0));
+    }
+    return rampColor(t);
+}
+
 QColor TrackColorBar::speciesColor(int aid)
 {
     float h = aid * 0.618034f;
     h -= std::floor(h);
     return QColor::fromHsvF(h, 1.0, 1.0);
+}
+
+// Tableau 10 palette; values from matplotlib's BSD-licensed TABLEAU_COLORS ("tab10")
+QColor TrackColorBar::tab10(int i)
+{
+    static const int rgb[10][3] = { { 31, 119, 180 },  { 255, 127, 14 },  { 44, 160, 44 },
+                                    { 214, 39, 40 },   { 148, 103, 189 }, { 140, 86, 75 },
+                                    { 227, 119, 194 }, { 127, 127, 127 }, { 188, 189, 34 },
+                                    { 23, 190, 207 } };
+    const int *c = rgb[((i % 10) + 10) % 10];
+    return QColor(c[0], c[1], c[2]);
 }
 
 TrackColorBar::TrackColorBar(Track3DViewport *view, QWidget *parent) : QWidget(parent), view_(view)
@@ -1090,9 +1154,10 @@ void TrackColorBar::paintEvent(QPaintEvent *)
 
     if (view_->colorMode() == Track3DViewport::Energy) {
         const QRect bar(m, m + 16, 20, height() - 2 * m - 16);
+        const int cmap = view_->colorMap();
         QLinearGradient g(bar.topLeft(), bar.bottomLeft());
         for (int k = 0; k <= 16; ++k)
-            g.setColorAt(k / 16.0, rampColor(1.f - k / 16.f)); // high E on top
+            g.setColorAt(k / 16.0, continuousColor(cmap, 1.f - k / 16.f)); // high E on top
         p.fillRect(bar, g);
         p.drawRect(bar);
         p.drawText(m, m + 12, QStringLiteral("E [eV]"));
@@ -1117,13 +1182,15 @@ void TrackColorBar::paintEvent(QPaintEvent *)
         return;
     }
 
+    const bool tab = view_->colorMap() == 1;
+
     if (view_->colorMode() == Track3DViewport::Generation) {
         p.drawText(m, m + 12, QStringLiteral("Recoil Gen."));
         const int n = 5;
         for (int i = 0; i < n; ++i) {
             const int y = m + 20 + i * 22;
             const QRect sw(m, y, 16, 16);
-            p.fillRect(sw, genSwatch(i));
+            p.fillRect(sw, tab ? tab10(i) : genSwatch(i));
             p.drawRect(sw);
             QString lbl = i == 0 ? QStringLiteral("source")
                                  : (i == 4 ? QStringLiteral("4+") : QString::number(i));
@@ -1140,7 +1207,7 @@ void TrackColorBar::paintEvent(QPaintEvent *)
             for (int i = 0; i < n; ++i) {
                 const int y = m + 20 + i * 22;
                 const QRect sw(m, y, 16, 16);
-                p.fillRect(sw, speciesColor(i));
+                p.fillRect(sw, tab ? tab10(i) : speciesColor(i));
                 p.drawRect(sw);
                 p.drawText(sw.right() + 6, y + 13, atom_labels[i].c_str());
             }
@@ -1149,7 +1216,7 @@ void TrackColorBar::paintEvent(QPaintEvent *)
             for (int i = 0; i < n; ++i) {
                 const int y = m + 20 + i * 22;
                 const QRect sw(m, y, 16, 16);
-                p.fillRect(sw, speciesColor(i));
+                p.fillRect(sw, tab ? tab10(i) : speciesColor(i));
                 p.drawRect(sw);
                 QString lbl = i == 0 ? QStringLiteral("source")
                                      : (i == 4 ? QStringLiteral("4+") : QString::number(i));
