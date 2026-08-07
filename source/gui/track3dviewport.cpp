@@ -27,7 +27,7 @@
 static const int kSceneFloats = 7;
 static const int kStride = kSceneFloats * sizeof(float);
 
-static const int kTrackVboBytes = 96 * 1024 * 1024;
+static const int kTrackVboBytes = 120 * 1024 * 1024;
 static const int kTrackVboVerts = kTrackVboBytes / int(sizeof(TrackVertex));
 static const int kMaxCapMB = 2000; // keep cap bytes < INT_MAX (QOpenGLBuffer::allocate)
 
@@ -104,7 +104,7 @@ static void appendBoxFaces(std::vector<float> &v, const QVector3D &lo, const QVe
 }
 
 CascadeRecorder::CascadeRecorder(McDriverObj *driver, QObject *parent)
-    : QObject(parent), driver_(driver)
+    : QObject(parent), driver_(driver), capacity_(kTrackVboVerts)
 {
     // capture follows the 3D tab; flush publishes the tail cascade after a run
     channel_ = new TrackDataChannel(this);
@@ -116,13 +116,15 @@ CascadeRecorder::CascadeRecorder(McDriverObj *driver, QObject *parent)
             [this](bool running) {
                 if (!running) {
                     channel_->flush();
-                    capture(false);
                 }
+                pause(!running);
             },
             Qt::QueuedConnection);
     connect(driver, &McDriverObj::simulationCreated, this, &CascadeRecorder::clear);
     connect(driver, &McDriverObj::configChanged, this, &CascadeRecorder::applyGeometry_);
     connect(driver, &McDriverObj::simulationCreated, this, &CascadeRecorder::applyGeometry_);
+    connect(driver, &McDriverObj::simulationCreated, this, [this]() { capture(true); });
+
     applyGeometry_();
 }
 
@@ -155,12 +157,17 @@ void CascadeRecorder::setNCascades(int n)
     emit needsUpdate();
 }
 
+int CascadeRecorder::memoryCapMB() const
+{
+    return capacity_ * sizeof(TrackVertex) / 1024 / 1024;
+}
 void CascadeRecorder::setMemoryCapMB(int mb)
 {
     mb = qBound(0, mb, kMaxCapMB);
-    if (mb == memCapMB_)
+    int cap = mb * 1024 * 1024 / sizeof(TrackVertex);
+    if (cap == capacity_)
         return;
-    memCapMB_ = mb;
+    capacity_ = cap;
     stateMachine(Clear);
     emit needsUpdate();
 }
@@ -174,9 +181,7 @@ void CascadeRecorder::setEnergyThreshold(double eV)
 
 int CascadeRecorder::capVerts() const
 {
-    if (memCapMB_ <= 0)
-        return kTrackVboVerts;
-    return int(size_t(memCapMB_) * 1024 * 1024 / sizeof(TrackVertex));
+    return capacity_;
 }
 
 void CascadeRecorder::setGenCutoff(int g)
@@ -206,9 +211,14 @@ void CascadeRecorder::stateMachine(Event e)
         switch (e) {
         case Start:
             clear_();
-            clock_.start();
-            channel_->setCapturing(true);
-            state_ = Capturing;
+            clock_.reset();
+            if (driver_->status() == McDriverObj::mcRunning) {
+                channel_->setCapturing(true);
+                state_ = Capturing;
+            } else {
+                channel_->setCapturing(false);
+                state_ = Paused;
+            }
             break;
         case Clear:
             clear_();
@@ -226,17 +236,16 @@ void CascadeRecorder::stateMachine(Event e)
             break;
         case Pause:
             channel_->setCapturing(false);
-            clock_.pause();
-            state_ = Paused;
+            state_ = Pausing;
             break;
         case Update:
             if (mode_ == Batch) {
-                if (int(cascade_buffer_.size()) == nCascades_) {
+                if (bufferFull_) {
                     channel_->setCapturing(false);
                     state_ = Finishing;
                 }
             } else {
-                if (int(cascade_buffer_.size()) == nCascades_ + 1 && clock_.playbackTime() > tMax_)
+                if (bufferFull_ && clock_.playbackTime() > tMax_)
                     evictOldest();
             }
             break;
@@ -251,9 +260,11 @@ void CascadeRecorder::stateMachine(Event e)
     case Paused:
         switch (e) {
         case Resume:
-            clock_.resume();
-            channel_->setCapturing(true);
-            state_ = Capturing;
+            if (driver_->status() == McDriverObj::mcRunning) {
+                clock_.resume();
+                channel_->setCapturing(true);
+                state_ = Capturing;
+            }
             break;
         case Stop:
             clock_.pause();
@@ -272,15 +283,57 @@ void CascadeRecorder::stateMachine(Event e)
         switch (e) {
         case Start:
             clear_();
-            clock_.start();
-            channel_->setCapturing(true);
-            state_ = Capturing;
+            clock_.reset();
+            if (driver_->get_mcdriver()->is_running()) {
+                channel_->setCapturing(true);
+                state_ = Capturing;
+            } else {
+                channel_->setCapturing(false);
+                state_ = Paused;
+            }
             break;
         case Update:
             if (clock_.playbackTime() > tMax_) {
                 clock_.pause();
                 state_ = Idle;
             }
+            break;
+        case Stop:
+            clock_.pause();
+            channel_->setCapturing(false);
+            state_ = Idle;
+            break;
+        case Clear:
+            clear_();
+            clock_.reset();
+            break;
+        default:
+            break;
+        }
+        break;
+    case Pausing:
+        switch (e) {
+        case Start:
+            clear_();
+            clock_.reset();
+            if (driver_->get_mcdriver()->is_running()) {
+                channel_->setCapturing(true);
+                state_ = Capturing;
+            } else {
+                channel_->setCapturing(false);
+                state_ = Paused;
+            }
+            break;
+        case Update:
+            if (clock_.playbackTime() > tMax_) {
+                clock_.pause();
+                state_ = Paused;
+            }
+            break;
+        case Stop:
+            clock_.pause();
+            channel_->setCapturing(false);
+            state_ = Idle;
             break;
         case Clear:
             clear_();
@@ -293,14 +346,18 @@ void CascadeRecorder::stateMachine(Event e)
     }
     if (old_ != state_)
         emit stateChange(old_, state_);
-    if (e == Update)
-        statusUpdate_();
+    // if (e == Update)
+    statusUpdate_();
+    if (tracksDirty_)
+        emit needsUpdate();
 }
 
 void CascadeRecorder::clear_()
 {
     int nresidents_ = cascade_buffer_.size();
     cascade_buffer_.clear();
+    size_ = 0;
+    bufferFull_ = false;
     tMin_ = 0.f;
     tMax_ = 0.f;
     tracksDirty_ = nresidents_ > 0;
@@ -328,23 +385,26 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<Cascade> &c)
     if (c->epoch != filterEpoch_)
         return false;
 
-    const int cap = capVerts();
+    // check if cascade fits in the free space
+    int free = capacity_ - size_;
+    if (free < int(c->buff.size())) {
+        if (size_)
+            bufferFull_ = true;
+        return false;
+    }
 
     if (mode_ == Batch) {
-        // check if we already have N cascades
-        if (int(cascade_buffer_.size()) == nCascades_)
-            return false;
 
-        // check if it fits in the free space
-        int free = cap;
-        for (const auto &r : cascade_buffer_)
-            free -= int(r->buff.size());
-        if (free < int(c->buff.size()))
+        // check if we already have N cascades
+        if (int(cascade_buffer_.size()) == nCascades_) {
+            bufferFull_ = true;
             return false;
+        }
 
         // the 1st cascade initializes tMin, tMax
         if (cascade_buffer_.empty()) {
-            tMin_ = tMax_ = clock_.playbackTime();
+            tMin_ = tMax_ = 0; // clock_.playbackTime();
+            clock_.start(); // start the clock on the 1st cascade
         }
 
         // update cascade timing
@@ -353,6 +413,7 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<Cascade> &c)
 
         // add cascade
         cascade_buffer_.push_back(c);
+        size_ += int(c->buff.size());
 
         // update state
         tMax_ += c->duration;
@@ -360,21 +421,18 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<Cascade> &c)
         update();
         return true;
     } else {
+
         // check if we already have N+1 cascades
         // the last cascade is the one pending to be shown
-        if (int(cascade_buffer_.size()) == nCascades_ + 1)
+        if (int(cascade_buffer_.size()) == nCascades_ + 1) {
+            bufferFull_ = true;
             return false;
-
-        // check if it fits in the free space
-        int free = cap;
-        for (const auto &r : cascade_buffer_)
-            free -= int(r->buff.size());
-        if (free < int(c->buff.size()))
-            return false;
+        }
 
         // the 1st cascade initializes tMin, tMax
         if (cascade_buffer_.empty()) {
-            tMin_ = tMax_ = clock_.playbackTime();
+            tMin_ = tMax_ = 0; // clock_.playbackTime();
+            clock_.start(); // start the clock on the 1st cascade
         }
 
         // update cascade timing
@@ -383,6 +441,7 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<Cascade> &c)
 
         // add cascade
         cascade_buffer_.push_back(c);
+        size_ += int(c->buff.size());
 
         // update state
         if (int(cascade_buffer_.size()) <= nCascades_) {
@@ -397,6 +456,8 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<Cascade> &c)
 void CascadeRecorder::evictOldest()
 {
     tMin_ += cascade_buffer_.front()->duration;
+    size_ -= int(cascade_buffer_.front()->buff.size());
+    bufferFull_ = false;
     cascade_buffer_.pop_front();
     tMax_ += cascade_buffer_.back()->duration;
     tracksDirty_ = true;
@@ -404,10 +465,7 @@ void CascadeRecorder::evictOldest()
 
 void CascadeRecorder::statusUpdate_()
 {
-    size_t verts = 0;
-    for (const auto &c : cascade_buffer_)
-        verts += c->buff.size();
-    const double mb = double(verts) * sizeof(TrackVertex) / (1024.0 * 1024.0);
+    const double mb = double(size_) * sizeof(TrackVertex) / (1024.0 * 1024.0);
     QString s = QString("Cascades: %1\nMemory: %2 MB\nworld t: %3 s\nplay t: %4 ns\n"
                         "span: %5 - %6 ns")
                         .arg(int(cascade_buffer_.size()))
@@ -438,7 +496,10 @@ Track3DViewport::Track3DViewport(McDriverObj *driver, QWidget *parent)
     connect(recorder_, &CascadeRecorder::needsUpdate, this, [this]() { update(); });
 
     connect(driver_, &McDriverObj::configChanged, this, &Track3DViewport::refreshScene);
-    connect(driver_, &McDriverObj::simulationCreated, this, &Track3DViewport::refreshScene);
+    connect(driver_, &McDriverObj::simulationCreated, this, [this]() {
+        this->refreshScene();
+        this->homeView();
+    });
 }
 
 Track3DViewport::~Track3DViewport()
@@ -1056,17 +1117,45 @@ void TrackColorBar::paintEvent(QPaintEvent *)
         return;
     }
 
-    const bool species = view_->colorMode() == Track3DViewport::Species;
-    p.drawText(m, m + 12, species ? QStringLiteral("Species") : QStringLiteral("Gen."));
-    const int n = species ? 6 : 5;
-    for (int i = 0; i < n; ++i) {
-        const int y = m + 20 + i * 22;
-        const QRect sw(m, y, 16, 16);
-        p.fillRect(sw, species ? speciesColor(i) : genSwatch(i));
-        p.drawRect(sw);
-        QString lbl = species ? QStringLiteral("#%1").arg(i)
-                              : (i == 0 ? QStringLiteral("source")
-                                        : (i == 4 ? QStringLiteral("4+") : QString::number(i)));
-        p.drawText(sw.right() + 6, y + 13, lbl);
+    if (view_->colorMode() == Track3DViewport::Generation) {
+        p.drawText(m, m + 12, QStringLiteral("Recoil Gen."));
+        const int n = 5;
+        for (int i = 0; i < n; ++i) {
+            const int y = m + 20 + i * 22;
+            const QRect sw(m, y, 16, 16);
+            p.fillRect(sw, genSwatch(i));
+            p.drawRect(sw);
+            QString lbl = i == 0 ? QStringLiteral("source")
+                                 : (i == 4 ? QStringLiteral("4+") : QString::number(i));
+            p.drawText(sw.right() + 6, y + 13, lbl);
+        }
+        return;
+    }
+
+    if (view_->colorMode() == Track3DViewport::Species) {
+        p.drawText(m, m + 12, QStringLiteral("Atom"));
+        if (view_->driver()->status() != McDriverObj::mcReset) {
+            auto atom_labels = view_->driver()->get_mcdriver()->getSim()->getTarget().atom_labels();
+            int n = atom_labels.size();
+            for (int i = 0; i < n; ++i) {
+                const int y = m + 20 + i * 22;
+                const QRect sw(m, y, 16, 16);
+                p.fillRect(sw, speciesColor(i));
+                p.drawRect(sw);
+                p.drawText(sw.right() + 6, y + 13, atom_labels[i].c_str());
+            }
+        } else {
+            int n = 5;
+            for (int i = 0; i < n; ++i) {
+                const int y = m + 20 + i * 22;
+                const QRect sw(m, y, 16, 16);
+                p.fillRect(sw, speciesColor(i));
+                p.drawRect(sw);
+                QString lbl = i == 0 ? QStringLiteral("source")
+                                     : (i == 4 ? QStringLiteral("4+") : QString::number(i));
+                p.drawText(sw.right() + 6, y + 13, lbl);
+            }
+        }
+        return;
     }
 }

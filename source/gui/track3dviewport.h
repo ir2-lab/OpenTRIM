@@ -96,7 +96,7 @@ class CascadeRecorder : public QObject
     Q_PROPERTY(double playbackSpeed READ playbackSpeed WRITE setPlaybackSpeed)
 
 public:
-    enum State { Idle, Capturing, Paused, Finishing };
+    enum State { Idle, Capturing, Paused, Finishing, Pausing };
     enum Mode { Batch, Ring };
 
     typedef std::deque<std::shared_ptr<const Cascade>> cascade_buffer_t;
@@ -114,7 +114,7 @@ public:
     bool isRunning() const { return clock_.isRunning(); }
     double tMin() const { return tMin_; }
     double tMax() const { return tMax_; }
-    int memoryCapMB() const { return memCapMB_; }
+    int memoryCapMB() const;
 
 public slots:
     void capture(bool on) { stateMachine(on ? Start : Stop); }
@@ -145,11 +145,13 @@ private:
     std::deque<std::shared_ptr<const Cascade>> cascade_buffer_;
     bool tracksDirty_{ false };
     Mode mode_{ Ring };
-    int nCascades_{ 5 };
+    int nCascades_{ 10 };
     CascadeRecorderClock clock_;
     double tMin_{ 0.f }; // [ns] start of 1st displayed cascade
     double tMax_{ 0.f }; // [ns] end of last displayed cascade
-    int memCapMB_{ 0 }; // 0 = no cap
+    int capacity_; // in # of vertices
+    int size_{ 0 }; // current total # of vertices
+    bool bufferFull_{ false };
     uint32_t filterEpoch_{ 0 };
 
     void stateMachine(Event e);
@@ -183,6 +185,7 @@ public:
     ~Track3DViewport() override;
 
     CascadeRecorder *cascadeRecorder() { return recorder_; }
+    McDriverObj *driver() { return driver_; }
 
     CameraState camera() const { return { yaw_, pitch_, dist_, center_ }; }
     void setCamera(const CameraState &c);

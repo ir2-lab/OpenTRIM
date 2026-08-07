@@ -23,9 +23,8 @@ private slots:
 
 private:
     QToolBar *buildToolBar_();
-    QWidget *buildPlaybackTab_();
+    QWidget *buildCaptureTab_();
     QWidget *buildColorTab_();
-    QWidget *buildLimitsTab_();
 
     Track3DViewport *view_;
 };
