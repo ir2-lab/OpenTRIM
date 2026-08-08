@@ -21,6 +21,7 @@
 class McDriverObj;
 class TrackDataChannel;
 class QOpenGLShaderProgram;
+class QImage;
 struct Cascade;
 
 // specialized clock for world- & simulation(playback)- time
@@ -95,7 +96,7 @@ class CascadeRecorder : public QObject
     Q_PROPERTY(double playbackSpeed READ playbackSpeed WRITE setPlaybackSpeed)
 
 public:
-    enum State { Idle, Capturing, Paused, Finishing };
+    enum State { Idle, Capturing, Paused, Finishing, Pausing };
     enum Mode { Batch, Ring };
 
     typedef std::deque<std::shared_ptr<const Cascade>> cascade_buffer_t;
@@ -113,7 +114,7 @@ public:
     bool isRunning() const { return clock_.isRunning(); }
     double tMin() const { return tMin_; }
     double tMax() const { return tMax_; }
-    int memoryCapMB() const { return memCapMB_; }
+    int memoryCapMB() const;
 
 public slots:
     void capture(bool on) { stateMachine(on ? Start : Stop); }
@@ -144,11 +145,13 @@ private:
     std::deque<std::shared_ptr<const Cascade>> cascade_buffer_;
     bool tracksDirty_{ false };
     Mode mode_{ Ring };
-    int nCascades_{ 5 };
+    int nCascades_{ 10 };
     CascadeRecorderClock clock_;
     double tMin_{ 0.f }; // [ns] start of 1st displayed cascade
     double tMax_{ 0.f }; // [ns] end of last displayed cascade
-    int memCapMB_{ 0 }; // 0 = no cap
+    int capacity_; // in # of vertices
+    int size_{ 0 }; // current total # of vertices
+    bool bufferFull_{ false };
     uint32_t filterEpoch_{ 0 };
 
     void stateMachine(Event e);
@@ -171,12 +174,26 @@ public:
     enum View { Front, Back, Top, Bottom, Left, Right, Iso };
     enum ColorMode { Generation, Energy, Species };
 
+    struct CameraState
+    {
+        float yaw{ 45.f }, pitch{ 30.f };
+        float dist{ 300.f };
+        QVector3D center;
+    };
+
     explicit Track3DViewport(McDriverObj *driver, QWidget *parent = nullptr);
     ~Track3DViewport() override;
 
     CascadeRecorder *cascadeRecorder() { return recorder_; }
+    McDriverObj *driver() { return driver_; }
+
+    CameraState camera() const { return { yaw_, pitch_, dist_, center_ }; }
+    void setCamera(const CameraState &c);
+
+    QImage grabScreenshot(int scale = 2);
 
     int colorMode() const { return colorMode_; }
+    int colorMap() const { return colorMap_; }
     bool energyLog() const { return energyLog_; }
     bool energyAuto() const { return energyAuto_; }
     float energyMin() const { return energyDataMin_; } // [eV]
@@ -187,6 +204,7 @@ public slots:
     void setPresetView(int v);
     void refreshScene();
     void setColorMode(int m);
+    void setColorMap(int m);
     void setEnergyLog(bool on);
     void setEnergyThreshold(double eV);
     void setEnergyAuto(bool on);
@@ -227,6 +245,7 @@ private:
     void fitView();
 
     void rebuildTrackBuffer();
+    void drawScene_();
 
     McDriverObj *driver_; // not owned
     CascadeRecorder *recorder_;
@@ -249,6 +268,7 @@ private:
     std::vector<int> first_, count_; // glMultiDrawArrays args
 
     int colorMode_{ Generation };
+    int colorMap_{ 0 };
     bool energyLog_{ true };
     bool energyAuto_{ true };
     float energyThreshold_{ 0.f }; // [eV]
@@ -274,7 +294,9 @@ public:
     QSize sizeHint() const override { return QSize(84, 200); }
 
     static QColor rampColor(float t); // mirrors track.frag ramp()
+    static QColor continuousColor(int map, float t); // mirrors track.frag continuousColor()
     static QColor speciesColor(int aid); // mirrors track.frag speciesColor()
+    static QColor tab10(int i); // mirrors track.frag tab10()
 
 protected:
     void paintEvent(QPaintEvent *e) override;

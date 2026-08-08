@@ -9,7 +9,7 @@ layout(location = 4) in int aAid; // atom id
 uniform mat4 uMvp;
 
 out float vEnergy;
-out float vT;
+centroid out float vT;
 flat out int vRid;
 flat out int vAid;
 

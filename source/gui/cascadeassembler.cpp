@@ -336,6 +336,12 @@ void CascadeAssembler::addVertex(const TrackVertex &v)
     if (trackDropped_)
         return;
 
+    if (activeEnergyThresh_ > 0.f && v.energy < activeEnergyThresh_) {
+        endTrack();
+        trackDropped_ = true;
+        return;
+    }
+
     // drop the segment crossing a periodic boundary
     if (static_cast<int32_t>(current_.buff.size()) > track_start_) {
         const TrackVertex &p = current_.buff.back();

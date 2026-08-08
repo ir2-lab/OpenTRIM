@@ -11,8 +11,10 @@
 
 #include <QDebug>
 #include <QHideEvent>
+#include <QImage>
 #include <QLinearGradient>
 #include <QMouseEvent>
+#include <QOpenGLFramebufferObject>
 #include <QOpenGLShaderProgram>
 #include <QPainter>
 #include <QPalette>
@@ -25,7 +27,7 @@
 static const int kSceneFloats = 7;
 static const int kStride = kSceneFloats * sizeof(float);
 
-static const int kTrackVboBytes = 96 * 1024 * 1024;
+static const int kTrackVboBytes = 120 * 1024 * 1024;
 static const int kTrackVboVerts = kTrackVboBytes / int(sizeof(TrackVertex));
 static const int kMaxCapMB = 2000; // keep cap bytes < INT_MAX (QOpenGLBuffer::allocate)
 
@@ -102,7 +104,7 @@ static void appendBoxFaces(std::vector<float> &v, const QVector3D &lo, const QVe
 }
 
 CascadeRecorder::CascadeRecorder(McDriverObj *driver, QObject *parent)
-    : QObject(parent), driver_(driver)
+    : QObject(parent), driver_(driver), capacity_(kTrackVboVerts)
 {
     // capture follows the 3D tab; flush publishes the tail cascade after a run
     channel_ = new TrackDataChannel(this);
@@ -114,13 +116,15 @@ CascadeRecorder::CascadeRecorder(McDriverObj *driver, QObject *parent)
             [this](bool running) {
                 if (!running) {
                     channel_->flush();
-                    capture(false);
                 }
+                pause(!running);
             },
             Qt::QueuedConnection);
     connect(driver, &McDriverObj::simulationCreated, this, &CascadeRecorder::clear);
     connect(driver, &McDriverObj::configChanged, this, &CascadeRecorder::applyGeometry_);
     connect(driver, &McDriverObj::simulationCreated, this, &CascadeRecorder::applyGeometry_);
+    connect(driver, &McDriverObj::simulationCreated, this, [this]() { capture(true); });
+
     applyGeometry_();
 }
 
@@ -153,12 +157,17 @@ void CascadeRecorder::setNCascades(int n)
     emit needsUpdate();
 }
 
+int CascadeRecorder::memoryCapMB() const
+{
+    return capacity_ * sizeof(TrackVertex) / 1024 / 1024;
+}
 void CascadeRecorder::setMemoryCapMB(int mb)
 {
     mb = qBound(0, mb, kMaxCapMB);
-    if (mb == memCapMB_)
+    int cap = mb * 1024 * 1024 / sizeof(TrackVertex);
+    if (cap == capacity_)
         return;
-    memCapMB_ = mb;
+    capacity_ = cap;
     stateMachine(Clear);
     emit needsUpdate();
 }
@@ -172,9 +181,7 @@ void CascadeRecorder::setEnergyThreshold(double eV)
 
 int CascadeRecorder::capVerts() const
 {
-    if (memCapMB_ <= 0)
-        return kTrackVboVerts;
-    return int(size_t(memCapMB_) * 1024 * 1024 / sizeof(TrackVertex));
+    return capacity_;
 }
 
 void CascadeRecorder::setGenCutoff(int g)
@@ -204,9 +211,14 @@ void CascadeRecorder::stateMachine(Event e)
         switch (e) {
         case Start:
             clear_();
-            clock_.start();
-            channel_->setCapturing(true);
-            state_ = Capturing;
+            clock_.reset();
+            if (driver_->status() == McDriverObj::mcRunning) {
+                channel_->setCapturing(true);
+                state_ = Capturing;
+            } else {
+                channel_->setCapturing(false);
+                state_ = Paused;
+            }
             break;
         case Clear:
             clear_();
@@ -224,17 +236,16 @@ void CascadeRecorder::stateMachine(Event e)
             break;
         case Pause:
             channel_->setCapturing(false);
-            clock_.pause();
-            state_ = Paused;
+            state_ = Pausing;
             break;
         case Update:
             if (mode_ == Batch) {
-                if (int(cascade_buffer_.size()) == nCascades_) {
+                if (bufferFull_) {
                     channel_->setCapturing(false);
                     state_ = Finishing;
                 }
             } else {
-                if (int(cascade_buffer_.size()) == nCascades_ + 1 && clock_.playbackTime() > tMax_)
+                if (bufferFull_ && clock_.playbackTime() > tMax_)
                     evictOldest();
             }
             break;
@@ -249,9 +260,11 @@ void CascadeRecorder::stateMachine(Event e)
     case Paused:
         switch (e) {
         case Resume:
-            clock_.resume();
-            channel_->setCapturing(true);
-            state_ = Capturing;
+            if (driver_->status() == McDriverObj::mcRunning) {
+                clock_.resume();
+                channel_->setCapturing(true);
+                state_ = Capturing;
+            }
             break;
         case Stop:
             clock_.pause();
@@ -270,15 +283,57 @@ void CascadeRecorder::stateMachine(Event e)
         switch (e) {
         case Start:
             clear_();
-            clock_.start();
-            channel_->setCapturing(true);
-            state_ = Capturing;
+            clock_.reset();
+            if (driver_->get_mcdriver()->is_running()) {
+                channel_->setCapturing(true);
+                state_ = Capturing;
+            } else {
+                channel_->setCapturing(false);
+                state_ = Paused;
+            }
             break;
         case Update:
             if (clock_.playbackTime() > tMax_) {
                 clock_.pause();
                 state_ = Idle;
             }
+            break;
+        case Stop:
+            clock_.pause();
+            channel_->setCapturing(false);
+            state_ = Idle;
+            break;
+        case Clear:
+            clear_();
+            clock_.reset();
+            break;
+        default:
+            break;
+        }
+        break;
+    case Pausing:
+        switch (e) {
+        case Start:
+            clear_();
+            clock_.reset();
+            if (driver_->get_mcdriver()->is_running()) {
+                channel_->setCapturing(true);
+                state_ = Capturing;
+            } else {
+                channel_->setCapturing(false);
+                state_ = Paused;
+            }
+            break;
+        case Update:
+            if (clock_.playbackTime() > tMax_) {
+                clock_.pause();
+                state_ = Paused;
+            }
+            break;
+        case Stop:
+            clock_.pause();
+            channel_->setCapturing(false);
+            state_ = Idle;
             break;
         case Clear:
             clear_();
@@ -291,15 +346,18 @@ void CascadeRecorder::stateMachine(Event e)
     }
     if (old_ != state_)
         emit stateChange(old_, state_);
-    if (e == Update)
-        statusUpdate_();
-    emit needsUpdate();
+    // if (e == Update)
+    statusUpdate_();
+    if (tracksDirty_)
+        emit needsUpdate();
 }
 
 void CascadeRecorder::clear_()
 {
     int nresidents_ = cascade_buffer_.size();
     cascade_buffer_.clear();
+    size_ = 0;
+    bufferFull_ = false;
     tMin_ = 0.f;
     tMax_ = 0.f;
     tracksDirty_ = nresidents_ > 0;
@@ -327,23 +385,26 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<Cascade> &c)
     if (c->epoch != filterEpoch_)
         return false;
 
-    const int cap = capVerts();
+    // check if cascade fits in the free space
+    int free = capacity_ - size_;
+    if (free < int(c->buff.size())) {
+        if (size_)
+            bufferFull_ = true;
+        return false;
+    }
 
     if (mode_ == Batch) {
-        // check if we already have N cascades
-        if (int(cascade_buffer_.size()) == nCascades_)
-            return false;
 
-        // check if it fits in the free space
-        int free = cap;
-        for (const auto &r : cascade_buffer_)
-            free -= int(r->buff.size());
-        if (free < int(c->buff.size()))
+        // check if we already have N cascades
+        if (int(cascade_buffer_.size()) == nCascades_) {
+            bufferFull_ = true;
             return false;
+        }
 
         // the 1st cascade initializes tMin, tMax
         if (cascade_buffer_.empty()) {
-            tMin_ = tMax_ = clock_.playbackTime();
+            tMin_ = tMax_ = 0; // clock_.playbackTime();
+            clock_.start(); // start the clock on the 1st cascade
         }
 
         // update cascade timing
@@ -352,6 +413,7 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<Cascade> &c)
 
         // add cascade
         cascade_buffer_.push_back(c);
+        size_ += int(c->buff.size());
 
         // update state
         tMax_ += c->duration;
@@ -359,21 +421,18 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<Cascade> &c)
         update();
         return true;
     } else {
+
         // check if we already have N+1 cascades
         // the last cascade is the one pending to be shown
-        if (int(cascade_buffer_.size()) == nCascades_ + 1)
+        if (int(cascade_buffer_.size()) == nCascades_ + 1) {
+            bufferFull_ = true;
             return false;
-
-        // check if it fits in the free space
-        int free = cap;
-        for (const auto &r : cascade_buffer_)
-            free -= int(r->buff.size());
-        if (free < int(c->buff.size()))
-            return false;
+        }
 
         // the 1st cascade initializes tMin, tMax
         if (cascade_buffer_.empty()) {
-            tMin_ = tMax_ = clock_.playbackTime();
+            tMin_ = tMax_ = 0; // clock_.playbackTime();
+            clock_.start(); // start the clock on the 1st cascade
         }
 
         // update cascade timing
@@ -382,6 +441,7 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<Cascade> &c)
 
         // add cascade
         cascade_buffer_.push_back(c);
+        size_ += int(c->buff.size());
 
         // update state
         if (int(cascade_buffer_.size()) <= nCascades_) {
@@ -396,6 +456,8 @@ bool CascadeRecorder::admitCascade(const std::shared_ptr<Cascade> &c)
 void CascadeRecorder::evictOldest()
 {
     tMin_ += cascade_buffer_.front()->duration;
+    size_ -= int(cascade_buffer_.front()->buff.size());
+    bufferFull_ = false;
     cascade_buffer_.pop_front();
     tMax_ += cascade_buffer_.back()->duration;
     tracksDirty_ = true;
@@ -403,15 +465,14 @@ void CascadeRecorder::evictOldest()
 
 void CascadeRecorder::statusUpdate_()
 {
-
-    int n = cascade_buffer_.size();
-    float ts = clock_.playbackTime();
-    double tw = clock_.worldTime();
-    QString s = QString("N: %1, tw: %2, tmin: %3, ts: %4, tmax: %5")
-                        .arg(n)
-                        .arg(tw, 0, 'f', 2)
+    const double mb = double(size_) * sizeof(TrackVertex) / (1024.0 * 1024.0);
+    QString s = QString("Cascades: %1\nMemory: %2 MB\nworld t: %3 s\nplay t: %4 ns\n"
+                        "span: %5 - %6 ns")
+                        .arg(int(cascade_buffer_.size()))
+                        .arg(mb, 0, 'f', 2)
+                        .arg(clock_.worldTime(), 0, 'f', 2)
+                        .arg(clock_.playbackTime(), 0, 'f', 2)
                         .arg(tMin_, 0, 'f', 2)
-                        .arg(ts, 0, 'f', 2)
                         .arg(tMax_, 0, 'f', 2);
     emit statusUpdate(s);
 }
@@ -435,7 +496,10 @@ Track3DViewport::Track3DViewport(McDriverObj *driver, QWidget *parent)
     connect(recorder_, &CascadeRecorder::needsUpdate, this, [this]() { update(); });
 
     connect(driver_, &McDriverObj::configChanged, this, &Track3DViewport::refreshScene);
-    connect(driver_, &McDriverObj::simulationCreated, this, &Track3DViewport::refreshScene);
+    connect(driver_, &McDriverObj::simulationCreated, this, [this]() {
+        this->refreshScene();
+        this->homeView();
+    });
 }
 
 Track3DViewport::~Track3DViewport()
@@ -461,7 +525,8 @@ Track3DViewport::~Track3DViewport()
 void Track3DViewport::initializeGL()
 {
     initializeOpenGLFunctions();
-    glClearColor(0.10f, 0.10f, 0.12f, 1.0f);
+    // glClearColor(0.10f, 0.10f, 0.12f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -518,14 +583,24 @@ void Track3DViewport::resizeGL(int w, int h)
 
 void Track3DViewport::paintGL()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     if (sceneDirty_)
         buildSceneBuffers();
     if (recorder_->dirty()) {
         rebuildTrackBuffer();
         recorder_->clearDirtyFlag();
     }
+
+    drawScene_();
+
+    recorder_->update();
+
+    if (recorder_->isRunning())
+        update();
+}
+
+void Track3DViewport::drawScene_()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if (!prog_ || !prog_->isLinked())
         return;
@@ -551,10 +626,12 @@ void Track3DViewport::paintGL()
     prog_->release();
 
     if (trackProg_ && trackProg_->isLinked() && !first_.empty()) {
+        glLineWidth(1.5f);
         trackProg_->bind();
         trackProg_->setUniformValue("uMvp", mvp());
         trackProg_->setUniformValue("uTime", static_cast<GLfloat>(recorder_->playbackTime()));
         trackProg_->setUniformValue("uColorMode", colorMode_);
+        trackProg_->setUniformValue("uColorMap", colorMap_);
         trackProg_->setUniformValue("uEnergyMin", energyDataMin_);
         trackProg_->setUniformValue("uEnergyMax", energyDataMax_);
         trackProg_->setUniformValue("uEnergyLog", energyLog_ ? 1 : 0);
@@ -563,11 +640,43 @@ void Track3DViewport::paintGL()
         trackVao_.release();
         trackProg_->release();
     }
+}
 
-    recorder_->update();
+QImage Track3DViewport::grabScreenshot(int scale)
+{
+    makeCurrent();
 
-    if (recorder_->isRunning())
-        update();
+    if (sceneDirty_)
+        buildSceneBuffers();
+    if (recorder_->dirty()) {
+        rebuildTrackBuffer();
+        recorder_->clearDirtyFlag();
+    }
+
+    int s = qBound(1, scale, 4);
+    const int kMaxSide = 4096;
+    while (s > 1 && std::max(width(), height()) * s > kMaxSide)
+        --s;
+
+    QOpenGLFramebufferObjectFormat fmt;
+    fmt.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+    fmt.setSamples(4);
+    QOpenGLFramebufferObject fbo(width() * s, height() * s, fmt);
+    if (!fbo.isValid()) {
+        doneCurrent();
+        return grabFramebuffer();
+    }
+
+    fbo.bind();
+    glViewport(0, 0, fbo.width(), fbo.height());
+    drawScene_();
+    fbo.release();
+
+    QImage img = fbo.toImage();
+    glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
+    glViewport(0, 0, width(), height());
+    doneCurrent();
+    return img;
 }
 
 void Track3DViewport::showEvent(QShowEvent *e)
@@ -731,6 +840,19 @@ void Track3DViewport::setPresetView(int v)
     update();
 }
 
+void Track3DViewport::setCamera(const CameraState &c)
+{
+    if (std::isfinite(c.yaw))
+        yaw_ = c.yaw;
+    if (std::isfinite(c.pitch))
+        pitch_ = qBound(-89.0f, c.pitch, 89.0f);
+    if (std::isfinite(c.dist))
+        dist_ = qBound(radius_ * 0.1f, c.dist, radius_ * 30.0f);
+    if (std::isfinite(c.center.x()) && std::isfinite(c.center.y()) && std::isfinite(c.center.z()))
+        center_ = c.center;
+    update();
+}
+
 void Track3DViewport::refreshScene()
 {
     readSceneFromConfig();
@@ -747,9 +869,8 @@ void Track3DViewport::rebuildTrackBuffer()
 
     trackVbo_.bind();
 
-    const int want = recorder_->memoryCapMB() > 0
-            ? recorder_->memoryCapMB() * 1024 * 1024
-            : kTrackVboBytes;
+    const int want =
+            recorder_->memoryCapMB() > 0 ? recorder_->memoryCapMB() * 1024 * 1024 : kTrackVboBytes;
     if (want != trackVboBytes_) {
         trackVbo_.allocate(want);
         trackVboBytes_ = want;
@@ -778,6 +899,15 @@ void Track3DViewport::setColorMode(int m)
     if (m == colorMode_)
         return;
     colorMode_ = m;
+    emit colorConfigChanged();
+    update();
+}
+
+void Track3DViewport::setColorMap(int m)
+{
+    if (m < 0 || m == colorMap_)
+        return;
+    colorMap_ = m;
     emit colorConfigChanged();
     update();
 }
@@ -923,25 +1053,61 @@ static std::vector<double> axisTicks(double lo, double hi, bool log)
 static QColor genSwatch(int g)
 {
     switch (g) {
-    case 0: return QColor::fromRgbF(1.0, 0.85, 0.2);
-    case 1: return QColor::fromRgbF(1.0, 0.45, 0.1);
-    case 2: return QColor::fromRgbF(0.9, 0.2, 0.2);
-    case 3: return QColor::fromRgbF(0.6, 0.3, 0.8);
-    default: return QColor::fromRgbF(0.35, 0.6, 1.0);
+    case 0:
+        return QColor::fromRgbF(1.0, 0.85, 0.2);
+    case 1:
+        return QColor::fromRgbF(1.0, 0.45, 0.1);
+    case 2:
+        return QColor::fromRgbF(0.9, 0.2, 0.2);
+    case 3:
+        return QColor::fromRgbF(0.6, 0.3, 0.8);
+    default:
+        return QColor::fromRgbF(0.35, 0.6, 1.0);
     }
 }
 
 QColor TrackColorBar::rampColor(float t)
 {
     t = qBound(0.f, t, 1.f);
-    static const float c[5][3] = { { 0, 0, 1 }, { 0, 1, 1 }, { 0, 1, 0 },
-                                   { 1, 1, 0 }, { 1, 0, 0 } };
+    static const float c[5][3] = {
+        { 0, 0, 1 }, { 0, 1, 1 }, { 0, 1, 0 }, { 1, 1, 0 }, { 1, 0, 0 }
+    };
     const float f = t * 4.f;
     const int i = std::min(int(f), 3);
     const float u = f - i;
     return QColor::fromRgbF(c[i][0] * (1 - u) + c[i + 1][0] * u,
                             c[i][1] * (1 - u) + c[i + 1][1] * u,
                             c[i][2] * (1 - u) + c[i + 1][2] * u);
+}
+
+// matplotlib 'rainbow' colormap — exact analytic definition.
+// Source: matplotlib _cm.py; License: matplotlib (BSD-compatible)
+static QColor mplRainbow(double x)
+{
+    x = qBound(0.0, x, 1.0);
+    const double r = qBound(0.0, std::abs(2.0 * x - 0.5), 1.0);
+    const double g = std::sin(M_PI * x);
+    const double b = std::cos(M_PI * x / 2.0);
+    return QColor::fromRgbF(r, g, b);
+}
+
+QColor TrackColorBar::continuousColor(int map, float t)
+{
+    if (map == 1)
+        return mplRainbow(t);
+    if (map == 2) {
+        // turbo, (c) Google LLC, Apache-2.0 (A. Mikhailov / R. Du)
+        double x = std::min(std::max(double(t), 0.0), 1.0);
+        const double r = 0.13572138 + x * (4.61539260 + x * (-42.66032258 + x * 132.13108234))
+                + x * x * x * x * (-152.94239396 + x * 59.28637943);
+        const double g = 0.09140261 + x * (2.19418839 + x * (4.84296658 + x * -14.18503333))
+                + x * x * x * x * (4.27729857 + x * 2.82956604);
+        const double b = 0.10667330 + x * (12.64194608 + x * (-60.58204836 + x * 110.36276771))
+                + x * x * x * x * (-89.90310912 + x * 27.34824973);
+        return QColor::fromRgbF(std::min(std::max(r, 0.0), 1.0), std::min(std::max(g, 0.0), 1.0),
+                                std::min(std::max(b, 0.0), 1.0));
+    }
+    return rampColor(t);
 }
 
 QColor TrackColorBar::speciesColor(int aid)
@@ -951,8 +1117,18 @@ QColor TrackColorBar::speciesColor(int aid)
     return QColor::fromHsvF(h, 1.0, 1.0);
 }
 
-TrackColorBar::TrackColorBar(Track3DViewport *view, QWidget *parent)
-    : QWidget(parent), view_(view)
+// Tableau 10 palette; values from matplotlib's BSD-licensed TABLEAU_COLORS ("tab10")
+QColor TrackColorBar::tab10(int i)
+{
+    static const int rgb[10][3] = { { 31, 119, 180 },  { 255, 127, 14 },  { 44, 160, 44 },
+                                    { 214, 39, 40 },   { 148, 103, 189 }, { 140, 86, 75 },
+                                    { 227, 119, 194 }, { 127, 127, 127 }, { 188, 189, 34 },
+                                    { 23, 190, 207 } };
+    const int *c = rgb[((i % 10) + 10) % 10];
+    return QColor(c[0], c[1], c[2]);
+}
+
+TrackColorBar::TrackColorBar(Track3DViewport *view, QWidget *parent) : QWidget(parent), view_(view)
 {
     connect(view_, &Track3DViewport::colorConfigChanged, this, QOverload<>::of(&QWidget::update));
 }
@@ -965,9 +1141,10 @@ void TrackColorBar::paintEvent(QPaintEvent *)
 
     if (view_->colorMode() == Track3DViewport::Energy) {
         const QRect bar(m, m + 16, 20, height() - 2 * m - 16);
+        const int cmap = view_->colorMap();
         QLinearGradient g(bar.topLeft(), bar.bottomLeft());
         for (int k = 0; k <= 16; ++k)
-            g.setColorAt(k / 16.0, rampColor(1.f - k / 16.f)); // high E on top
+            g.setColorAt(k / 16.0, continuousColor(cmap, 1.f - k / 16.f)); // high E on top
         p.fillRect(bar, g);
         p.drawRect(bar);
         p.drawText(m, m + 12, QStringLiteral("E [eV]"));
@@ -992,17 +1169,47 @@ void TrackColorBar::paintEvent(QPaintEvent *)
         return;
     }
 
-    const bool species = view_->colorMode() == Track3DViewport::Species;
-    p.drawText(m, m + 12, species ? QStringLiteral("Species") : QStringLiteral("Gen."));
-    const int n = species ? 6 : 5;
-    for (int i = 0; i < n; ++i) {
-        const int y = m + 20 + i * 22;
-        const QRect sw(m, y, 16, 16);
-        p.fillRect(sw, species ? speciesColor(i) : genSwatch(i));
-        p.drawRect(sw);
-        QString lbl = species ? QStringLiteral("#%1").arg(i)
-                              : (i == 0 ? QStringLiteral("source")
-                                        : (i == 4 ? QStringLiteral("4+") : QString::number(i)));
-        p.drawText(sw.right() + 6, y + 13, lbl);
+    const bool tab = view_->colorMap() == 1;
+
+    if (view_->colorMode() == Track3DViewport::Generation) {
+        p.drawText(m, m + 12, QStringLiteral("Recoil Gen."));
+        const int n = 5;
+        for (int i = 0; i < n; ++i) {
+            const int y = m + 20 + i * 22;
+            const QRect sw(m, y, 16, 16);
+            p.fillRect(sw, tab ? tab10(i) : genSwatch(i));
+            p.drawRect(sw);
+            QString lbl = i == 0 ? QStringLiteral("source")
+                                 : (i == 4 ? QStringLiteral("4+") : QString::number(i));
+            p.drawText(sw.right() + 6, y + 13, lbl);
+        }
+        return;
+    }
+
+    if (view_->colorMode() == Track3DViewport::Species) {
+        p.drawText(m, m + 12, QStringLiteral("Atom"));
+        if (view_->driver()->status() != McDriverObj::mcReset) {
+            auto atom_labels = view_->driver()->get_mcdriver()->getSim()->getTarget().atom_labels();
+            int n = atom_labels.size();
+            for (int i = 0; i < n; ++i) {
+                const int y = m + 20 + i * 22;
+                const QRect sw(m, y, 16, 16);
+                p.fillRect(sw, tab ? tab10(i) : speciesColor(i));
+                p.drawRect(sw);
+                p.drawText(sw.right() + 6, y + 13, atom_labels[i].c_str());
+            }
+        } else {
+            int n = 5;
+            for (int i = 0; i < n; ++i) {
+                const int y = m + 20 + i * 22;
+                const QRect sw(m, y, 16, 16);
+                p.fillRect(sw, tab ? tab10(i) : speciesColor(i));
+                p.drawRect(sw);
+                QString lbl = i == 0 ? QStringLiteral("source")
+                                     : (i == 4 ? QStringLiteral("4+") : QString::number(i));
+                p.drawText(sw.right() + 6, y + 13, lbl);
+            }
+        }
+        return;
     }
 }
