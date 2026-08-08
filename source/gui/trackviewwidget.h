@@ -6,6 +6,7 @@
 class McDriverObj;
 class Track3DViewport;
 class QToolBar;
+class PendingBlinker;
 
 class TrackViewWidget : public QWidget
 {
@@ -28,6 +29,7 @@ private:
     QWidget *buildCameraTab_();
 
     Track3DViewport *view_;
+    PendingBlinker *blinker_{ nullptr };
 };
 
 #endif // TRACKVIEWWIDGET_H

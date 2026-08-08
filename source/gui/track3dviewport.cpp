@@ -1080,34 +1080,21 @@ QColor TrackColorBar::rampColor(float t)
                             c[i][2] * (1 - u) + c[i + 1][2] * u);
 }
 
-// viridis, 17-point LUT from the CC0 colormap data (BIDS); mirrors track.frag viridis()
-static QColor viridisLut(double t)
+// matplotlib 'rainbow' colormap — exact analytic definition.
+// Source: matplotlib _cm.py; License: matplotlib (BSD-compatible)
+static QColor mplRainbow(double x)
 {
-    static const double lut[17][3] = {
-        { 0.267004, 0.004874, 0.329415 }, { 0.282327, 0.094955, 0.417331 },
-        { 0.278826, 0.175490, 0.483397 }, { 0.257322, 0.256130, 0.526563 },
-        { 0.227802, 0.326594, 0.546532 }, { 0.195860, 0.395433, 0.555276 },
-        { 0.160665, 0.478540, 0.558115 }, { 0.127568, 0.566949, 0.551229 },
-        { 0.119483, 0.614817, 0.537692 }, { 0.150148, 0.676631, 0.506589 },
-        { 0.220124, 0.725509, 0.466226 }, { 0.311925, 0.767822, 0.415586 },
-        { 0.440137, 0.811138, 0.340967 }, { 0.575563, 0.844566, 0.256415 },
-        { 0.709898, 0.868751, 0.169257 }, { 0.835270, 0.886029, 0.102646 },
-        { 0.993248, 0.906157, 0.143936 }
-    };
-    const double x = std::min(std::max(t, 0.0), 1.0) * 16.0;
-    int i = int(x);
-    if (i >= 16)
-        return QColor::fromRgbF(lut[16][0], lut[16][1], lut[16][2]);
-    const double u = x - i;
-    return QColor::fromRgbF(lut[i][0] * (1 - u) + lut[i + 1][0] * u,
-                            lut[i][1] * (1 - u) + lut[i + 1][1] * u,
-                            lut[i][2] * (1 - u) + lut[i + 1][2] * u);
+    x = qBound(0.0, x, 1.0);
+    const double r = qBound(0.0, std::abs(2.0 * x - 0.5), 1.0);
+    const double g = std::sin(M_PI * x);
+    const double b = std::cos(M_PI * x / 2.0);
+    return QColor::fromRgbF(r, g, b);
 }
 
 QColor TrackColorBar::continuousColor(int map, float t)
 {
     if (map == 1)
-        return viridisLut(t);
+        return mplRainbow(t);
     if (map == 2) {
         // turbo, (c) Google LLC, Apache-2.0 (A. Mikhailov / R. Du)
         double x = std::min(std::max(double(t), 0.0), 1.0);

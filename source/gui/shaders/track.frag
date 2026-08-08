@@ -32,26 +32,6 @@ vec3 ramp(float t)
     return mix(c3, c4, (t - 0.75) / 0.25);
 }
 
-// viridis, 17-point LUT from the CC0 colormap data (BIDS, N. Smith & S. van der Walt,
-// https://github.com/BIDS/colormap); linearly interpolated.
-vec3 viridis(float t)
-{
-    const vec3 lut[17] = vec3[17](
-            vec3(0.267004, 0.004874, 0.329415), vec3(0.282327, 0.094955, 0.417331),
-            vec3(0.278826, 0.175490, 0.483397), vec3(0.257322, 0.256130, 0.526563),
-            vec3(0.227802, 0.326594, 0.546532), vec3(0.195860, 0.395433, 0.555276),
-            vec3(0.160665, 0.478540, 0.558115), vec3(0.127568, 0.566949, 0.551229),
-            vec3(0.119483, 0.614817, 0.537692), vec3(0.150148, 0.676631, 0.506589),
-            vec3(0.220124, 0.725509, 0.466226), vec3(0.311925, 0.767822, 0.415586),
-            vec3(0.440137, 0.811138, 0.340967), vec3(0.575563, 0.844566, 0.256415),
-            vec3(0.709898, 0.868751, 0.169257), vec3(0.835270, 0.886029, 0.102646),
-            vec3(0.993248, 0.906157, 0.143936));
-    float x = clamp(t, 0.0, 1.0) * 16.0;
-    int i = int(floor(x));
-    if (i >= 16) return lut[16];
-    return mix(lut[i], lut[i + 1], x - float(i));
-}
-
 // turbo, (c) Google LLC, Apache-2.0. Design A. Mikhailov, GLSL approx R. Du
 // (https://gist.github.com/mikhailov-work/0d177465a8151eb6ede1768d51d476c7).
 vec3 turbo(float t)
@@ -69,9 +49,21 @@ vec3 turbo(float t)
                 dot(v4, kBlueVec4) + dot(v2, kBlueVec2));
 }
 
+// matplotlib 'rainbow' colormap (exact analytic definition, not a fit).
+// Source: matplotlib lib/matplotlib/_cm.py (_rainbow_data):
+//   red = |2x - 1/2|, green = sin(pi x), blue = cos(pi x / 2)
+// License: matplotlib license (BSD-compatible). https://matplotlib.org
+vec3 mplRainbow(float x)
+{
+    x = clamp(x, 0.0, 1.0);
+    return vec3(clamp(abs(2.0 * x - 0.5), 0.0, 1.0),
+                sin(3.14159265 * x),
+                cos(1.57079633 * x));
+}
+
 vec3 continuousColor(int map, float t)
 {
-    if (map == 1) return viridis(t);
+    if (map == 1) return mplRainbow(t);
     if (map == 2) return turbo(t);
     return ramp(t);
 }

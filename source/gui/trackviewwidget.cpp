@@ -35,7 +35,10 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QSvgRenderer>
-#include <qlabel.h>
+#include <QLabel>
+#include <QGraphicsOpacityEffect>
+#include <QPointer>
+#include <QPropertyAnimation>
 
 static float jsonNumber(const nlohmann::json &j, const char *key, float fallback)
 {
@@ -56,7 +59,7 @@ const QPointF bbl{ FX0 + DX, FY1 + DY }, bbr{ FX1 + DX, FY1 + DY };
 
 QString polygonFor(Track3DViewport::View f)
 {
-    const QPointF *q[4] = {};
+    const QPointF *q[4] = { };
     switch (f) {
     case Track3DViewport::Front:
         q[0] = &ftl;
@@ -95,7 +98,7 @@ QString polygonFor(Track3DViewport::View f)
         q[3] = &bbl;
         break;
     default:
-        return {};
+        return { };
     }
     QString pts;
     for (int i = 0; i < 4; ++i)
@@ -151,6 +154,50 @@ QIcon makeViewIcon(Track3DViewport::View face, const QColor &color)
     }
     return icon;
 }
+
+class PendingBlinker : public QObject
+{
+public:
+    PendingBlinker(QAction *action, QToolBar *bar, QObject *parent = nullptr)
+        : QObject(parent), m_action(action), m_bar(bar)
+    {
+    }
+
+    void start()
+    {
+        if (m_anim)
+            return; // already blinking
+        QWidget *w = m_bar->widgetForAction(m_action);
+        if (!w)
+            return; // action not in this toolbar (yet)
+
+        auto *fx = new QGraphicsOpacityEffect(w);
+        w->setGraphicsEffect(fx); // w takes ownership
+
+        m_anim = new QPropertyAnimation(fx, "opacity", fx);
+        m_anim->setDuration(1000);
+        m_anim->setKeyValueAt(0.0, 1.0); // key values, not start/end,
+        m_anim->setKeyValueAt(0.5, 0.2); // so the loop ping-pongs instead
+        m_anim->setKeyValueAt(1.0, 1.0); // of snapping back
+        m_anim->setEasingCurve(QEasingCurve::InOutSine);
+        m_anim->setLoopCount(-1);
+        m_anim->start();
+    }
+
+    void stop()
+    {
+        if (m_anim)
+            m_anim->stop();
+        if (QWidget *w = m_bar->widgetForAction(m_action))
+            w->setGraphicsEffect(nullptr); // deletes effect + child animation
+        m_anim = nullptr;
+    }
+
+private:
+    QAction *m_action;
+    QToolBar *m_bar;
+    QPointer<QPropertyAnimation> m_anim; // QPointer: dies with the effect
+};
 
 TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget(parent)
 {
@@ -252,24 +299,34 @@ QToolBar *TrackViewWidget::buildToolBar_()
     //     cap->setText(on ? tr("Capture off") : tr("Capture on"));
     // });
     connect(R, &CascadeRecorder::stateChange, cap,
-            [cap](CascadeRecorder::State from, CascadeRecorder::State to) {
+            [this, cap](CascadeRecorder::State from, CascadeRecorder::State to) {
                 QSignalBlocker block(cap); // don't let setChecked re-emit toggled()
                 switch (to) {
                 case CascadeRecorder::Idle:
                     cap->setChecked(false);
                     cap->setText(tr("Capture on"));
+                    this->blinker_->stop();
                     break;
                 case CascadeRecorder::Capturing:
-                case CascadeRecorder::Finishing:
                     cap->setChecked(true);
                     cap->setText(tr("Capture off"));
+                    this->blinker_->stop();
+                    break;
+                case CascadeRecorder::Finishing:
+                case CascadeRecorder::Pausing:
+                    cap->setChecked(true);
+                    cap->setText(tr("Capture off"));
+                    this->blinker_->start();
                     break;
                 case CascadeRecorder::Paused:
                     cap->setChecked(true);
                     cap->setText(tr("Paused"));
+                    this->blinker_->stop();
                     break;
                 }
             });
+
+    blinker_ = new PendingBlinker(cap, tb, this);
 
     QAction *clr = tb->addAction(tr("Clear"));
     connect(clr, &QAction::triggered, R, &CascadeRecorder::clear);
@@ -465,7 +522,7 @@ QWidget *TrackViewWidget::buildColorTab_()
         QSignalBlocker block(colorMap);
         colorMap->clear();
         if (mode == Track3DViewport::Energy)
-            colorMap->addItems({ tr("Ramp"), tr("Viridis"), tr("Turbo") });
+            colorMap->addItems({ tr("Ramp"), tr("Rainbow"), tr("Turbo") });
         else
             colorMap->addItems({ tr("Default"), tr("Tab10") });
     };
