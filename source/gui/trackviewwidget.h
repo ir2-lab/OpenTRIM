@@ -21,6 +21,7 @@ private slots:
     void saveCamera_();
     void loadCamera_();
     void saveScreenshot_();
+    void showGuide_();
 
 private:
     QToolBar *buildToolBar_();
@@ -30,6 +31,7 @@ private:
 
     Track3DViewport *view_;
     PendingBlinker *blinker_{ nullptr };
+    QWidget *guide_{ nullptr };
 };
 
 #endif // TRACKVIEWWIDGET_H

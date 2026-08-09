@@ -31,8 +31,10 @@
 #include <QSplitter>
 #include <QStyle>
 #include <QTabWidget>
+#include <QTextBrowser>
 #include <QToolBar>
 #include <QToolButton>
+#include <QUrl>
 #include <QVBoxLayout>
 #include <QSvgRenderer>
 #include <QLabel>
@@ -361,6 +363,12 @@ QToolBar *TrackViewWidget::buildToolBar_()
         });
     }
 
+    tb->addSeparator();
+
+    QAction *help = tb->addAction(tr("?"));
+    help->setToolTip(tr("Open the 3D viewer guide"));
+    connect(help, &QAction::triggered, this, &TrackViewWidget::showGuide_);
+
     return tb;
 }
 
@@ -654,6 +662,25 @@ void TrackViewWidget::loadCamera_()
         c.center =
                 QVector3D((*ctr)[0].get<float>(), (*ctr)[1].get<float>(), (*ctr)[2].get<float>());
     view_->setCamera(c);
+}
+
+void TrackViewWidget::showGuide_()
+{
+    if (!guide_) {
+        guide_ = new QWidget(this, Qt::Window);
+        guide_->setWindowTitle(tr("3D Viewer Guide"));
+        QVBoxLayout *lay = new QVBoxLayout(guide_);
+        QLabel *title = new QLabel(tr("3D Viewer Guide"));
+        title->setStyleSheet("font-size : 14pt; font-weight : bold;");
+        lay->addWidget(title);
+        QTextBrowser *browser = new QTextBrowser;
+        browser->setSource(QUrl("qrc:./md/track_viewer_guide.md"));
+        browser->setOpenExternalLinks(true);
+        lay->addWidget(browser);
+        guide_->resize(1240, 840);
+    }
+    guide_->show();
+    guide_->raise();
 }
 
 void TrackViewWidget::saveScreenshot_()
