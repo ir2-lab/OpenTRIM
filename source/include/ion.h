@@ -6,7 +6,11 @@
 
 #include "geometry.h"
 
-#define S_ERG_TO_TIME_CONST 7.198712007850257e-02 // ps/nm-eV^(1/2)
+// Constant used to calculate the time Δt for
+// an ion to travel a distance Δs
+//   Δt = Δs [m(amu)/E(eV)]^(1/2) [1amu*c^2/2]^(1/2)/c
+//   1amu*c^2 = 9.3149410372e8 eV
+#define S_ERG_TO_TIME_CONST 7.198704629020672e-02 // ps-eV^(1/2)/nm
 
 class atom;
 
@@ -96,8 +100,8 @@ private:
     vector3 dir_; // direction cosines
     double erg_; // energy in eV
     double erg0_; // initial energy
-    double t_; // time in ns
-    double t0_; // start time in ns (relative to ??? TODO)
+    double t_; // time in ps
+    double t0_; // start time in ps (relative to source ion)
     double s_erg_to_t_;
     ivector3 icell_;
     int cellid_, // current cell id
@@ -154,10 +158,10 @@ public:
     /// Returns the ion's initial kinetic energy
     const double &erg0() const { return erg0_; }
 
-    /// Returns the ion's current time
+    /// Returns the ion's current time [ps]
     const double &t() const { return t_; }
 
-    /// Returns the ion's start time
+    /// Returns the ion's start time [ps]
     const double &t0() const { return t0_; }
 
     /// Returns the index vector of the cell the ion is currently in

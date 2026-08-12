@@ -19,7 +19,7 @@ struct TrackVertex
 {
     float x, y, z; // position [nm]
     float energy; // [eV]
-    float t; // time [ns]
+    float t; // time [ps]
     int16_t rid; // recoil generation (0 = source ion)
     int16_t aid; // atom id
 };

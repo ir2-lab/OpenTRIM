@@ -81,8 +81,8 @@ private:
     QElapsedTimer clock_;
     bool clockRunning_{ false };
     double twOffset_{ 0.0 }; // [s] world time offset
-    double tsOffset_{ 0.0 }; // [ns] simulation/playback time offset
-    double speed_{ 1.0 }; // [ns/s] playback speed
+    double tsOffset_{ 0.0 }; // [ps]] simulation/playback time offset
+    double speed_{ 1.0 }; // [ps/s] playback speed
 };
 
 // Recorder object with internal state machine functionality
@@ -122,7 +122,7 @@ public slots:
     void clear() { stateMachine(Clear); }
     void setNCascades(int n);
     void setRingMode(bool on);
-    void setPlaybackSpeed(double f); // f [ns/s]
+    void setPlaybackSpeed(double f); // f [ps/s]
     void setMemoryCapMB(int mb);
     void setEnergyThreshold(double eV);
     void setGenCutoff(int g);
@@ -147,8 +147,8 @@ private:
     Mode mode_{ Ring };
     int nCascades_{ 10 };
     CascadeRecorderClock clock_;
-    double tMin_{ 0.f }; // [ns] start of 1st displayed cascade
-    double tMax_{ 0.f }; // [ns] end of last displayed cascade
+    double tMin_{ 0.f }; // [ps] start of 1st displayed cascade
+    double tMax_{ 0.f }; // [ps] end of last displayed cascade
     int capacity_; // in # of vertices
     int size_{ 0 }; // current total # of vertices
     bool bufferFull_{ false };

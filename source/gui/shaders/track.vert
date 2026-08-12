@@ -2,7 +2,7 @@
 
 layout(location = 0) in vec3 aPos; // nm
 layout(location = 1) in float aEnergy; // eV
-layout(location = 2) in float aT; // ns
+layout(location = 2) in float aT; // ps
 layout(location = 3) in int aRid; // recoil generation
 layout(location = 4) in int aAid; // atom id
 
