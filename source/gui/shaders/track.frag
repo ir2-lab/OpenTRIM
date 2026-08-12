@@ -5,7 +5,7 @@ centroid in float vT;
 flat in int vRid;
 flat in int vAid;
 
-uniform float uTime; // playback time [ns]
+uniform float uTime; // playback time [ps]
 uniform int uColorMode; // 0 generation, 1 energy, 2 species
 uniform int uColorMap; // continuous: 0 ramp 1 viridis 2 turbo; discrete: 0 default 1 tab10
 uniform float uEnergyMin; // [eV]

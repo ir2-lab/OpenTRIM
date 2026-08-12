@@ -45,5 +45,6 @@
         <file>assets/3d/cubeFlat.obj</file>
         <file>assets/ionicons/create-outline.svg</file>
         <file>examples/270keV_He_on_C.json</file>
+        <file>assets/ionicons/help-circle-outline.svg</file>
     </qresource>
 </RCC>

@@ -365,7 +365,7 @@ QToolBar *TrackViewWidget::buildToolBar_()
 
     tb->addSeparator();
 
-    QAction *help = tb->addAction(tr("?"));
+    QAction *help = tb->addAction(QIcon(":/assets/ionicons/help-circle-outline.svg"), QString());
     help->setToolTip(tr("Open the 3D viewer guide"));
     connect(help, &QAction::triggered, this, &TrackViewWidget::showGuide_);
 
@@ -414,7 +414,7 @@ QWidget *TrackViewWidget::buildCaptureTab_()
         spdBox->setValue(1.0);
         connect(spdBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), R,
                 &CascadeRecorder::setPlaybackSpeed);
-        form->addRow(tr("Speed [ns/s]"), spdBox);
+        form->addRow(tr("Speed [ps/s]"), spdBox);
 
         QSlider *sldr = new QSlider(Qt::Horizontal);
         const int N = 20;
@@ -668,9 +668,9 @@ void TrackViewWidget::showGuide_()
 {
     if (!guide_) {
         guide_ = new QWidget(this, Qt::Window);
-        guide_->setWindowTitle(tr("3D Viewer Guide"));
+        guide_->setWindowTitle(tr("OpenTRIM - 3D Viewer Guide"));
         QVBoxLayout *lay = new QVBoxLayout(guide_);
-        QLabel *title = new QLabel(tr("3D Viewer Guide"));
+        QLabel *title = new QLabel(tr("OpenTRIM 3D Visualization of ion tracks"));
         title->setStyleSheet("font-size : 14pt; font-weight : bold;");
         lay->addWidget(title);
         QTextBrowser *browser = new QTextBrowser;

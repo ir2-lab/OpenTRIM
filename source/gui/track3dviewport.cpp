@@ -466,8 +466,8 @@ void CascadeRecorder::evictOldest()
 void CascadeRecorder::statusUpdate_()
 {
     const double mb = double(size_) * sizeof(TrackVertex) / (1024.0 * 1024.0);
-    QString s = QString("Cascades: %1\nMemory: %2 MB\nworld t: %3 s\nplay t: %4 ns\n"
-                        "span: %5 - %6 ns")
+    QString s = QString("Cascades: %1\nMemory: %2 MB\nworld t: %3 s\nplay t: %4 ps\n"
+                        "span: %5 - %6 ps")
                         .arg(int(cascade_buffer_.size()))
                         .arg(mb, 0, 'f', 2)
                         .arg(clock_.worldTime(), 0, 'f', 2)
