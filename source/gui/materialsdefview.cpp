@@ -121,28 +121,14 @@ void MaterialsDefView::addMaterialFromDatabase()
 
     MaterialDatabaseDialog dlg(existingMaterialIds, this);
     if (dlg.exec() == QDialog::Accepted) {
-        ojson mat = dlg.getSelectedMaterial();
-        if (!mat.is_null() && !mat.empty()) {
-            mcconfig cfg = *model_->options();
-            std::string s;
-            if (cfg.get("/Target/materials", s)) {
-                ojson arr;
-                try {
-                    arr = ojson::parse(s, nullptr, true, true);
-                }
-                catch (const std::exception &) {
-                    arr = ojson::array();
-                }
-                if (!arr.is_array())
-                    arr = ojson::array();
-                arr.push_back(mat);
-                cfg.set("/Target/materials", arr.dump());
-                model_->setOptions(cfg);
-                setWidgetData();
-                cbMaterialID->setCurrentText(QString::fromStdString(mat["id"].get<std::string>()));
-                emit materialsChanged();
-            }
-        }
+        const auto &md = dlg.getSelectedMaterial();
+        assert(!md.id.empty());
+        mcconfig cfg = *model_->options();
+        cfg.Target.materials.push_back(md);
+        model_->setOptions(cfg);
+        setWidgetData();
+        cbMaterialID->setCurrentText(md.id.c_str());
+        emit materialsChanged();
     }
 }
 

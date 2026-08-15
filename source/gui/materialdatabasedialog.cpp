@@ -1,6 +1,8 @@
 #include "materialdatabasedialog.h"
 
-#include <QListWidget>
+#include "periodic_table.h"
+
+#include <QTreeView>
 #include <QDialogButtonBox>
 #include <QLineEdit>
 #include <QVBoxLayout>
@@ -12,54 +14,158 @@
 #include <QFile>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QScrollArea>
+#include <QFontDatabase>
+#include <QSplitter>
+#include <QStandardItemModel>
+#include <QSortFilterProxyModel>
+
+#include "json_defs_p.h"
+
+NLOHMANN_JSON_SERIALIZE_ENUM(MaterialDatabaseDialog::composition_type_t,
+                             { { MaterialDatabaseDialog::atomic, "atomic" },
+                               { MaterialDatabaseDialog::mass, "mass" } })
+
+// MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MaterialDatabaseDialog::material_datasheet, id, title,
+//                                          density, composition_type, Z, X, comment)
+
+// serialization of mcconfig struct
+void from_json(const ojson &j, MaterialDatabaseDialog::material_datasheet &md)
+{
+    md.id = j["id"];
+    md.title = j["title"];
+    md.density = j["density"];
+    md.composition_type = j["composition_type"];
+    md.comment = j["comment"];
+    md.source = j["source"];
+    ojson Z = j["Z"];
+    if (Z.is_array())
+        Z.get_to(md.Z);
+    else {
+        md.Z.resize(1);
+        Z.get_to(md.Z.at(0));
+    }
+    ojson X = j["X"];
+    if (X.is_array())
+        X.get_to(md.X);
+    else {
+        md.X.resize(1);
+        X.get_to(md.X.at(0));
+    }
+}
+
+class MyFilterModel : public QSortFilterProxyModel
+{
+public:
+    MyFilterModel(QObject *obj) : QSortFilterProxyModel(obj) { }
+
+protected:
+    bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override
+    {
+        QModelIndex i = sourceModel()->index(sourceRow, 0, sourceParent);
+        // match either the name  or tooltip(id) of material
+        return sourceModel()->data(i).toString().contains(filterRegExp())
+                || sourceModel()->data(i, Qt::ToolTipRole).toString().contains(filterRegExp());
+    }
+};
 
 MaterialDatabaseDialog::MaterialDatabaseDialog(const QStringList &existingMaterialIds,
                                                QWidget *parent)
     : QDialog(parent), existingMaterialIds_(QSet<QString>(existingMaterialIds.begin(),
                                                           existingMaterialIds.end()))
 {
-    setWindowTitle("Select Material from Database");
-    setMinimumSize(600, 400);
+    setWindowTitle("OpenTRIM - Select Target Material");
+    setMinimumSize(800, 400);
+
+    QFile loadFile(QStringLiteral(":/md/material_card.html"));
+    loadFile.open(QIODevice::ReadOnly);
+    material_card_tmpl = loadFile.readAll();
+
+    loadMaterialsDb();
 
     filterLineEdit = new QLineEdit;
     filterLineEdit->setPlaceholderText("Filter materials...");
+    filterLineEdit->setClearButtonEnabled(true);
 
-    materialListWidget = new QListWidget;
-        materialListWidget->setStyleSheet(
-            "QListWidget::item:disabled {"
-            " background-color: palette(alternate-base);"
-            " }");
-    
+    /* create left-side tree widget */
+    materialsTreeView = new QTreeView;
+    proxyModel = new MyFilterModel(this);
+    proxyModel->setSourceModel(materials_db);
+    proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    proxyModel->setRecursiveFilteringEnabled(true);
+    materialsTreeView->setModel(proxyModel);
+    materialsTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
+    materialsTreeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    QScrollArea *sa = new QScrollArea;
+    sa->setFrameShape(QFrame::StyledPanel);
+    sa->setFrameShadow(QFrame::Sunken);
+    sa->setWidgetResizable(true);
+
+    materialLabel = new QLabel;
+    materialLabel->setStyleSheet(QStringLiteral("background-color: white;"));
+    materialLabel->setWordWrap(true);
+    materialLabel->setOpenExternalLinks(true);
+    materialLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    // materialLabel->setTextFormat(Qt::MarkdownText);
+    materialLabel->setTextFormat(Qt::RichText);
+    materialLabel->setAlignment(Qt::AlignTop);
+    QFont monoFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    materialLabel->setFont(monoFont);
+
+    sa->setWidget(materialLabel);
+
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 
     connect(filterLineEdit, &QLineEdit::textChanged, this, &MaterialDatabaseDialog::onFilterTextChanged);
-    connect(materialListWidget, &QListWidget::currentRowChanged, this, &MaterialDatabaseDialog::onMaterialSelected);
+    connect(materialsTreeView->selectionModel(), &QItemSelectionModel::currentChanged, this,
+            &MaterialDatabaseDialog::onMaterialSelected);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
-    QWidget *detailsPanel = createDetailsPanel();
+    QWidget *leftPanel = new QWidget;
+    QVBoxLayout *vbox = new QVBoxLayout;
+    leftPanel->setLayout(vbox);
+    vbox->setContentsMargins(0, 0, 0, 0);
+    vbox->addWidget(filterLineEdit);
+    vbox->addWidget(materialsTreeView);
 
-    QHBoxLayout *mainLayout = new QHBoxLayout;
-    mainLayout->addWidget(materialListWidget, 1);
-    mainLayout->addWidget(detailsPanel, 2);
+    QSplitter *splitter = new QSplitter;
+    splitter->addWidget(leftPanel);
+    splitter->addWidget(sa);
+    splitter->setSizes({ 200, 600 });
 
     QVBoxLayout *containerLayout = new QVBoxLayout(this);
-    containerLayout->addWidget(filterLineEdit);
-    containerLayout->addLayout(mainLayout);
+    containerLayout->addWidget(splitter);
     containerLayout->addWidget(buttonBox);
-
-    loadDatabase();
 }
 
-void MaterialDatabaseDialog::loadDatabase()
+material::material_desc_t MaterialDatabaseDialog::getSelectedMaterial() const
+{
+    material::material_desc_t md;
+
+    if (selected_.id.empty())
+        return md;
+
+    md.id = selected_.id;
+    md.density = selected_.density;
+    for (int i = 0; i < int(selected_.Z.size()); ++i) {
+        atom::parameters p;
+        p.element.atomic_number = selected_.Z[i];
+        p.element.symbol = periodic_table::at(selected_.Z[i]).symbol;
+        p.element.atomic_mass = periodic_table::at(selected_.Z[i]).mass;
+        p.X = selected_.X[i];
+        md.composition.push_back(p);
+    }
+
+    return md;
+}
+
+void MaterialDatabaseDialog::loadMaterialsDb()
 {
     // Note: The path should point to the resource file once added to the .qrc
-    QFile file(":/assets/materials.json");
-    if (!file.exists()) {
-        // Fallback for testing if not in resources yet
-        file.setFileName("../source/gui/assets/materials.json"); // Corrected path
-    }
+    QFile file(":/data/materials.json");
 
     if (!file.open(QIODevice::ReadOnly)) {
         QMessageBox::critical(this, "Error", "Could not open material database.");
@@ -67,126 +173,126 @@ void MaterialDatabaseDialog::loadDatabase()
     }
 
     ojson doc;
+    materials_db = new QStandardItemModel(0, 1, this);
+    materials_db->setHeaderData(0, Qt::Horizontal, "Materials");
+    QStandardItem *parentItem = materials_db->invisibleRootItem();
     try {
         doc = ojson::parse(file.readAll().toStdString(), nullptr, true, true);
-    }
-    catch (const std::exception &) {
-        QMessageBox::critical(this, "Error", "Could not parse material database.");
+
+        for (const auto &group : doc) {
+            std::string title = group["title"];
+            QStandardItem *g =
+                    new QStandardItem(QIcon(":/assets/ionicons/folder-outline.svg"), title.c_str());
+            g->setToolTip(title.c_str());
+            parentItem->appendRow(g);
+
+            for (const auto &m : group["items"]) {
+                material_datasheet md;
+                m.get_to(md);
+                QStandardItem *mi = new QStandardItem(
+                        QIcon(":/assets/ionicons/document-text-outline.svg"), md.title.c_str());
+                mi->setData(QVariant::fromValue(md));
+                mi->setToolTip(md.id.c_str());
+                g->appendRow(mi);
+            }
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::critical(this, "Error parsing materials db", e.what());
         return;
-    }
-
-    for (const auto &obj : doc) {
-        const ojson &mat = obj["data"];
-        materials.push_back(mat);
-
-        QString itemName = QString::fromStdString(obj["name"].get<std::string>());
-        QString materialId = QString::fromStdString(mat["id"].get<std::string>());
-        if (existingMaterialIds_.contains(materialId)) {
-            itemName += " [selected]";
-        }
-
-        QListWidgetItem *item = new QListWidgetItem(itemName);
-        if (existingMaterialIds_.contains(materialId)) {
-            item->setFlags(item->flags() & ~Qt::ItemIsEnabled & ~Qt::ItemIsSelectable);
-            item->setToolTip("Already added");
-        }
-        materialListWidget->addItem(item);
     }
 }
 
-void MaterialDatabaseDialog::onMaterialSelected(int currentRow)
+void MaterialDatabaseDialog::onMaterialSelected(const QModelIndex &selected,
+                                                const QModelIndex &deselected)
 {
-    if (currentRow < 0 || currentRow >= materials.size()) {
-        clearDetails();
-        buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+    QModelIndex sourceSelected = proxyModel->mapToSource(selected);
+    QStandardItem *item =
+            sourceSelected.isValid() ? materials_db->itemFromIndex(sourceSelected) : nullptr;
+    materialLabel->clear();
+    buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+    selected_ = { "", "", 0.f, atomic, {}, {}, "", "" };
+
+    if (!item) {
         return;
     }
 
-    QListWidgetItem *currentItem = materialListWidget->item(currentRow);
-    if (!currentItem || !(currentItem->flags() & Qt::ItemIsEnabled)) {
-        clearDetails();
-        buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+    QVariant V = item->data();
+    if (!V.isValid())
         return;
+
+    const material_datasheet &md = V.value<material_datasheet>();
+
+    // calc normalized atomic frac
+    std::vector<float> x(md.X);
+    float sum(0.f);
+    for (const auto &xi : x)
+        sum += xi;
+    for (auto &xi : x)
+        xi /= sum;
+    if (md.composition_type == mass) {
+        for (int i = 0; i < int(md.Z.size()); ++i) {
+            const auto &e = periodic_table::at(md.Z[i]);
+            x[i] /= e.mass;
+        }
+        sum = 0.f;
+        for (const auto &xi : x)
+            sum += xi;
+        for (auto &xi : x)
+            xi /= sum;
     }
 
-    const ojson &selected = materials.at(currentRow);
-    idLabel->setText(QString::fromStdString(selected["id"].get<std::string>()));
-    densityLabel->setText(QString::number(selected["density"].get<double>()) + " g/cm³");
+    selected_ = md;
+    selected_.composition_type = atomic;
+    selected_.X = x;
 
-    compositionTable->setRowCount(0);
-    for (const auto &compObj : selected["composition"]) {
-        const ojson &elemObj = compObj["element"];
-        
-        int row = compositionTable->rowCount();
-        compositionTable->insertRow(row);
-        compositionTable->setItem(
-                row, 0,
-                new QTableWidgetItem(
-                        QString("%1 (%2)").arg(QString::fromStdString(elemObj["symbol"].get<std::string>()))
-                                .arg(elemObj["atomic_number"].get<int>())));
-        compositionTable->setItem(row, 1,
-                                  new QTableWidgetItem(QString::number(compObj["X"].get<double>())));
-        compositionTable->setItem(row, 2,
-                                  new QTableWidgetItem(QString::number(compObj["Ed"].get<double>())));
-        compositionTable->setItem(row, 3,
-                                  new QTableWidgetItem(QString::number(compObj["El"].get<double>())));
-        compositionTable->setItem(row, 4,
-                                  new QTableWidgetItem(QString::number(compObj["Es"].get<double>())));
+    // md
+    // QString tbl;
+    // for (int i = 0; i < int(md.Z.size()); ++i) {
+    //     const auto &e = periodic_table::at(md.Z[i]);
+    //     tbl += QString("| %1(Z=%2) | %3 |\n")
+    //                    .arg(e.symbol.c_str())
+    //                    .arg(e.Z)
+    //                    .arg(100 * x[i], 6, 'f', 3);
+    // }
+    // QString comment(md.comment.c_str());
+    // comment.replace(QChar('\n'), " <br />");
+    // QString S = QString(material_card_tmpl)
+    //                     .arg(md.title.c_str())
+    //                     .arg(md.id.c_str())
+    //                     .arg(md.density)
+    //                     .arg(tbl)
+    //                     .arg(comment);
+
+    // html
+    QString tbl;
+    for (int i = 0; i < int(md.Z.size()); ++i) {
+        const auto &e = periodic_table::at(md.Z[i]);
+        tbl += QString("<tr><td style=\"border: 1px solid #999;\">%1(Z=%2)</td><td "
+                       "style=\"border: 1px solid #999;\">%3</td></tr>\n")
+                       .arg(e.symbol.c_str())
+                       .arg(e.Z)
+                       .arg(100 * x[i], 6, 'f', 3);
     }
+
+    QString comment(md.comment.c_str());
+    comment.replace(QChar('\n'), "<br/>");
+
+    QString S = QString(material_card_tmpl)
+                        .arg(md.title.c_str())
+                        .arg(md.id.c_str())
+                        .arg(md.density)
+                        .arg(tbl)
+                        .arg(comment)
+                        .arg(md.source.c_str());
+
+    materialLabel->setText(S);
+
     buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
-}
-
-ojson MaterialDatabaseDialog::getSelectedMaterial() const
-{
-    int currentRow = materialListWidget->currentRow();
-    if (currentRow < 0 || currentRow >= materials.size()) {
-        return ojson();
-    }
-    return materials.at(currentRow);
 }
 
 void MaterialDatabaseDialog::onFilterTextChanged(const QString &text)
 {
-    for (int i = 0; i < materialListWidget->count(); ++i) {
-        QListWidgetItem *item = materialListWidget->item(i);
-        // Simple case-insensitive filter
-        bool match = item->text().contains(text, Qt::CaseInsensitive);
-        item->setHidden(!match);
-    }
-    clearDetails();
-    buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-}
-
-QWidget *MaterialDatabaseDialog::createDetailsPanel()
-{
-    QWidget *panel = new QWidget;
-    QVBoxLayout *layout = new QVBoxLayout(panel);
-    layout->setContentsMargins(0, 0, 0, 0);
-
-    QFormLayout *formLayout = new QFormLayout;
-    idLabel = new QLabel;
-    densityLabel = new QLabel;
-    formLayout->addRow("<b>ID:</b>", idLabel);
-    formLayout->addRow("<b>Density:</b>", densityLabel);
-
-    compositionTable = new QTableWidget;
-    compositionTable->setColumnCount(5);
-    compositionTable->setHorizontalHeaderLabels({"Element", "X", "Ed (eV)", "El (eV)", "Es (eV)"});
-    compositionTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    compositionTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    compositionTable->verticalHeader()->setVisible(false);
-    compositionTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-
-    layout->addLayout(formLayout);
-    layout->addWidget(new QLabel("<b>Composition:</b>"));
-    layout->addWidget(compositionTable);
-
-    return panel;
-}
-
-void MaterialDatabaseDialog::clearDetails()
-{
-    idLabel->clear();
-    densityLabel->clear();
-    compositionTable->setRowCount(0);
+    proxyModel->setFilterWildcard(text);
+    // clearDetails();
+    // buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 }

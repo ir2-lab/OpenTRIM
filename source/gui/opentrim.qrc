@@ -9,7 +9,6 @@
         <file>assets/ionicons/remove-outline.svg</file>
         <file>assets/ionicons/add-outline.svg</file>
         <file>assets/ionicons/checkmark-done-outline.svg</file>
-        <file>assets/materials.json</file>
         <file>assets/ionicons/document-text-outline.svg</file>
         <file>assets/ionicons/play-circle-outline.png</file>
         <file>assets/ionicons/refresh-circle-outline.png</file>
@@ -23,6 +22,7 @@
         <file>assets/ionicons/grid-outline.png</file>
         <file>assets/ionicons/list-outline.png</file>
         <file>assets/ionicons/bar-chart-outline.png</file>
+        <file>assets/ionicons/folder-outline.svg</file>
         <file>assets/lucide/chart-line.svg</file>
         <file>assets/lucide/database-search.svg</file>
         <file>md/quick_start.md</file>
@@ -33,8 +33,11 @@
         <file>md/images/run12.png</file>
         <file>md/images/sum1.png</file>
         <file>md/about.md</file>
+        <file>md/material_card.md</file>
+        <file>md/material_card.html</file>
         <file>assets/ionicons/open-outline.svg</file>
         <file>assets/3d/cubeFlat.obj</file>
         <file>assets/ionicons/create-outline.svg</file>
+        <file>data/materials.json</file>
     </qresource>
 </RCC>
