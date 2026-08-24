@@ -17,27 +17,14 @@ class QItemSelection;
 class QItemSelectionModel;
 class MaterialCompositionView;
 class OptionsModel;
+class OptionsView;
 
 class MaterialsDefView : public QWidget
 {
     Q_OBJECT
 
-    MyComboBox *cbMaterialID;
-    QToolButton *btDbMaterial;
-    QToolButton *btAddMaterial;
-    QToolButton *btDelMaterial;
-    QToolButton *btEdtMaterial;
-    QDoubleSpinBox *sbDensity;
-    QToolButton *btMatColor;
-    MaterialCompositionView *materialsView;
-    OptionsModel *model_;
-
-    QPersistentModelIndex materialsIndex_;
-
-    void setBtMatColor(const QColor &clr);
-
 public:
-    MaterialsDefView(OptionsModel *m, QWidget *parent = nullptr);
+    MaterialsDefView(OptionsView *v, QWidget *parent = nullptr);
 
 signals:
     void materialsChanged();
@@ -52,6 +39,26 @@ public slots:
     void updateSelectedMaterial();
     void setDensity(double v);
     void selectColor();
+
+private:
+    // combo showing selected material
+    MyComboBox *cbMaterialID;
+    // buttons to open db/add/del/edit material
+    QToolButton *btDbMaterial;
+    QToolButton *btAddMaterial;
+    QToolButton *btDelMaterial;
+    QToolButton *btEdtMaterial;
+    // material mass density
+    QDoubleSpinBox *sbDensity;
+    // material display color
+    QToolButton *btMatColor;
+    // composition table
+    MaterialCompositionView *materialsView;
+    OptionsModel *model_;
+    // index of materials array in main model
+    QPersistentModelIndex materialsIndex_;
+
+    void setBtMatColor(const QColor &clr);
 };
 
 class MyComboBox : public QComboBox
@@ -67,8 +74,6 @@ signals:
 protected:
     void mouseDoubleClickEvent(QMouseEvent *event) override { emit doubleClicked(); }
 };
-
-class OptionsModel;
 
 class MaterialCompositionModel : public QAbstractTableModel
 {
@@ -134,14 +139,8 @@ class MaterialCompositionView : public QWidget
 {
     Q_OBJECT
 
-    MaterialCompositionModel *model_;
-    MaterialCompositionDelegate *delegate_;
-    QToolButton *btAdd;
-    QToolButton *btRemove;
-    QItemSelectionModel *selectionModel;
-
 public:
-    MaterialCompositionView(OptionsModel *m, QObject *parent = nullptr);
+    MaterialCompositionView(OptionsView *v, QObject *parent = nullptr);
 
     void setMaterialIdx(int i = -1);
     MaterialCompositionModel *model() const { return model_; }
@@ -150,5 +149,12 @@ public slots:
     void addElement();
     void removeElement();
     void onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+
+private:
+    MaterialCompositionModel *model_;
+    MaterialCompositionDelegate *delegate_;
+    QToolButton *btAdd;
+    QToolButton *btRemove;
+    QItemSelectionModel *selectionModel;
 };
 #endif // MATERIALSDEFVIEW_H

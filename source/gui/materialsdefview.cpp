@@ -4,8 +4,10 @@
 #include "periodictablewidget.h"
 #include "floatlineedit.h"
 #include "optionsmodel.h"
+#include "optionsview.h"
+#include "mainui.h"
 #include "materialdatabasedialog.h"
-#include "json_defs_p.h"
+#include "helppanel.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -22,6 +24,7 @@
 #include <QFontMetrics>
 #include <QItemSelectionModel>
 #include <QColorDialog>
+#include <QHeaderView>
 
 void MaterialsDefView::setBtMatColor(const QColor &clr)
 {
@@ -32,7 +35,8 @@ void MaterialsDefView::setBtMatColor(const QColor &clr)
     btMatColor->setIcon(px);
 }
 
-MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ parent }, model_(m)
+MaterialsDefView::MaterialsDefView(OptionsView *v, QWidget *parent)
+    : QWidget{ parent }, model_(v->mainui->optionsModel)
 {
     QModelIndex i;
     i = model_->index("Target");
@@ -52,6 +56,7 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     connect(cbMaterialID, &MyComboBox::doubleClicked, this, &MaterialsDefView::editMaterialName);
     connect(cbMaterialID, &MyComboBox::currentTextChanged, this,
             &MaterialsDefView::updateSelectedMaterial);
+    v->helpPanel->addStaticHelp(cbMaterialID, "/Target/materials/i/id");
 
     btDbMaterial = new QToolButton;
     btDbMaterial->setIcon(QIcon(":/assets/lucide/database-search.svg"));
@@ -81,6 +86,7 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     sbDensity->setMaximum(100.0);
     sbDensity->setDecimals(4);
     connect(sbDensity, SIGNAL(valueChanged(double)), this, SLOT(setDensity(double)));
+    v->helpPanel->addStaticHelp(sbDensity, "/Target/materials/i/density");
 
     btMatColor = new QToolButton;
     btMatColor->setText(" Select Display Color ");
@@ -88,6 +94,7 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     setBtMatColor(Qt::darkBlue);
     btMatColor->setToolTip("Select display color for this material");
     connect(btMatColor, &QToolButton::pressed, this, &MaterialsDefView::selectColor);
+    v->helpPanel->addStaticHelp(btMatColor, "/Target/materials/i/color");
 
     hbox->addWidget(cbMaterialID);
     hbox->addWidget(btDbMaterial);
@@ -99,6 +106,9 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     flayout->addRow("Material", hbox);
     flayout->addRow("Density (g/cm³)", sbDensity);
     flayout->addRow("Color", btMatColor);
+    v->helpPanel->addStaticHelp(flayout->labelForField(hbox), "/Target/materials/i/id");
+    v->helpPanel->addStaticHelp(flayout->labelForField(sbDensity), "/Target/materials/i/density");
+    v->helpPanel->addStaticHelp(flayout->labelForField(btMatColor), "/Target/materials/i/color");
 
     hbox = new QHBoxLayout;
     hbox->addLayout(flayout);
@@ -107,7 +117,7 @@ MaterialsDefView::MaterialsDefView(OptionsModel *m, QWidget *parent) : QWidget{ 
     vbox->addLayout(hbox);
     vbox->addSpacing(12);
 
-    materialsView = new MaterialCompositionView(model_);
+    materialsView = new MaterialCompositionView(v);
 
     vbox->addWidget(materialsView);
     setLayout(vbox);
@@ -539,8 +549,8 @@ void MaterialCompositionDelegate::updateEditorGeometry(QWidget *editor,
     editor->setGeometry(option.rect);
 }
 /*****************************************************************************/
-MaterialCompositionView::MaterialCompositionView(OptionsModel *m, QObject *parent)
-    : model_(new MaterialCompositionModel(m, this)),
+MaterialCompositionView::MaterialCompositionView(OptionsView *v, QObject *parent)
+    : model_(new MaterialCompositionModel(v->mainui->optionsModel, this)),
       delegate_(new MaterialCompositionDelegate(this))
 {
     btAdd = new QToolButton;
@@ -554,21 +564,31 @@ MaterialCompositionView::MaterialCompositionView(OptionsModel *m, QObject *paren
     btAdd->setEnabled(false);
     btRemove->setEnabled(false);
 
+    QLabel *compositionLabel = new QLabel("Composition ");
+    v->helpPanel->addStaticHelp(compositionLabel, "/Target/materials/i/composition");
+
     QTableView *view = new QTableView;
     view->setModel(model_);
     view->setItemDelegate(delegate_);
+
     QFontMetrics fm = view->fontMetrics();
-    int sz = fm.averageCharWidth();
-    const int W[] = { 10, 8, 6, 6, 6, 6, 6, 6 };
-    for (int col = 0; col < 8; ++col)
-        view->setColumnWidth(col, sz * W[col]);
+    int minWidth = fm.horizontalAdvance("000000") + 20; // padding for margins
+    view->horizontalHeader()->setMinimumSectionSize(minWidth);
+    view->horizontalHeader()->setDefaultSectionSize(minWidth);
 
     selectionModel = view->selectionModel();
     connect(selectionModel, &QItemSelectionModel::selectionChanged, this,
             &MaterialCompositionView::onSelectionChanged);
+    v->helpPanel->addStaticHelp(
+            view,
+            { "/Target/materials/i/composition/j/element/symbol",
+              "/Target/materials/i/composition/j/element/atomic_mass",
+              "/Target/materials/i/composition/j/X", "/Target/materials/i/composition/j/Ed",
+              "/Target/materials/i/composition/j/El", "/Target/materials/i/composition/j/Es",
+              "/Target/materials/i/composition/j/Er", "/Target/materials/i/composition/j/Rc" });
 
     QHBoxLayout *hbox = new QHBoxLayout;
-    hbox->addWidget(new QLabel("Composition "));
+    hbox->addWidget(compositionLabel);
     hbox->addWidget(btAdd);
     hbox->addWidget(btRemove);
     hbox->addStretch();

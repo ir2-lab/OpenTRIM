@@ -3,7 +3,7 @@
 #include "mcdriverobj.h"
 #include "mainui.h"
 #include "optionsmodel.h"
-#include "simulationoptionsview.h"
+#include "optionsview.h"
 
 #include <QTimer>
 #include <QVBoxLayout>

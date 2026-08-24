@@ -1,47 +1,45 @@
-#include "mydatawidgetmapper.h"
+#include "optionwidgetmapper.h"
 
 #include "optionsmodel.h"
 
 #include <QMetaObject>
 #include <QMetaMethod>
 #include <QDebug>
+#include <QLabel>
 
-MyDataWidgetMapper::MyDataWidgetMapper(OptionsModel *m, QObject *parent)
+OptionWidgetMapper::OptionWidgetMapper(OptionsModel *m, QObject *parent)
     : QObject{ parent }, model_(m), delegate_(new OptionsItemDelegate(this))
 {
-    connect(model_, &QAbstractItemModel::dataChanged, this, &MyDataWidgetMapper::dataChanged);
-
-    // The following connections are for Qt Views (QTableView etc)
-    //    connect(delegate_, &QAbstractItemDelegate::commitData,
-    //            this, &MyDataWidgetMapper::commitData);
-    //    connect(delegate_, &QAbstractItemDelegate::closeEditor,
-    //            this, &MyDataWidgetMapper::closeEditor);
+    connect(model_, &QAbstractItemModel::dataChanged, this, &OptionWidgetMapper::dataChanged);
 }
 
-void MyDataWidgetMapper::addMapping(QWidget *widget, const QModelIndex &idx, const char *signal)
+void OptionWidgetMapper::addMapping(QWidget *w, const QModelIndex &idx, bool isEditor,
+                                    const char *signal)
 {
-    removeMapping(widget);
-    widgetMap.push_back({ widget, idx, signal });
-    widget->installEventFilter(delegate_);
-    if (signal) {
-        const QMetaObject *wmo = widget->metaObject();
-        int is = wmo->indexOfSignal(signal);
-        QMetaMethod M1 = wmo->method(is);
-        is = metaObject()->indexOfSlot("commitData_()");
-        QMetaMethod M2 = metaObject()->method(is);
-        bool ret = connect(widget, M1, this, M2);
-        assert(ret);
+    removeMapping(w);
+    widgetMap.push_back({ w, idx, signal });
+    if (isEditor) {
+        w->installEventFilter(delegate_);
+        if (signal) {
+            const QMetaObject *wmo = w->metaObject();
+            int is = wmo->indexOfSignal(signal);
+            QMetaMethod M1 = wmo->method(is);
+            is = metaObject()->indexOfSlot("commitData_()");
+            QMetaMethod M2 = metaObject()->method(is);
+            bool ret = connect(w, M1, this, M2);
+            assert(ret);
+        }
     }
 }
 
-void MyDataWidgetMapper::removeMapping(const QString &key)
+void OptionWidgetMapper::removeMapping(const QString &key)
 {
     QWidget *w = findWidget(key);
     if (w)
         removeMapping(w);
 }
 
-void MyDataWidgetMapper::removeMapping(QWidget *w)
+void OptionWidgetMapper::removeMapping(QWidget *w)
 {
     int idx = findWidget(w);
     if (idx == -1)
@@ -53,7 +51,7 @@ void MyDataWidgetMapper::removeMapping(QWidget *w)
     w->removeEventFilter(delegate_);
 }
 
-int MyDataWidgetMapper::findWidget(QWidget *w) const
+int OptionWidgetMapper::findWidget(QWidget *w) const
 {
     for (const mapItem &m : widgetMap) {
         if (m.widget == w)
@@ -62,7 +60,7 @@ int MyDataWidgetMapper::findWidget(QWidget *w) const
     return -1;
 }
 
-QWidget *MyDataWidgetMapper::findWidget(const QString &key) const
+QWidget *OptionWidgetMapper::findWidget(const QString &key) const
 {
     for (const mapItem &m : widgetMap) {
         assert(!m.widget.isNull()); // widget must be there
@@ -72,7 +70,23 @@ QWidget *MyDataWidgetMapper::findWidget(const QString &key) const
     return nullptr;
 }
 
-void MyDataWidgetMapper::setToolTip(const QString &txt)
+QModelIndex OptionWidgetMapper::widgetToIndex(QWidget *w) const
+{
+    int i = findWidget(w);
+    if (i >= 0)
+        return widgetMap[i].idx;
+    return QModelIndex();
+}
+
+QWidgetList OptionWidgetMapper::widgets() const
+{
+    QWidgetList w;
+    for (const mapItem &m : widgetMap)
+        w << m.widget;
+    return w;
+}
+
+void OptionWidgetMapper::setToolTip(const QString &txt)
 {
     bool set_global_tooltip = !txt.isEmpty();
     for (const mapItem &m : widgetMap) {
@@ -86,13 +100,13 @@ void MyDataWidgetMapper::setToolTip(const QString &txt)
     }
 }
 
-void MyDataWidgetMapper::revert()
+void OptionWidgetMapper::revert()
 {
     for (mapItem &e : widgetMap)
         populate(e);
 }
 
-bool MyDataWidgetMapper::submit()
+bool OptionWidgetMapper::submit()
 {
     for (auto &m : widgetMap) {
         if (m.widget.isNull())
@@ -107,7 +121,7 @@ bool MyDataWidgetMapper::submit()
     return model_->submit();
 }
 
-void MyDataWidgetMapper::setEnabled(bool b)
+void OptionWidgetMapper::setEnabled(bool b)
 {
     for (auto &m : widgetMap) {
         if (m.widget.isNull())
@@ -124,7 +138,7 @@ static bool qContainsIndex(const QModelIndex &idx, const QModelIndex &topLeft,
             && idx.column() >= topLeft.column() && idx.column() <= bottomRight.column();
 }
 
-void MyDataWidgetMapper::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight,
+void OptionWidgetMapper::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight,
                                      const QVector<int> &)
 {
     for (mapItem &m : widgetMap) {
@@ -133,16 +147,16 @@ void MyDataWidgetMapper::dataChanged(const QModelIndex &topLeft, const QModelInd
     }
 }
 
-void MyDataWidgetMapper::populate(mapItem &m)
+void OptionWidgetMapper::populate(mapItem &m)
 {
     if (m.widget.isNull())
         return;
 
-    if (m.idx.isValid())
+    if (m.idx.isValid() && m.signal)
         delegate_->setEditorData(m.widget, m.idx);
 }
 
-void MyDataWidgetMapper::commitData(QWidget *w)
+void OptionWidgetMapper::commitData(QWidget *w)
 {
     // if (submitPolicy == QDataWidgetMapper::ManualSubmit)
     //     return;
@@ -154,13 +168,13 @@ void MyDataWidgetMapper::commitData(QWidget *w)
     commit(widgetMap[idx]);
 }
 
-void MyDataWidgetMapper::commitData_()
+void OptionWidgetMapper::commitData_()
 {
     QWidget *w = qobject_cast<QWidget *>(sender());
     commitData(w);
 }
 
-bool MyDataWidgetMapper::commit(const mapItem &m)
+bool OptionWidgetMapper::commit(const mapItem &m)
 {
     if (m.widget.isNull())
         return true; // just ignore
@@ -173,7 +187,7 @@ bool MyDataWidgetMapper::commit(const mapItem &m)
     return true;
 }
 
-void MyDataWidgetMapper::closeEditor(QWidget *w, int i)
+void OptionWidgetMapper::closeEditor(QWidget *w, int i)
 {
     int idx = findWidget(w);
     if (idx == -1)

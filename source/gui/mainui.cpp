@@ -1,7 +1,7 @@
 #include "mainui.h"
 
 #include "optionsmodel.h"
-#include "simulationoptionsview.h"
+#include "optionsview.h"
 #include "welcomeview.h"
 #include "mcdriverobj.h"
 #include "simcontrolwidget.h"
@@ -10,7 +10,6 @@
 
 #include <QVBoxLayout>
 
-#include <QJsonDocument>
 #include <QStatusBar>
 #include <QToolButton>
 #include <QStackedWidget>
@@ -23,6 +22,7 @@
 #include <QScreen>
 #include <QFile>
 #include <QButtonGroup>
+#include <QSplitter>
 
 #define SIDEBAR_W 70
 #define SIDEBAR_H 70
@@ -88,11 +88,9 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     welcomeView = new WelcomeView(this);
     push(tr("Welcome"), welcomeView);
 
-    optionsView = new SimulationOptionsView(this);
+    optionsView = new OptionsView(this);
     push(tr("Configuration"), optionsView);
 
-    // runView = new RunView(this);
-    // push(tr("Run"), runView);
     tblView = new TabularView(this);
     push(tr("Summary Tables"), tblView);
 
@@ -187,6 +185,7 @@ void MainUI::push(const QString &title, QWidget *page)
     vbox->addWidget(lbl);
     vbox->addSpacing(V_SPACING);
     vbox->addWidget(page);
+    QSizePolicy szPolicy = page->sizePolicy();
     w->setLayout(vbox);
     _stackedWidget->addWidget(w);
 }

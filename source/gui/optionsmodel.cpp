@@ -21,10 +21,13 @@ OptionsItem::OptionsItem(OptionsItem *parent) : m_parentItem(parent)
     else
         options_ = std::make_shared<mcconfig>();
 }
-OptionsItem::OptionsItem(const QString &key, OptionsItem *parent)
-    : OptionsItem(key, key, parent) { }
-OptionsItem::OptionsItem(const QString &key, const QString &name, OptionsItem *parent)
-    : m_parentItem(parent), key_(key), name_(name), options_(parent->options_)
+OptionsItem::OptionsItem(const QString &key, mcconfig::option_type_t t, OptionsItem *parent)
+    : OptionsItem(key, key, t, parent)
+{
+}
+OptionsItem::OptionsItem(const QString &key, const QString &name, mcconfig::option_type_t t,
+                         OptionsItem *parent)
+    : m_parentItem(parent), key_(key), name_(name), type_(t), options_(parent->options_)
 {
     if (!m_parentItem->isRoot())
         jpath_ = m_parentItem->jpath_;
@@ -134,8 +137,12 @@ QString quoteString(const QString &s0)
     return s;
 }
 EnumOptionsItem::EnumOptionsItem(const QStringList &values, const QStringList &labels,
-                                 const QString &key, const QString &name, OptionsItem *parent)
-    : OptionsItem(key, name, parent), enumValues_(values), enumValueLabels_(labels)
+                                 const QStringList &desc, const QString &key, const QString &name,
+                                 OptionsItem *parent)
+    : OptionsItem(key, name, mcconfig::tEnum, parent),
+      enumValues_(values),
+      enumValueLabels_(labels),
+      enumValueDescriptions_(desc)
 {
 }
 QWidget *EnumOptionsItem::createEditor(QWidget *parent) const
@@ -157,7 +164,7 @@ QVariant EnumOptionsItem::getEditorData(QWidget *editor)
 }
 FloatOptionsItem::FloatOptionsItem(double fmin, double fmax, int digits, const QString &key,
                                    const QString &name, OptionsItem *parent)
-    : OptionsItem(key, name, parent), fmin_(fmin), fmax_(fmax), digits_(digits)
+    : OptionsItem(key, name, mcconfig::tFloat, parent), fmin_(fmin), fmax_(fmax), digits_(digits)
 {
 }
 QWidget *FloatOptionsItem::createEditor(QWidget *parent) const
@@ -178,7 +185,7 @@ QVariant FloatOptionsItem::getEditorData(QWidget *editor)
 }
 IntOptionsItem::IntOptionsItem(int imin, int imax, const QString &key, const QString &name,
                                OptionsItem *parent)
-    : OptionsItem(key, name, parent), imin_(imin), imax_(imax)
+    : OptionsItem(key, name, mcconfig::tInt, parent), imin_(imin), imax_(imax)
 {
 }
 QWidget *IntOptionsItem::createEditor(QWidget *parent) const
@@ -198,7 +205,7 @@ QVariant IntOptionsItem::getEditorData(QWidget *editor)
     return QString::number(((QSpinBox *)editor)->value());
 }
 BoolOptionsItem::BoolOptionsItem(const QString &key, const QString &name, OptionsItem *parent)
-    : OptionsItem(key, name, parent)
+    : OptionsItem(key, name, mcconfig::tBool, parent)
 {
 }
 QWidget *BoolOptionsItem::createEditor(QWidget *parent) const
@@ -218,7 +225,7 @@ QVariant BoolOptionsItem::getEditorData(QWidget *editor)
     return ((QComboBox *)editor)->currentText();
 }
 StringOptionsItem::StringOptionsItem(const QString &key, const QString &name, OptionsItem *parent)
-    : OptionsItem(key, name, parent)
+    : OptionsItem(key, name, mcconfig::tString, parent)
 {
 }
 QWidget *StringOptionsItem::createEditor(QWidget *parent) const
@@ -239,6 +246,7 @@ VectorOptionsItem::VectorOptionsItem(int size, double fmin, double fmax, int dig
                                      const QString &key, const QString &name, OptionsItem *parent)
     : FloatOptionsItem(fmin, fmax, digits, key, name, parent), sz_(size)
 {
+    type_ = mcconfig::tVector;
 }
 QWidget *VectorOptionsItem::createEditor(QWidget *parent) const
 {
@@ -258,6 +266,7 @@ IVectorOptionsItem::IVectorOptionsItem(int size, int fmin, int fmax, const QStri
                                        const QString &name, OptionsItem *parent)
     : IntOptionsItem(fmin, fmax, key, name, parent), sz_(size)
 {
+    type_ = mcconfig::tIntVector;
 }
 QWidget *IVectorOptionsItem::createEditor(QWidget *parent) const
 {
@@ -329,7 +338,8 @@ OptionsItem *OptionsItem::jsonHelper(const ojson &j, OptionsItem *parentItem)
     OptionsItem *item;
     switch (type) {
     case mcconfig::tStruct:
-        item = parentItem ? new OptionsItem(toString(j["name"]), toString(j["label"]), parentItem)
+        item = parentItem ? new OptionsItem(toString(j["name"]), toString(j["label"]),
+                                            mcconfig::tStruct, parentItem)
                           : new OptionsItem;
         for (auto it = j["fields"].begin(); it != j["fields"].end(); ++it) {
             const ojson &obj = *it;
@@ -340,11 +350,13 @@ OptionsItem *OptionsItem::jsonHelper(const ojson &j, OptionsItem *parentItem)
     case mcconfig::tArray:
         // Arrays are the materials & regions
         // These are handled in separate models
-        item = new OptionsItem(toString(j["name"]), toString(j["label"]), parentItem);
+        item = new OptionsItem(toString(j["name"]), toString(j["label"]), mcconfig::tArray,
+                               parentItem);
         break;
     case mcconfig::tEnum:
         item = new EnumOptionsItem(toStringList(j["values"]), toStringList(j["valueLabels"]),
-                                   toString(j["name"]), toString(j["label"]), parentItem);
+                                   toStringList(j["valueDescriptions"]), toString(j["name"]),
+                                   toString(j["label"]), parentItem);
         break;
     case mcconfig::tFloat:
         item = new FloatOptionsItem(j["min"].template get<double>(),
@@ -384,12 +396,13 @@ OptionsItem *OptionsItem::jsonHelper(const ojson &j, OptionsItem *parentItem)
         item->toolTip_ = txt;
     }
     if (j.contains("whatsThis")) {
+        if (j["whatsThis"].is_array()) {
+            item->notes_ = toStringList(j["whatsThis"]).join('\n');
+        } else
+            item->notes_ = toString(j["whatsThis"]);
         if (!txt.isEmpty())
             txt += "\n\n";
-        if (j["whatsThis"].is_array())
-            txt += toStringList(j["whatsThis"]).join('\n');
-        else
-            txt += toString(j["whatsThis"]);
+        txt += item->notes_;
     }
     item->whatsThis_ = txt;
 
@@ -502,7 +515,7 @@ QModelIndex OptionsModel::index(const QString &key, int column, const QModelInde
 
     OptionsItem *childItem = nullptr;
     int row = 0;
-    for (; row < parentItem->m_childItems.size(); ++row) {
+    for (; row < int(parentItem->m_childItems.size()); ++row) {
         auto i = parentItem->m_childItems[row];
         if (i->key() == key) {
             childItem = i;
@@ -514,6 +527,18 @@ QModelIndex OptionsModel::index(const QString &key, int column, const QModelInde
         return createIndex(row, column, childItem);
     else
         return {};
+}
+
+QModelIndex OptionsModel::indexFromPath(const QString &path) const
+{
+    QStringList keys = path.split(QChar('/'), Qt::SkipEmptyParts);
+    QModelIndex idx;
+    for (const auto &key : keys) {
+        idx = index(key, 0, idx);
+        if (!idx.isValid())
+            break;
+    }
+    return idx;
 }
 
 QModelIndex OptionsModel::parent(const QModelIndex &index) const

@@ -71,6 +71,32 @@ int main()
 
 #define TAB_WIDTH 2
 
+std::string htmlEscape(const std::string &s)
+{
+    std::string out;
+    out.reserve(s.size());
+    for (char c : s) {
+        switch (c) {
+        case '&':
+            out += "&amp;";
+            break;
+        case '<':
+            out += "&lt;";
+            break;
+        case '>':
+            out += "&gt;";
+            break;
+        case '"':
+            out += "&quot;";
+            break;
+        default:
+            out += c;
+            break;
+        }
+    }
+    return out;
+}
+
 void indent(std::ostream &os, int n)
 {
     for (int i = 0; i < n * TAB_WIDTH; i++)
@@ -225,12 +251,47 @@ std::ostream &operator<<(std::ostream &os, mcconfig::option_type_t type)
 void printPath(std::ostream &os, const string &path)
 {
     os << path;
-    // for (int i = 1; i < path.size(); i++) {
-    //     char c = path[i];
-    //     if (c == '/')
-    //         c = '.';
-    //     os << c;
-    // }
+}
+
+void jsonPrintDesc(std::ostream &os, const ojson &j, mcconfig::option_type_t type)
+{
+    os << "<tr><td>" << "Description ";
+    os << "<td>" << htmlEscape(j["toolTip"].template get<std::string>()) << endl;
+    if (type == mcconfig::tEnum) {
+        vector<string> values, labels, desc;
+        j["values"].get_to(values);
+        j["valueLabels"].get_to(labels);
+        j["valueDescriptions"].get_to(desc);
+        os << "<h4>Options</h4><ul>";
+        for (int i = 0; i < int(values.size()); ++i) {
+            os << "<li>";
+            os << "<strong>" << htmlEscape(values[i]) << "</strong>";
+            if (labels[i] != values[i]) {
+                os << " [" << htmlEscape(labels[i]) << "]";
+            }
+            os << " - " << htmlEscape(desc[i]);
+            os << "</li>";
+        }
+        os << "</ul>";
+    }
+    if (j.contains("whatsThis")) {
+        vector<string> s;
+        if (j["whatsThis"].is_array())
+
+            j["whatsThis"].get_to(s);
+        else {
+            string s1;
+            j["whatsThis"].get_to(s1);
+            if (!s1.empty())
+                s.push_back(s1);
+        }
+        if (!s.empty()) {
+            os << "<h4>Notes</h4><ul>";
+            for (auto it = s.cbegin(); it != s.cend(); it++)
+                os << "<li>" << htmlEscape(*it) << "</li>" << endl;
+            os << "</ul>";
+        }
+    }
 }
 
 void jsonPrintTable(std::ostream &os, const ojson &j, string path)
@@ -246,6 +307,8 @@ void jsonPrintTable(std::ostream &os, const ojson &j, string path)
         os << "<tr><th colspan=\"2\">";
         linkCode(os, path, false);
         printPath(os, path); // os << path << endl;
+        os << "<tr><td>" << "Label ";
+        os << "<td>" << htmlEscape(j["label"].template get<std::string>()) << endl;
         os << "<tr><td>" << "Type ";
         os << "<td>" << type << endl;
         opt.get(path, val);
@@ -256,10 +319,8 @@ void jsonPrintTable(std::ostream &os, const ojson &j, string path)
     switch (type) {
 
     case mcconfig::tStruct:
-        if (!is_root) {
-            os << "<tr><td>" << "Description ";
-            os << "<td>" << j["label"].template get<std::string>() << endl;
-        }
+        if (!is_root)
+            jsonPrintDesc(os, j, type);
 
         for (auto it = j["fields"].begin(); it != j["fields"].end(); ++it) {
             const ojson &obj = *it;
@@ -269,10 +330,8 @@ void jsonPrintTable(std::ostream &os, const ojson &j, string path)
         return;
 
     case mcconfig::tArray:
-        if (!is_root) {
-            os << "<tr><td>" << "Description ";
-            os << "<td>" << j["label"].template get<std::string>() << endl;
-        }
+        if (!is_root)
+            jsonPrintDesc(os, j, type);
 
         {
             const ojson &items = j["items"];
@@ -338,19 +397,7 @@ void jsonPrintTable(std::ostream &os, const ojson &j, string path)
         break;
     }
 
-    os << "<tr><td>" << "Description ";
-    os << "<td>" << j["toolTip"].template get<std::string>() << endl;
-    if (j["whatsThis"].is_array()) {
-        os << "<br>" << endl;
-        vector<string> s;
-        j["whatsThis"].get_to(s);
-        if (!s.empty()) {
-            auto it = s.cbegin();
-            os << *it++ << "<br>" << endl;
-            for (; it != s.cend(); it++)
-                os << *it << "<br>" << endl;
-        }
-    }
+    jsonPrintDesc(os, j, type);
 }
 
 void h5Print(std::ostream &os, const ojson &specs, int level = 0)

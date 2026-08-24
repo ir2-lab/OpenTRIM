@@ -9,7 +9,7 @@ class QLineEdit;
 class QLabel;
 class QPushButton;
 
-class MyDataWidgetMapper;
+class OptionWidgetMapper;
 class MainUI;
 
 class data_table;
@@ -28,7 +28,7 @@ public slots:
 
 private:
     MainUI *mainui_;
-    MyDataWidgetMapper *mapper_;
+    OptionWidgetMapper *mapper_;
     QLineEdit *simTitle_;
     QTabWidget *tabWidget_;
 

@@ -1,28 +1,33 @@
-#ifndef MYDATAWIDGETMAPPER_H
-#define MYDATAWIDGETMAPPER_H
+#ifndef OPTIONWIDGETMAPPER_H
+#define OPTIONWIDGETMAPPER_H
 
 #include <QObject>
 #include <QPointer>
 #include <QPersistentModelIndex>
+#include <QWidgetList>
 
 class OptionsItemDelegate;
 class OptionsModel;
 class QModelIndex;
 class QDataWidgetMapperPrivate;
 
-class MyDataWidgetMapper : public QObject
+class OptionWidgetMapper : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit MyDataWidgetMapper(OptionsModel *m, QObject *parent = nullptr);
+    explicit OptionWidgetMapper(OptionsModel *m, QObject *parent = nullptr);
 
-    void addMapping(QWidget *widget, const QModelIndex &idx, const char *signal = nullptr);
+    void addMapping(QWidget *w, const QModelIndex &idx, bool isEditor,
+                    const char *signal = nullptr);
+
     void removeMapping(const QString &key);
 
     OptionsModel *model() const { return model_; }
 
     QWidget *findWidget(const QString &key) const;
+    QModelIndex widgetToIndex(QWidget *w) const;
+    QWidgetList widgets() const;
 
     void setToolTip(const QString &txt = QString());
 
@@ -54,7 +59,7 @@ private:
 
     OptionsModel *model_;
     OptionsItemDelegate *delegate_;
-    Q_DISABLE_COPY(MyDataWidgetMapper)
+    Q_DISABLE_COPY(OptionWidgetMapper)
 };
 
 #endif // MYDATAWIDGETMAPPER_H

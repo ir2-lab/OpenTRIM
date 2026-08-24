@@ -6,13 +6,13 @@ set(CMAKE_AUTORCC ON)
 
 set(GUI_HEADERS
     mainui.h
-    simulationoptionsview.h 
+    optionsview.h
     periodictablewidget.h  
     materialdatabasedialog.h
     materialsdefview.h 
     optionsmodel.h 
     floatlineedit.h 
-    mydatawidgetmapper.h 
+    optionwidgetmapper.h
     regionsview.h 
     welcomeview.h 
     mcdriverobj.h 
@@ -23,6 +23,7 @@ set(GUI_HEADERS
     jsedit/jsedit.h 
     simboxview.h
     mcdatamodel.h
+    helppanel.h
 )
 
 # Collect JSON examples from the top-level examples/json directory.
@@ -50,13 +51,13 @@ set(GUI_SOURCES
     mainui.cpp
     opentrim.qrc
     "${_EXAMPLES_QRC}"
-    simulationoptionsview.cpp
+    optionsview.cpp
     materialdatabasedialog.cpp
     periodictablewidget.cpp
     materialsdefview.cpp
     optionsmodel.cpp
     floatlineedit.cpp
-    mydatawidgetmapper.cpp
+    optionwidgetmapper.cpp
     regionsview.cpp
     welcomeview.cpp
     mcdriverobj.cpp
@@ -66,6 +67,7 @@ set(GUI_SOURCES
     jsedit/jsedit.cpp
     simboxview.cpp
     mcdatamodel.cpp
+    helppanel.cpp
 )
 
 set (GUI_TARGET ${PROJECT_NAME_LOWERCASE}-gui)

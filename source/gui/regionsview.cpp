@@ -1,6 +1,9 @@
 #include "regionsview.h"
 #include "floatlineedit.h"
 #include "optionsmodel.h"
+#include "optionsview.h"
+#include "mainui.h"
+#include "helppanel.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -17,6 +20,7 @@
 #include <QMessageBox>
 #include <QFontMetrics>
 #include <QItemSelectionModel>
+#include <QHeaderView>
 
 #include "json_defs_p.h"
 
@@ -365,8 +369,8 @@ void RegionDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionVie
     editor->setGeometry(option.rect);
 }
 /*****************************************************************************/
-RegionsView::RegionsView(OptionsModel *m, QObject *parent)
-    : model_(new RegionsModel(m, this)), delegate_(new RegionDelegate(this))
+RegionsView::RegionsView(OptionsView *v, QObject *parent)
+    : model_(new RegionsModel(v->mainui->optionsModel, this)), delegate_(new RegionDelegate(this))
 {
     btAdd = new QToolButton;
     btAdd->setIcon(QIcon(":/assets/ionicons/add-outline.svg"));
@@ -400,10 +404,13 @@ RegionsView::RegionsView(OptionsModel *m, QObject *parent)
     tableView->setModel(model_);
     tableView->setItemDelegate(delegate_);
     QFontMetrics fm = tableView->fontMetrics();
-    int char_w = fm.averageCharWidth();
-    const int field_w[] = { 10, 10, 15, 15 };
-    for (int col = 0; col < 4; ++col)
-        tableView->setColumnWidth(col, char_w * field_w[col]);
+    int minWidth = fm.horizontalAdvance("[1000, 1000, 1000]") + 20; // padding for margins
+    tableView->horizontalHeader()->setMinimumSectionSize(minWidth);
+    tableView->horizontalHeader()->setDefaultSectionSize(minWidth);
+
+    v->helpPanel->addStaticHelp(tableView,
+                                { "/Target/regions/i/id", "/Target/regions/i/material_id",
+                                  "/Target/regions/i/origin", "/Target/regions/i/size" });
 
     selectionModel = tableView->selectionModel();
     connect(selectionModel, &QItemSelectionModel::selectionChanged, this,

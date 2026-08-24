@@ -12,7 +12,8 @@ class QTableView;
 class VectorLineEdit;
 class IntVectorLineEdit;
 class OptionsModel;
-class MyDataWidgetMapper;
+class OptionsView;
+class OptionWidgetMapper;
 class RegionsView;
 class MainUI;
 
@@ -71,18 +72,8 @@ class RegionsView : public QWidget
 {
     Q_OBJECT
 
-    QToolButton *btAdd;
-    QToolButton *btRemove;
-    QToolButton *btUp;
-    QToolButton *btDown;
-    QItemSelectionModel *selectionModel;
-    QTableView *tableView;
-
-    RegionDelegate *delegate_;
-    RegionsModel *model_;
-
 public:
-    RegionsView(OptionsModel *m, QObject *parent = nullptr);
+    RegionsView(OptionsView *m, QObject *parent = nullptr);
 
     RegionsModel *model() const { return model_; }
 
@@ -108,6 +99,21 @@ private slots:
         emit regionsChanged();
     }
     void onRowsRemoved(const QModelIndex &, int, int) { emit regionsChanged(); }
+
+private:
+    // Top toolbar for add/remove, move up/down
+    QToolButton *btAdd;
+    QToolButton *btRemove;
+    QToolButton *btUp;
+    QToolButton *btDown;
+
+    // regions model/view & selection
+    RegionsModel *model_;
+    QTableView *tableView;
+    RegionDelegate *delegate_;
+    QItemSelectionModel *selectionModel;
+
+    // pointer to parent options view
 };
 
 #endif // REGIONSVIEW_H
