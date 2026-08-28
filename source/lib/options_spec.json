@@ -569,7 +569,11 @@
                                 "label": "Material id",
                                 "type": "string",
                                 "toolTip": "Name of the material.",
-                                "whatsThis": ""
+                                "whatsThis": [
+                                    "The material id is used for identifying the specific material, e.g. in the region definitions.",
+                                    "Preferably, it is a short name without spaces or special characters.",
+                                    "The material id should be unique."
+                                ]
                             },
                             {
                                 "name": "density",
@@ -717,14 +721,21 @@
                                 "label": "Region id",
                                 "type": "string",
                                 "toolTip": "Name of the region.",
-                                "whatsThis": ""
+                                "whatsThis": [
+                                    "The region id is used for identifying the specific region.",
+                                    "Preferably, it is a short name without spaces or special characters.",
+                                    "The region id should be unique."
+                                ]
                             },
                             {
                                 "name": "material_id",
                                 "label": "Material id",
                                 "type": "string",
                                 "toolTip": "Id of the material that fills the region.",
-                                "whatsThis": ""
+                                "whatsThis": [
+                                    "The material id must match the id of a material defined in the materials list.",
+                                    "The region is filled with the specified material."
+                                ]
                             },
                             {
                                 "name": "origin",
@@ -734,7 +745,7 @@
                                 "min": -1.0e12,
                                 "max": 1.0e12,
                                 "digits": 6,
-                                "toolTip": "Origin of the region.",
+                                "toolTip": "Origin of the region in simulation space.",
                                 "whatsThis": ""
                             },
                             {
@@ -875,20 +886,22 @@
                 "fields": [
                     {
                         "name": "id",
-                        "label": "User-specified tally id",
+                        "label": "Tally id",
                         "type": "string",
                         "toolTip": "User-specified tally id (name).",
                         "whatsThis": [
-                            "For identifying the specific UserTally in the output file."
+                            "The UserTally id is used for identifying the specific UserTally, e.g., in the output file.",
+                            "Preferably, it is a short name without spaces or special characters.",
+                            "The UserTally id should be unique."
                         ]
                     },
                     {
                         "name": "description",
-                        "label": "User-specified tally description",
+                        "label": "Tally description",
                         "type": "string",
                         "toolTip": "Short description of the tally.",
                         "whatsThis": [
-                            "One can give here a short explanation of the tally, its purpose, expected information, etc."
+                            "Gives a short explanation of the tally, its purpose, expected information, etc."
                         ]
                     },
                     {
@@ -924,9 +937,15 @@
                     },
                     {
                         "name": "coordinate_system",
-                        "label": "UserTally coordinate system",
+                        "label": "Tally coordinate system",
                         "type": "struct",
                         "toolTip": "Local coordinate system used to interpret the tally's bin coordinates.",
+                        "whatsThis": [
+                            "Ion positions and directions are transformed into the UserTally coordinate system before binning.",
+                            "The local coordinate system is defined by the origin, a z-axis direction vector and a vector on the xz-plane.",
+                            "The z-axis direction vector and the xz-plane vector must not be parallel.",
+                            "With default values, the UserTally coordinate system is identical to the simulation coordinate system."
+                        ],
                         "fields": [
                             {
                                 "name": "origin",
@@ -936,8 +955,8 @@
                                 "min": -1.0e12,
                                 "max": 1.0e12,
                                 "digits": 6,
-                                "toolTip": "Origin of the UserTally coordinates.",
-                                "whatsThis": "The vector is defined with respect to the simulation space."
+                                "toolTip": "Origin of the UserTally coordinate system.",
+                                "whatsThis": "The vector is defined in simulation coordinates."
                             },
                             {
                                 "name": "zaxis",
@@ -948,7 +967,10 @@
                                 "max": 1.0e7,
                                 "digits": 6,
                                 "toolTip": "A vector parallel to the z-axis of the UserTally coordinate system.",
-                                "whatsThis": "The vector is defined with respect to the simulation space."
+                                "whatsThis": [
+                                    "zaxis must not be parallel to xzvector.",
+                                    "The vector is defined in simulation coordinates."
+                                ]
                             },
                             {
                                 "name": "xzvector",
@@ -959,7 +981,10 @@
                                 "max": 1.0e7,
                                 "digits": 6,
                                 "toolTip": "A vector on the xz-plane of the UserTally coordinate system.",
-                                "whatsThis": "The vector is defined with respect to the simulation space."
+                                "whatsThis": [
+                                    "xzvector must not be parallel to the zaxis.",
+                                    "The vector is defined in simulation coordinates."
+                                ]
                             }
                         ]
                     },
@@ -968,6 +993,14 @@
                         "label": "Bin edges",
                         "type": "struct",
                         "toolTip": "Bin edge definitions for each variable scored by the tally.",
+                        "whatsThis": [
+                            "The bin edges define the binning intervals for each variable.",
+                            "The number of bins is equal to the number of bin edges minus one. Thus, bin egdes must contain at least two values.",
+                            "A score is assigned to the i-th bin if the variable value x ∈ [b[i], b[i+1]), where b[i] is the i-th bin edge.",
+                            "If x is outside the range of the bin edges, it is not counted.",
+                            "Bin edges must be monotonously increasing.",
+                            "The edges of at least one binning variable must be defined."
+                        ],
                         "fields": [
                             {
                                 "name": "x",
@@ -1019,7 +1052,7 @@
                                 "min": 0.0,
                                 "max": 1.0e12,
                                 "digits": 6,
-                                "toolTip": "Bin edges for the ion's r=sqrt(x^2+y^2+z^2).",
+                                "toolTip": "Bin edges for the ion's r=√(x^2+y^2+z^2).",
                                 "whatsThis": [
                                     "Coordinates refer to the UserTally coordinate system.",
                                     "Bin edges must be monotonously increasing."
@@ -1033,7 +1066,7 @@
                                 "min": 0.0,
                                 "max": 1.0e12,
                                 "digits": 6,
-                                "toolTip": "Bin edges for the ion's ρ=sqrt(x^2+y^2).",
+                                "toolTip": "Bin edges for the ion's ρ=√(x^2+y^2).",
                                 "whatsThis": [
                                     "Coordinates refer to the UserTally coordinate system.",
                                     "Bin edges must be monotonously increasing."
@@ -1047,7 +1080,7 @@
                                 "min": -1.0,
                                 "max": 1.0,
                                 "digits": 6,
-                                "toolTip": "Bin edges for the ion's position cosθ = z/r.",
+                                "toolTip": "Bin edges for the ion's position polar angle cosine, cosθ = z/r.",
                                 "whatsThis": [
                                     "Coordinates refer to the UserTally coordinate system.",
                                     "Bin edges must be monotonously increasing."
@@ -1119,7 +1152,7 @@
                                 "toolTip": "Bin edges for the ion's damage energy.",
                                 "whatsThis": [
                                     "Tdam refers to the energy of the PKA dissipated to atomic displacements during the whole cascade.",
-                                    "This can be used only with events of type CascadeComplete.",
+                                    "This variable can be used only with events of type CascadeComplete.",
                                     "Bin edges must be monotonously increasing."
                                 ]
                             },
@@ -1148,9 +1181,9 @@
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's atomic species id.",
                                 "whatsThis": [
-                                    "Each atomic species in the simulation is assigned an id number.",
-                                    "Beam ions always have an id of 0.",
-                                    "Target atom recoils have id>=1.",
+                                    "Each atomic species in the simulation is assigned an integer numeric id.",
+                                    "Beam ions always have an id of 0. Target atoms are given consequtive ids with id>=1.",
+                                    "If we have a target with 2 atomic species, the atomic ids will be 0, 1 and 2. With tally bin edges [0, 1, 2, 3], the first bin will count contributions from beam ions, the second bin will count target atoms of species 1 and the third bin will count target atoms of species 2.",
                                     "Bin edges must be monotonously increasing."
                                 ]
                             },
@@ -1164,8 +1197,8 @@
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's recoil generation id.",
                                 "whatsThis": [
-                                    "Beam ions always have a recoil generation id of 0.",
-                                    "PKAs have id=1. Higher-order recoils have higher recoil ids.",
+                                    "Beam ions always have a recoil generation id of 0. Primary recoils (PKAs) have id=1. Higher-order recoils have id>1.",
+                                    "With bin edges [0, 1, 2], the first bin will count contributions from beam ions and the second bin will count contributions from PKAs.",
                                     "Bin edges must be monotonously increasing."
                                 ]
                             }

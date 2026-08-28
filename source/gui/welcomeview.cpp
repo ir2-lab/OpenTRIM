@@ -556,10 +556,20 @@ void WelcomeView::openJson(const QString &path)
     std::istringstream is(json.constData());
     std::ostringstream os;
     if (opt.parseJSON(is, false, &os) != 0) {
-        QMessageBox::warning(
-                this, "Open JSON",
-                QString("Error parsing JSON file:\n%1\n%2").arg(path).arg(os.str().c_str()),
-                QMessageBox::Ok);
+
+        QString title = tr("OpenTRIM - Open JSON file");
+        QFontMetrics fm = fontMetrics();
+        int w = fm.boundingRect(title).width() * 2;
+        QMessageBox msgBox(QMessageBox::Warning, title,
+                           QString("<table width='%1'>"
+                                   "<tr><td><b>Error parsing JSON file:</b></td></tr>"
+                                   "<tr><td>%2</td></tr>"
+                                   "</table>")
+                                   .arg(w)
+                                   .arg(path),
+                           QMessageBox::NoButton, this);
+        msgBox.setDetailedText(os.str().c_str());
+        msgBox.exec();
         return;
     }
 

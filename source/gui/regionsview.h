@@ -2,7 +2,8 @@
 #define REGIONSVIEW_H
 
 #include <QWidget>
-#include <QStyledItemDelegate>
+
+#include "validatingitemdelegate.h"
 
 class QToolButton;
 class QItemSelection;
@@ -50,7 +51,7 @@ private:
     float size_lim_[2];
 };
 
-class RegionDelegate : public QStyledItemDelegate
+class RegionDelegate : public ValidatingItemDelegate
 {
     Q_OBJECT
 
@@ -73,7 +74,7 @@ class RegionsView : public QWidget
     Q_OBJECT
 
 public:
-    RegionsView(OptionsView *m, QObject *parent = nullptr);
+    RegionsView(OptionsView *m, QWidget *parent = nullptr);
 
     RegionsModel *model() const { return model_; }
 
@@ -89,10 +90,7 @@ public slots:
     void onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
 
 private slots:
-    void onDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
-    {
-        emit regionsChanged();
-    }
+    void onDataChanged(const QModelIndex &, const QModelIndex &) { emit regionsChanged(); }
     void onRowsInserted(const QModelIndex &, int, int) { emit regionsChanged(); }
     void onRowsMoved(const QModelIndex &, int, int, const QModelIndex &, int)
     {

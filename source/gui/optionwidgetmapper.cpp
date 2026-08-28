@@ -200,17 +200,15 @@ void OptionWidgetMapper::closeEditor(QWidget *w, int i)
         populate(widgetMap[idx]);
         break;
     }
-        //    case QAbstractItemDelegate::EditNextItem:
-        //        w->focusNextChild();
-        //        break;
-        //    case QAbstractItemDelegate::EditPreviousItem:
-        //        w->focusPreviousChild();
-        //        break;
     case QAbstractItemDelegate::EditNextItem:
     case QAbstractItemDelegate::EditPreviousItem:
     case QAbstractItemDelegate::SubmitModelCache:
     case QAbstractItemDelegate::NoHint:
-        // nothing
+        // Tab/Backtab focus movement is handled directly in
+        // OptionsItemDelegate::eventFilter() -- this slot is never reached
+        // for those hints since it isn't connected to the delegate's
+        // closeEditor signal at all (editors here are permanent form
+        // widgets, not transient QAbstractItemView editors).
         break;
     }
 }

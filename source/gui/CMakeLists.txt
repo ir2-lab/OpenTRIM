@@ -10,11 +10,12 @@ set(GUI_HEADERS
     periodictablewidget.h  
     materialdatabasedialog.h
     materialsdefview.h 
-    optionsmodel.h 
-    floatlineedit.h 
+    optionsmodel.h
     optionwidgetmapper.h
-    regionsview.h 
-    welcomeview.h 
+    validatingitemdelegate.h
+    regionsview.h
+    utallyview.h
+    welcomeview.h
     mcdriverobj.h 
     resultsview.h 
     simcontrolwidget.h 
@@ -24,6 +25,7 @@ set(GUI_HEADERS
     simboxview.h
     mcdatamodel.h
     helppanel.h
+    qstring_vector_serialize.h
 )
 
 # Collect JSON examples from the top-level examples/json directory.
@@ -56,9 +58,10 @@ set(GUI_SOURCES
     periodictablewidget.cpp
     materialsdefview.cpp
     optionsmodel.cpp
-    floatlineedit.cpp
     optionwidgetmapper.cpp
+    validatingitemdelegate.cpp
     regionsview.cpp
+    utallyview.cpp
     welcomeview.cpp
     mcdriverobj.cpp
     resultsview.cpp
@@ -83,6 +86,7 @@ PRIVATE
     Qt5::Svg
     Qwt::Qwt
     QtDataBrowser::QtDataBrowser
+    QtVectorEdit::QtVectorEdit
     ${LIB_TARGET}
     nlohmann_json::nlohmann_json
 )

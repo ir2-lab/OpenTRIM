@@ -6,8 +6,10 @@
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QCheckBox>
+#include <QKeyEvent>
 
-#include "floatlineedit.h"
+#include <QtVectorEdit/qvectoredit.h>
+#include <QtVectorEdit/qnumberedit.h>
 
 #include <QFile>
 #include "json_defs_p.h"
@@ -169,19 +171,23 @@ FloatOptionsItem::FloatOptionsItem(double fmin, double fmax, int digits, const Q
 }
 QWidget *FloatOptionsItem::createEditor(QWidget *parent) const
 {
-    QWidget *w = new FloatLineEdit(fmin_, fmax_, digits_, parent);
+    QNumberEdit *w = new QNumberEdit(parent);
+    w->setElementType(QNumberEdit::Real);
+    w->setMinimum(fmin_);
+    w->setMaximum(fmax_);
+    w->setPrecision(digits_);
     prepareWidget(w);
     return w;
 }
 void FloatOptionsItem::setEditorData(QWidget *editor, const QVariant &v) const
 {
     //((FloatLineEdit *)editor)->setValue(v.toDouble());
-    ((FloatLineEdit *)editor)->setText(v.toString());
+    ((QNumberEdit *)editor)->setValue(v); // v text or number is ok!
 }
 QVariant FloatOptionsItem::getEditorData(QWidget *editor)
 {
     // return ((FloatLineEdit *)editor)->value();
-    return ((FloatLineEdit *)editor)->text();
+    return ((QNumberEdit *)editor)->text();
 }
 IntOptionsItem::IntOptionsItem(int imin, int imax, const QString &key, const QString &name,
                                OptionsItem *parent)
@@ -250,17 +256,24 @@ VectorOptionsItem::VectorOptionsItem(int size, double fmin, double fmax, int dig
 }
 QWidget *VectorOptionsItem::createEditor(QWidget *parent) const
 {
-    QWidget *w = new VectorLineEdit(sz_, fmin_, fmax_, digits_, parent);
-    prepareWidget(w);
-    return w;
+    QVectorEdit *editor = new QVectorEdit(parent);
+    editor->setElementType(QNumberEdit::Real);
+    editor->setSizeMode(QVectorEdit::Fixed);
+    editor->setMinimum(fmin_);
+    editor->setMaximum(fmax_);
+    editor->setPrecision(digits_);
+    editor->setSize(sz_);
+    editor->setShowEllipsisButton(false);
+    prepareWidget(editor);
+    return editor;
 }
 void VectorOptionsItem::setEditorData(QWidget *editor, const QVariant &v) const
 {
-    ((VectorLineEdit *)editor)->setText(v.toString());
+    ((QVectorEdit *)editor)->setText(v.toString());
 }
 QVariant VectorOptionsItem::getEditorData(QWidget *editor)
 {
-    return ((VectorLineEdit *)editor)->text();
+    return ((QVectorEdit *)editor)->text();
 }
 IVectorOptionsItem::IVectorOptionsItem(int size, int fmin, int fmax, const QString &key,
                                        const QString &name, OptionsItem *parent)
@@ -270,20 +283,26 @@ IVectorOptionsItem::IVectorOptionsItem(int size, int fmin, int fmax, const QStri
 }
 QWidget *IVectorOptionsItem::createEditor(QWidget *parent) const
 {
-    QWidget *w = new IntVectorLineEdit(sz_, imin_, imax_, parent);
-    prepareWidget(w);
-    return w;
+    QVectorEdit *editor = new QVectorEdit(parent);
+    editor->setElementType(QNumberEdit::Integer);
+    editor->setSizeMode(QVectorEdit::Fixed);
+    editor->setSize(sz_);
+    editor->setMinimum(imin_);
+    editor->setMaximum(imax_);
+    editor->setShowEllipsisButton(false);
+    prepareWidget(editor);
+    return editor;
 }
 void IVectorOptionsItem::setEditorData(QWidget *editor, const QVariant &v) const
 {
-    ((IntVectorLineEdit *)editor)->setText(v.toString());
+    ((QVectorEdit *)editor)->setText(v.toString());
 }
 QVariant IVectorOptionsItem::getEditorData(QWidget *editor)
 {
-    return ((IntVectorLineEdit *)editor)->text();
+    return ((QVectorEdit *)editor)->text();
 }
 /*********************************************************/
-OptionsItemDelegate::OptionsItemDelegate(QObject *parent) : QStyledItemDelegate(parent) { }
+OptionsItemDelegate::OptionsItemDelegate(QObject *parent) : ValidatingItemDelegate(parent) { }
 QWidget *OptionsItemDelegate::createEditor(QWidget *parent,
                                            const QStyleOptionViewItem & /* option */,
                                            const QModelIndex &index) const
@@ -316,6 +335,24 @@ QSize OptionsItemDelegate::sizeHint(const QStyleOptionViewItem &option,
                                     const QModelIndex &index) const
 {
     return QStyledItemDelegate::sizeHint(option, index) + QSize(3, 4);
+}
+bool OptionsItemDelegate::eventFilter(QObject *object, QEvent *event)
+{
+    if (event->type() == QEvent::KeyPress) {
+        auto *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab) {
+            QWidget *editor = qobject_cast<QWidget *>(object);
+            if (editor) {
+                bool forward = keyEvent->key() == Qt::Key_Tab;
+                QWidget *next = forward ? editor->nextInFocusChain()
+                                        : editor->previousInFocusChain();
+                if (next)
+                    next->setFocus(forward ? Qt::TabFocusReason : Qt::BacktabFocusReason);
+                return true;
+            }
+        }
+    }
+    return ValidatingItemDelegate::eventFilter(object, event);
 }
 /****/
 QString toString(const ojson &j)
@@ -415,9 +452,7 @@ OptionsItem *OptionsItem::jsonHelper(const ojson &j, OptionsItem *parentItem)
 OptionsModel::OptionsModel(QObject *parent)
     : QAbstractItemModel{ parent }, rootItem(new OptionsItem)
 {
-    std::istringstream is(mcconfig::options_spec());
-    ojson opt_spec = ojson::parse(is, nullptr, true, true);
-    rootItem = OptionsItem::jsonHelper(opt_spec, nullptr);
+    rootItem = OptionsItem::jsonHelper(json_options_spec(), nullptr);
 }
 OptionsModel::~OptionsModel()
 {

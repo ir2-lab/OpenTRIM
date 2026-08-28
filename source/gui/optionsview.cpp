@@ -1,9 +1,9 @@
 #include "optionsview.h"
-#include "floatlineedit.h"
 #include "periodic_table.h"
 #include "periodictablewidget.h"
 #include "materialsdefview.h"
 #include "regionsview.h"
+#include "utallyview.h"
 #include "optionsmodel.h"
 #include "optionwidgetmapper.h"
 #include "mainui.h"
@@ -31,6 +31,7 @@
 #include <QSplitter>
 #include <QToolButton>
 #include <QSignalBlocker>
+#include <QtVectorEdit/qvectoredit.h>
 
 #include "jsedit/jsedit.h"
 
@@ -74,22 +75,27 @@ OptionsView::OptionsView(MainUI *iui, QWidget *parent)
         if (category == "Run")
             continue;
 
+        if (category == "UserTally")
+            continue; // handled inline right after Target, below
+
         QWidget *widget = nullptr;
         if (category == "IonBeam")
             widget = createIonBeamTab(idx);
         else if (category == "Target")
             widget = createTargetTab(idx);
-        else if (category == "UserTally") {
-            // TODO !!
-        } else
+        else
             widget = createTab(idx);
 
         if (widget)
             tabWidget->addTab(widget, item->name());
+
+        if (category == "Target")
+            tabWidget->addTab(createUserTallyView(), "User Tallies");
     }
 
-    helpPanel->addStaticHelp(tabWidget,
-                             { "/Simulation", "/Transport", "/IonBeam", "/Target", "/Output" });
+    helpPanel->addStaticHelp(
+            tabWidget,
+            { "/Simulation", "/Transport", "/IonBeam", "/Target", "/UserTally", "/Output" });
 
     // main title widget
     QLabel *simTitleLabel = new QLabel("Simulation title:");
@@ -210,12 +216,12 @@ OptionsView::OptionsView(MainUI *iui, QWidget *parent)
             &OptionsView::drawSimBox);
     connect(regionsView, &RegionsView::regionsChanged, this, &OptionsView::drawSimBox);
     {
-        VectorLineEdit *w = findChild<VectorLineEdit *>("/Target/size");
+        QVectorEdit *w = findChild<QVectorEdit *>("/Target/size");
         if (w)
-            connect(w, &VectorLineEdit::editingFinished, this, &OptionsView::drawSimBox);
-        w = findChild<VectorLineEdit *>("/Target/origin");
+            connect(w, &QVectorEdit::editingFinished, this, &OptionsView::drawSimBox);
+        w = findChild<QVectorEdit *>("/Target/origin");
         if (w)
-            connect(w, &VectorLineEdit::editingFinished, this, &OptionsView::drawSimBox);
+            connect(w, &QVectorEdit::editingFinished, this, &OptionsView::drawSimBox);
     }
     connect(mainui->driverObj(), &McDriverObj::configChanged, this, &OptionsView::revert);
 
@@ -225,21 +231,26 @@ OptionsView::OptionsView(MainUI *iui, QWidget *parent)
 }
 
 void OptionsView::submit()
-{
+{    
     const mcconfig *opt = mapper->model()->options();
+    submitting_ = true; // avoid reloading the model due to McDriverObj::configChanged signal
     mainui->driverObj()->setOptions(*opt, false);
+    submitting_ = false;
     jsonView->setPlainText(QString::fromStdString(mainui->driverObj()->json()));
     setModified(false);
-    // emit optionsChanged();
 }
 
 void OptionsView::revert()
 {
+    if (submitting_)
+        return;
+
     const mcconfig &opt = mainui->driverObj()->options();
     mapper->model()->setOptions(opt);
     mapper->revert();
     materialsView->setWidgetData();
     regionsView->revert();
+    userTallyView->setWidgetData();
     jsonView->setPlainText(QString::fromStdString(mainui->driverObj()->json()));
 
     // fix the isotope label
@@ -402,6 +413,12 @@ QWidget *OptionsView::createTargetTab(const QModelIndex &idx)
     return widget;
 }
 
+QWidget *OptionsView::createUserTallyView()
+{
+    userTallyView = new UserTallyView(this);
+    return userTallyView;
+}
+
 QWidget *OptionsView::createTab(const QModelIndex &idx)
 {
     // exclude experimental stuff
@@ -508,10 +525,28 @@ void OptionsView::validateOptions()
 {
     QString msg;
     bool ret = mainui->driverObj()->validateOptions(&msg);
-    if (!ret)
-        QMessageBox::warning(mainui, "Options validation", msg);
-    else
-        QMessageBox::information(mainui, "Options validation", "Options are OK!");
+
+    QString title = tr("OpenTRIM - Options Validation");
+    QFontMetrics fm = fontMetrics();
+    int w = fm.boundingRect(title).width() * 2;
+    if (!ret) {
+        QMessageBox msgBox(QMessageBox::Warning, title,
+                           QString("<table width='%1'>"
+                                   "<tr><td><b>The options are invalid!</b></td></tr>"
+                                   "</table>")
+                                   .arg(w),
+                           QMessageBox::NoButton, this);
+        msgBox.setDetailedText(msg);
+        msgBox.exec();
+    } else {
+        QMessageBox msgBox(QMessageBox::Information, title,
+                           QString("<table width='%1'>"
+                                   "<tr><td><b>The options are OK!</b></td></tr>"
+                                   "</table>")
+                                   .arg(w),
+                           QMessageBox::NoButton, this);
+        msgBox.exec();
+    }
 }
 
 void OptionsView::onDriverStatusChanged()
@@ -524,6 +559,7 @@ void OptionsView::onDriverStatusChanged()
     btSelectIon->setEnabled(isreset);
     materialsView->setEnabled(isreset);
     regionsView->setEnabled(isreset);
+    userTallyView->setEnabled(isreset);
     if (isreset)
         applyRules();
     btValidate->setEnabled(isreset);

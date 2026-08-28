@@ -65,6 +65,12 @@ if(OPENTRIM_BUILD_GUI)
     message(STATUS "  QtDataBrowser: <not found>")
   endif()
 
+  if(${QtVectorEdit_FOUND})
+    message(STATUS "  QtVectorEdit: ${QtVectorEdit_VERSION}")
+  else()
+    message(STATUS "  QtVectorEdit: <not found>")
+  endif()
+
 endif()
 
 message(STATUS "------------------------------------------------------")

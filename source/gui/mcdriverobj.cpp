@@ -130,7 +130,7 @@ bool McDriverObj::validateOptions(QString *msg) const
     bool isValid = true;
 
     try {
-        opt.validate();
+        opt.validate(false, nullptr);
     } catch (const std::invalid_argument &e) {
         isValid = false;
         if (msg)
@@ -152,8 +152,7 @@ void McDriverObj::loadJsonTemplate(const QString &path)
         QFile f(path);
         f.open(QFile::ReadOnly);
         std::stringstream is(f.readAll().constData());
-        bool validate = false;
-        opt.parseJSON(is, validate);
+        opt.parseJSON(is, true);
     }
     setOptions(opt, true);
 
@@ -178,8 +177,7 @@ void McDriverObj::loadJsonFile(const QString &path)
     QFile f(path);
     f.open(QFile::ReadOnly);
     std::stringstream is(f.readAll().constData());
-    bool validate = false;
-    opt.parseJSON(is, validate);
+    opt.parseJSON(is);
 
     setOptions(opt, true);
 

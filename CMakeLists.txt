@@ -58,6 +58,7 @@ if(OPENTRIM_BUILD_GUI)
     find_package(Qt5 REQUIRED COMPONENTS Core Widgets Svg)
     find_package(Qwt REQUIRED)
     find_package(QtDataBrowser 0.2.1 REQUIRED)
+    find_package(QtVectorEdit 0.1.0 REQUIRED)
 endif () ## BUILD GUI
 
 include(CTest)

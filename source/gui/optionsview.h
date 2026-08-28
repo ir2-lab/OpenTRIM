@@ -20,6 +20,7 @@ class SimBoxView;
 class OptionsModel;
 class MainUI;
 class HelpPanel;
+class UserTallyView;
 
 class OptionsView : public QWidget
 {
@@ -63,6 +64,7 @@ private:
 
     QWidget *createIonBeamTab(const QModelIndex &idx);
     QWidget *createTargetTab(const QModelIndex &idx);
+    QWidget *createUserTallyView();
     QWidget *createTab(const QModelIndex &idx);
     QFormLayout *createForm(const QModelIndex &idx, QWidget *widgetParent = nullptr,
                             const QStringList &excludeKeys = QStringList());
@@ -107,14 +109,20 @@ private:
     RegionsView *regionsView;
     // sim box geometry view
     SimBoxView *simBoxView;
+    // user-defined tallies view
+    UserTallyView *userTallyView;
 
     // model & mapper used for help display
     OptionsModel *defaultOptionsModel;
     OptionWidgetMapper *helpMapper;
 
+    // flag to prevent model reload during submit
+    bool submitting_{ false };
+
     friend class MaterialsDefView;
     friend class MaterialCompositionView;
     friend class RegionsView;
+    friend class UserTallyView;
 };
 
 #endif // SIMULATIONOPTIONSVIEW_H

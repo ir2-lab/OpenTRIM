@@ -1,6 +1,7 @@
 #include "helppanel.h"
 #include "optionsmodel.h"
 #include "optionwidgetmapper.h"
+#include "utallyview.h"
 #include "json_defs_p.h"
 
 #include <QTextBrowser>
@@ -25,32 +26,6 @@
 #include <QMouseEvent>
 #include <QEnterEvent>
 
-static const char *toString(mcconfig::option_type_t t)
-{
-    switch (t) {
-    case mcconfig::tEnum:
-        return "Enumerator";
-    case mcconfig::tFloat:
-        return "Real Number";
-    case mcconfig::tInt:
-        return "Integer";
-    case mcconfig::tBool:
-        return "Boolean";
-    case mcconfig::tString:
-        return "String";
-    case mcconfig::tVector:
-        return "Real Vector";
-    case mcconfig::tIntVector:
-        return "Integer Vector";
-    case mcconfig::tStruct:
-        return "Option Group";
-    case mcconfig::tArray:
-        return "Options Array";
-    default:
-        return "invalid";
-    }
-}
-
 struct HelpPanel::HelpData
 {
     enum widget_hint_t { label, tabbar, header, table };
@@ -70,76 +45,40 @@ struct HelpPanel::HelpData
         } break;
         case header: {
             col = ((QHeaderView *)parentView)->logicalIndexAt(p);
+            // check if this is the UserTally bins table header
+            // section number is written in the "section" property
+            if (parentView->objectName() == "binsTable") {
+                auto V = parentView->property("section");
+                if (V.isValid())
+                    col = V.toInt();
+            }
         } break;
         case table: {
             QModelIndex idx = ((QTableView *)parentView)->indexAt(p);
             col = idx.column();
+            // check if this is the UserTally bins table
+            // in this case the section is the id of the binning variable
+            if (parentView->objectName() == "binsTable") {
+                // section = bin variable
+                auto binsModel = qobject_cast<const UserTallyBinsModel *>(idx.model());
+                if (binsModel) {
+                    col = binsModel->rowVar()[idx.row()];
+                }
+            }
         } break;
         default:
             break;
         }
         return col;
     }
-    static ojson specForPath(const QString &path, const ojson &spec)
-    {
-        QStringList splitPath = path.split(QChar('/'), Qt::SkipEmptyParts);
-        ojson j = spec;
-        for (const QString &qs : splitPath) {
-            mcconfig::option_type_t type;
-            j["type"].get_to(type);
-
-            std::string s = qs.toStdString();
-
-            switch (type) {
-
-            case mcconfig::tStruct: {
-                bool found = false;
-                auto it = j["fields"].begin();
-                for (; it != j["fields"].end(); ++it) {
-                    const ojson &obj = *it;
-                    std::string name;
-                    obj["name"].get_to(name);
-                    if (name == s) {
-                        j = obj;
-                        found = true;
-                        break;
-                    }
-                }
-                assert(found);
-            } break;
-
-            case mcconfig::tArray:
-                j = j["items"];
-                break;
-
-            case mcconfig::tEnum:
-            case mcconfig::tFloat:
-            case mcconfig::tVector:
-            case mcconfig::tIntVector:
-            case mcconfig::tInt:
-            case mcconfig::tBool:
-            case mcconfig::tString:
-                break;
-            default:
-                assert(0);
-                break;
-            }
-        }
-        return j;
-    }
+    // the default options template
+    static ojson json_templ;
 };
 
-struct HelpPanel::OptionsSpec
-{
-    ojson j;
-};
+ojson HelpPanel::HelpData::json_templ = ojson::parse(mcconfig::config_template().toJSON());
 
 HelpPanel::HelpPanel(QWidget *parent) : QTextBrowser(parent)
 {
-    optionsSpec = new OptionsSpec;
-    std::istringstream is(mcconfig::options_spec());
-    optionsSpec->j = ojson::parse(is, nullptr, true, true);
-
     setOpenExternalLinks(true);
     setMinimumWidth(200);
 
@@ -156,7 +95,6 @@ HelpPanel::HelpPanel(QWidget *parent) : QTextBrowser(parent)
 
 HelpPanel::~HelpPanel()
 {
-    delete optionsSpec;
     for (auto p : static_help_map) {
         delete p;
     }
@@ -189,7 +127,7 @@ void HelpPanel::addStaticHelp(QWidget *w, const QStringList &paths)
     h->path = paths;
     ojson::array_t j;
     for (const QString &path : paths) {
-        j.push_back(HelpData::specForPath(path, optionsSpec->j));
+        j.push_back(spec_for_path(HelpData::json_templ, ojson::json_pointer(path.toStdString())));
     }
     h->j = j;
     const QMetaObject *mobj = w->metaObject();
@@ -465,9 +403,12 @@ QString HelpPanel::numericHelp(const QString &sectionTitle, double minVal, doubl
 QString HelpPanel::vectorHelp(int size, double minVal, double maxVal)
 {
     QString html = sectionHeader("Element Count");
-    QString elmnt = QString::number(size);
-    if (size == 0)
-        elmnt += " (Variable)";
+    QString elmnt;
+    if (size)
+        elmnt = QString::number(size);
+    else
+        elmnt = "Variable";
+
     html += QString("<tr><td style='padding: 2px 0;'>"
                     "  <span style='font-size: 10pt;'>%1</span>"
                     "</td></tr>")
@@ -531,7 +472,8 @@ QString HelpPanel::currentValue(OptionsItem *item)
 
 QString HelpPanel::generateHelpHtml(OptionsItem *item)
 {
-    if(!item) return QString();
+    if (!item)
+        return QString();
 
     mcconfig::option_type_t type = item->type();
     QString label = item->name().isEmpty() ? item->key() : item->name();
@@ -556,7 +498,7 @@ QString HelpPanel::generateHelpHtml(OptionsItem *item)
         break;
     default:
         break;
-    }    
+    }
 
     html += currentValue(item);
 
@@ -594,7 +536,7 @@ QString HelpPanel::numericHelp(OptionsItem *item)
 }
 
 QString HelpPanel::vectorHelp(OptionsItem *item)
-{   
+{
     double minVal = 0, maxVal = 0;
     int size;
     if (auto *vi = dynamic_cast<VectorOptionsItem *>(item)) {

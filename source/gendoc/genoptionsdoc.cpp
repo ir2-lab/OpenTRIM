@@ -31,8 +31,7 @@ int main()
     {
         cout << "[genoptionsdoc] Generating \"options.dox.md\" ... ";
 
-        std::istringstream is(mcconfig::options_spec());
-        ojson j = ojson::parse(is, nullptr, true, true);
+        const ojson &j = json_options_spec();
 
         std::ofstream os("options.dox.md");
 
@@ -211,43 +210,6 @@ void jsonPrint(std::ostream &os, const ojson &j, int level, string path)
     }
 }
 
-std::ostream &operator<<(std::ostream &os, mcconfig::option_type_t type)
-{
-    switch (type) {
-    case mcconfig::tStruct:
-        os << "Option group";
-        break;
-    case mcconfig::tArray:
-        os << "Array of same type options";
-        break;
-    case mcconfig::tEnum:
-        os << "Enumerator";
-        break;
-    case mcconfig::tFloat:
-        os << "Floating point number";
-        break;
-    case mcconfig::tVector:
-        os << "Vector of floating point values";
-        break;
-    case mcconfig::tIntVector:
-        os << "Vector of integer values";
-        break;
-    case mcconfig::tInt:
-        os << "Integer";
-        break;
-    case mcconfig::tBool:
-        os << "Boolean";
-        break;
-    case mcconfig::tString:
-        os << "String";
-        break;
-    default:
-        assert(0);
-        break;
-    }
-    return os;
-}
-
 void printPath(std::ostream &os, const string &path)
 {
     os << path;
@@ -310,7 +272,7 @@ void jsonPrintTable(std::ostream &os, const ojson &j, string path)
         os << "<tr><td>" << "Label ";
         os << "<td>" << htmlEscape(j["label"].template get<std::string>()) << endl;
         os << "<tr><td>" << "Type ";
-        os << "<td>" << type << endl;
+        os << "<td>" << toString(type) << endl;
         opt.get(path, val);
         path += '/';
     } else

@@ -1,5 +1,5 @@
 #include "regionsview.h"
-#include "floatlineedit.h"
+#include "qstring_vector_serialize.h"
 #include "optionsmodel.h"
 #include "optionsview.h"
 #include "mainui.h"
@@ -21,6 +21,7 @@
 #include <QFontMetrics>
 #include <QItemSelectionModel>
 #include <QHeaderView>
+#include <QtVectorEdit/qvectoredit.h>
 
 #include "json_defs_p.h"
 
@@ -31,30 +32,14 @@ RegionsModel::RegionsModel(OptionsModel *m, QObject *parent)
     idx = model_->index("regions", 1, idx);
     regionsIndex_ = idx;
 
-    // get origin and size limits from mcconfig
-    // path:
-    std::istringstream is(mcconfig::options_spec());
-    ojson opt_spec = ojson::parse(is, nullptr, true, true);
-    ojson::array_t arr = opt_spec["fields"];
-    for (size_t i = 0; i < arr.size(); ++i) {
-        if (arr[i]["name"] == "Target") {
-            ojson::array_t arr1 = arr[i]["fields"];
-            for (size_t j = 0; j < arr1.size(); ++j) {
-                if (arr1[j]["name"] == "regions") {
-                    ojson::array_t arr2 = arr1[j]["items"]["fields"];
-                    for (size_t k = 0; k < arr2.size(); ++k) {
-                        if (arr2[k]["name"] == "origin") {
-                            arr2[k]["min"].get_to(origin_lim_[0]);
-                            arr2[k]["max"].get_to(origin_lim_[1]);
-                        } else if (arr2[k]["name"] == "size") {
-                            arr2[k]["min"].get_to(size_lim_[0]);
-                            arr2[k]["max"].get_to(size_lim_[1]);
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // get origin and size limits from options_spec
+    ojson opt_templ = ojson::parse(mcconfig::config_template().toJSON());
+    ojson jspec = spec_for_path(opt_templ, ojson::json_pointer("/Target/regions/0/origin"));
+    jspec["min"].get_to(origin_lim_[0]);
+    jspec["max"].get_to(origin_lim_[1]);
+    jspec = spec_for_path(opt_templ, ojson::json_pointer("/Target/regions/0/size"));
+    jspec["min"].get_to(size_lim_[0]);
+    jspec["max"].get_to(size_lim_[1]);
 }
 int RegionsModel::rowCount(const QModelIndex & /* parent */) const
 {
@@ -168,9 +153,8 @@ bool RegionsModel::setData(const QModelIndex &index, const QVariant &value, int 
         break;
     }
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(regionsIndex_, QVariant());
+    // signal that model_ data changed
+    model_->dataChanged(regionsIndex_, regionsIndex_);
 
     emit dataChanged(index, index);
 
@@ -192,9 +176,8 @@ bool RegionsModel::insertRows(int position, int rows, const QModelIndex &parent)
     opt->Target.regions.push_back(reg);
     endInsertRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(regionsIndex_, QVariant());
+    // signal that model_ data changed
+    model_->dataChanged(regionsIndex_, regionsIndex_);
 
     return true;
 }
@@ -204,7 +187,7 @@ bool RegionsModel::removeRows(int position, int rows, const QModelIndex &parent)
 
     mcconfig *opt = model_->options();
     auto &regions = opt->Target.regions;
-    if (regions.empty() || position >= regions.size())
+    if (regions.empty() || position >= int(regions.size()))
         return false;
 
     beginRemoveRows(parent, position, position);
@@ -212,9 +195,8 @@ bool RegionsModel::removeRows(int position, int rows, const QModelIndex &parent)
     regions.erase(it);
     endRemoveRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(regionsIndex_, QVariant());
+    // signal that model_ data changed
+    model_->dataChanged(regionsIndex_, regionsIndex_);
 
     return true;
 }
@@ -246,9 +228,8 @@ bool RegionsModel::moveRow(int from, int to)
     regions.insert(regions.begin() + to, reg);
     endInsertRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(regionsIndex_, QVariant());
+    // signal that model_ data changed
+    model_->dataChanged(regionsIndex_, regionsIndex_);
 
     return true;
 }
@@ -260,7 +241,7 @@ void RegionsModel::resetModel()
 }
 
 /*********************************************************/
-RegionDelegate::RegionDelegate(QObject *parent) : QStyledItemDelegate(parent) { }
+RegionDelegate::RegionDelegate(QObject *parent) : ValidatingItemDelegate(parent) { }
 QWidget *RegionDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem & /* option */,
                                       const QModelIndex &index) const
 {
@@ -284,7 +265,7 @@ QWidget *RegionDelegate::createEditor(QWidget *parent, const QStyleOptionViewIte
         QComboBox *cb = new QComboBox(parent);
         const mcconfig *opt = rmodel->model_->options();
         auto &materials = opt->Target.materials;
-        for (int i = 0; i < materials.size(); ++i) {
+        for (int i = 0; i < int(materials.size()); ++i) {
             cb->addItem(QString::fromStdString(materials[i].id));
             QPixmap pxmap(cb->iconSize());
             pxmap.fill(QColor(materials[i].color.c_str()));
@@ -293,13 +274,25 @@ QWidget *RegionDelegate::createEditor(QWidget *parent, const QStyleOptionViewIte
         w = cb;
     } break;
     case 2: {
-        VectorLineEdit *edt =
-                new VectorLineEdit(3, rmodel->origin_lim_[0], rmodel->origin_lim_[1], 3, parent);
+        QVectorEdit *edt = new QVectorEdit(parent);
+        edt->setElementType(QVectorEdit::Real);
+        edt->setSizeMode(QVectorEdit::Fixed);
+        edt->setSize(3);
+        edt->setMinimum(rmodel->origin_lim_[0]);
+        edt->setMaximum(rmodel->origin_lim_[1]);
+        edt->setPrecision(3);
+        edt->setShowEllipsisButton(false);
         w = edt;
     } break;
     case 3: {
-        VectorLineEdit *edt =
-                new VectorLineEdit(3, rmodel->size_lim_[0], rmodel->size_lim_[1], 3, parent);
+        QVectorEdit *edt = new QVectorEdit(parent);
+        edt->setElementType(QVectorEdit::Real);
+        edt->setSizeMode(QVectorEdit::Fixed);
+        edt->setSize(3);
+        edt->setMinimum(rmodel->size_lim_[0]);
+        edt->setMaximum(rmodel->size_lim_[1]);
+        edt->setPrecision(3);
+        edt->setShowEllipsisButton(false);
         w = edt;
     } break;
     }
@@ -328,7 +321,7 @@ void RegionDelegate::setEditorData(QWidget *editor, const QModelIndex &index) co
     } break;
     case 2:
     case 3: {
-        VectorLineEdit *edt = (VectorLineEdit *)(editor);
+        QVectorEdit *edt = (QVectorEdit *)(editor);
         edt->setText(v.toString());
     } break;
     }
@@ -356,7 +349,7 @@ void RegionDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
     } break;
     case 2:
     case 3: {
-        VectorLineEdit *edt = (VectorLineEdit *)(editor);
+        QVectorEdit *edt = (QVectorEdit *)(editor);
         v = edt->text();
     } break;
     }
@@ -369,8 +362,10 @@ void RegionDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionVie
     editor->setGeometry(option.rect);
 }
 /*****************************************************************************/
-RegionsView::RegionsView(OptionsView *v, QObject *parent)
-    : model_(new RegionsModel(v->mainui->optionsModel, this)), delegate_(new RegionDelegate(this))
+RegionsView::RegionsView(OptionsView *v, QWidget *parent)
+    : QWidget(parent),
+      model_(new RegionsModel(v->mainui->optionsModel, this)),
+      delegate_(new RegionDelegate(this))
 {
     btAdd = new QToolButton;
     btAdd->setIcon(QIcon(":/assets/ionicons/add-outline.svg"));
@@ -409,8 +404,8 @@ RegionsView::RegionsView(OptionsView *v, QObject *parent)
     tableView->horizontalHeader()->setDefaultSectionSize(minWidth);
 
     v->helpPanel->addStaticHelp(tableView,
-                                { "/Target/regions/i/id", "/Target/regions/i/material_id",
-                                  "/Target/regions/i/origin", "/Target/regions/i/size" });
+                                { "/Target/regions/0/id", "/Target/regions/0/material_id",
+                                  "/Target/regions/0/origin", "/Target/regions/0/size" });
 
     selectionModel = tableView->selectionModel();
     connect(selectionModel, &QItemSelectionModel::selectionChanged, this,
@@ -485,11 +480,11 @@ void RegionsView::moveRegionDown()
     }
 }
 
-void RegionsView::onSelectionChanged(const QItemSelection &selected, const QItemSelection &)
+void RegionsView::onSelectionChanged(const QItemSelection &, const QItemSelection &)
 {
     bool st[3] = { false, false, false };
 
-    int i = 0, n = model_->rowCount();
+    int n = model_->rowCount();
     for (int i = 0; i < n; ++i) {
         if (selectionModel->isRowSelected(i)) {
             st[0] = true;

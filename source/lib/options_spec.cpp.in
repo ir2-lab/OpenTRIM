@@ -1,4 +1,4 @@
-#include "mcdriver.h"
+#include "json_defs_p.h"
 
 // clang-format off
 
@@ -12,4 +12,15 @@ R"-(
 std::string mcconfig::options_spec()
 {
     return std::string(option_spec_str_);
+}
+
+const ojson &json_options_spec()
+{
+    static ojson options_spec_;
+
+    if (options_spec_.is_null()) {
+        options_spec_ = ojson::parse(option_spec_str_, nullptr, true, true);
+    }
+
+    return options_spec_;
 }

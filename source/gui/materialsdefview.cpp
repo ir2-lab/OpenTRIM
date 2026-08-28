@@ -2,12 +2,14 @@
 
 #include "periodic_table.h"
 #include "periodictablewidget.h"
-#include "floatlineedit.h"
 #include "optionsmodel.h"
 #include "optionsview.h"
 #include "mainui.h"
 #include "materialdatabasedialog.h"
 #include "helppanel.h"
+
+#include <QtVectorEdit/qvectoredit.h>
+#include <QtVectorEdit/qnumberedit.h>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -56,7 +58,7 @@ MaterialsDefView::MaterialsDefView(OptionsView *v, QWidget *parent)
     connect(cbMaterialID, &MyComboBox::doubleClicked, this, &MaterialsDefView::editMaterialName);
     connect(cbMaterialID, &MyComboBox::currentTextChanged, this,
             &MaterialsDefView::updateSelectedMaterial);
-    v->helpPanel->addStaticHelp(cbMaterialID, "/Target/materials/i/id");
+    v->helpPanel->addStaticHelp(cbMaterialID, "/Target/materials/0/id");
 
     btDbMaterial = new QToolButton;
     btDbMaterial->setIcon(QIcon(":/assets/lucide/database-search.svg"));
@@ -86,7 +88,7 @@ MaterialsDefView::MaterialsDefView(OptionsView *v, QWidget *parent)
     sbDensity->setMaximum(100.0);
     sbDensity->setDecimals(4);
     connect(sbDensity, SIGNAL(valueChanged(double)), this, SLOT(setDensity(double)));
-    v->helpPanel->addStaticHelp(sbDensity, "/Target/materials/i/density");
+    v->helpPanel->addStaticHelp(sbDensity, "/Target/materials/0/density");
 
     btMatColor = new QToolButton;
     btMatColor->setText(" Select Display Color ");
@@ -94,7 +96,7 @@ MaterialsDefView::MaterialsDefView(OptionsView *v, QWidget *parent)
     setBtMatColor(Qt::darkBlue);
     btMatColor->setToolTip("Select display color for this material");
     connect(btMatColor, &QToolButton::pressed, this, &MaterialsDefView::selectColor);
-    v->helpPanel->addStaticHelp(btMatColor, "/Target/materials/i/color");
+    v->helpPanel->addStaticHelp(btMatColor, "/Target/materials/0/color");
 
     hbox->addWidget(cbMaterialID);
     hbox->addWidget(btDbMaterial);
@@ -106,9 +108,9 @@ MaterialsDefView::MaterialsDefView(OptionsView *v, QWidget *parent)
     flayout->addRow("Material", hbox);
     flayout->addRow("Density (g/cm³)", sbDensity);
     flayout->addRow("Color", btMatColor);
-    v->helpPanel->addStaticHelp(flayout->labelForField(hbox), "/Target/materials/i/id");
-    v->helpPanel->addStaticHelp(flayout->labelForField(sbDensity), "/Target/materials/i/density");
-    v->helpPanel->addStaticHelp(flayout->labelForField(btMatColor), "/Target/materials/i/color");
+    v->helpPanel->addStaticHelp(flayout->labelForField(hbox), "/Target/materials/0/id");
+    v->helpPanel->addStaticHelp(flayout->labelForField(sbDensity), "/Target/materials/0/density");
+    v->helpPanel->addStaticHelp(flayout->labelForField(btMatColor), "/Target/materials/0/color");
 
     hbox = new QHBoxLayout;
     hbox->addLayout(flayout);
@@ -144,23 +146,36 @@ void MaterialsDefView::addMaterialFromDatabase()
 
 void MaterialsDefView::addMaterial()
 {
-    bool ok;
-    QString id = QInputDialog::getText(this, tr("Add Material"), tr("New Material id"),
-                                       QLineEdit::Normal,
-                                       QString("Material #%1").arg(cbMaterialID->count() + 1), &ok);
-    if (ok && !id.isEmpty()) {
-        auto &materials = model_->options()->Target.materials;
-        material::material_desc_t newMaterial;
-        newMaterial.id = id.toStdString();
-        materials.push_back(newMaterial);
-        setWidgetData(); // widgets updated
-        cbMaterialID->setCurrentText(id);
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
-
-        emit materialsChanged();
+    QInputDialog dlg(this);
+    dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowContextHelpButtonHint
+                       & ~Qt::WindowMinMaxButtonsHint);
+    QString wTitle = tr("OpenTRIM - Add Material");
+    dlg.setWindowTitle(wTitle);
+    dlg.setLabelText(tr("New Material id:"));
+    dlg.setTextValue(QString("Material%1").arg(cbMaterialID->count() + 1));
+    QFontMetrics fm = fontMetrics();
+    QRect rect = fm.boundingRect(wTitle);
+    int minW = rect.width() * 2;
+    if (auto *edit = dlg.findChild<QLineEdit *>()) {
+        edit->setMinimumWidth(minW);
     }
+    if (dlg.exec() == QDialog::Rejected)
+        return;
+
+    QString id = dlg.textValue();
+    if (id.isEmpty())
+        return;
+
+    auto &materials = model_->options()->Target.materials;
+    material::material_desc_t newMaterial;
+    newMaterial.id = id.toStdString();
+    materials.push_back(newMaterial);
+    setWidgetData(); // widgets updated
+    cbMaterialID->setCurrentText(id);
+    // let model_ know that underlying data changed
+    model_->dataChanged(materialsIndex_, materialsIndex_);
+
+    emit materialsChanged();
 }
 
 void MaterialsDefView::editMaterialName()
@@ -168,20 +183,34 @@ void MaterialsDefView::editMaterialName()
     if (cbMaterialID->count() == 0)
         return;
 
+    QInputDialog dlg(this);
+    dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowContextHelpButtonHint
+                       & ~Qt::WindowMinMaxButtonsHint);
+    QString wTitle = tr("OpenTRIM - Edit Material id");
+    dlg.setWindowTitle(wTitle);
+    dlg.setLabelText(tr("Enter the new id:"));
+    dlg.setTextValue(cbMaterialID->currentText());
+    QFontMetrics fm = fontMetrics();
+    QRect rect = fm.boundingRect(wTitle);
+    int minW = rect.width() * 2;
+    if (auto *edit = dlg.findChild<QLineEdit *>()) {
+        edit->setMinimumWidth(minW);
+    }
+    if (dlg.exec() == QDialog::Rejected)
+        return;
+
+    QString id = dlg.textValue();
+    if (id.isEmpty())
+        return;
+
     int i = cbMaterialID->currentIndex();
 
-    bool ok;
-    QString id = QInputDialog::getText(this, tr("Edit Material id"), tr("Enter the new id"),
-                                       QLineEdit::Normal, cbMaterialID->currentText(), &ok);
-    if (ok && !id.isEmpty()) {
-        cbMaterialID->setItemText(i, id);
-        material::material_desc_t &m = model_->options()->Target.materials[i];
-        m.id = id.toStdString();
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
-    }
-    setValueData(); // update material name
+    cbMaterialID->setItemText(i, id);
+    material::material_desc_t &m = model_->options()->Target.materials[i];
+    m.id = id.toStdString();
+
+    // let model_ know that underlying data changed
+    model_->dataChanged(materialsIndex_, materialsIndex_);
 }
 
 void MaterialsDefView::removeMaterial()
@@ -197,9 +226,8 @@ void MaterialsDefView::removeMaterial()
         auto &materials = model_->options()->Target.materials;
         materials.erase(materials.begin() + i);
         setWidgetData(); // widgets updated
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
+        // let model_ know that underlying data changed
+        model_->dataChanged(materialsIndex_, materialsIndex_);
 
         emit materialsChanged();
     }
@@ -248,7 +276,6 @@ void MaterialsDefView::setWidgetData()
 
     cbMaterialID->blockSignals(false);
 }
-void MaterialsDefView::setValueData() { }
 
 void MaterialsDefView::updateSelectedMaterial()
 {
@@ -282,9 +309,8 @@ void MaterialsDefView::setDensity(double v)
     QString matid = cbMaterialID->currentText();
     material::material_desc_t &mat = materials[i];
     mat.density = v;
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    // let model_ know that underlying data changed
+    model_->dataChanged(materialsIndex_, materialsIndex_);
 }
 
 void MaterialsDefView::selectColor()
@@ -306,9 +332,8 @@ void MaterialsDefView::selectColor()
     if (clr.isValid()) {
         mat.color = clr.name(QColor::HexArgb).toStdString();
         setBtMatColor(clr);
-        // fake setData just to let model_ know that
-        // underlying data changed
-        model_->setData(materialsIndex_, QVariant());
+        // let model_ know that underlying data changed
+        model_->dataChanged(materialsIndex_, materialsIndex_);
 
         emit materialsChanged();
     }
@@ -468,9 +493,8 @@ bool MaterialCompositionModel::setData(const QModelIndex &index, const QVariant 
     default:;
     }
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    // let model_ know that underlying data changed
+    model_->dataChanged(materialsIndex_, materialsIndex_);
 
     return true;
 }
@@ -488,9 +512,8 @@ bool MaterialCompositionModel::insertRows(int position, int rows, const QModelIn
     mat->composition.push_back(atom::parameters());
     endInsertRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    // let model_ know that underlying data changed
+    model_->dataChanged(materialsIndex_, materialsIndex_);
 
     return true;
 }
@@ -510,9 +533,8 @@ bool MaterialCompositionModel::removeRows(int position, int rows, const QModelIn
     mat->composition.erase(mat->composition.begin() + position);
     endRemoveRows();
 
-    // fake setData just to let model_ know that
-    // underlying data changed
-    model_->setData(materialsIndex_, QVariant());
+    // let model_ know that underlying data changed
+    model_->dataChanged(materialsIndex_, materialsIndex_);
 
     return true;
 }
@@ -526,20 +548,24 @@ QWidget *MaterialCompositionDelegate::createEditor(QWidget *parent,
                                                    const QStyleOptionViewItem & /* option */,
                                                    const QModelIndex &index) const
 {
-    FloatLineEdit *editor = new FloatLineEdit(0.f, 100.f, index.column() == 1 ? 10 : 3, parent);
+    QNumberEdit *editor = new QNumberEdit(parent);
+    editor->setElementType(QNumberEdit::Real);
+    editor->setMinimum(0.0f);
+    editor->setMaximum(100.0f);
+    editor->setPrecision(index.column() == 1 ? 10 : 3);
     return editor;
 }
 void MaterialCompositionDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
     double value = index.model()->data(index, Qt::DisplayRole).toDouble();
 
-    FloatLineEdit *fedt = static_cast<FloatLineEdit *>(editor);
+    QNumberEdit *fedt = static_cast<QNumberEdit *>(editor);
     fedt->setValue(value);
 }
 void MaterialCompositionDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
                                                const QModelIndex &index) const
 {
-    FloatLineEdit *fedt = static_cast<FloatLineEdit *>(editor);
+    QNumberEdit *fedt = static_cast<QNumberEdit *>(editor);
     model->setData(index, fedt->value(), Qt::EditRole);
 }
 void MaterialCompositionDelegate::updateEditorGeometry(QWidget *editor,
@@ -565,7 +591,7 @@ MaterialCompositionView::MaterialCompositionView(OptionsView *v, QObject *parent
     btRemove->setEnabled(false);
 
     QLabel *compositionLabel = new QLabel("Composition ");
-    v->helpPanel->addStaticHelp(compositionLabel, "/Target/materials/i/composition");
+    v->helpPanel->addStaticHelp(compositionLabel, "/Target/materials/0/composition");
 
     QTableView *view = new QTableView;
     view->setModel(model_);
@@ -581,11 +607,11 @@ MaterialCompositionView::MaterialCompositionView(OptionsView *v, QObject *parent
             &MaterialCompositionView::onSelectionChanged);
     v->helpPanel->addStaticHelp(
             view,
-            { "/Target/materials/i/composition/j/element/symbol",
-              "/Target/materials/i/composition/j/element/atomic_mass",
-              "/Target/materials/i/composition/j/X", "/Target/materials/i/composition/j/Ed",
-              "/Target/materials/i/composition/j/El", "/Target/materials/i/composition/j/Es",
-              "/Target/materials/i/composition/j/Er", "/Target/materials/i/composition/j/Rc" });
+            { "/Target/materials/0/composition/0/element/symbol",
+              "/Target/materials/0/composition/0/element/atomic_mass",
+              "/Target/materials/0/composition/0/X", "/Target/materials/0/composition/0/Ed",
+              "/Target/materials/0/composition/0/El", "/Target/materials/0/composition/0/Es",
+              "/Target/materials/0/composition/0/Er", "/Target/materials/0/composition/0/Rc" });
 
     QHBoxLayout *hbox = new QHBoxLayout;
     hbox->addWidget(compositionLabel);

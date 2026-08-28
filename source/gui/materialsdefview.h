@@ -35,7 +35,6 @@ public slots:
     void removeMaterial();
     void editMaterialName();
     void setWidgetData();
-    void setValueData();
     void updateSelectedMaterial();
     void setDensity(double v);
     void selectColor();

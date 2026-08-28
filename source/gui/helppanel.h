@@ -40,9 +40,7 @@ private:
     // data for static help
     struct HelpData;
     QMap<QWidget *, HelpData *> static_help_map;
-    // copy of options spec for static help
-    struct OptionsSpec;
-    OptionsSpec *optionsSpec;
+
     // mapper for dynamic help display (including actual values)
     OptionWidgetMapper *mapper_{ nullptr };
     // The current currentWidget we display help for

@@ -319,7 +319,7 @@ std::shared_ptr<mcdriver> mcdriver::load(const std::string &h5filename, std::ost
         {
             std::string json = h5e::load<std::string>(h5f, "/run_info/json_config");
             std::stringstream is(json);
-            if (opt.parseJSON(is, true, os, false) != 0)
+            if (opt.parseJSON(is, false, os) != 0 || opt.validate(false, os) != 0)
                 return std::shared_ptr<mcdriver>();
         }
 

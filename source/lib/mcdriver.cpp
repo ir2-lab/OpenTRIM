@@ -9,39 +9,9 @@
 #include <cctype>
 #include <set>
 
-#define CHECK_INVALID_ENUM(OptName, EnumName) \
-    if (int(OptName.EnumName) < 0)            \
-        throw std::invalid_argument("Invalid enum value in " #OptName "." #EnumName);
-
-#define CHECK_ZEROorNEG(OptName, Field) \
-    if (int(OptName.Field) < 0)         \
-        throw std::invalid_argument("Zero or negative " #OptName "." #Field);
-
-#define CHECK_EMPTY_VEC(MatDesc, V, MatName) \
-    if (MatDesc.V.size() == 0)               \
-        throw std::invalid_argument("Empty " #V " in " + MatName);
-
-#define CHECK_VEC_SIZE(MatDesc, V, N, MatName)                          \
-    if (MatDesc.V.size() != N)                                          \
-        throw std::invalid_argument("In material descriptor " + MatName \
-                                    + " the # of values in " #V " is not equal to those of Z.");
-
-#define ANY_ZEROorNEG(V) std::any_of(V.begin(), V.end(), [](float c) { return c <= 0.f; })
-
-#define CHECK_VEC_ZEROorNEG(MatDesc, V, MatName)                        \
-    if (ANY_ZEROorNEG(MatDesc.V))                                       \
-        throw std::invalid_argument("In material descriptor " + MatName \
-                                    + " " #V " has zero or negative values.");
-
-#define CHECK_ZERO_ATOMPAR(AtomPar, V, MatName)                                            \
-    if (AtomPar.V == 0.f)                                                                  \
-        throw std::invalid_argument("Undefined or zero " #V " in element "                 \
-                                    + AtomPar.element.symbol + " of material \"" + MatName \
-                                    + "\"");
-
 mcdriver::mcdriver(const mcconfig &cfg) : config_(cfg), s_(nullptr)
 {
-    config_.validate();
+    config_.validate(false, nullptr);
 
     s_ = std::unique_ptr<mccore>(new mccore(cfg.Simulation, cfg.Transport));
 
@@ -56,7 +26,7 @@ mcdriver::mcdriver(const mcconfig &cfg) : config_(cfg), s_(nullptr)
     for (auto rd : cfg.Target.regions)
         T.addRegion(rd);
 
-    for (int i = 0; i < cfg.UserTally.size(); ++i)
+    for (int i = 0; i < int(cfg.UserTally.size()); ++i)
         s_->addUserTally(cfg.UserTally[i]);
 
     s_->init();
@@ -331,8 +301,26 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     return 0;
 }
 
-int mcconfig::validate(bool AcceptIncomplete) const
+using std::endl;
+
+#define CHECK_INVALID_ENUM(OptName, EnumName)          \
+    if (int(OptName.EnumName) < 0) {                   \
+        msg << "(/" << #OptName "/" #EnumName << ") "; \
+        msg << " Invalid enum value." << endl;         \
+        ret = false;                                   \
+    }
+
+#define CHECK_INVALID_ENUM2(OptName1, OptName2, EnumName)             \
+    if (int(OptName1.OptName2.EnumName) < 0) {                        \
+        msg << "(/" << #OptName1 "/" #OptName2 "/" #EnumName << ") "; \
+        msg << " Invalid enum value." << endl;                        \
+        ret = false;                                                  \
+    }
+
+int mcconfig::validate(bool AcceptIncomplete, std::ostream *os) const
 {
+    bool ret = true;
+    std::ostringstream msg;
 
     // Simulation & Transport
     CHECK_INVALID_ENUM(Simulation, simulation_type)
@@ -343,31 +331,37 @@ int mcconfig::validate(bool AcceptIncomplete) const
     CHECK_INVALID_ENUM(Transport, flight_path_type)
 
     if (Transport.flight_path_type == flight_path_calc::Constant
-        && Transport.flight_path_const <= 0.f)
-        throw std::invalid_argument("Transport.flight_path_type is \"Constant\" but "
-                                    "Transport.flight_path_const is negative.");
+        && Transport.flight_path_const <= 0.f) {
+        msg << "(/Transport/flight_path_const) Negative flight path constant with "
+               "flight_path_type==Constant"
+            << endl;
+        ret = false;
+    }
 
     // Ion source
-    CHECK_INVALID_ENUM(IonBeam.energy_distribution, type)
-    CHECK_INVALID_ENUM(IonBeam.spatial_distribution, type)
-    CHECK_INVALID_ENUM(IonBeam.spatial_distribution, geometry)
-    CHECK_INVALID_ENUM(IonBeam.angular_distribution, type)
+    CHECK_INVALID_ENUM2(IonBeam, energy_distribution, type)
+    CHECK_INVALID_ENUM2(IonBeam, spatial_distribution, type)
+    CHECK_INVALID_ENUM2(IonBeam, spatial_distribution, geometry)
+    CHECK_INVALID_ENUM2(IonBeam, angular_distribution, type)
 
     // Output
     const std::string &fname = Output.outfilename;
-    if (fname.empty() && !AcceptIncomplete)
-        throw std::invalid_argument("Output.outfilename is empty.");
+    if (fname.empty() && !AcceptIncomplete) {
+        msg << "(/Output/outfilename) is empty. " << endl;
+        ret = false;
+    }
 
     if (!fname.empty() && std::any_of(fname.begin(), fname.end(), [](unsigned char c) {
             return !(std::isalnum(c) || c == '_');
         })) {
-        std::string msg = "Output.outfilename=\"";
-        msg += fname;
-        msg += "\" contains invalid characters. Valid chars=[0-9a-zA-Z_].";
-        throw std::invalid_argument(msg);
+        msg << "(/Output/outfilename) \"";
+        msg << fname;
+        msg << "\" contains invalid characters. Valid chars=[0-9a-zA-Z_]." << endl;
+        ret = false;
     }
 
     std::unordered_map<std::string, int> mmap; // map material_id->index
+    bool target_ret = true;
 
     // Target
     if (!Target.materials.empty()) {
@@ -376,93 +370,58 @@ int mcconfig::validate(bool AcceptIncomplete) const
 
             auto md = Target.materials[i];
             if (md.id.empty()) {
-                std::stringstream msg;
-                msg << "Empty material id in material No.";
-                msg << i + 1;
-                throw std::invalid_argument(msg.str());
+                msg << "(/Target/materials/" << i << "/id) Empty material id." << endl;
+                target_ret = false;
             }
             if (mmap.count(md.id)) {
-                std::stringstream msg;
-                msg << "Duplicate material id found: ";
-                msg << '"' << md.id << '"';
-                throw std::invalid_argument(msg.str());
+                msg << "(/Target/materials) Duplicate material id found: ";
+                msg << '"' << md.id << '"' << endl;
+                target_ret = false;
             }
             mmap[md.id] = i;
 
             if (md.density == 0.f) {
-                std::stringstream msg;
-                msg << "Undefined or zero density in material ";
-                msg << '"' << md.id << '"';
-                throw std::invalid_argument(msg.str());
+                msg << "(/Target/materials/" << i << "/density) Undefined or zero density" << endl;
+                target_ret = false;
             }
             if (md.density < 0.f) {
-                std::stringstream msg;
-                msg << "Negative density in material ";
-                msg << '"' << md.id << '"';
-                throw std::invalid_argument(msg.str());
+                msg << "(/Target/materials/" << i << "/density) Negative density" << endl;
+                target_ret = false;
             }
-
             if (md.composition.empty()) {
-                std::stringstream msg;
-                msg << "Undefined composition in material ";
-                msg << '"' << md.id << '"';
-                throw std::invalid_argument(msg.str());
+                msg << "(/Target/materials/" << i << "/composition) is empty" << endl;
+                target_ret = false;
             }
 
             std::set<int> atset;
-            for (const atom::parameters &at : md.composition) {
-
+            for (int j = 0; j < int(md.composition.size()); ++j) {
+                const atom::parameters &at = md.composition[j];
                 int Z = at.element.atomic_number;
                 if (atset.count(Z)) {
-                    std::stringstream msg;
-                    msg << "Duplicate element " << periodic_table::at(Z).symbol << "(Z=" << Z
-                        << ")";
-                    msg << " in definition of material " << '"' << md.id << '"';
-                    throw std::invalid_argument(msg.str());
+                    msg << "(/Target/materials/" << i << "/composition/" << j << "/element) ";
+                    ret = false;
+                    msg << "Duplicate element " << periodic_table::at(Z).symbol << "(Z=" << Z << ")"
+                        << endl;
+                    target_ret = false;
                 }
                 atset.insert(Z);
             }
         }
     }
 
-    if (Target.regions.empty()) {
-        const ivector3 &cell_count = Target.cell_count;
-        if (std::any_of(cell_count.begin(), cell_count.end(), [](int c) { return c <= 0; })) {
-            std::stringstream msg;
-            msg << "Target.cell_count=[";
-            msg << cell_count;
-            msg << "] contains zero or negative values.";
-            throw std::invalid_argument(msg.str());
-        }
-
-        const vector3 &size = Target.size;
-        if (std::any_of(size.begin(), size.end(), [](float c) { return c <= 0.f; })) {
-            std::stringstream msg;
-            msg << "Target.size=[";
-            msg << size;
-            msg << "] contains zero or negative values.";
-            throw std::invalid_argument(msg.str());
-        }
+    if (!Target.regions.empty()) {
 
         // Check Region descriptors
-        for (auto rd : Target.regions) {
+        for (int i = 0; i < int(Target.regions.size()); ++i) {
+
+            auto rd = Target.regions[i];
             auto rname = rd.id;
 
             // check valid material
             if (!mmap.count(rd.material_id)) {
-                std::stringstream msg;
-                msg << "Region " << rname << " has invalid material_id: ";
-                msg << rd.material_id;
-                throw std::invalid_argument(msg.str());
-            }
-
-            const vector3 &size = rd.size;
-            if (std::any_of(size.begin(), size.end(), [](float c) { return c <= 0.f; })) {
-                std::stringstream msg;
-                msg << "Region " << rname << ".size=[";
-                msg << size;
-                msg << "] contains zero or negative values.";
-                throw std::invalid_argument(msg.str());
+                msg << "(/Target/regions/" << i << "/material_id) Undefined ";
+                msg << "material_id: " << rd.material_id << endl;
+                target_ret = false;
             }
 
             // check that the region is within the simulation volume
@@ -474,13 +433,95 @@ int mcconfig::validate(bool AcceptIncomplete) const
             sbox.max() = Target.origin + Target.size;
             rbox = sbox.intersection(rbox);
             if (rbox.isEmpty()) {
-                std::stringstream msg;
-                msg << "Region " << rname << " does not intersect ";
-                msg << "the simulation volume.";
-                throw std::invalid_argument(msg.str());
+                msg << "(/Target/regions/" << i << ") Region ";
+                msg << rname << " does not intersect with ";
+                msg << "the simulation volume." << endl;
+                target_ret = false;
             }
         }
     }
+    ret = ret && target_ret;
 
-    return 0;
+    // --- UserTally ---
+    std::unordered_map<std::string, int> utmap; // map UserTally id->index
+    for (int i = 0; i < int(UserTally.size()); ++i) {
+
+        auto ut = UserTally[i];
+        if (ut.id.empty()) {
+            msg << "(/UserTally/" << i << "/id) Empty user tally id." << endl;
+            ret = false;
+        }
+        if (utmap.count(ut.id)) {
+            msg << "(/UserTally/" << i << "/id) Duplicate user tally id found: ";
+            msg << '"' << ut.id << '"' << endl;
+            ret = false;
+        }
+        utmap[ut.id] = i;
+
+        // coord sys
+        vector3 nz = ut.coordinate_system.zaxis.normalized();
+        vector3 xzn = ut.coordinate_system.xzvector.normalized();
+        if (std::abs(std::abs(nz.dot(xzn)) - 1) < 10 * std::numeric_limits<float>::epsilon()) {
+            msg << "(/UserTally/" << i << "/coordinate_system) zaxis is nearly parallel to xzvector"
+                << endl;
+            ret = false;
+        }
+
+        int nbins = 0;
+        auto ff = [&msg](const std::vector<float> &b, const std::string &path, int &count) -> bool {
+            int n = b.size();
+            if (n == 0)
+                return true; // empty is ok
+            if (n == 1) {
+                msg << "(" << path << ") Has size=1. At least 2 bin edges are required" << endl;
+                return false;
+            }
+            bool asc = true;
+            for (int i = 0; i < n - 1; ++i)
+                if (b[i] >= b[i + 1]) {
+                    asc = false;
+                    break;
+                }
+
+            if (!asc) {
+                msg << "(" << path << ") is not strictly increasing." << endl;
+                return false;
+            }
+
+            count++;
+            return true;
+        };
+        std::string path = "/UserTally/";
+        path += std::to_string(i);
+        path += "/bins/";
+        ret = ret && ff(ut.bins.x, path + "x", nbins);
+        ret = ret && ff(ut.bins.y, path + "y", nbins);
+        ret = ret && ff(ut.bins.z, path + "z", nbins);
+        ret = ret && ff(ut.bins.r, path + "r", nbins);
+        ret = ret && ff(ut.bins.rho, path + "rho", nbins);
+        ret = ret && ff(ut.bins.cosTheta, path + "cosTheta", nbins);
+        ret = ret && ff(ut.bins.nx, path + "nx", nbins);
+        ret = ret && ff(ut.bins.ny, path + "ny", nbins);
+        ret = ret && ff(ut.bins.nz, path + "nz", nbins);
+        ret = ret && ff(ut.bins.E, path + "E", nbins);
+        ret = ret && ff(ut.bins.Tdam, path + "Tdam", nbins);
+        ret = ret && ff(ut.bins.V, path + "V", nbins);
+        ret = ret && ff(ut.bins.atom_id, path + "atom_id", nbins);
+        ret = ret && ff(ut.bins.recoil_id, path + "recoil_id", nbins);
+
+        if (nbins == 0) {
+            msg << "(/UserTally/" << i << ") No valid bins found." << endl;
+            ret = false;
+        }
+    }
+
+    if (ret)
+        return 0;
+
+    if (os) {
+        *os << msg.str();
+    } else {
+        throw std::invalid_argument(msg.str());
+    }
+    return -1;
 }

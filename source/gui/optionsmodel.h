@@ -3,8 +3,8 @@
 
 #include <memory>
 #include <QAbstractItemModel>
-#include <QStyledItemDelegate>
 #include "mcdriver.h"
+#include "validatingitemdelegate.h"
 
 class OptionsItem
 {
@@ -164,7 +164,7 @@ public:
     int size() const { return sz_; }
 };
 
-class OptionsItemDelegate : public QStyledItemDelegate
+class OptionsItemDelegate : public ValidatingItemDelegate
 {
     Q_OBJECT
 
@@ -182,6 +182,15 @@ public:
                               const QModelIndex &index) const override;
 
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+
+protected:
+    // Editors created via OptionWidgetMapper live permanently in a
+    // QFormLayout, not inside a QAbstractItemView -- there is no view to
+    // "close the editor and move to the next cell", so the base
+    // QAbstractItemDelegate::eventFilter()'s Tab/Backtab handling (which
+    // swallows the key and emits closeEditor(EditNextItem/EditPreviousItem))
+    // has nothing to act on it. Move focus ourselves instead.
+    bool eventFilter(QObject *object, QEvent *event) override;
 };
 
 class OptionsModel : public QAbstractItemModel

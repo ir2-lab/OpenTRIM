@@ -102,25 +102,36 @@ struct mcconfig
     std::vector<user_tally::parameters> UserTally;
 
     /**
-     * @brief Parse simulation mcconfig from JSON formatted input
+     * @brief Parse the simulation mcconfig from JSON formatted text input
      *
-     * For a full list of available mcconfig and details on JSON
+     * For a full list of available mcconfig options and details on JSON
      * formatting see \ref json_config.
      *
-     * The function first parses the whole JSON string. On formatting errors
-     * the function stops and prints an error message to stderr.
+     * The function first parses the whole JSON string.
+     * If a JSON formatting error is encountered the function stops
+     * and handles the error condition as described below.
      *
-     * After that validate() is called to check the given mcconfig. Errors
-     * are again reported to stderr.
+     * Next, the JSON input is checked against OpenTRIM's options specification,
+     * as provided by options_spec().
+     * If errors are found they are reported according to the error handling as
+     * described below.
+     *
+     * If the \a strict flag is set to false, option keys not described in options_spec()
+     * are ignored. Otherwise, they raise an error.
+     *
+     * @section Error handling
+     *
+     * - If os is null, the function throws a std::invalid_argument exception and the
+     * error message is available from the what() member function.
+     * - If os is not null, the error message is written to that stream and the function
+     * returns a negative value.
      *
      * @param js a JSON formatted input stream
-     * @param doValidation if true the function calls validate()
-     * @param os optional pointer to an output stream to recieve error messages
-     * @param strict if true reject unrecognized option keys during config validation
+     * @param strict if true reject unrecognized option keys in the JSON data
+     * @param os optional output stream to recieve error messages
      * @return 0 if succesfull, negative value otherwise
      */
-    int parseJSON(std::istream &js, bool doValidation = true, std::ostream *os = nullptr,
-                  bool strict = true);
+    int parseJSON(std::istream &js, bool strict = true, std::ostream *os = nullptr);
 
     /// Pretty print JSON formattet mcconfig to a stream
     void printJSON(std::ostream &os) const;
@@ -138,6 +149,23 @@ struct mcconfig
      * @return The json code as a std::string
      */
     static std::string options_spec();
+
+    /**
+     * @brief Returns the specification for a single option, selected by its JSON path
+     *
+     * The returned JSON string is the sub-tree of options_spec() corresponding to
+     * the option at @a jpath, pretty-printed.
+     *
+     * @a jpath="/" or "" corresponds to the root spec, in which case the function
+     * returns the same output as options_spec().
+     *
+     * @param jpath the json path to the configuration option
+     * @param os optional stream to receive warnings and error messages
+     * @return the spec of the option as a JSON string, or "null" on error (if @a os is given)
+     *
+     * @throws std::invalid_argument if @a jpath is invalid and @a os is nullptr
+     */
+    std::string spec_for_path(const std::string &jpath, std::ostream *os = nullptr) const;
 
     /**
      * @brief Returns a configuration template with all default options
@@ -201,17 +229,27 @@ struct mcconfig
      * @brief Validate the simulation mcconfig
      *
      * A number of checks are performed including
-     * - correct parameter range
-     * - allowed parameter combinations
-     * - target definition (geometry, materials, regions)
+     * - Incompatible parameter combinations
+     * - Correct target definition (geometry, materials, regions)
+     * - Unique object ids
+     * - Increasing tally bin edges
      *
-     * On error, a std::invalid_argument exception is thrown.
-     * exception::what() returns a relevant error message.
+     * The @a AcceptIncomplete flag can be used to relax the validation
+     * process so that an incomplete config with some empty values is
+     * accepted.
+     *
+     * @section Error handling
+     *
+     * - If os is null, the function throws a std::invalid_argument exception and the
+     * error message is available from the what() member function.
+     * - If os is not null, the error message is written to that stream and the function
+     * returns a negative value.
      *
      * @param AcceptIncomplete if true, empty values are accepted
-     * @return
+     * @param os optional stream to receive error messages
+     * @return 0 if the config is valid, negative value otherwise
      */
-    int validate(bool AcceptIncomplete = false) const;
+    int validate(bool AcceptIncomplete, std::ostream *os) const;
 
 private:
     void set_impl_(const std::string &path, const std::string &json_str);
