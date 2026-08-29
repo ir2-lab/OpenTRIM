@@ -7,6 +7,7 @@
 #include "mainui.h"
 #include "materialdatabasedialog.h"
 #include "helppanel.h"
+#include "dialogs.h"
 
 #include <QtVectorEdit/qvectoredit.h>
 #include <QtVectorEdit/qnumberedit.h>
@@ -21,8 +22,6 @@
 #include <QPushButton>
 #include <QDoubleSpinBox>
 #include <QTableView>
-#include <QInputDialog>
-#include <QMessageBox>
 #include <QFontMetrics>
 #include <QItemSelectionModel>
 #include <QColorDialog>
@@ -132,6 +131,7 @@ void MaterialsDefView::addMaterialFromDatabase()
         existingMaterialIds << QString::fromStdString(material.id);
 
     MaterialDatabaseDialog dlg(existingMaterialIds, this);
+    dlg.setWindowTitle(Dialogs::appTitle(tr("Select Target Material")));
     if (dlg.exec() == QDialog::Accepted) {
         const auto &md = dlg.getSelectedMaterial();
         assert(!md.id.empty());
@@ -146,23 +146,8 @@ void MaterialsDefView::addMaterialFromDatabase()
 
 void MaterialsDefView::addMaterial()
 {
-    QInputDialog dlg(this);
-    dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowContextHelpButtonHint
-                       & ~Qt::WindowMinMaxButtonsHint);
-    QString wTitle = tr("OpenTRIM - Add Material");
-    dlg.setWindowTitle(wTitle);
-    dlg.setLabelText(tr("New Material id:"));
-    dlg.setTextValue(QString("Material%1").arg(cbMaterialID->count() + 1));
-    QFontMetrics fm = fontMetrics();
-    QRect rect = fm.boundingRect(wTitle);
-    int minW = rect.width() * 2;
-    if (auto *edit = dlg.findChild<QLineEdit *>()) {
-        edit->setMinimumWidth(minW);
-    }
-    if (dlg.exec() == QDialog::Rejected)
-        return;
-
-    QString id = dlg.textValue();
+    QString id = Dialogs::getText(this, tr("Add Material"), tr("New Material id:"),
+                                  QString("Material%1").arg(cbMaterialID->count() + 1));
     if (id.isEmpty())
         return;
 
@@ -183,23 +168,8 @@ void MaterialsDefView::editMaterialName()
     if (cbMaterialID->count() == 0)
         return;
 
-    QInputDialog dlg(this);
-    dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowContextHelpButtonHint
-                       & ~Qt::WindowMinMaxButtonsHint);
-    QString wTitle = tr("OpenTRIM - Edit Material id");
-    dlg.setWindowTitle(wTitle);
-    dlg.setLabelText(tr("Enter the new id:"));
-    dlg.setTextValue(cbMaterialID->currentText());
-    QFontMetrics fm = fontMetrics();
-    QRect rect = fm.boundingRect(wTitle);
-    int minW = rect.width() * 2;
-    if (auto *edit = dlg.findChild<QLineEdit *>()) {
-        edit->setMinimumWidth(minW);
-    }
-    if (dlg.exec() == QDialog::Rejected)
-        return;
-
-    QString id = dlg.textValue();
+    QString id = Dialogs::getText(this, tr("Edit Material id"), tr("Enter the new id:"),
+                                  cbMaterialID->currentText());
     if (id.isEmpty())
         return;
 
@@ -219,10 +189,8 @@ void MaterialsDefView::removeMaterial()
     int i = cbMaterialID->currentIndex();
     if (id.isEmpty())
         return;
-    QMessageBox::StandardButton ret = QMessageBox::warning(
-            this, "Remove Material", QString("%1 is being removed.\nClick OK to proceed.").arg(id),
-            QMessageBox::Ok | QMessageBox::Cancel);
-    if (ret == QMessageBox::Ok) {
+    if (Dialogs::confirm(this, tr("Remove Material"), tr("%1 is being removed.").arg(id),
+                         { tr("Click OK to proceed.") })) {
         auto &materials = model_->options()->Target.materials;
         materials.erase(materials.begin() + i);
         setWidgetData(); // widgets updated

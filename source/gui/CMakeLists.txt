@@ -25,6 +25,7 @@ set(GUI_HEADERS
     simboxview.h
     mcdatamodel.h
     helppanel.h
+    dialogs.h
     qstring_vector_serialize.h
 )
 
@@ -71,6 +72,7 @@ set(GUI_SOURCES
     simboxview.cpp
     mcdatamodel.cpp
     helppanel.cpp
+    dialogs.cpp
 )
 
 set (GUI_TARGET ${PROJECT_NAME_LOWERCASE}-gui)

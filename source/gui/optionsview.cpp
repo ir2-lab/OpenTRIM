@@ -10,6 +10,7 @@
 #include "mcdriverobj.h"
 #include "simboxview.h"
 #include "helppanel.h"
+#include "dialogs.h"
 
 #include <QVBoxLayout>
 #include <QFormLayout>
@@ -27,7 +28,6 @@
 #include <QAction>
 #include <QDataWidgetMapper>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QSplitter>
 #include <QToolButton>
 #include <QSignalBlocker>
@@ -497,6 +497,7 @@ void OptionsView::onSplitterMoved(int a, int b)
 void OptionsView::selectIonZ()
 {
     PeriodicTableDialog dlg(true);
+    dlg.setWindowTitle(Dialogs::appTitle(tr("Select Beam Ion")));
     if (dlg.exec() == QDialog::Accepted) {
         OptionsModel *model = mapper->model();
         QModelIndex i = model->index("IonBeam");
@@ -526,26 +527,11 @@ void OptionsView::validateOptions()
     QString msg;
     bool ret = mainui->driverObj()->validateOptions(&msg);
 
-    QString title = tr("OpenTRIM - Options Validation");
-    QFontMetrics fm = fontMetrics();
-    int w = fm.boundingRect(title).width() * 2;
     if (!ret) {
-        QMessageBox msgBox(QMessageBox::Warning, title,
-                           QString("<table width='%1'>"
-                                   "<tr><td><b>The options are invalid!</b></td></tr>"
-                                   "</table>")
-                                   .arg(w),
-                           QMessageBox::NoButton, this);
-        msgBox.setDetailedText(msg);
-        msgBox.exec();
+        Dialogs::warning(this, tr("Options Validation"), tr("The options are invalid!"),
+                         QStringList(), msg);
     } else {
-        QMessageBox msgBox(QMessageBox::Information, title,
-                           QString("<table width='%1'>"
-                                   "<tr><td><b>The options are OK!</b></td></tr>"
-                                   "</table>")
-                                   .arg(w),
-                           QMessageBox::NoButton, this);
-        msgBox.exec();
+        Dialogs::information(this, tr("Options Validation"), tr("The options are OK!"));
     }
 }
 

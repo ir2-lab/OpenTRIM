@@ -4,6 +4,7 @@
 #include "mcdriver.h"
 
 #include "mcdriverobj.h"
+#include "dialogs.h"
 
 #include <QPushButton>
 #include <QToolButton>
@@ -21,8 +22,6 @@
 #include <QDir>
 #include <QDialogButtonBox>
 #include <QFile>
-#include <QFileDialog>
-#include <QMessageBox>
 #include <QJsonDocument>
 #include <QMenu>
 #include <QSettings>
@@ -292,9 +291,9 @@ void WelcomeView::onOpenJson()
     if (!userDiscardCurrentSim("Open JSON"))
         return;
 
-    QString fileName =
-            QFileDialog::getOpenFileName(this, tr("Open JSON configuration"), QString(),
-                                         tr("Json Files [*.json](*.json);;All Files [*.*](*.*)"));
+    QString fileName = Dialogs::getOpenFileName(
+            this, tr("Open JSON configuration"), QString(),
+            tr("Json Files [*.json](*.json);;All Files [*.*](*.*)"));
 
     if (fileName.isNull())
         return; // cancelled by user
@@ -307,9 +306,9 @@ void WelcomeView::onOpenH5()
     if (!userDiscardCurrentSim("Open HDF5"))
         return;
 
-    QString fileName =
-            QFileDialog::getOpenFileName(this, tr("Open HDF5 file"), QString(),
-                                         tr("HDF5 Files [*.h5](*.h5);;All Files [*.*](*.*)"));
+    QString fileName = Dialogs::getOpenFileName(
+            this, tr("Open HDF5 file"), QString(),
+            tr("HDF5 Files [*.h5](*.h5);;All Files [*.*](*.*)"));
 
     if (fileName.isNull())
         return; // cancelled by user
@@ -324,8 +323,8 @@ void WelcomeView::onOpenRecent()
     QString loc = i->data(2, Qt::DisplayRole).toString();
     QFileInfo info(QDir(loc), fname);
     if (!info.exists()) {
-        QMessageBox::critical(ionsui, "Open recent file ...",
-                              QString("The file does not exist:\n%1").arg(fname));
+        Dialogs::critical(ionsui, tr("Open Recent File"), tr("The file does not exist:"),
+                          { fname });
         return;
     }
 
@@ -363,17 +362,11 @@ void WelcomeView::onSaveJsonAs()
     QString fname = ionsui->driverObj()->fileName();
     fname += ".json";
     QFileInfo finfo(fname);
-    QString selectedFileName = QFileDialog::getSaveFileName(
+    QString selectedFileName = Dialogs::getSaveFileName(
             this, tr("Save JSON configuration As ..."), finfo.absoluteFilePath(),
-            tr("Json files [*.json](*.json);; All files (*.*)"));
+            tr("Json files [*.json](*.json);; All files (*.*)"), "json");
     if (selectedFileName.isNull())
         return;
-    QFileInfo finfo2(selectedFileName);
-    if (finfo2.suffix().toLower() != "json")
-        selectedFileName += ".json";
-
-    QString dirPath = finfo2.dir().absolutePath();
-    bool ret = QDir::setCurrent(dirPath);
 
     ionsui->driverObj()->saveJson(selectedFileName);
 }
@@ -390,10 +383,8 @@ void WelcomeView::onSaveH5()
     QString fname = D->fileName();
     fname += ".h5";
     if (!D->saveH5(fname)) {
-        QMessageBox::warning(
-                this, "Save to HDF5",
-                QString("Error creating file:\n%1\n%2").arg(fname).arg(D->ioErrorMsg()),
-                QMessageBox::Ok);
+        Dialogs::warning(this, tr("Save to HDF5"), tr("Error creating file:"), { fname },
+                         D->ioErrorMsg());
         return;
     }
 }
@@ -403,25 +394,17 @@ void WelcomeView::onSaveH5As()
     QString fname = ionsui->driverObj()->fileName();
     fname += ".h5";
     QFileInfo finfo(fname);
-    QString selectedFileName = QFileDialog::getSaveFileName(
+    QString selectedFileName = Dialogs::getSaveFileName(
             this, tr("Save HDF5 (Config+Data) As ..."), finfo.absoluteFilePath(),
-            tr("HDF5 files [*.h5](*.h5);; All files (*.*)"));
+            tr("HDF5 files [*.h5](*.h5);; All files (*.*)"), "h5");
     if (selectedFileName.isNull())
         return;
-    QFileInfo finfo2(selectedFileName);
-    if (finfo2.suffix().toLower() != "h5")
-        selectedFileName += ".h5";
-
-    QString dirPath = finfo2.dir().absolutePath();
-    QDir::setCurrent(dirPath);
 
     // Let driver save the file
     McDriverObj *D = ionsui->driverObj();
     if (!D->saveH5(selectedFileName)) {
-        QMessageBox::warning(
-                this, "Save to HDF5",
-                QString("Error creating file:\n%1\n%2").arg(selectedFileName).arg(D->ioErrorMsg()),
-                QMessageBox::Ok);
+        Dialogs::warning(this, tr("Save to HDF5"), tr("Error creating file:"),
+                         { selectedFileName }, D->ioErrorMsg());
         return;
     }
 }
@@ -535,8 +518,7 @@ bool WelcomeView::userDiscardCurrentSim(const QString &title)
     McDriverObj::DriverStatus st = ionsui->driverObj()->status();
     QString msg = st == McDriverObj::mcRunning ? "Stop the running simulation & discard data?"
                                                : "Discard current simulation?";
-    return QMessageBox::question(this, title, msg, QMessageBox::Ok | QMessageBox::Cancel)
-            == QMessageBox::Ok;
+    return Dialogs::confirm(this, title, msg);
 }
 
 void WelcomeView::openJson(const QString &path)
@@ -544,8 +526,7 @@ void WelcomeView::openJson(const QString &path)
     // Check the selected file
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, "Open JSON", QString("Could not open file:\n%1").arg(path),
-                             QMessageBox::Ok);
+        Dialogs::warning(this, tr("Open JSON"), tr("Could not open file:"), { path });
         return;
     }
 
@@ -556,20 +537,8 @@ void WelcomeView::openJson(const QString &path)
     std::istringstream is(json.constData());
     std::ostringstream os;
     if (opt.parseJSON(is, false, &os) != 0) {
-
-        QString title = tr("OpenTRIM - Open JSON file");
-        QFontMetrics fm = fontMetrics();
-        int w = fm.boundingRect(title).width() * 2;
-        QMessageBox msgBox(QMessageBox::Warning, title,
-                           QString("<table width='%1'>"
-                                   "<tr><td><b>Error parsing JSON file:</b></td></tr>"
-                                   "<tr><td>%2</td></tr>"
-                                   "</table>")
-                                   .arg(w)
-                                   .arg(path),
-                           QMessageBox::NoButton, this);
-        msgBox.setDetailedText(os.str().c_str());
-        msgBox.exec();
+        Dialogs::warning(this, tr("Open JSON File"), tr("Error parsing JSON file:"), { path },
+                         QString::fromStdString(os.str()));
         return;
     }
 
@@ -587,9 +556,8 @@ void WelcomeView::openH5(const QString &path)
     // Let driver load the file
     McDriverObj *D = ionsui->driverObj();
     if (!D->loadH5File(path)) {
-        QMessageBox::warning(this, "Open HDF5",
-                             QString("Error opening file:\n%1\n%2").arg(path).arg(D->ioErrorMsg()),
-                             QMessageBox::Ok);
+        Dialogs::warning(this, tr("Open HDF5"), tr("Error opening file:"), { path },
+                         D->ioErrorMsg());
         return;
     }
 

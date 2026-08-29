@@ -142,7 +142,11 @@
                     "label": "Intra-cascade recombination",
                     "type": "bool",
                     "toolTip": "Enable intra-cascade recombination of Frenkel pairs.",
-                    "whatsThis": ""
+                    "whatsThis": [
+                        "When this option is enabled the Frenkel pairs within a PKA cascade may recombine under certain conditions.",
+                        "Moving ions with E < Er can recombine with vacancies if their mutual distance R is below the recombination radius Rc (defined in the Target options for each atomic species).",
+                        "The ion must be of the same atomic type as the one that was originally in the vacant site."
+                    ]
                 },
                 {
                     "name": "time_ordered_cascades",
@@ -697,7 +701,11 @@
                                             "max": 1000.0,
                                             "digits": 3,
                                             "toolTip": "Recombination radius [nm].",
-                                            "whatsThis": "A Frenkel pair with an I-V distance R < Rc recombines spontaneously."
+                                            "whatsThis": [
+                                                "The recombination radius is used when intra-cascade recombination is active (/Simulation/intra_cascade_recombination = true)",
+                                                "When a vacancy is at a distance R < Rc from an interstitial atom, they recombine spontaneously.",
+                                                "The interstitial must be of the same atomic type as the atom that was in the vacant site."
+                                            ]
                                         }
                                     ]
                                 }

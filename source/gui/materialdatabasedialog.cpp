@@ -1,6 +1,7 @@
 #include "materialdatabasedialog.h"
 
 #include "periodic_table.h"
+#include "dialogs.h"
 
 #include <QTreeView>
 #include <QDialogButtonBox>
@@ -12,7 +13,6 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QFile>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QFontDatabase>
@@ -71,8 +71,8 @@ protected:
 
 MaterialDatabaseDialog::MaterialDatabaseDialog(const QStringList &existingMaterialIds,
                                                QWidget *parent)
-    : QDialog(parent), existingMaterialIds_(QSet<QString>(existingMaterialIds.begin(),
-                                                          existingMaterialIds.end()))
+    : QDialog(parent),
+      existingMaterialIds_(QSet<QString>(existingMaterialIds.begin(), existingMaterialIds.end()))
 {
     setWindowTitle("OpenTRIM - Select Target Material");
     setMinimumSize(800, 400);
@@ -118,7 +118,8 @@ MaterialDatabaseDialog::MaterialDatabaseDialog(const QStringList &existingMateri
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 
-    connect(filterLineEdit, &QLineEdit::textChanged, this, &MaterialDatabaseDialog::onFilterTextChanged);
+    connect(filterLineEdit, &QLineEdit::textChanged, this,
+            &MaterialDatabaseDialog::onFilterTextChanged);
     connect(materialsTreeView->selectionModel(), &QItemSelectionModel::currentChanged, this,
             &MaterialDatabaseDialog::onMaterialSelected);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
@@ -168,7 +169,7 @@ void MaterialDatabaseDialog::loadMaterialsDb()
     QFile file(":/data/materials.json");
 
     if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::critical(this, "Error", "Could not open material database.");
+        Dialogs::critical(this, tr("Material Database"), tr("Could not open material database."));
         return;
     }
 
@@ -197,7 +198,8 @@ void MaterialDatabaseDialog::loadMaterialsDb()
             }
         }
     } catch (const std::exception &e) {
-        QMessageBox::critical(this, "Error parsing materials db", e.what());
+        Dialogs::critical(this, tr("Material Database"), tr("Error parsing materials database"),
+                          { }, QString::fromUtf8(e.what()));
         return;
     }
 }
@@ -210,7 +212,7 @@ void MaterialDatabaseDialog::onMaterialSelected(const QModelIndex &selected,
             sourceSelected.isValid() ? materials_db->itemFromIndex(sourceSelected) : nullptr;
     materialLabel->clear();
     buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-    selected_ = { "", "", 0.f, atomic, {}, {}, "", "" };
+    selected_ = { "", "", 0.f, atomic, { }, { }, "", "" };
 
     if (!item) {
         return;
@@ -267,11 +269,12 @@ void MaterialDatabaseDialog::onMaterialSelected(const QModelIndex &selected,
     QString tbl;
     for (int i = 0; i < int(md.Z.size()); ++i) {
         const auto &e = periodic_table::at(md.Z[i]);
-        tbl += QString("<tr><td style=\"border: 1px solid #999;\">%1(Z=%2)</td><td "
-                       "style=\"border: 1px solid #999;\">%3</td></tr>\n")
-                       .arg(e.symbol.c_str())
-                       .arg(e.Z)
-                       .arg(100 * x[i], 6, 'f', 3);
+        const char *html_td = R"(<td style="padding-left: 1em;border: 1px solid #999;">%1</td>)";
+        QString cell1 = QString("%1(Z=%2)").arg(e.symbol.c_str()).arg(e.Z);
+        cell1 = QString(html_td).arg(cell1);
+        QString cell2 = QString("%1").arg(100 * x[i], 6, 'f', 3);
+        cell2 = QString(html_td).arg(cell2);
+        tbl += QString("<tr>%1%2</tr>\n").arg(cell1).arg(cell2);
     }
 
     QString comment(md.comment.c_str());

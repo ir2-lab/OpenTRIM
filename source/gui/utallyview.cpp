@@ -5,6 +5,7 @@
 #include "optionsview.h"
 #include "mainui.h"
 #include "helppanel.h"
+#include "dialogs.h"
 
 #include <QtVectorEdit/qvectoredit.h>
 
@@ -18,9 +19,6 @@
 #include <QStandardItemModel>
 #include <QTableView>
 #include <QHeaderView>
-#include <QInputDialog>
-#include <QMessageBox>
-#include <QLineEdit>
 #include <QFontMetrics>
 #include <QItemSelectionModel>
 #include <QDebug>
@@ -663,23 +661,8 @@ void UserTallyView::setWidgetData()
 
 void UserTallyView::addTally()
 {
-    QInputDialog dlg(this);
-    dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowContextHelpButtonHint
-                       & ~Qt::WindowMinMaxButtonsHint);
-    QString wTitle = tr("OpenTRIM - Add UserTally");
-    dlg.setWindowTitle(wTitle);
-    dlg.setLabelText(tr("New UserTally id:"));
-    dlg.setTextValue(QString("UserTally%1").arg(cbTallyID->count() + 1));
-    QFontMetrics fm = fontMetrics();
-    QRect rect = fm.boundingRect(wTitle);
-    int minW = rect.width() * 2;
-    if (auto *edit = dlg.findChild<QLineEdit *>()) {
-        edit->setMinimumWidth(minW);
-    }
-    if (dlg.exec() == QDialog::Rejected)
-        return;
-
-    QString id = dlg.textValue();
+    QString id = Dialogs::getText(this, tr("Add UserTally"), tr("New UserTally id:"),
+                                  QString("UserTally%1").arg(cbTallyID->count() + 1));
     if (id.isEmpty())
         return;
 
@@ -706,10 +689,8 @@ void UserTallyView::removeTally()
     if (id.isEmpty() || i < 0)
         return;
 
-    QMessageBox::StandardButton ret = QMessageBox::warning(
-            this, "Remove UserTally", QString("%1 is being removed.\nClick OK to proceed.").arg(id),
-            QMessageBox::Ok | QMessageBox::Cancel);
-    if (ret != QMessageBox::Ok)
+    if (!Dialogs::confirm(this, tr("Remove UserTally"), tr("%1 is being removed.").arg(id),
+                          { tr("Click OK to proceed.") }))
         return;
 
     auto &tallies = model_->options()->UserTally;
@@ -731,8 +712,8 @@ void UserTallyView::editTallyName()
 
     int i = cbTallyID->currentIndex();
     bool ok;
-    QString id = QInputDialog::getText(this, tr("Edit UserTally id"), tr("Enter the new id"),
-                                       QLineEdit::Normal, cbTallyID->currentText(), &ok);
+    QString id = Dialogs::getText(this, tr("Edit UserTally id"), tr("Enter the new id"),
+                                  cbTallyID->currentText(), &ok);
     if (ok && !id.isEmpty()) {
         cbTallyID->setItemText(i, id);
         model_->options()->UserTally[i].id = id.toStdString();

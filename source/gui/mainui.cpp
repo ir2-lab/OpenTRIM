@@ -7,6 +7,7 @@
 #include "simcontrolwidget.h"
 #include "resultsview.h"
 #include "tabularview.h"
+#include "dialogs.h"
 
 #include <QVBoxLayout>
 
@@ -16,7 +17,6 @@
 #include <QTextBrowser>
 #include <QLabel>
 #include <QProgressBar>
-#include <QMessageBox>
 #include <QCloseEvent>
 #include <QGuiApplication>
 #include <QScreen>
@@ -157,10 +157,7 @@ void MainUI::closeEvent(QCloseEvent *event)
         QString msg = st == McDriverObj::mcRunning
                 ? "Stop the running simulation, discard data & quit program?"
                 : "Discard simulation data & quit program?";
-        int ret = QMessageBox::warning(
-                this, QString("Close %1").arg(mcdriver::version_info().project_name), msg,
-                QMessageBox::Ok | QMessageBox::Cancel);
-        driver_ok = (ret == QMessageBox::Ok);
+        driver_ok = Dialogs::confirm(this, tr("Quit Program"), msg);
     }
 
     if (driver_ok) {

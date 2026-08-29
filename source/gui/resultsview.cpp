@@ -6,14 +6,12 @@
 #include <QBitmap>
 #include <QButtonGroup>
 #include <QComboBox>
-#include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QMenu>
-#include <QMessageBox>
 #include <QPixmap>
 #include <QToolButton>
 #include <QTreeWidget>

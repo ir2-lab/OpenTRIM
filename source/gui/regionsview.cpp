@@ -16,8 +16,6 @@
 #include <QDoubleSpinBox>
 #include <QTableView>
 #include <QComboBox>
-#include <QInputDialog>
-#include <QMessageBox>
 #include <QFontMetrics>
 #include <QItemSelectionModel>
 #include <QHeaderView>

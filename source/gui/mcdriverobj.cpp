@@ -1,6 +1,7 @@
 #include "mcdriverobj.h"
 
 #include "mcdriver.h"
+#include "dialogs.h"
 
 #include <fstream>
 
@@ -194,9 +195,8 @@ void McDriverObj::loadJsonFile(const QString &path)
 bool McDriverObj::loadH5File(const QString &path)
 {
     // Try to load the file
-    QProgressDialog dlg("Loading HDF5. Please wait ...", QString(), 0, 110);
-    dlg.setWindowModality(Qt::WindowModal);
-    dlg.setMinimumDuration(0);
+    Dialogs::ProgressDialog dlg(tr("Loading HDF5. Please wait ..."), QString(), 0, 110, nullptr,
+                                tr("Loading"));
 
     io_op_active_ = true;
     emit loadH5_(path);
@@ -281,9 +281,8 @@ bool McDriverObj::saveH5(const QString &fname)
     setFileName(fname);
 
     // Try to save the file
-    QProgressDialog dlg("Saving HDF5. Please wait ...", QString(), 0, 110);
-    dlg.setWindowModality(Qt::WindowModal);
-    dlg.setMinimumDuration(0);
+    Dialogs::ProgressDialog dlg(tr("Saving HDF5. Please wait ..."), QString(), 0, 110, nullptr,
+                                tr("Saving"));
 
     io_op_active_ = true;
     emit saveH5_();
