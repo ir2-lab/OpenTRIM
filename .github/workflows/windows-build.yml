@@ -65,6 +65,10 @@ jobs:
           gh release download $tag --repo ir2-lab/QtDataBrowser `
             --pattern "*.pkg.tar.zst" `
             --dir C:\Temp\opentrim-pkgs
+          $tag = gh release list --repo ir2-lab/QtVectorEdit --limit 1 --json tagName --jq '.[0].tagName'
+          gh release download $tag --repo ir2-lab/QtVectorEdit `
+            --pattern "*.pkg.tar.zst" `
+            --dir C:\Temp\opentrim-pkgs
 
       - name: Install dependency packages
         run: pacman -U --noconfirm /c/Temp/opentrim-pkgs/*.pkg.tar.zst
