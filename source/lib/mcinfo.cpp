@@ -304,8 +304,8 @@ mcinfo::mcinfo(std::shared_ptr<mcdriver> d) : mcinfo_node({ }, nullptr), driver_
                     [](const mcinfo_data_node &i, std::vector<float> &s) {
                         auto D = i.parent()->driver()->getSim()->get_dedx_calc().dedx();
                         mcinfo_data_node::dim_t d = { D.dim()[0], D.dim()[1], dedx_erange::size() };
-                        for (uint i = 0; i < d[0]; ++i)
-                            for (uint j = 0; j < d[1]; ++j) {
+                        for (unsigned int i = 0; i < d[0]; ++i)
+                            for (unsigned int j = 0; j < d[1]; ++j) {
                                 if (D(i, j)) {
                                     memcpy(s.data() + (i * d[1] + j) * d[2], D(i, j)->data().data(),
                                            dedx_erange::size() * sizeof(float));
@@ -323,8 +323,8 @@ mcinfo::mcinfo(std::shared_ptr<mcdriver> d) : mcinfo_node({ }, nullptr), driver_
                     [](const mcinfo_data_node &i, std::vector<float> &s) {
                         auto D = i.parent()->driver()->getSim()->get_dedx_calc().de_strag();
                         mcinfo_data_node::dim_t d = { D.dim()[0], D.dim()[1], dedx_erange::size() };
-                        for (uint i = 0; i < d[0]; ++i)
-                            for (uint j = 0; j < d[1]; ++j) {
+                        for (unsigned int i = 0; i < d[0]; ++i)
+                            for (unsigned int j = 0; j < d[1]; ++j) {
                                 if (D(i, j)) {
                                     memcpy(s.data() + (i * d[1] + j) * d[2], D(i, j)->data().data(),
                                            dedx_erange::size() * sizeof(float));
