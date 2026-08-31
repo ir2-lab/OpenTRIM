@@ -135,7 +135,7 @@ void check_element_def(const ojson &j, element_t &p)
 
 void from_json(const ojson &nlohmann_json_j, element_t &nlohmann_json_t)
 {
-    const element_t nlohmann_json_default_obj{};
+    const element_t nlohmann_json_default_obj{ };
     NLOHMANN_JSON_FROM_WITH_DEFAULT(symbol);
     NLOHMANN_JSON_FROM_WITH_DEFAULT(atomic_number);
     NLOHMANN_JSON_FROM_WITH_DEFAULT(atomic_mass);
@@ -204,6 +204,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Event,
                                { Event::BoundaryCrossing, "BoundaryCrossing" },
                                { Event::Replacement, "Replacement" },
                                { Event::Vacancy, "Vacancy" },
+                               { Event::Interstitial, "Interstitial" },
                                { Event::CascadeComplete, "CascadeComplete" },
                                { Event::NewFlightPath, "NewFlightPath" },
                                { Event::NEvent, "NEvent" } })
@@ -275,7 +276,7 @@ void to_json(ojson &j, const material::material_desc_t &md)
 
 void from_json(const ojson &nlohmann_json_j, material::material_desc_t &nlohmann_json_t)
 {
-    const material::material_desc_t nlohmann_json_default_obj{};
+    const material::material_desc_t nlohmann_json_default_obj{ };
     NLOHMANN_JSON_FROM_WITH_DEFAULT(id);
     NLOHMANN_JSON_FROM_WITH_DEFAULT(density);
     NLOHMANN_JSON_FROM_WITH_DEFAULT(color);
@@ -302,7 +303,7 @@ void to_json(ojson &j, const target::target_desc_t &td)
 
 void from_json(const ojson &nlohmann_json_j, target::target_desc_t &nlohmann_json_t)
 {
-    const target::target_desc_t nlohmann_json_default_obj{};
+    const target::target_desc_t nlohmann_json_default_obj{ };
     NLOHMANN_JSON_FROM_WITH_DEFAULT(origin);
     NLOHMANN_JSON_FROM_WITH_DEFAULT(size);
     NLOHMANN_JSON_FROM_WITH_DEFAULT(cell_count);

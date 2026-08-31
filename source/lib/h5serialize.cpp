@@ -395,11 +395,11 @@ std::shared_ptr<mcdriver> mcdriver::load(const std::string &h5filename, std::ost
         // prepare to load events
         uint32_t ev_mask{ 0 };
         if (D->config_.Output.store_pka_events)
-            ev_mask |= static_cast<uint32_t>(Event::CascadeComplete);
+            ev_mask |= pka_buffer::event_mask;
         if (D->config_.Output.store_exit_events)
-            ev_mask |= static_cast<uint32_t>(Event::IonExit);
+            ev_mask |= exit_buffer::event_mask;
         if (D->config_.Output.store_damage_events)
-            ev_mask |= static_cast<uint32_t>(Event::Vacancy);
+            ev_mask |= damage_event_buffer::event_mask;
         S->init_streams(ev_mask);
 
         // load pka events

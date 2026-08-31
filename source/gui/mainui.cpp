@@ -7,10 +7,11 @@
 #include "simcontrolwidget.h"
 #include "resultsview.h"
 #include "tabularview.h"
+#include "track3dviewport.h"
+#include "trackviewwidget.h"
 #include "dialogs.h"
 
 #include <QVBoxLayout>
-
 #include <QStatusBar>
 #include <QToolButton>
 #include <QStackedWidget>
@@ -49,10 +50,10 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     pageButtonGrp = new QButtonGroup(this);
 
     QString iconFolder = ":/assets/ionicons/";
-    QStringList icons{ "grid-outline.png", "settings-outline.png", "list-outline.png",
-                       "bar-chart-outline.png" };
+    QStringList icons{ "grid-outline.png", "settings-outline.png", "cube-outline.svg",
+                       "list-outline.png", "bar-chart-outline.png" };
 
-    QStringList titles{ "Welcome", "Config", "Summary", "Data" };
+    QStringList titles{ "Welcome", "Config", "3D Vis", "Summary", "Data" };
     for (int i = 0; i < titles.count(); ++i) {
         pageButtonGrp->addButton(createSidebarButton(iconFolder + icons.at(i), titles.at(i)), i);
         sidebarLayout->addWidget(pageButtonGrp->button(i));
@@ -90,6 +91,8 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
 
     optionsView = new OptionsView(this);
     push(tr("Configuration"), optionsView);
+
+    push(tr("3D Visualization"), createTrackViewPage());
 
     tblView = new TabularView(this);
     push(tr("Summary Tables"), tblView);
@@ -193,6 +196,13 @@ void MainUI::pop()
     _stackedWidget->removeWidget(currentWidget);
 
     // delete currentWidget; currentWidget = nullptr;
+}
+
+QWidget *MainUI::createTrackViewPage()
+{
+    TrackViewWidget *page = new TrackViewWidget(driverObj_, this);
+    trackView = page->viewport();
+    return page;
 }
 
 QToolButton *MainUI::createSidebarButton(const QString &iconPath, const QString &title)

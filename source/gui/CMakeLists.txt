@@ -21,8 +21,12 @@ set(GUI_HEADERS
     simcontrolwidget.h 
     tabularview.h
     value_with_error.h
-    jsedit/jsedit.h 
+    jsedit/jsedit.h
     simboxview.h
+    cascadeassembler.h
+    trackdatachannel.h
+    track3dviewport.h
+    trackviewwidget.h
     mcdatamodel.h
     helppanel.h
     dialogs.h
@@ -70,10 +74,17 @@ set(GUI_SOURCES
     tabularview.cpp
     jsedit/jsedit.cpp
     simboxview.cpp
+    cascadeassembler.cpp
+    trackdatachannel.cpp
+    track3dviewport.cpp
+    trackviewwidget.cpp
     mcdatamodel.cpp
     helppanel.cpp
     dialogs.cpp
 )
+
+# OpenGL for the 3D viewport
+find_package(Qt5 REQUIRED COMPONENTS OpenGL)
 
 set (GUI_TARGET ${PROJECT_NAME_LOWERCASE}-gui)
 
@@ -86,6 +97,7 @@ target_link_libraries(${GUI_TARGET}
 PRIVATE
     Qt5::Widgets
     Qt5::Svg
+    Qt5::OpenGL
     Qwt::Qwt
     QtDataBrowser::QtDataBrowser
     QtVectorEdit::QtVectorEdit

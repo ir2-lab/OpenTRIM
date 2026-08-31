@@ -67,8 +67,19 @@ void mcdriver::abort()
 
 void mcdriver::wait()
 {
-    for (int i = 0; i < thread_pool_.size(); ++i)
+    for (int i = 0; i < (int)thread_pool_.size(); ++i)
         thread_pool_[i].join();
+}
+
+bool mcdriver::install_event_handler(mccore::event_handler h, uint32_t mask, void *p, int thread_no)
+{
+    event_handlers_.push_back({ h, p, mask, thread_no });
+    return true;
+}
+
+void mcdriver::clear_event_handlers()
+{
+    event_handlers_.clear();
 }
 
 double elapsed_sec(const timespec &t0, const timespec &t1)
@@ -137,11 +148,11 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // init event streams
     uint32_t ev_mask{ 0 };
     if (config_.Output.store_pka_events)
-        ev_mask |= static_cast<uint32_t>(Event::CascadeComplete);
+        ev_mask |= pka_buffer::event_mask;
     if (config_.Output.store_exit_events)
-        ev_mask |= static_cast<uint32_t>(Event::IonExit);
+        ev_mask |= exit_buffer::event_mask;
     if (config_.Output.store_damage_events)
-        ev_mask |= static_cast<uint32_t>(Event::Vacancy);
+        ev_mask |= damage_event_buffer::event_mask;
 
     // open clone streams
     for (size_t i = 0; i < nthreads; i++)
@@ -160,6 +171,12 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
         // ions for this thread
         size_t thread_n_ions = (n_run / nthreads) + (i < (n_run % nthreads) ? 1 : 0);
         sim_clones_[i]->arm(thread_n_ions, id1, nthreads);
+    }
+
+    // set event handlers
+    for (auto eh : event_handlers_) {
+        if (eh.thread_no < (int)nthreads)
+            sim_clones_[eh.thread_no]->set_event_handler(eh.eh, eh.mask, eh.user_data);
     }
 
     // create & start worker threads
@@ -289,12 +306,10 @@ int mcdriver::exec(progress_callback cb, size_t msInterval, void *callback_user_
     // copy back rng state from 1st clone
     s_->setRngState(sim_clones_[0]->rngState());
 
-    // delete simulation clones
+    // delete simulation clones, clear threads & clone pointers
     for (int i = 0; i < nthreads; i++) {
         delete sim_clones_[i];
     }
-
-    // clear threads & clone pointers
     thread_pool_.clear();
     sim_clones_.clear();
 

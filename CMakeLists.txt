@@ -16,6 +16,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 option (OPENTRIM_BUILD_GUI "build gui" ON)
 option (OPENTRIM_BUILD_TESTS "build tests" ON)
+option (OPENTRIM_BUILD_PYTHON "Build Python bindings" ON)
 
 string(TIMESTAMP CMAKE_BUILD_TIME UTC)
 
@@ -65,11 +66,14 @@ include(CTest)
 
 add_subdirectory(source)
 
-if (OPENTRIM_BUILD_TESTS)
-    add_subdirectory(test/scattering_calc)
-endif () ## Tests
+if (OPENTRIM_BUILD_PYTHON)
+    add_subdirectory(bindings/python)
+endif()
 
-add_subdirectory(test/post-build)
+if (OPENTRIM_BUILD_TESTS)
+    add_subdirectory(test/cpp)
+    add_subdirectory(test/post-build) # needs h5diff; keep it under the tests option
+endif () ## Tests
 
 include(CMakeSummary)
 

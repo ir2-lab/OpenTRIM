@@ -6,12 +6,16 @@
 
 #include "geometry.h"
 
-#define S_ERG_TO_TIME_CONST 7.198712007850257e-02 // ps/nm-eV^(1/2)
+// Constant used to calculate the time Δt for
+// an ion to travel a distance Δs
+//   Δt = Δs [m(amu)/E(eV)]^(1/2) [1amu*c^2/2]^(1/2)/c
+//   1amu*c^2 = 9.3149410372e8 eV
+#define S_ERG_TO_TIME_CONST 7.198704629020672e-02 // ps-eV^(1/2)/nm
 
 class atom;
 
 /**
- * @brief An basic atomic element definition struct
+ * @brief A basic atomic element definition struct
  */
 struct element_t
 {
@@ -21,6 +25,31 @@ struct element_t
     int atomic_number{ 0 };
     /// Atomic mass
     float atomic_mass{ 0.f };
+
+    /// Default constructor
+    element_t() = default;
+
+    /// Construct from element symbol.
+    /// Throws std::invalid_argument for unknown symbols.
+    explicit element_t(const std::string &sym);
+
+    /// Construct from element symbol and mass M.
+    /// Throws std::invalid_argument for unknown symbols or M <= 0..
+    explicit element_t(const std::string &sym, float M);
+
+    /// Construct from atomic number Z (1-based, 1=H..92=U).
+    /// Throws std::invalid_argument for Z <= 0 or Z > 92.
+    explicit element_t(int Z);
+
+    /// Construct from atomic number Z (1-based, 1=H..92=U) and mass M.
+    /// Throws std::invalid_argument for Z <= 0 or Z > 92 or M <= 0.
+    explicit element_t(int Z, float M);
+
+    /// check if the element is valid:
+    /// - 1 <= Z <= 92
+    /// - symbol is non-empty and matches the symbol for Z
+    /// - atomic mass is positive
+    bool is_valid() const;
 };
 
 /**
@@ -71,8 +100,8 @@ private:
     vector3 dir_; // direction cosines
     double erg_; // energy in eV
     double erg0_; // initial energy
-    double t_; // time in ns
-    double t0_; // start time in ns (relative to ??? TODO)
+    double t_; // time in ps
+    double t0_; // start time in ps (relative to source ion)
     double s_erg_to_t_;
     ivector3 icell_;
     int cellid_, // current cell id
@@ -81,6 +110,7 @@ private:
     size_t ion_id_; // ion history id
     int recoil_id_; // recoil id (generation), 0=ion, 1=PKA, ...
     size_t uid_; // unique recoil id
+    bool source_ion_; // true for source generated ions
     const atom *atom_;
     const grid3D *grid_;
 
@@ -128,10 +158,10 @@ public:
     /// Returns the ion's initial kinetic energy
     const double &erg0() const { return erg0_; }
 
-    /// Returns the ion's current time
+    /// Returns the ion's current time [ps]
     const double &t() const { return t_; }
 
-    /// Returns the ion's start time
+    /// Returns the ion's start time [ps]
     const double &t0() const { return t0_; }
 
     /// Returns the index vector of the cell the ion is currently in
@@ -147,10 +177,21 @@ public:
     int prev_cellid() const { return prev_cellid_; }
 
     /// Returns the history id that the current ion belongs to
-    int ion_id() const { return ion_id_; }
+    size_t ion_id() const { return ion_id_; }
 
     /// set history id
     void setId(size_t id) { ion_id_ = id; }
+
+    /// set source flag
+    void setSource() { source_ion_ = true; }
+
+    /// reset source flag and return its value
+    bool source_test_and_reset()
+    {
+        bool ret = source_ion_;
+        source_ion_ = false;
+        return ret;
+    }
 
     /**
      * @brief Returns the recoil generation id of the current ion

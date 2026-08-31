@@ -139,6 +139,9 @@ public:
         std::array<float, 2> mfp_range{ 1.0f, 1e30f };
     };
 
+    /// Typedef for an event handler function
+    typedef void (*event_handler)(Event ev, const ion &i, void *p);
+
 protected:
     ion_queue ion_queue_;
 
@@ -163,6 +166,18 @@ protected:
     exit_buffer exit_ev;
     damage_event_buffer damage_ev;
     uint32_t pka_stream_mask_, exit_stream_mask_, damage_stream_mask_;
+
+    // mask for all active events
+    uint32_t globalEventMask_{ 0 };
+
+    // struct encapsulating event handler + user data + mask
+    struct event_handler_slot
+    {
+        event_handler eh{ nullptr };
+        void *user_data{ nullptr };
+        uint32_t mask{ 0 };
+    };
+    event_handler_slot event_handler_slot_;
 
     // ref counter
     std::shared_ptr<int> ref_count_;
@@ -368,6 +383,22 @@ public:
 
     int reset();
 
+    /**
+     * @brief Set an external event handler callback
+     *
+     * The function will be called at simulation events specified by the value of mask.
+     *
+     * The mask is an ORed combination of \ref Event enum values. If a 0 is passed
+     * as a mask for a valid event handler, then the handler will be called on all events.
+     *
+     * Avoid expensive computations in the handler; they will stall the simulation.
+     *
+     * @param eh Pointer to a function of type \ref event_handler
+     * @param mask ORed combination of \ref Event enum values
+     * @param p Pointer to user data
+     */
+    void set_event_handler(event_handler eh = nullptr, uint32_t mask = 0, void *p = nullptr);
+
 protected:
     /**
      * @brief Transport an ion through the target
@@ -411,31 +442,9 @@ protected:
      * @param nt recoil direction
      * @return a pointer to the newly created moving ion
      */
-    ion *new_recoil(const ion *proj, const atom *target, const float &recoil_erg, const vector3 &nt)
-    {
-        // init the recoil by cloning the projectile ion
-        // this gets the correct position and cell id
-        ion *j = ion_queue_.clone_ion(*proj);
+    ion *new_recoil(const ion *proj, const atom *target, const float &recoil_erg,
+                    const vector3 &nt);
 
-        // set atomic species,
-        // recoil kinetic energy & direction
-        // Energy partition
-        //   kinetic energy = T !!! Was T-Ed
-        //   Ed-Efp goes to the lattice (phonos)
-        //   Efp is stored energy (will be deposited when the ion finishes)
-        j->init_recoil(target, recoil_erg); // - target->El());
-        j->reset_counters();
-        // j->de_phonon(target->Ed()); //(target->Ed()-target->El());
-        j->setNormalizedDir(nt);
-
-        // store recoil in respective queue
-        if (j->recoil_id() == 1)
-            ion_queue_.push_pka(j);
-        else
-            ion_queue_.push_recoil(j);
-
-        return j;
-    }
     /**
      * @brief Handle simulation events
      *
@@ -443,36 +452,46 @@ protected:
      * - Sends the event to the standard tally for scoring
      * - Sends the event to user tallies (if some tally has been registered for this event)
      * - Sends the event to the appropriate stream (if it is open) for storage
+     * - Sends the event to an external event handler (if registered)
      *
      * @param ev The type of event
      * @param i The ion that generated the event
      * @param pv Pointer to additional information for some types of events
      */
-    void handle_event(Event ev, const ion &i, const void *pv = 0)
-    {
-        // send to tally for scoring
-        if (static_cast<uint32_t>(ev) & tion_.eventMask())
-            tion_(ev, i, pv);
+    void handle_event(Event ev, const ion &i, const void *pv = 0);
 
-        // send to all user_tally objects
-        if (static_cast<uint32_t>(ev) & utallyMask_) {
-            for (int k = 0; k < ution_.size(); ++k)
-                (*(ution_[k]))(ev, i, pv);
-        }
+    // event handling implementation
+    void handle_event_impl(Event ev, const ion &i, const void *pv = 0);
 
-        // send to the event streams
-        if (static_cast<uint32_t>(ev) & damage_stream_mask_) {
-            damage_ev.set(i);
-            damage_stream_.write(&damage_ev);
-        }
-        if (static_cast<uint32_t>(ev) & exit_stream_mask_) {
-            exit_ev.set(&i);
-            exit_stream_.write(&exit_ev);
-        }
-        if (static_cast<uint32_t>(ev) & pka_stream_mask_) {
-            pka_stream_.write(&pka);
-        }
-    }
+public:
 };
+
+inline ion *mccore::new_recoil(const ion *proj, const atom *target, const float &recoil_erg,
+                               const vector3 &nt)
+{
+    // init the recoil by cloning the projectile ion
+    // this gets the correct position and cell id
+    ion *j = ion_queue_.clone_ion(*proj);
+
+    // set atomic species,
+    // recoil kinetic energy & direction
+    j->init_recoil(target, recoil_erg);
+    j->reset_counters();
+    j->setNormalizedDir(nt);
+
+    // store recoil in respective queue
+    if (j->recoil_id() == 1)
+        ion_queue_.push_pka(j);
+    else
+        ion_queue_.push_recoil(j);
+
+    return j;
+}
+
+inline void mccore::handle_event(Event ev, const ion &i, const void *pv)
+{
+    if (static_cast<uint32_t>(ev) & globalEventMask_)
+        handle_event_impl(ev, i, pv);
+}
 
 #endif // SIMULATION_H

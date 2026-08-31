@@ -105,7 +105,7 @@ public:
     struct parameters
     {
         /// Atomic type of the generated ions
-        element_t ion{ "H", 1, 1.007825f }; // initialize to proton
+        element_t ion{ "H", 1.007825f }; // initialize to proton
         /// Energy distribution of the generated ions
         energy_distribution_t energy_distribution;
         /// Spatial distribution of the generated ions

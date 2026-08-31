@@ -249,7 +249,7 @@ struct mcconfig
      * @param os optional stream to receive error messages
      * @return 0 if the config is valid, negative value otherwise
      */
-    int validate(bool AcceptIncomplete, std::ostream *os) const;
+    int validate(bool AcceptIncomplete, std::ostream *os = nullptr) const;
 
 private:
     void set_impl_(const std::string &path, const std::string &json_str);
@@ -329,6 +329,17 @@ protected:
     std::vector<std::thread> thread_pool_;
     // 2. simulation execution clones
     std::vector<mccore *> sim_clones_;
+
+    // event handler slot struct
+    struct event_handler_slot
+    {
+        mccore::event_handler eh{ nullptr };
+        void *user_data{ nullptr };
+        uint32_t mask{ 0 };
+        int thread_no{ 0 };
+    };
+    // event handlers
+    std::vector<event_handler_slot> event_handlers_;
 
     // No default constructor
     mcdriver() = delete;
@@ -445,6 +456,28 @@ public:
     void abort();
     /// Wait for a running simulation to finish
     void wait();
+
+    /**
+     * @brief Install an event handler on one of the simulation threads.
+     *
+     * The function will be called on all simulation events matching the @a mask.
+     *
+     * @a mask should be set to a ORed mix of \ref Event enum values
+     *
+     * @param h Pointer to an \ref event_handler function
+     * @param mask Event mask.
+     * @param p Pointer to user data. Default: nullptr
+     * @param thread_no The thread number to install the handler (0 to threads()-1). Default: 0
+     * @return True if succesfull
+     */
+    bool install_event_handler(mccore::event_handler h, uint32_t mask, void *p = nullptr,
+                               int thread_no = 0);
+
+    /**
+     * @brief Remove all event handlers
+     */
+    void clear_event_handlers();
+
     /// Returns a reference to the run history
     const std::vector<run_data> &run_history() const { return run_history_; }
 
