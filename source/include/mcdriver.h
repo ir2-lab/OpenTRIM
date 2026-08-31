@@ -249,7 +249,7 @@ struct mcconfig
      * @param os optional stream to receive error messages
      * @return 0 if the config is valid, negative value otherwise
      */
-    int validate(bool AcceptIncomplete, std::ostream *os) const;
+    int validate(bool AcceptIncomplete, std::ostream *os = nullptr) const;
 
 private:
     void set_impl_(const std::string &path, const std::string &json_str);
