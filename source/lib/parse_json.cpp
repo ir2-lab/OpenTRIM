@@ -34,34 +34,33 @@ void to_json(ojson &j, const mcconfig &p);
 void from_json(const ojson &j, mcconfig &p);
 
 // validate json config against option specs
-int validate_json_config(const std::string &specs, const ojson &j, bool strict = true);
+int validate_json_config(const ojson &j, bool strict = true,
+                         const ojson &spec = json_options_spec(),
+                         const std::string &path = std::string(), std::ostream *os = nullptr);
 
-int mcconfig::parseJSON(std::istream &js, bool doValidation, std::ostream *os, bool strict)
+int mcconfig::parseJSON(std::istream &js, bool strict, std::ostream *os)
 {
-    if (os) {
-        try {
-            ojson j = ojson::parse(js, nullptr, true, true);
-            validate_json_config(options_spec(), j, strict);
-            *this = j.template get<mcconfig>();
-            if (doValidation)
-                validate();
-        } catch (const ojson::exception &e) {
-            *os << "Error reading json input:" << endl;
-            *os << e.what() << std::endl;
-            return -1;
-        } catch (const std::invalid_argument &e) {
-            *os << "Invalid option:" << endl;
-            *os << e.what() << endl;
-            return -1;
-        }
-    } else {
+    std::ostringstream oss;
+    try {
         ojson j = ojson::parse(js, nullptr, true, true);
-        validate_json_config(options_spec(), j, strict);
+        validate_json_config(j, strict);
         *this = j.template get<mcconfig>();
-        if (doValidation)
-            validate();
+        return 0;
+    } catch (const ojson::exception &e) {
+        oss << "Error reading json input:" << endl;
+        oss << e.what() << endl;
+    } catch (const std::invalid_argument &e) {
+        oss << "Errors in OpenTRIM options:" << endl;
+        oss << e.what() << endl;
     }
-    return 0;
+
+    if (os) {
+        *os << oss.str();
+    } else {
+        throw std::invalid_argument(oss.str());
+    }
+
+    return -1;
 }
 
 /* serialization of element_t struct
@@ -432,7 +431,8 @@ void mcconfig::set_impl_(const std::string &path, const std::string &json_str)
     ojson v = ojson::parse(json_str);
     j.at(ptr) = v;
     *this = j;
-    validate(true);
+    // validate(true, nullptr);
+    validate_json_config(j, false);
 }
 
 void mcconfig::get_impl_(const std::string &path, std::string &json_str) const
@@ -445,10 +445,11 @@ void mcconfig::get_impl_(const std::string &path, std::string &json_str) const
     json_str = ss.str();
 }
 
-ojson get_option_spec();
-
-int validate_simple_value(const ojson &spec, ojson::const_reference &vref, const std::string &jpath)
+bool validate_simple_value(const ojson &spec, ojson::const_reference &vref,
+                           const std::string &jpath, std::ostream &msg)
 {
+    bool ret = true;
+
     mcconfig::option_type_t type;
     spec["type"].get_to(type);
 
@@ -459,7 +460,6 @@ int validate_simple_value(const ojson &spec, ojson::const_reference &vref, const
         vref.get_to(v);
         spec["values"].get_to(values);
         if (std::find(values.begin(), values.end(), v) == values.end()) {
-            std::ostringstream msg;
             msg << "(" << jpath << ") ";
             msg << "Invalid enum value " << std::quoted(v) << std::endl;
             msg << "Valid options: ";
@@ -468,7 +468,7 @@ int validate_simple_value(const ojson &spec, ojson::const_reference &vref, const
             for (; i != values.end(); ++i)
                 msg << '|' << std::quoted(*i);
             msg << endl;
-            throw std::invalid_argument(msg.str());
+            ret = false;
         }
     } break;
     case mcconfig::tFloat: {
@@ -477,11 +477,10 @@ int validate_simple_value(const ojson &spec, ojson::const_reference &vref, const
         spec["min"].get_to(vmin);
         spec["max"].get_to(vmax);
         if (v > vmax || v < vmin) {
-            std::ostringstream msg;
             msg << "(" << jpath << ") ";
             msg << "Out of bounds value " << v << endl;
             msg << "Valid range: [" << vmin << ", " << vmax << "]" << endl;
-            throw std::invalid_argument(msg.str());
+            ret = false;
         }
     } break;
     case mcconfig::tVector: {
@@ -490,13 +489,12 @@ int validate_simple_value(const ojson &spec, ojson::const_reference &vref, const
         vref.get_to(v);
         spec["min"].get_to(vmin);
         spec["max"].get_to(vmax);
-        for (int i = 0; i < v.size(); ++i)
+        for (int i = 0; i < int(v.size()); ++i)
             if (v[i] > vmax || v[i] < vmin) {
-                std::ostringstream msg;
                 msg << "(" << jpath << "/" << i << ") ";
                 msg << "Out of bounds value " << v[i] << endl;
                 msg << "Valid range: [" << vmin << ", " << vmax << "]" << endl;
-                throw std::invalid_argument(msg.str());
+                ret = false;
             }
     } break;
     case mcconfig::tIntVector: {
@@ -507,11 +505,10 @@ int validate_simple_value(const ojson &spec, ojson::const_reference &vref, const
         spec["max"].get_to(vmax);
         for (int i = 0; i < v.size(); ++i)
             if (v[i] > vmax || v[i] < vmin) {
-                std::ostringstream msg;
                 msg << "(" << jpath << "/" << i << ") ";
                 msg << "Out of bounds value " << v[i] << endl;
                 msg << "Valid range: [" << vmin << ", " << vmax << "]" << endl;
-                throw std::invalid_argument(msg.str());
+                ret = false;
             }
     } break;
     case mcconfig::tInt: {
@@ -520,31 +517,43 @@ int validate_simple_value(const ojson &spec, ojson::const_reference &vref, const
         spec["min"].get_to(vmin);
         spec["max"].get_to(vmax);
         if (v > vmax || v < vmin) {
-            std::ostringstream msg;
             msg << "(" << jpath << ") ";
             msg << "Out of bounds value " << v << endl;
             msg << "Valid range: [" << vmin << ", " << vmax << "]" << endl;
-            throw std::invalid_argument(msg.str());
+            ret = false;
         }
     } break;
     case mcconfig::tBool: {
         bool v;
-        vref.get_to(v); // throws json exception if not bool
+        try {
+            vref.get_to(v); // throws json exception if not bool
+        } catch (ojson::exception &e) {
+            msg << "(" << jpath << ") ";
+            msg << "Not a valid boolean value (true/false)" << endl;
+            ret = false;
+        }
     } break;
     case mcconfig::tString: {
         std::string v;
-        vref.get_to(v); // throws json exception if not string
+        try {
+            vref.get_to(v); // throws json exception if not string
+        } catch (ojson::exception &e) {
+            msg << "(" << jpath << ") ";
+            msg << "Not a valid string value" << endl;
+            ret = false;
+        }
     } break;
     default:
         assert(0);
         break;
     }
-    return 0;
+    return ret;
 }
 
-int validate_helper(const ojson &spec, const ojson &opt, const std::string &path = std::string(),
-                    bool strict = true)
+bool validate_helper(const ojson &spec, const ojson &opt, const std::string &path, bool strict,
+                     std::ostream &os)
 {
+    bool ret = true;
     mcconfig::option_type_t type;
     spec["type"].get_to(type);
     std::string name;
@@ -568,10 +577,9 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
                     for (auto &[key, val] : struct_node.items()) {
                         if (std::find(known_names.begin(), known_names.end(), key)
                             == known_names.end()) {
-                            std::ostringstream msg;
-                            msg << "(" << (path.empty() ? "" : struct_path) << "/" << key << ") ";
-                            msg << "Unrecognized option " << std::quoted(key) << std::endl;
-                            throw std::invalid_argument(msg.str());
+                            os << "(" << (path.empty() ? "" : struct_path) << "/" << key << ") ";
+                            os << "Unrecognized option " << std::quoted(key) << std::endl;
+                            ret = false;
                         }
                     }
                 }
@@ -582,9 +590,9 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
 
         for (auto it = spec["fields"].begin(); it != spec["fields"].end(); ++it) {
             const ojson &opt_spec = *it;
-            validate_helper(opt_spec, opt, next_path, strict);
+            ret &= validate_helper(opt_spec, opt, next_path, strict, os);
         }
-        return 0;
+        return ret;
     }
 
     // try if json key exists
@@ -593,7 +601,7 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
     try {
         ojson::const_reference vref = opt.at(ptr);
     } catch (const ojson::out_of_range &e) {
-        return 0;
+        return ret;
     }
 
     // get a reference to the value
@@ -608,10 +616,9 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
 
         // currently we only have arrays of objects (=struct)
         if (item_type != mcconfig::tStruct) {
-            std::ostringstream msg;
-            msg << "(" << jpath << ") ";
-            msg << "array items shoul be JSON Objects" << std::endl;
-            throw std::invalid_argument(msg.str());
+            os << "(" << jpath << ") ";
+            os << "array items shoul be JSON Objects" << std::endl;
+            ret = false;
         }
 
         std::vector<std::string> item_known_names;
@@ -620,7 +627,7 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
 
         // we accept arrays of objects OR a single object (equiv. to array of size 1)
         if (vref.is_array()) {
-            for (int k = 0; k < vref.size(); ++k) {
+            for (int k = 0; k < int(vref.size()); ++k) {
                 std::string item_obj_path = jpath + "/" + std::to_string(k);
                 std::string item_path = item_obj_path + "/";
                 if (strict) {
@@ -629,10 +636,9 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
                         for (auto &[key, val] : item_node.items()) {
                             if (std::find(item_known_names.begin(), item_known_names.end(), key)
                                 == item_known_names.end()) {
-                                std::ostringstream msg;
-                                msg << "(" << item_obj_path << "/" << key << ") ";
-                                msg << "Unrecognized option " << std::quoted(key) << std::endl;
-                                throw std::invalid_argument(msg.str());
+                                os << "(" << item_obj_path << "/" << key << ") ";
+                                os << "Unrecognized option " << std::quoted(key) << std::endl;
+                                ret = false;
                             }
                         }
                     }
@@ -640,19 +646,18 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
 
                 for (auto it = item_spec["fields"].begin(); it != item_spec["fields"].end(); ++it) {
                     const ojson &opt_spec = *it;
-                    validate_helper(opt_spec, opt, item_path, strict);
+                    ret &= validate_helper(opt_spec, opt, item_path, strict, os);
                 }
             }
-            return 0;
+            return ret;
         } else {
             if (strict && vref.is_object()) {
                 for (auto &[key, val] : vref.items()) {
                     if (std::find(item_known_names.begin(), item_known_names.end(), key)
                         == item_known_names.end()) {
-                        std::ostringstream msg;
-                        msg << "(" << jpath << "/" << key << ") ";
-                        msg << "Unrecognized option " << std::quoted(key) << std::endl;
-                        throw std::invalid_argument(msg.str());
+                        os << "(" << jpath << "/" << key << ") ";
+                        os << "Unrecognized option " << std::quoted(key) << std::endl;
+                        ret = false;
                     }
                 }
             }
@@ -660,19 +665,149 @@ int validate_helper(const ojson &spec, const ojson &opt, const std::string &path
             std::string item_path = jpath + "/";
             for (auto it = item_spec["fields"].begin(); it != item_spec["fields"].end(); ++it) {
                 const ojson &opt_spec = *it;
-                validate_helper(opt_spec, opt, item_path, strict);
+                ret &= validate_helper(opt_spec, opt, item_path, strict, os);
             }
-            return 0;
+            return ret;
         }
     }
 
-    return validate_simple_value(spec, vref, jpath);
+    return validate_simple_value(spec, vref, jpath, os);
 }
 
-int validate_json_config(const std::string &specs, const ojson &j, bool strict)
+int validate_json_config(const ojson &j, bool strict, const ojson &spec, const std::string &path,
+                         std::ostream *os)
 {
-    std::istringstream is(specs);
-    ojson json_specs = ojson::parse(is, nullptr, true, true);
-    validate_helper(json_specs, j, std::string(), strict);
-    return 0;
+    std::ostringstream msg;
+    if (validate_helper(spec, j, path, strict, msg))
+        return 0;
+    if (os) {
+        *os << msg.str();
+    } else {
+        throw std::invalid_argument(msg.str());
+    }
+    return -1;
+}
+
+ojson spec_for_path(const ojson &config, const ojson::json_pointer &jptr, std::ostream *os)
+{
+    auto fail = [os](const std::string &msg) -> ojson {
+        if (os) {
+            *os << msg << endl;
+            return ojson();
+        }
+        throw std::invalid_argument(msg);
+    };
+
+    const ojson &spec = json_options_spec();
+
+    if (jptr.empty())
+        return spec;
+
+    // decompose jptr into an ordered token list using only the public
+    // json_pointer API (back()/pop_back())
+    std::vector<std::string> tokens;
+    {
+        ojson::json_pointer p = jptr;
+        while (!p.empty()) {
+            tokens.push_back(p.back());
+            p.pop_back();
+        }
+        std::reverse(tokens.begin(), tokens.end());
+    }
+
+    ojson cur_spec = spec;
+    ojson::json_pointer built_ptr;
+
+    for (const std::string &t : tokens) {
+        mcconfig::option_type_t type;
+        cur_spec["type"].get_to(type);
+
+        switch (type) {
+        case mcconfig::tStruct: {
+            bool found = false;
+            for (auto it = cur_spec["fields"].begin(); it != cur_spec["fields"].end(); ++it) {
+                std::string name;
+                (*it)["name"].get_to(name);
+                if (name == t) {
+                    cur_spec = *it;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                std::ostringstream msg;
+                msg << "(" << built_ptr.to_string() << "/" << t << ") ";
+                msg << "Unrecognized option " << std::quoted(t);
+                return fail(msg.str());
+            }
+            built_ptr.push_back(t);
+            try {
+                config.at(built_ptr);
+            } catch (const ojson::exception &) {
+                std::ostringstream msg;
+                msg << "(" << built_ptr.to_string() << ") ";
+                msg << "Path not found in config";
+                return fail(msg.str());
+            }
+        } break;
+
+        case mcconfig::tArray: {
+            cur_spec = cur_spec["items"];
+            built_ptr.push_back(t);
+            try {
+                config.at(built_ptr);
+            } catch (const ojson::exception &) {
+                std::ostringstream msg;
+                msg << "(" << built_ptr.to_string() << ") ";
+                msg << "Path not found in config";
+                return fail(msg.str());
+            }
+        } break;
+
+        case mcconfig::tVector:
+        case mcconfig::tIntVector: {
+            std::ostringstream msg;
+            msg << "(" << built_ptr.to_string() << "/" << t << ") ";
+            msg << "Path continues below a vector-typed option";
+            return fail(msg.str());
+        } break;
+
+        case mcconfig::tEnum:
+        case mcconfig::tFloat:
+        case mcconfig::tInt:
+        case mcconfig::tBool:
+        case mcconfig::tString: {
+            std::ostringstream msg;
+            msg << "(" << built_ptr.to_string() << "/" << t << ") ";
+            msg << "Path continues below a scalar option";
+            return fail(msg.str());
+        } break;
+
+        default:
+            return fail("Corrupt option spec");
+        }
+    }
+
+    return cur_spec;
+}
+
+std::string mcconfig::spec_for_path(const std::string &jpath, std::ostream *os) const
+{
+    if (jpath.empty() || jpath == "/")
+        return options_spec();
+
+    ojson::json_pointer ptr;
+    try {
+        ptr = ojson::json_pointer(jpath);
+    } catch (const ojson::exception &e) {
+        if (os) {
+            *os << "Failed getting spec for " << jpath << endl << "Error: " << e.what() << endl;
+            return ojson().dump(4);
+        }
+        throw std::invalid_argument(e.what());
+    }
+
+    ojson cfg(*this);
+    ojson result = ::spec_for_path(cfg, ptr, os);
+    return result.dump(4);
 }

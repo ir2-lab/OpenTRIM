@@ -171,14 +171,20 @@ int main(int argc, char *argv[])
                 cout << "Parsing JSON config from " << input_config_file << endl;
             }
 
-            if (config.parseJSON(is, true, &cerr, !relaxed) != 0)
+            if (config.parseJSON(is, !relaxed, &cerr) != 0)
                 return -1;
 
         } else {
 
-            if (config.parseJSON(cin, true, &cerr, !relaxed) != 0)
+            if (config.parseJSON(cin, !relaxed, &cerr) != 0)
                 return -1;
         }
+
+        cout << "Validating config ..." << endl;
+        if (config.validate(false, &cerr) != 0)
+            return -1;
+
+        cout << "OK." << endl;
 
         // cli overrides
         if (n > 0)

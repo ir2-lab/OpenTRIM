@@ -45,29 +45,33 @@
 
 ### Tests
 
+- [ ] Complete the OpenTRIM/SRIM comparison (5 projectiles x 15 targets), primarily on damage generation
+- [ ] Create a series of CTest runs that calculate one value with relatively low error (e.g. < 1%). These values will be compared with previous OpenTRIM versions. Significant differences should be checked. 
 - [X] Run SRIM-FC benchmark #2 for 20000 histories 
-- [ ] Run SRIM QC benchmarks and compare 
-- [ ] Create a series of CTest runs that calculate one value with relatively low error (e.g. < 1%). These values will be compared with previous OpenTRIM versions. Significant differences should be checked  
 
 ### GUI:
 
 - [ ] Enter grid in 2 ways (see above)
 - [ ] Better help in configuration. A foldable dedicated text browser widget to show info?
 - [ ] Implement UserTally options/definition in GUI
-- [ ] Threads option 0 - auto thread number by OpenTRIM
-      Make the "Threads" SpinBox widget indicate that 0 means auto thread number
-      e.g. instead of just "0" to show "0 (Auto)" and when the sim
-      runs to show the actual number of threads used
+- [ ] Simulation Control Tab
+      A redesign in needed as few things need changing
+      - no. of Threads and RNG seed are set at the beginning of the simulation. They remain fixed when stopping/resuming 
+      - no of Thread 0 = means the program decides the no of threads. This has to be indicated 
+      e.g. instead of just "0" to show "0 (Auto)" in the spin-box 
+      - when the sim runs, the thread spinbox deactivates and shows the actual number of threads used
+      - max no of ions can be changed any time
+      - The time limit should also be shown. How? keeping the control tab simple and not flooded
 - [X] Getting Started
 - [X] About
+
+### Doc:
+- [ ] Update install instructions 
 
 ### Dist:
 - [ ] Program icon/logo
 - [ ] Desktop integration
 
-- [ ] Implement function to set limit on ion histories or time to run
-  E.g., the "Ions to run" label can become a ToolButton, allowing the user
-  to set the limit either on the # of ions or in time
 
 Tally:
 - [X] Make std. tally tables 4D by expanding the cells axis to Nx x Ny x Nz, where Nx, Ny, Nz are the # of cells along each axis
@@ -80,6 +84,20 @@ Tally:
 ## Enhancements
 
 ### Core lib
+
+- [ ] Extend E range of dEdx to 1e12 eV = 1 TeV = 2^40 eV, 
+      2^4..2^40 with 4-bit analysis makes a 36*2^4=576 pts table
+      with 3-bit makes 36*2^3 = 288
+      dEdx data (SRIM, PASS) are tabulated from 1e3 to 1e9 eV/amu
+      For U (M=238) this translates to E = 240 keV ... 0.24 TeV
+      For H (M=1), E = 1 keV ... 1 GeV
+
+- [ ] Create 3 new classes to group the MC core algorithm:
+      - `propagation`: handles flight path & scattering length selection, electronic stopping & straggling
+      - `scattering`: handles the scattering event
+      - `damage`: implements the damage model
+
+- [ ] Handle surface effects (sputtering etc.)
 
 - [X] json parser: un-recognized options should create an error
   - This will aid in checking if a .json file is valid OpenTRIM options
@@ -108,13 +126,12 @@ Tally:
         b' = b + (δb-b)*ΔN/(N+ΔN)
       The same can be done for the square
 
-- [ ] Handle surface effects (sputtering etc.)
-
 ### User
 
 - GUI: 
-  - [ ] Add a database of pre-defined materials with full definition: composition, density, Ed, etc
-  - [ ] Pressing add material presents to the user a selection/search function to discover & select
+  - [x] Add a database of pre-defined materials with full definition: composition, density, Ed, etc
+  - [x] Pressing add material presents to the user a selection/search function to discover & select
+  - [] Extend the database of pre-defined materials
 
 - CLI:
   - [X] Block Ctrl-C signal so that data is saved before the program is aborted

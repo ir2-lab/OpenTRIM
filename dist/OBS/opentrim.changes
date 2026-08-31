@@ -9,6 +9,7 @@ Fri Feb 21 14:30:14 UTC 2025 - Michail Axiotis <psaxioti@gmail.com> - 1.1.1
 - GUI changes:
 - Added simboxview to display the simulation box
 - Added QDataBrowser for viewing simulation results
+- Added QtVectorEdit for entering numbers and numeric vectors in the config editor
 - General changes
 - Improved cmake build
 - Add git_tag to version info

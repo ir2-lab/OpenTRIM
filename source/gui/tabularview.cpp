@@ -1,7 +1,7 @@
 #include "tabularview.h"
 
 #include "mainui.h"
-#include "mydatawidgetmapper.h"
+#include "optionwidgetmapper.h"
 #include "optionsmodel.h"
 #include "mcdriverobj.h"
 #include "tally.h"
@@ -481,6 +481,7 @@ public:
         i = 0;
         j = 0;
         x = t(tally::isFlightPath, 0) * f;
+        // mapper->addMapping(w, i, item->editorSignal());
         dx = dt(tally::isFlightPath, 0) * f - x * x;
         dx = (dx > 0.0) ? std::sqrt(dx * f1) : 0.0;
         buff(0, i, j) = x;
@@ -567,7 +568,7 @@ TabularView::TabularView(MainUI *ui, QWidget *parent) : QWidget{ parent }, mainu
     /* Create & Map widgets to OptionsModel */
 
     OptionsModel *model = mainui_->optionsModel;
-    mapper_ = new MyDataWidgetMapper(model, this);
+    mapper_ = new OptionWidgetMapper(model, this);
 
     // main title widget
     QLabel *simTitleLabel = new QLabel("Simulation title:");
@@ -579,7 +580,7 @@ TabularView::TabularView(MainUI *ui, QWidget *parent) : QWidget{ parent }, mainu
         simTitle_->setReadOnly(true);
         simTitleLabel->setToolTip(simTitle_->toolTip());
         simTitleLabel->setWhatsThis(simTitle_->whatsThis());
-        mapper_->addMapping(simTitle_, idxTitle, item->editorSignal());
+        mapper_->addMapping(simTitle_, idxTitle, true, item->editorSignal());
         simTitleLabel->setStyleSheet("font-size : 14pt; font-weight : bold;");
         simTitle_->setStyleSheet("font-size : 14pt");
     }

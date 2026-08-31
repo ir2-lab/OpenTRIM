@@ -319,7 +319,7 @@ std::shared_ptr<mcdriver> mcdriver::load(const std::string &h5filename, std::ost
         {
             std::string json = h5e::load<std::string>(h5f, "/run_info/json_config");
             std::stringstream is(json);
-            if (opt.parseJSON(is, true, os, false) != 0)
+            if (opt.parseJSON(is, false, os) != 0 || opt.validate(false, os) != 0)
                 return std::shared_ptr<mcdriver>();
         }
 
@@ -342,7 +342,7 @@ std::shared_ptr<mcdriver> mcdriver::load(const std::string &h5filename, std::ost
             std::vector<random_vars::result_type> state_cpy =
                     h5e::load<std::vector<random_vars::result_type>>(h5f, "/run_info/rng_state");
             // copy into std::array
-            for (uint i = 0; i < state_cpy.size(); ++i)
+            for (int i = 0; i < int(state_cpy.size()); ++i)
                 rngstate[i] = state_cpy[i];
             // set it in simulation object
             S->setRngState(rngstate);
@@ -380,7 +380,7 @@ std::shared_ptr<mcdriver> mcdriver::load(const std::string &h5filename, std::ost
                 bool ret = true;
                 auto &t = S->getUserTally();
                 auto &dt = S->getUserTallyVar();
-                for (uint i = 0; i < t.size(); ++i) {
+                for (int i = 0; i < int(t.size()); ++i) {
                     std::string name("/user_tally/");
                     name += t[i]->id();
                     name += "/data";

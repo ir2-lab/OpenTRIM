@@ -24,45 +24,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up MSYS2 (UCRT64)
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          update: true
-          install: >-
-            mingw-w64-ucrt-x86_64-toolchain
-            mingw-w64-ucrt-x86_64-cmake
-            mingw-w64-ucrt-x86_64-ninja
-            mingw-w64-ucrt-x86_64-hdf5
-            mingw-w64-ucrt-x86_64-qt5-base
-            mingw-w64-ucrt-x86_64-qt5-svg
-            mingw-w64-ucrt-x86_64-qwt-qt5
-            mingw-w64-ucrt-x86_64-qt5-tools
-            mingw-w64-ucrt-x86_64-angleproject
-
-      # Eigen3 3.4.0 must be installed manually; the current MSYS2 package
-      # is v5.x which is not supported. Download from the MSYS2 archive.
-      - name: Install Eigen3 3.4.0
-        run: |
-          curl -L -o eigen3.pkg.tar.zst \
-            "https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-eigen3-3.4.0-1-any.pkg.tar.zst"
-          pacman -U --noconfirm eigen3.pkg.tar.zst
+      # Pinned UCRT64 toolchain (GCC 16.1.0-5, Qt 5.15.19, HDF5 2.1.1, Eigen3 3.4.0,
+      # CMake, Ninja, qwt-qt5, qt5-tools, angleproject). See ir2-lab/windows-build-env.
+      - name: Set up pinned toolchain
+        uses: ir2-lab/windows-build-env@2026.06
 
       - name: Download dependency packages
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $tag = gh release list --repo gapost/qmatplotwidget --limit 1 --json tagName --jq '.[0].tagName'
-          gh release download $tag --repo gapost/qmatplotwidget `
+          gh release download v0.2.2 --repo gapost/qmatplotwidget `
             --pattern "*.pkg.tar.zst" `
             --dir C:\Temp\opentrim-pkgs
-          $tag = gh release list --repo ir2-lab/libdedx --limit 1 --json tagName --jq '.[0].tagName'
-          gh release download $tag --repo ir2-lab/libdedx `
+          gh release download 0.2.2 --repo ir2-lab/libdedx `
             --pattern "*.pkg.tar.zst" `
             --dir C:\Temp\opentrim-pkgs
-          $tag = gh release list --repo ir2-lab/QtDataBrowser --limit 1 --json tagName --jq '.[0].tagName'
-          gh release download $tag --repo ir2-lab/QtDataBrowser `
+          gh release download v0.2.1 --repo ir2-lab/QtDataBrowser `
+            --pattern "*.pkg.tar.zst" `
+            --dir C:\Temp\opentrim-pkgs
+          gh release download v0.1.0 --repo ir2-lab/QtVectorEdit `
             --pattern "*.pkg.tar.zst" `
             --dir C:\Temp\opentrim-pkgs
 

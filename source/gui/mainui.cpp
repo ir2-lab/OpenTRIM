@@ -1,7 +1,7 @@
 #include "mainui.h"
 
 #include "optionsmodel.h"
-#include "simulationoptionsview.h"
+#include "optionsview.h"
 #include "welcomeview.h"
 #include "mcdriverobj.h"
 #include "simcontrolwidget.h"
@@ -9,21 +9,21 @@
 #include "tabularview.h"
 #include "track3dviewport.h"
 #include "trackviewwidget.h"
+#include "dialogs.h"
 
 #include <QVBoxLayout>
-
 #include <QStatusBar>
 #include <QToolButton>
 #include <QStackedWidget>
 #include <QTextBrowser>
 #include <QLabel>
 #include <QProgressBar>
-#include <QMessageBox>
 #include <QCloseEvent>
 #include <QGuiApplication>
 #include <QScreen>
 #include <QFile>
 #include <QButtonGroup>
+#include <QSplitter>
 
 #define SIDEBAR_W 70
 #define SIDEBAR_H 70
@@ -89,13 +89,11 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     welcomeView = new WelcomeView(this);
     push(tr("Welcome"), welcomeView);
 
-    optionsView = new SimulationOptionsView(this);
+    optionsView = new OptionsView(this);
     push(tr("Configuration"), optionsView);
 
     push(tr("3D Visualization"), createTrackViewPage());
 
-    // runView = new RunView(this);
-    // push(tr("Run"), runView);
     tblView = new TabularView(this);
     push(tr("Summary Tables"), tblView);
 
@@ -116,8 +114,9 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     setWindowTitle(mcdriver::version_info().project_name);
     QPoint x0 = geometry().center();
     QScreen *scr = QGuiApplication::screenAt(x0);
-    // resize(1024, 768);
-    resize(600, 600);
+    // resize(1200, 900);
+    resize(1024, 768);
+    //  resize(600, 600);
 
     show();
 
@@ -161,10 +160,7 @@ void MainUI::closeEvent(QCloseEvent *event)
         QString msg = st == McDriverObj::mcRunning
                 ? "Stop the running simulation, discard data & quit program?"
                 : "Discard simulation data & quit program?";
-        int ret = QMessageBox::warning(
-                this, QString("Close %1").arg(mcdriver::version_info().project_name), msg,
-                QMessageBox::Ok | QMessageBox::Cancel);
-        driver_ok = (ret == QMessageBox::Ok);
+        driver_ok = Dialogs::confirm(this, tr("Quit Program"), msg);
     }
 
     if (driver_ok) {
@@ -189,6 +185,7 @@ void MainUI::push(const QString &title, QWidget *page)
     vbox->addWidget(lbl);
     vbox->addSpacing(V_SPACING);
     vbox->addWidget(page);
+    QSizePolicy szPolicy = page->sizePolicy();
     w->setLayout(vbox);
     _stackedWidget->addWidget(w);
 }

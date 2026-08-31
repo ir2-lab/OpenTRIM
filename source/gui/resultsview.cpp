@@ -1,32 +1,28 @@
 #include "resultsview.h"
 
 #include "mcdriverobj.h"
-#include "mcplotinfo.h"
+#include "mcdatamodel.h"
 
 #include <QBitmap>
 #include <QButtonGroup>
 #include <QComboBox>
-#include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QMenu>
-#include <QMessageBox>
 #include <QPixmap>
 #include <QToolButton>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
-#include <fstream>
-
 #include "mainui.h"
 
 ResultsView::ResultsView(MainUI *iui, QWidget *parent) : QDataBrowser{ parent }, ionsui(iui)
 {
-    setTreeTitle("Data Tables");
+    // setTreeTitle("Data Tables");
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     /* connect signals */
@@ -41,43 +37,28 @@ ResultsView::ResultsView(MainUI *iui, QWidget *parent) : QDataBrowser{ parent },
     // tallyTree->setCurrentItem(curr);
 }
 
-void ResultsView::addPlotItem(const QString &name, mcplotinfo *i, const QString loc)
-{
-    switch (i->type()) {
-    case mcplotinfo::group:
-        addGroup(name, loc);
-        for (auto &ch : i->children()) {
-            addPlotItem(ch.first.c_str(), ch.second, loc + "/" + name);
-        }
-        break;
-    default:
-        addData(i->takeData(), loc);
-        break;
-    }
-}
-
 void ResultsView::onSimulationCreated()
 {
     McDriverObj *D = ionsui->driverObj();
 
-    mcplotinfo info(D);
+    McDataModel *m = new McDataModel(D->get_mcdriver(), this);
+    setModel(m);
 
-    QString loc = "/";
-    for (auto &ch : info.children()) {
-        addPlotItem(ch.first.c_str(), ch.second);
+    if (!hasSavedState()) {
+        setCurrentDataPath("/tally/damage_events/Vacancies");
+        setCurrentViewType(Plot);
+        setCurrentPlotType(ErrorBar);
     }
 
     // selectItem("/tally/damage_events/Vacancies");
-    setActiveView(QDataBrowser::Plot);
-    setPlotType(QDataBrowser::ErrorBar);
 }
 
 void ResultsView::onSimulationDestroyed()
 {
-    clear();
+    // model()->clear();
 }
 
 void ResultsView::onTallyUpdate()
 {
-    dataUpdated();
+    model()->setDatasetChanged();
 }

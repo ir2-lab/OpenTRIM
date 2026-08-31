@@ -1,0 +1,13 @@
+Name: opentrim
+Version: 1.1.6
+Date: 2026-06-19
+Author: OpenTRIM contributors
+Maintainer: George Apostolopoulos <gapost47.com@proton.me>
+Title: GNU Octave bindings for OpenTRIM
+Description: Provides opentrim.config, opentrim.driver, and opentrim.info
+ objects for setting up, running, and reading results from OpenTRIM
+ ion-in-matter Monte Carlo simulations.  Requires a compatible version of
+ libopentrim to be installed on the system.
+Depends: octave (>= 6.0)
+License: MIT
+Url: https://github.com/gapost/opentrim

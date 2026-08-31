@@ -2,11 +2,13 @@
     "name": "options",
     "label": "Simulation Options",
     "type": "struct",
+    "toolTip": "Top-level container for all simulation configuration options.",
     "fields": [
         {
             "name": "Simulation",
             "label": "General simulation options",
             "type": "struct",
+            "toolTip": "General options controlling how the simulation is carried out.",
             "fields": [
                 {
                     "name": "simulation_type",
@@ -22,12 +24,13 @@
                         "Ions Only",
                         "Cascades Only"
                     ],
+                    "valueDescriptions": [
+                        "Simulate full damage cascades, follow recoils",
+                        "Simulate only ions, do not follow recoils",
+                        "Simulate recoil cascades"
+                    ],
                     "toolTip": "Define the type of simulation.",
-                    "whatsThis": [
-                        "- FullCascade: Simulate full damage cascades, follow recoils",
-                        "- IonsOnly: Simulate only ions, do not follow recoils",
-                        "- CascadesOnly: Simulate recoil cascades"
-                    ]
+                    "whatsThis": ""
                 },
                 {
                     "name": "screening_type",
@@ -49,16 +52,17 @@
                         "ZBL",
                         "ZBL_MAGIC (Analytic approx.)"
                     ],
+                    "valueDescriptions": [
+                        "Unscreened Coulomb potential",
+                        "Bohr screening",
+                        "Kr-C screening",
+                        "Moliere screening",
+                        "Ziegler-Biersack-Littmark universal screening",
+                        "ZBL with analytic approx. formula"
+                    ],
                     "toolTip": "Define the type of screening potential.",
                     "whatsThis": [
-                        "- None: Unscreened Coulomb potential",
-                        "- Bohr: Bohr screening",
-                        "- KrC: Kr-C screening",
-                        "- Moliere - Moliere screening",
-                        "- ZBL - Ziegler-Biersack-Littmark universal screening",
-                        "- ZBL_MAGIC - ZBL with analytic approx. formula",
-                        "  ",
-                        "For Unscreened Coulomb and ZBL_MAGIK the scattering is calculated analytically.",
+                        "For Unscreened Coulomb and ZBL_MAGIC the scattering is calculated analytically.",
                         "In all other cases interpolation tables are used."
                     ]
                 },
@@ -78,13 +82,14 @@
                         "SRIM13",
                         "DPASS"
                     ],
+                    "valueDescriptions": [
+                        "No electronic stopping",
+                        "Using the SRIM parametrization, v. 1996",
+                        "Using the SRIM parametrization, v. 2013",
+                        "Using the DPASS parametrization, v. 21.06"
+                    ],
                     "toolTip": "Calculation of electronic stopping.",
-                    "whatsThis": [
-                        "- Off: No electronic stopping",
-                        "- SRIM96: Using the SRIM parametrization, v. 1996",
-                        "- SRIM13: Using the SRIM parametrization, v. 2013",
-                        "- DPASS: Using the DPASS parametrization, v. 21.06"
-                    ]
+                    "whatsThis": ""
                 },
                 {
                     "name": "electronic_straggling",
@@ -102,13 +107,14 @@
                         "Chu",
                         "Yang"
                     ],
+                    "valueDescriptions": [
+                        "No electronic straggling.",
+                        "According to the Bohr model",
+                        "According to the model of Chu et al.",
+                        "According to the model of Yang et al."
+                    ],
                     "toolTip": "Calculation of electronic straggling.",
-                    "whatsThis": [
-                        "- Off: No electronic straggling.",
-                        "- Bohr: According to the Bohr model",
-                        "- Chu: According to the model of Chu et al.",
-                        "- Yang: According to the model of Yang et al."
-                    ]
+                    "whatsThis": ""
                 },
                 {
                     "name": "nrt_calculation",
@@ -119,13 +125,16 @@
                         "NRT_average"
                     ],
                     "valueLabels": [
-                        "NRT_element (Per element)",
-                        "NRT_average (Material average)"
+                        "NRT per element",
+                        "NRT per material average"
+                    ],
+                    "valueDescriptions": [
+                        "NRT calculated per recoil atom",
+                        "NRT calculated using material average values"
                     ],
                     "toolTip": "Define how to implement NRT in multielemental targets.",
                     "whatsThis": [
-                        "- NRT_element: NRT calculated per recoil atom",
-                        "- NRT_average: NRT calculated using material average values"
+                        "Material average Ed is calculated as 1/Ed = Σi{Xi / Edi} according to Ghoniem & Chou JNM1988"
                     ]
                 },
                 {
@@ -133,13 +142,17 @@
                     "label": "Intra-cascade recombination",
                     "type": "bool",
                     "toolTip": "Enable intra-cascade recombination of Frenkel pairs.",
-                    "whatsThis": ""
+                    "whatsThis": [
+                        "When this option is enabled the Frenkel pairs within a PKA cascade may recombine under certain conditions.",
+                        "Moving ions with E < Er can recombine with vacancies if their mutual distance R is below the recombination radius Rc (defined in the Target options for each atomic species).",
+                        "The ion must be of the same atomic type as the one that was originally in the vacant site."
+                    ]
                 },
                 {
                     "name": "time_ordered_cascades",
-                    "label": "Time ordered recombinations in cascades  [Experimental]",
+                    "label": "Time ordered recombinations in cascades [Experimental]",
                     "type": "bool",
-                    "toolTip": "Time ordered recombinations in cascades  [Experimental]",
+                    "toolTip": "Time ordered recombinations in cascades [Experimental]",
                     "whatsThis": ""
                 },
                 {
@@ -169,6 +182,7 @@
             "name": "Transport",
             "label": "Ion transport options",
             "type": "struct",
+            "toolTip": "Options controlling the transport of simulated ions, such as flight path sampling and energy cutoffs.",
             "fields": [
                 {
                     "name": "min_energy",
@@ -179,8 +193,7 @@
                     "digits": 3,
                     "toolTip": "Lowest kinetic energy of a simulated ion.",
                     "whatsThis": [
-                        "When the energy of an ion goes below this cutoff,",
-                        "the ion history is terminated."
+                        "When the energy of an ion goes below this cutoff, the ion history is terminated."
                     ]
                 },
                 {
@@ -195,22 +208,23 @@
                         "Constant",
                         "Variable"
                     ],
+                    "valueDescriptions": [
+                        "User-defined constant flight path",
+                        "Sampled flight path, energy-dependent mean free path"
+                    ],
                     "toolTip": "Flight path sampling algorithm.",
-                    "whatsThis": [
-                        "- Constant: User defined constant flight path",
-                        "- Variable: Sampled flight path, energy dependent mean free path"
-                    ]
+                    "whatsThis": ""
                 },
                 {
                     "name": "flight_path_const",
-                    "label": "Const. Flight Path [units of atomic radius]",
+                    "label": "Const. Flight Path (Rat)",
                     "type": "float",
                     "min": 0.001,
                     "max": 1.0e6,
                     "digits": 3,
-                    "toolTip": "Constant Flight Path in units of the atomic radius.",
+                    "toolTip": "Constant Flight Path in units of the atomic radius, Rat.",
                     "whatsThis": [
-                        "Used when flight_path_type=Constant"
+                        "Used when the flight path sampling algorithm is set to Constant, flight_path_type=Constant."
                     ]
                 },
                 {
@@ -220,9 +234,10 @@
                     "min": 0.001,
                     "max": 1.0,
                     "digits": 3,
-                    "toolTip": "Maximum allowed relative energy loss per flight path.",
+                    "toolTip": "Maximum allowed relative electronic energy loss per flight path.",
                     "whatsThis": [
-                        "Applicable only when flight_path_type=Variable"
+                        "If this value is exceeded in a given flight path Δs, then Δs is truncated so that the ion suffers the maximum allowed relative energy loss and no collision takes place.",
+                        "Applicable only when flight_path_type=Variable."
                     ]
                 },
                 {
@@ -234,8 +249,8 @@
                     "digits": 3,
                     "toolTip": "Minimum recoil energy in eV.",
                     "whatsThis": [
-                        "Events with recoil energy below this value will be ignoredif the scattering angle is also below min_scattering_angle.",
-                        "Applicable only when flight_path_type=Variable"
+                        "Recoils with energy below this value will be ignored if the scattering angle is also below min_scattering_angle.",
+                        "Applicable only when flight_path_type=Variable."
                     ]
                 },
                 {
@@ -245,24 +260,27 @@
                     "min": 0.001,
                     "max": 90,
                     "digits": 3,
-                    "toolTip": "Minimum scattering angle in degrees.",
+                    "toolTip": "Minimum scattering angle θ in degrees.",
                     "whatsThis": [
                         "Refers to the projectile scattering angle in the lab reference frame.",
-                        "Events with scattering angle lower that this value will be ignotred if the recoil energy is also below min_recoil_energy.",
-                        "Applicable only when flight_path_type=Variable"
+                        "Events with scattering angle lower than this value will be ignored if the recoil energy is also below min_recoil_energy.",
+                        "Applicable only when flight_path_type=Variable."
                     ]
                 },
                 {
                     "name": "mfp_range",
-                    "label": "Range of ion mfp [units of Rat]",
+                    "label": "Ion mean free path range (Rat)",
                     "type": "vector",
                     "size": 2,
                     "min": 0.001,
                     "max": 1e30,
                     "digits": 3,
-                    "toolTip": "Range of ion mean free path in units of atomic radius.",
+                    "toolTip": "Defines the lower and upper limit of the ion mean free path in units of the atomic radius, Rat.",
                     "whatsThis": [
-                        "Applicable only when flight_path_type=Variable"
+                        "The lower limit is typically set equal to 1 Rat. This is equivalent to a cutoff radius Rc for the potential, V(R>Rc)=0, where Rc~Rat.",
+                        "Setting the lower limit below 1 Rat increases Rc and allows scattering by distant atoms.",
+                        "The upper limit can be useful for the simulation of light atoms in thin targets, where the mfp can become much larger than the target thickness.",
+                        "Applicable only when flight_path_type=Variable."
                     ]
                 }
             ]
@@ -271,11 +289,13 @@
             "name": "IonBeam",
             "label": "Ion Source",
             "type": "struct",
+            "toolTip": "Definition of the ion beam source: projectile species, energy, spatial and angular distributions.",
             "fields": [
                 {
                     "name": "ion",
                     "label": "Projectile ion definition",
                     "type": "struct",
+                    "toolTip": "Definition of the projectile ion species and mass.",
                     "fields": [
                         {
                             "name": "symbol",
@@ -310,6 +330,7 @@
                     "name": "energy_distribution",
                     "label": "Energy Distribution",
                     "type": "struct",
+                    "toolTip": "Definition of the kinetic energy distribution of the generated ions.",
                     "fields": [
                         {
                             "name": "type",
@@ -321,18 +342,17 @@
                                 "Gaussian"
                             ],
                             "valueLabels": [
-                                "SingleValue",
+                                "Single Value",
                                 "Uniform",
                                 "Gaussian"
                             ],
+                            "valueDescriptions": [
+                                "All ions have the same energy",
+                                "Ion energy distributed uniformly within center ± fwhm/2",
+                                "Ion energy distributed according to the Gaussian (Normal) distribution around the center value with given fwhm"
+                            ],
                             "toolTip": "Type of energy distribution of the generated ions.",
-                            "whatsThis": [
-                                "- Single Value: All ions have the same energy",
-                                "- Uniform: Ion energy distributed uniformly within center ± fwhm/2",
-                                "- Gaussian: Ion energy distributed according to the Gaussian(Normal) distribution around the center value with given fwhm",
-                                " ",
-                                "When sampling from a distribution, out-of-bounds values are rejected and a new sample is drawn."
-                            ]
+                            "whatsThis": "When sampling from a distribution, out-of-bounds values are rejected and a new sample is drawn."
                         },
                         {
                             "name": "center",
@@ -341,7 +361,7 @@
                             "min": 1.0,
                             "max": 1.0e10,
                             "digits": 6,
-                            "toolTip": "Central energy of generated ions in eV.",
+                            "toolTip": "Center (mean) of the generated ion energy distribution in eV.",
                             "whatsThis": ""
                         },
                         {
@@ -360,6 +380,7 @@
                     "name": "spatial_distribution",
                     "label": "Spatial Distribution",
                     "type": "struct",
+                    "toolTip": "Definition of the generated ions spatial distribution.",
                     "fields": [
                         {
                             "name": "geometry",
@@ -373,11 +394,12 @@
                                 "Surface",
                                 "Volume"
                             ],
+                            "valueDescriptions": [
+                                "Ions are generated on the left yz-plane bounding the simulation volume.",
+                                "Ions are generated within the simulation volume."
+                            ],
                             "toolTip": "Geometry of the ion source.",
-                            "whatsThis": [
-                                "- Surface: Ions are generated on a simulation boundary surface.",
-                                "- Volume: Ions are generated within the simulation volume."
-                            ]
+                            "whatsThis": ""
                         },
                         {
                             "name": "type",
@@ -393,14 +415,15 @@
                                 "Uniform",
                                 "Gaussian"
                             ],
+                            "valueDescriptions": [
+                                "All ions have the same initial position",
+                                "Ion position distributed uniformly around the center position",
+                                "Ion position distributed according to the Gaussian (Normal) distribution around the center position with given fwhm"
+                            ],
                             "toolTip": "Type of spatial distribution of the generated ions.",
                             "whatsThis": [
-                                "- Single Value: All ions have the same initial position",
-                                "- Uniform: Ion position distributed uniformly around the center position",
-                                "- Gaussian: Ion position distributed according to the Gaussian(Normal) distribution around the center position with given fwhm",
-                                "",
-                                "Surface(2D) distributions are sampled on the left yz-plane bounding the simulation box.",
-                                "In a Uniform surface(volume) distribution, the position is sampled uniformly in a square(cube) of width fwhm around the center.",
+                                "Surface (2D) distributions are sampled on the left yz-plane bounding the simulation box.",
+                                "In a Uniform surface (volume) distribution, the position is sampled uniformly in a square (cube) of width fwhm around the center.",
                                 "In a Gaussian distribution, each component of the position vector is sampled from a Gaussian with the same fwhm around the center.",
                                 "When sampling from a distribution, out-of-bounds positions are rejected and a new sample is drawn."
                             ]
@@ -413,7 +436,7 @@
                             "min": -1.0e12,
                             "max": 1.0e12,
                             "digits": 6,
-                            "toolTip": "Central initial position of generated ions, [x,y,z] in nm.",
+                            "toolTip": "Center (mean) of the generated ions position distribution, [x,y,z] in nm.",
                             "whatsThis": "Must be either within the simulation box or at the lowest yz-plane boundary."
                         },
                         {
@@ -432,6 +455,7 @@
                     "name": "angular_distribution",
                     "label": "Angular Distribution",
                     "type": "struct",
+                    "toolTip": "Definition of the generated ions angular distribution.",
                     "fields": [
                         {
                             "name": "type",
@@ -447,11 +471,14 @@
                                 "Uniform",
                                 "Gaussian"
                             ],
+                            "valueDescriptions": [
+                                "All ions have the same initial direction",
+                                "Ion direction distributed uniformly within a cone around the central direction",
+                                "Ion direction distributed according to a 2D isotropic Gaussian around the central direction"
+                            ],
                             "toolTip": "Type of angular distribution of the generated ions.",
                             "whatsThis": [
-                                "- Single Value: All ions have the same initial direction",
-                                "- Uniform: Ion direction distributed uniformly within a cone around the central direction",
-                                "- Gaussian: Ion direction distributed according to a 2D isotropic Gaussian around the central direction. Transverse components tx,ty ~ N(0,sigma); polar angle follows Rayleigh distribution, azimuthal angle is automatically uniform"
+                                "For the Gaussian distribution the transverse direction components tx,ty ~ N(0,sigma). Polar angle θ follows the Rayleigh distribution, azimuthal angle φ is automatically uniform."
                             ]
                         },
                         {
@@ -486,6 +513,7 @@
             "name": "Target",
             "label": "Target",
             "type": "struct",
+            "toolTip": "Definition of the target geometry, materials and regions.",
             "fields": [
                 {
                     "name": "size",
@@ -495,7 +523,7 @@
                     "min": 0.001,
                     "max": 1.0e12,
                     "digits": 6,
-                    "toolTip": "Size in nm of the simulation volume along the x-, y- and z-axis.",
+                    "toolTip": "Size in nm of the simulation volume along the x-, y- and z-axes.",
                     "whatsThis": ""
                 },
                 {
@@ -516,7 +544,7 @@
                     "size": 3,
                     "min": 1,
                     "max": 1000000,
-                    "toolTip": "Number of simulation cells along the x-, y- and z-axis.",
+                    "toolTip": "Number of simulation cells along the x-, y- and z-axes.",
                     "whatsThis": ""
                 },
                 {
@@ -533,17 +561,23 @@
                     "name": "materials",
                     "label": "Target materials definition",
                     "type": "array",
+                    "toolTip": "List of materials available to fill the target regions.",
                     "items": {
                         "name": "material_desc",
                         "label": "Material description",
                         "type": "struct",
+                        "toolTip": "Definition of a single target material.",
                         "fields": [
                             {
                                 "name": "id",
-                                "label": "material id",
+                                "label": "Material id",
                                 "type": "string",
                                 "toolTip": "Name of the material.",
-                                "whatsThis": ""
+                                "whatsThis": [
+                                    "The material id is used for identifying the specific material, e.g. in the region definitions.",
+                                    "Preferably, it is a short name without spaces or special characters.",
+                                    "The material id should be unique."
+                                ]
                             },
                             {
                                 "name": "density",
@@ -551,29 +585,32 @@
                                 "type": "float",
                                 "min": 1e-6,
                                 "max": 1e6,
-                                "toolTip": "Mass density [g/cm3]",
+                                "toolTip": "Mass density [g/cm3].",
                                 "whatsThis": ""
                             },
                             {
                                 "name": "color",
-                                "label": "html color code",
+                                "label": "Material color",
                                 "type": "string",
-                                "toolTip": "Html color code.",
+                                "toolTip": "HTML color code used for materials display.",
                                 "whatsThis": ""
                             },
                             {
                                 "name": "composition",
                                 "label": "Material composition",
                                 "type": "array",
+                                "toolTip": "List of elements making up the material's composition.",
                                 "items": {
                                     "name": "element_data",
                                     "label": "Element data",
                                     "type": "struct",
+                                    "toolTip": "Definition of a single element within a material's composition.",
                                     "fields": [
                                         {
                                             "name": "element",
                                             "label": "Element definition",
                                             "type": "struct",
+                                            "toolTip": "Definition of a chemical element.",
                                             "fields": [
                                                 {
                                                     "name": "symbol",
@@ -599,7 +636,7 @@
                                                     "min": 0.001,
                                                     "max": 1000.0,
                                                     "digits": 6,
-                                                    "toolTip": "Element atomic mass.",
+                                                    "toolTip": "Element atomic mass (amu).",
                                                     "whatsThis": ""
                                                 }
                                             ]
@@ -611,8 +648,10 @@
                                             "min": 0.001,
                                             "max": 1000.0,
                                             "digits": 3,
-                                            "toolTip": "Relative atomic concentration (un-normalized).",
-                                            "whatsThis": ""
+                                            "toolTip": "Relative atomic concentration.",
+                                            "whatsThis": [
+                                                "Values can be given in arbitrary units. They will be normalized internally so that Σi(Xi) = 1"
+                                            ]
                                         },
                                         {
                                             "name": "Ed",
@@ -652,7 +691,7 @@
                                             "max": 1000.0,
                                             "digits": 3,
                                             "toolTip": "Replacement energy [eV].",
-                                            "whatsThis": "An ion with kinetic energy E<Er can be captured in a vacant lattice site."
+                                            "whatsThis": "An ion with kinetic energy E < Er can be captured in a vacant lattice site."
                                         },
                                         {
                                             "name": "Rc",
@@ -662,7 +701,11 @@
                                             "max": 1000.0,
                                             "digits": 3,
                                             "toolTip": "Recombination radius [nm].",
-                                            "whatsThis": "A Frenkel pair with an I-V distance R<Rc recombines spontaneously."
+                                            "whatsThis": [
+                                                "The recombination radius is used when intra-cascade recombination is active (/Simulation/intra_cascade_recombination = true)",
+                                                "When a vacancy is at a distance R < Rc from an interstitial atom, they recombine spontaneously.",
+                                                "The interstitial must be of the same atomic type as the atom that was in the vacant site."
+                                            ]
                                         }
                                     ]
                                 }
@@ -674,24 +717,33 @@
                     "name": "regions",
                     "label": "Target regions definition",
                     "type": "array",
+                    "toolTip": "List of regions making up the target geometry.",
                     "items": {
                         "name": "region_desc",
                         "label": "Region description",
                         "type": "struct",
+                        "toolTip": "Definition of a single target region.",
                         "fields": [
                             {
                                 "name": "id",
-                                "label": "region id",
+                                "label": "Region id",
                                 "type": "string",
                                 "toolTip": "Name of the region.",
-                                "whatsThis": ""
+                                "whatsThis": [
+                                    "The region id is used for identifying the specific region.",
+                                    "Preferably, it is a short name without spaces or special characters.",
+                                    "The region id should be unique."
+                                ]
                             },
                             {
                                 "name": "material_id",
                                 "label": "Material id",
                                 "type": "string",
                                 "toolTip": "Id of the material that fills the region.",
-                                "whatsThis": ""
+                                "whatsThis": [
+                                    "The material id must match the id of a material defined in the materials list.",
+                                    "The region is filled with the specified material."
+                                ]
                             },
                             {
                                 "name": "origin",
@@ -701,7 +753,7 @@
                                 "min": -1.0e12,
                                 "max": 1.0e12,
                                 "digits": 6,
-                                "toolTip": "Origin of the region.",
+                                "toolTip": "Origin of the region in simulation space.",
                                 "whatsThis": ""
                             },
                             {
@@ -712,7 +764,7 @@
                                 "min": 0.001,
                                 "max": 1.0e12,
                                 "digits": 6,
-                                "toolTip": "Size in nm of the simulation volume along the x-, y- and z-axis.",
+                                "toolTip": "Size in nm of the region along the x-, y- and z-axes.",
                                 "whatsThis": ""
                             }
                         ]
@@ -724,6 +776,7 @@
             "name": "Output",
             "label": "Output options",
             "type": "struct",
+            "toolTip": "Options controlling the simulation title, what data is saved and how the output file is named.",
             "fields": [
                 {
                     "name": "title",
@@ -736,9 +789,9 @@
                     "name": "outfilename",
                     "label": "Output file name",
                     "type": "string",
-                    "toolTip": "Name of the output file without the extention.",
+                    "toolTip": "Name of the output file without the extension.",
                     "whatsThis": [
-                        "The extention '.h5' will be added.",
+                        "The extension '.h5' will be added.",
                         "The name can contain the relative or absolute path to the file."
                     ]
                 },
@@ -753,7 +806,7 @@
                 },
                 {
                     "name": "store_exit_events",
-                    "label": "Store transmitted ions",
+                    "label": "Store escaped ions",
                     "type": "bool",
                     "toolTip": "Store a table of ion exit events.",
                     "whatsThis": ""
@@ -767,9 +820,9 @@
                 },
                 {
                     "name": "store_damage_events",
-                    "label": "Store generated vacancies & interstitials",
+                    "label": "Store defects",
                     "type": "bool",
-                    "toolTip": "Store a table of damage events.",
+                    "toolTip": "Store a table of generated vacancies and interstitials.",
                     "whatsThis": ""
                 },
                 {
@@ -783,8 +836,9 @@
         },
         {
             "name": "Run",
-            "label": "Options for running the simulation.",
+            "label": "Options for running the simulation",
             "type": "struct",
+            "toolTip": "Options controlling execution of the simulation run, such as ion number, threads and random seed.",
             "fields": [
                 {
                     "name": "max_no_ions",
@@ -797,11 +851,11 @@
                 },
                 {
                     "name": "max_cpu_time",
-                    "label": "Max cpu time in s",
+                    "label": "Max CPU time in s",
                     "type": "int",
                     "min": 0,
                     "max": 2147483647,
-                    "toolTip": "Maximum cpu time for the simulation in s.",
+                    "toolTip": "Maximum CPU time for the simulation in s.",
                     "whatsThis": [
                         "The simulation will stop when the maximum cpu time has been reached.",
                         "A value of 0 disables the cpu time limit."
@@ -831,35 +885,36 @@
             "name": "UserTally",
             "label": "User tallies",
             "type": "array",
+            "toolTip": "List of user-defined tallies for scoring simulation events.",
             "items": {
                 "name": "UserTally definition",
                 "label": "UserTally definition",
                 "type": "struct",
+                "toolTip": "Definition of a single user-defined tally.",
                 "fields": [
                     {
                         "name": "id",
-                        "label": "User specified tally id",
+                        "label": "Tally id",
                         "type": "string",
-                        "toolTip": "User specified tally id (name).",
+                        "toolTip": "User-specified tally id (name).",
                         "whatsThis": [
-                            "For identifying the specific UserTally",
-                            "in the output file etc."
+                            "The UserTally id is used for identifying the specific UserTally, e.g., in the output file.",
+                            "Preferably, it is a short name without spaces or special characters.",
+                            "The UserTally id should be unique."
                         ]
                     },
                     {
                         "name": "description",
-                        "label": "User specified tally description",
+                        "label": "Tally description",
                         "type": "string",
                         "toolTip": "Short description of the tally.",
                         "whatsThis": [
-                            "One can give here a short explanation of",
-                            "the purpose of setting up this tally,",
-                            "what kind of information is expected, etc."
+                            "Gives a short explanation of the tally, its purpose, expected information, etc."
                         ]
                     },
                     {
                         "name": "event",
-                        "label": "Type of simulation event to tally.",
+                        "label": "Type of simulation event to tally",
                         "type": "enum",
                         "values": [
                             "IonExit",
@@ -869,22 +924,36 @@
                             "CascadeComplete",
                             "BoundaryCrossing"
                         ],
+                        "valueLabels": [
+                            "IonExit",
+                            "IonStop",
+                            "Vacancy",
+                            "Replacement",
+                            "CascadeComplete",
+                            "BoundaryCrossing"
+                        ],
+                        "valueDescriptions": [
+                            "The ion exits the simulation volume",
+                            "The ion stops inside the simulation volume",
+                            "A lattice vacancy is created",
+                            "A replacement event occurs",
+                            "A PKA cascade is completed",
+                            "An ion crosses an internal cell boundary"
+                        ],
                         "toolTip": "Simulation event that will trigger a tally score.",
-                        "whatsThis": [
-                            "The supported events are:",
-                            "- IonExit: the ion exits the simulation volume",
-                            "- IonStop: the ion stops inside the simulation volume",
-                            "- Interstitial: an interstitial atom is created",
-                            "- Vacancy: a lattice vacancy is created",
-                            "- Replacement: a replacement event occurs",
-                            "- CascadeComplete: a PKA cascade is completed",
-                            "- BoundaryCrossing: an ion crosses an internal cell boundary"
-                        ]
+                        "whatsThis": ""
                     },
                     {
                         "name": "coordinate_system",
-                        "label": "UserTally coordinate system",
+                        "label": "Tally coordinate system",
                         "type": "struct",
+                        "toolTip": "Local coordinate system used to interpret the tally's bin coordinates.",
+                        "whatsThis": [
+                            "Ion positions and directions are transformed into the UserTally coordinate system before binning.",
+                            "The local coordinate system is defined by the origin, a z-axis direction vector and a vector on the xz-plane.",
+                            "The z-axis direction vector and the xz-plane vector must not be parallel.",
+                            "With default values, the UserTally coordinate system is identical to the simulation coordinate system."
+                        ],
                         "fields": [
                             {
                                 "name": "origin",
@@ -894,8 +963,8 @@
                                 "min": -1.0e12,
                                 "max": 1.0e12,
                                 "digits": 6,
-                                "toolTip": "Origin of the UserTally coordinates.",
-                                "whatsThis": "The vector is defined with respect to the simulation space."
+                                "toolTip": "Origin of the UserTally coordinate system.",
+                                "whatsThis": "The vector is defined in simulation coordinates."
                             },
                             {
                                 "name": "zaxis",
@@ -906,7 +975,10 @@
                                 "max": 1.0e7,
                                 "digits": 6,
                                 "toolTip": "A vector parallel to the z-axis of the UserTally coordinate system.",
-                                "whatsThis": "The vector is defined with respect to the simulation space."
+                                "whatsThis": [
+                                    "zaxis must not be parallel to xzvector.",
+                                    "The vector is defined in simulation coordinates."
+                                ]
                             },
                             {
                                 "name": "xzvector",
@@ -917,7 +989,10 @@
                                 "max": 1.0e7,
                                 "digits": 6,
                                 "toolTip": "A vector on the xz-plane of the UserTally coordinate system.",
-                                "whatsThis": "The vector is defined with respect to the simulation space."
+                                "whatsThis": [
+                                    "xzvector must not be parallel to the zaxis.",
+                                    "The vector is defined in simulation coordinates."
+                                ]
                             }
                         ]
                     },
@@ -925,6 +1000,15 @@
                         "name": "bins",
                         "label": "Bin edges",
                         "type": "struct",
+                        "toolTip": "Bin edge definitions for each variable scored by the tally.",
+                        "whatsThis": [
+                            "The bin edges define the binning intervals for each variable.",
+                            "The number of bins is equal to the number of bin edges minus one. Thus, bin egdes must contain at least two values.",
+                            "A score is assigned to the i-th bin if the variable value x ∈ [b[i], b[i+1]), where b[i] is the i-th bin edge.",
+                            "If x is outside the range of the bin edges, it is not counted.",
+                            "Bin edges must be monotonously increasing.",
+                            "The edges of at least one binning variable must be defined."
+                        ],
                         "fields": [
                             {
                                 "name": "x",
@@ -976,7 +1060,7 @@
                                 "min": 0.0,
                                 "max": 1.0e12,
                                 "digits": 6,
-                                "toolTip": "Bin edges for the ion's r=sqrt(x^2+y^2+z^2).",
+                                "toolTip": "Bin edges for the ion's r=√(x^2+y^2+z^2).",
                                 "whatsThis": [
                                     "Coordinates refer to the UserTally coordinate system.",
                                     "Bin edges must be monotonously increasing."
@@ -990,7 +1074,7 @@
                                 "min": 0.0,
                                 "max": 1.0e12,
                                 "digits": 6,
-                                "toolTip": "Bin edges for the ion's ρ=sqrt(x^2+y^2).",
+                                "toolTip": "Bin edges for the ion's ρ=√(x^2+y^2).",
                                 "whatsThis": [
                                     "Coordinates refer to the UserTally coordinate system.",
                                     "Bin edges must be monotonously increasing."
@@ -1004,7 +1088,7 @@
                                 "min": -1.0,
                                 "max": 1.0,
                                 "digits": 6,
-                                "toolTip": "Bin edges for the ion's position cosθ = z/r.",
+                                "toolTip": "Bin edges for the ion's position polar angle cosine, cosθ = z/r.",
                                 "whatsThis": [
                                     "Coordinates refer to the UserTally coordinate system.",
                                     "Bin edges must be monotonously increasing."
@@ -1075,8 +1159,8 @@
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's damage energy.",
                                 "whatsThis": [
-                                    "Tdam refers to the energy of the PKA dissipated to atomic displacements during the whole cascade",
-                                    "This can be used only with events of type CascadeComplete",
+                                    "Tdam refers to the energy of the PKA dissipated to atomic displacements during the whole cascade.",
+                                    "This variable can be used only with events of type CascadeComplete.",
                                     "Bin edges must be monotonously increasing."
                                 ]
                             },
@@ -1090,8 +1174,8 @@
                                 "digits": 6,
                                 "toolTip": "Bin edges for the number of generated vacancies.",
                                 "whatsThis": [
-                                    "It refers to the total number of vacancies generated in a PKA cascade",
-                                    "This can be used only with events of type CascadeComplete",
+                                    "It refers to the total number of vacancies generated in a PKA cascade.",
+                                    "This can be used only with events of type CascadeComplete.",
                                     "Bin edges must be monotonously increasing."
                                 ]
                             },
@@ -1105,9 +1189,9 @@
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's atomic species id.",
                                 "whatsThis": [
-                                    "Each atomic species in the simulation is assigned an id number",
-                                    "Beam ions always have an id of 0.",
-                                    "Target atoms recoils have id>=1.",
+                                    "Each atomic species in the simulation is assigned an integer numeric id.",
+                                    "Beam ions always have an id of 0. Target atoms are given consequtive ids with id>=1.",
+                                    "If we have a target with 2 atomic species, the atomic ids will be 0, 1 and 2. With tally bin edges [0, 1, 2, 3], the first bin will count contributions from beam ions, the second bin will count target atoms of species 1 and the third bin will count target atoms of species 2.",
                                     "Bin edges must be monotonously increasing."
                                 ]
                             },
@@ -1121,8 +1205,8 @@
                                 "digits": 6,
                                 "toolTip": "Bin edges for the ion's recoil generation id.",
                                 "whatsThis": [
-                                    "Beam ions always have a recoil generation id of 0.",
-                                    "PKAs have id=1. Higher order recoils have higher recoil ids",
+                                    "Beam ions always have a recoil generation id of 0. Primary recoils (PKAs) have id=1. Higher-order recoils have id>1.",
+                                    "With bin edges [0, 1, 2], the first bin will count contributions from beam ions and the second bin will count contributions from PKAs.",
                                     "Bin edges must be monotonously increasing."
                                 ]
                             }

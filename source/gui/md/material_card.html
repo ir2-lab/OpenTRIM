@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<style>
+		body {
+			font-family: sans-serif;
+			margin: 6px;
+		}
+
+		table {
+			width: 30%;
+			border-collapse: collapse;
+			border: 1px solid #999;
+			margin-top: 10px;
+		}
+
+		h2 {
+			margin-top: 0;
+			color: #0d47a1;
+		}
+
+		h3 {
+			margin-bottom: 4px;
+			color: #888;
+			font-size: 8pt;
+			font-weight: bold;
+			text-transform: uppercase;
+			letter-spacing: 1px;
+		}
+	</style>
+</head>
+
+<body>
+	<h2>%1</h2>
+	<ul>
+		<li><strong>id</strong>: %2</li>
+		<li><strong>density</strong>: %3 g/cm³</li>
+	</ul>
+
+	<h3>Composition</h3>
+	<table border="1" cellspacing="0" cellpadding="4">
+		<thead>
+			<tr style="background-color: #e0e0e0;">
+				<th style="border: 1px solid #999;">Element</th>
+				<th style="border: 1px solid #999;">Atomic %</th>
+			</tr>
+		</thead>
+		<tbody>
+			%4
+		</tbody>
+	</table>
+
+	<h3>Comments</h3>
+	<pre>%5</pre>
+
+	<h3>Source</h3>
+	<p>%6</p>
+
+	<p></p>
+</body>
+
+</html>

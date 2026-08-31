@@ -26,10 +26,11 @@ sudo dnf install eigen3-devel.noarch hdf5.x86_64 hdf5-devel.x86_64
 
 ## ir2-lab dependencies
 
-There are 3 subprojects of our own that OpenTRIM depends on:
+There are 4 subprojects of our own that OpenTRIM depends on:
 - [libdedx](https://github.com/ir2-lab/libdedx) for ion stopping data
 - [QMatPlotWidget](https://github.com/gapost/qmatplotwidget) 
 - [QtDataBrowser](https://github.com/ir2-lab/QtDataBrowser) for plotting results
+- [QtVectorEdit](https://github.com/ir2-lab/QtVectorEdit) for numeric input widgets
 
 These have to be built & installed first so that they are available when building OpenTRIM.
 

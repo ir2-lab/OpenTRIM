@@ -9,12 +9,13 @@ class QTextBrowser;
 class QToolButton;
 class QLabel;
 class QButtonGroup;
+class QSplitter;
 
 class OptionsModel;
 class SimControlWidget;
 class McDriverObj;
 class WelcomeView;
-class SimulationOptionsView;
+class OptionsView;
 class RunView;
 class ResultsView;
 class TabularView;
@@ -28,13 +29,11 @@ class MainUI : public QWidget
 
 public:
     OptionsModel *optionsModel;
-
-    SimulationOptionsView *optionsView;
+    OptionsView *optionsView;
 
     explicit MainUI(QWidget *parent = nullptr);
     ~MainUI();
 
-    // const McDriverObj* driverObj() const { return ions_driver; }
     McDriverObj *driverObj() { return driverObj_; }
 
     void push(const QString &title, QWidget *page);

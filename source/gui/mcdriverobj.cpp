@@ -1,6 +1,7 @@
 #include "mcdriverobj.h"
 
 #include "mcdriver.h"
+#include "dialogs.h"
 
 #include <fstream>
 
@@ -137,7 +138,7 @@ bool McDriverObj::validateOptions(QString *msg) const
     bool isValid = true;
 
     try {
-        opt.validate();
+        opt.validate(false, nullptr);
     } catch (const std::invalid_argument &e) {
         isValid = false;
         if (msg)
@@ -159,8 +160,7 @@ void McDriverObj::loadJsonTemplate(const QString &path)
         QFile f(path);
         f.open(QFile::ReadOnly);
         std::stringstream is(f.readAll().constData());
-        bool validate = false;
-        opt.parseJSON(is, validate);
+        opt.parseJSON(is, true);
     }
     setOptions(opt, true);
 
@@ -185,8 +185,7 @@ void McDriverObj::loadJsonFile(const QString &path)
     QFile f(path);
     f.open(QFile::ReadOnly);
     std::stringstream is(f.readAll().constData());
-    bool validate = false;
-    opt.parseJSON(is, validate);
+    opt.parseJSON(is);
 
     setOptions(opt, true);
 
@@ -203,9 +202,8 @@ void McDriverObj::loadJsonFile(const QString &path)
 bool McDriverObj::loadH5File(const QString &path)
 {
     // Try to load the file
-    QProgressDialog dlg("Loading HDF5. Please wait ...", QString(), 0, 110);
-    dlg.setWindowModality(Qt::WindowModal);
-    dlg.setMinimumDuration(0);
+    Dialogs::ProgressDialog dlg(tr("Loading HDF5. Please wait ..."), QString(), 0, 110, nullptr,
+                                tr("Loading"));
 
     io_op_active_ = true;
     emit loadH5_(path);
@@ -290,9 +288,8 @@ bool McDriverObj::saveH5(const QString &fname)
     setFileName(fname);
 
     // Try to save the file
-    QProgressDialog dlg("Saving HDF5. Please wait ...", QString(), 0, 110);
-    dlg.setWindowModality(Qt::WindowModal);
-    dlg.setMinimumDuration(0);
+    Dialogs::ProgressDialog dlg(tr("Saving HDF5. Please wait ..."), QString(), 0, 110, nullptr,
+                                tr("Saving"));
 
     io_op_active_ = true;
     emit saveH5_();

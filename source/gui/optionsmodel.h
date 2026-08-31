@@ -3,14 +3,8 @@
 
 #include <memory>
 #include <QAbstractItemModel>
-#include <QStyledItemDelegate>
 #include "mcdriver.h"
-
-// Q_DECLARE_TYPEINFO(vector3, Q_PRIMITIVE_TYPE);
-// Q_DECLARE_METATYPE(vector3)
-
-// Q_DECLARE_TYPEINFO(ivector3, Q_PRIMITIVE_TYPE);
-// Q_DECLARE_METATYPE(ivector3)
+#include "validatingitemdelegate.h"
 
 class OptionsItem
 {
@@ -24,8 +18,11 @@ public:
 
     QString key() const { return key_; }
     QString name() const { return name_; }
+    QString path() const { return QString::fromStdString(jpath_); }
+    mcconfig::option_type_t type() const { return type_; }
     QString toolTip() const { return toolTip_; }
     QString whatsThis() const { return whatsThis_; }
+    QString notes() const { return notes_; }
     QVariant displayValue() const { return value().toString(); }
     QVariant value() const;
     bool setValue(const QVariant &v);
@@ -47,14 +44,16 @@ private:
     static OptionsItem *jsonHelper(const J &j, OptionsItem *parentItem);
 
 protected:
-    OptionsItem(const QString &key, OptionsItem *parent);
-    OptionsItem(const QString &key, const QString &name, OptionsItem *parent);
+    OptionsItem(const QString &key, mcconfig::option_type_t t, OptionsItem *parent);
+    OptionsItem(const QString &key, const QString &name, mcconfig::option_type_t t,
+                OptionsItem *parent);
     void prepareWidget(QWidget *w) const;
     std::vector<OptionsItem *> m_childItems;
     OptionsItem *m_parentItem;
     QString key_, name_;
+    mcconfig::option_type_t type_{ mcconfig::tStruct };
     std::string jpath_;
-    QString toolTip_, whatsThis_;
+    QString toolTip_, whatsThis_, notes_;
 
     bool get_(QString &qs) const;
     bool set_(const QString &qs);
@@ -65,23 +64,26 @@ protected:
 class EnumOptionsItem : public OptionsItem
 {
 public:
-    EnumOptionsItem(const QStringList &values, const QStringList &labels, const QString &key,
-                    const QString &name, OptionsItem *parent);
+    EnumOptionsItem(const QStringList &values, const QStringList &labels, const QStringList &desc,
+                    const QString &key, const QString &name, OptionsItem *parent);
     const QStringList &values() { return enumValues_; }
     const QStringList &valueLabels() { return enumValueLabels_; }
+    const QStringList &valueValueDescriptions() { return enumValueDescriptions_; }
     virtual QWidget *createEditor(QWidget *parent) const override;
     virtual void setEditorData(QWidget *editor, const QVariant &v) const override;
     virtual QVariant getEditorData(QWidget *editor) override;
     virtual const char *editorSignal() const override { return "currentIndexChanged(int)"; }
 
 protected:
-    QStringList enumValues_;
-    QStringList enumValueLabels_;
+    QStringList enumValues_, enumValueLabels_, enumValueDescriptions_;
 };
 
 class FloatOptionsItem : public OptionsItem
 {
 public:
+
+    double min() const { return fmin_; }
+    double max() const { return fmax_; }
     FloatOptionsItem(double fmin, double fmax, int digits, const QString &key, const QString &name,
                      OptionsItem *parent);
     virtual QWidget *createEditor(QWidget *parent) const override;
@@ -97,6 +99,9 @@ protected:
 class IntOptionsItem : public OptionsItem
 {
 public:
+    int min() const { return imin_; }
+    int max() const { return imax_; }
+
     IntOptionsItem(int imin, int imax, const QString &key, const QString &name,
                    OptionsItem *parent);
     // virtual QVariant value() const override;
@@ -141,6 +146,7 @@ public:
     virtual QWidget *createEditor(QWidget *parent) const override;
     virtual void setEditorData(QWidget *editor, const QVariant &v) const override;
     virtual QVariant getEditorData(QWidget *editor) override;
+    int size() const { return sz_; }
 };
 
 class IVectorOptionsItem : public IntOptionsItem
@@ -151,16 +157,14 @@ class IVectorOptionsItem : public IntOptionsItem
 public:
     IVectorOptionsItem(int size, int imin, int imax, const QString &key, const QString &name,
                        OptionsItem *parent);
-    // virtual QVariant value() const override;
-    // virtual QVariant displayValue() const override;
-    // virtual bool setValue(const QVariant &v) override;
     virtual QWidget *createEditor(QWidget *parent) const override;
     virtual void setEditorData(QWidget *editor, const QVariant &v) const override;
     virtual QVariant getEditorData(QWidget *editor) override;
     virtual const char *editorSignal() const override { return "editingFinished()"; }
+    int size() const { return sz_; }
 };
 
-class OptionsItemDelegate : public QStyledItemDelegate
+class OptionsItemDelegate : public ValidatingItemDelegate
 {
     Q_OBJECT
 
@@ -178,6 +182,15 @@ public:
                               const QModelIndex &index) const override;
 
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+
+protected:
+    // Editors created via OptionWidgetMapper live permanently in a
+    // QFormLayout, not inside a QAbstractItemView -- there is no view to
+    // "close the editor and move to the next cell", so the base
+    // QAbstractItemDelegate::eventFilter()'s Tab/Backtab handling (which
+    // swallows the key and emits closeEditor(EditNextItem/EditPreviousItem))
+    // has nothing to act on it. Move focus ourselves instead.
+    bool eventFilter(QObject *object, QEvent *event) override;
 };
 
 class OptionsModel : public QAbstractItemModel
@@ -199,6 +212,7 @@ public:
 
     QModelIndex index(int row, int column, const QModelIndex &parent = {}) const override;
     QModelIndex index(const QString &key, int column = 0, const QModelIndex &parent = {}) const;
+    QModelIndex indexFromPath(const QString &path) const;
     QModelIndex parent(const QModelIndex &index) const override;
 
     int rowCount(const QModelIndex &parent = {}) const override;

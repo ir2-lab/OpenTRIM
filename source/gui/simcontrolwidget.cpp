@@ -3,7 +3,8 @@
 #include "mcdriverobj.h"
 #include "mainui.h"
 #include "optionsmodel.h"
-#include "simulationoptionsview.h"
+#include "optionsview.h"
+#include "dialogs.h"
 
 #include <QTimer>
 #include <QVBoxLayout>
@@ -209,11 +210,11 @@ void SimControlWidget::onStart(bool b)
 
         // check if there are unsaved options
         if (mainui_->optionsView->modified()) {
-            int ret =
-                    QMessageBox::warning(window(), "Run Simulation",
-                                         "Changes to some options have not been applied.\n"
-                                         "Apply them before starting the simulation?",
-                                         QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+            QMessageBox::StandardButton ret = Dialogs::question(
+                    window(), tr("Run Simulation"),
+                    tr("Changes to some options have not been applied."),
+                    { tr("Apply them before starting the simulation?") }, QString(),
+                    QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
 
             if (ret == QMessageBox::Yes) {
                 mainui_->optionsView->submit();
@@ -228,7 +229,8 @@ void SimControlWidget::onStart(bool b)
         QString msg;
         bool ret = driver_->validateOptions(&msg);
         if (!ret) {
-            QMessageBox::warning(window(), "Run Simulation", msg);
+            Dialogs::warning(window(), tr("Run Simulation"), tr("The options are invalid!"),
+                             QStringList(), msg);
             btStart->setChecked(false);
             return;
         }
@@ -242,12 +244,8 @@ void SimControlWidget::onStart(bool b)
 
 void SimControlWidget::onReset()
 {
-    int ret = QMessageBox::warning(window(), "Reset",
-                                   "Reset simulation?\n"
-                                   "This will discard all data.",
-                                   QMessageBox::Ok | QMessageBox::Cancel);
-
-    if (ret != QMessageBox::Ok)
+    if (!Dialogs::confirm(window(), tr("Reset"), tr("Reset simulation?"),
+                          { tr("This will discard all data.") }))
         return;
 
     McDriverObj *D = driver_;

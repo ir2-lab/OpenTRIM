@@ -31,10 +31,11 @@ OpenTRIM on windows is built with https://msys2.org in the UCRT64 environment
 
 ### Install ir2-lab dependencies
 
-OpenTRIM depends on 3 projects of our own: 
+OpenTRIM depends on 4 projects of our own: 
 - [libdedx](https://github.com/ir2-lab/libdedx)
 - [QMatPlotWidget](https://github.com/gapost/qmatplotwidget)
 - [QtDataBrowser](https://github.com/ir2-lab/QtDataBrowser)
+- [QtVectorEdit](https://github.com/ir2-lab/QtVectorEdit)
 
 These repos provide MSYS2/UCRT64 runtime+devel packages. Download all package files from the respective release pages and install them all together with, e.g.
 

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
     
 project(OpenTRIM 
-        VERSION 1.1.6
+        VERSION 1.2.0
         DESCRIPTION "Monte-Carlo simulation of ion transport in materials"
         HOMEPAGE_URL https://gitlab.com/ir2-lab/
         LANGUAGES C CXX)
@@ -58,7 +58,8 @@ find_package(libdedx REQUIRED)
 if(OPENTRIM_BUILD_GUI)
     find_package(Qt5 REQUIRED COMPONENTS Core Widgets Svg)
     find_package(Qwt REQUIRED)
-    find_package(QtDataBrowser REQUIRED)
+    find_package(QtDataBrowser 0.2.1 REQUIRED)
+    find_package(QtVectorEdit 0.1.0 REQUIRED)
 endif () ## BUILD GUI
 
 include(CTest)

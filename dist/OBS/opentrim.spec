@@ -25,6 +25,7 @@ Source19:       ext9.tar.gz
 BuildRequires:	 cmake >= 3.23
 BuildRequires:	 libdedx-devel
 BuildRequires:	 qtdatabrowser-devel
+BuildRequires:	 qtvectoredit-devel
 BuildRequires:	 qmatplotwidget-devel
 
 %if "%{_vendor}" == "debbuild"

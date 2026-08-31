@@ -2,7 +2,8 @@
 #define REGIONSVIEW_H
 
 #include <QWidget>
-#include <QStyledItemDelegate>
+
+#include "validatingitemdelegate.h"
 
 class QToolButton;
 class QItemSelection;
@@ -12,7 +13,8 @@ class QTableView;
 class VectorLineEdit;
 class IntVectorLineEdit;
 class OptionsModel;
-class MyDataWidgetMapper;
+class OptionsView;
+class OptionWidgetMapper;
 class RegionsView;
 class MainUI;
 
@@ -49,7 +51,7 @@ private:
     float size_lim_[2];
 };
 
-class RegionDelegate : public QStyledItemDelegate
+class RegionDelegate : public ValidatingItemDelegate
 {
     Q_OBJECT
 
@@ -71,18 +73,8 @@ class RegionsView : public QWidget
 {
     Q_OBJECT
 
-    QToolButton *btAdd;
-    QToolButton *btRemove;
-    QToolButton *btUp;
-    QToolButton *btDown;
-    QItemSelectionModel *selectionModel;
-    QTableView *tableView;
-
-    RegionDelegate *delegate_;
-    RegionsModel *model_;
-
 public:
-    RegionsView(OptionsModel *m, QObject *parent = nullptr);
+    RegionsView(OptionsView *m, QWidget *parent = nullptr);
 
     RegionsModel *model() const { return model_; }
 
@@ -98,16 +90,28 @@ public slots:
     void onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
 
 private slots:
-    void onDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
-    {
-        emit regionsChanged();
-    }
+    void onDataChanged(const QModelIndex &, const QModelIndex &) { emit regionsChanged(); }
     void onRowsInserted(const QModelIndex &, int, int) { emit regionsChanged(); }
     void onRowsMoved(const QModelIndex &, int, int, const QModelIndex &, int)
     {
         emit regionsChanged();
     }
     void onRowsRemoved(const QModelIndex &, int, int) { emit regionsChanged(); }
+
+private:
+    // Top toolbar for add/remove, move up/down
+    QToolButton *btAdd;
+    QToolButton *btRemove;
+    QToolButton *btUp;
+    QToolButton *btDown;
+
+    // regions model/view & selection
+    RegionsModel *model_;
+    QTableView *tableView;
+    RegionDelegate *delegate_;
+    QItemSelectionModel *selectionModel;
+
+    // pointer to parent options view
 };
 
 #endif // REGIONSVIEW_H
