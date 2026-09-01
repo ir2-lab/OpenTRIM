@@ -28,6 +28,9 @@ OpenTRIM on windows is built with https://msys2.org in the UCRT64 environment
   - `mingw-w64-ucrt-x86_64-qt5-tools`
   - `mingw-w64-ucrt-x86_64-angleproject` (needed for some OpenGL dependencies of Qt5)
 
+  The GUI 3D track viewport uses the Qt5 OpenGL module, which is part of
+  `mingw-w64-ucrt-x86_64-qt5-base` (listed above) - no extra package needed.
+
 
 ### Install ir2-lab dependencies
 
@@ -51,7 +54,7 @@ Get the source from https://github.com/ir2-lab/OpenTRIM and do the cmake build a
 cd opentrim
 mkdir .winbuild
 cd .winbuild
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_BUILD_TYPE=Release -DOPENTRIM_BUILD_PYTHON=OFF -DOPENTRIM_BUILD_TESTS=OFF
 cmake --build . --target install
 ```
 
@@ -61,22 +64,34 @@ The default install location is `${CMAKE_BIN_DIR}/${PROJECT_NAME}`, i.e.,
 Run [`dist/mingw64/mingw64-deploy.sh`](mingw64-deploy.sh) to create a directory for deployment. 
 
 ```
-dist/mingw64/mingw64-deploy.sh .winbuild/OpenTRIM .winbuild/opentrim-1.1.0
+dist/mingw64/mingw64-deploy.sh .winbuild/OpenTRIM .winbuild/opentrim-1.2.0
 ```
 
-Now the `opentrim-1.1.0` folder contains a full windows distribution (program, dlls etc)
+Now the `opentrim-1.2.0` folder contains a full windows distribution (program, dlls etc)
 
-To check: open the `opentrim-1.0.0` folder in windows explorer and double-click `opentri-gui`
+To check: open the `opentrim-1.2.0` folder in windows explorer and double-click `opentrim-gui`
+
+### Python bindings
+
+The `opentrim` Python package is **not** part of the Windows installer. To use it,
+install from the source tree in a UCRT64 console with
+
+```
+pip install .
+```
+
+This additionally requires `mingw-w64-ucrt-x86_64-python`,
+`mingw-w64-ucrt-x86_64-pybind11` and `mingw-w64-ucrt-x86_64-python-numpy`.
 
 ### Create installer
 
-An installer can be generated with Inno Setup using the script file [`dist/mingw64/opentrim.iss`](mingw64-deploy.sh). The version and the folder containing the program deployment files (`opentrim-1.0.0` in the above example)
+An installer can be generated with Inno Setup using the script file [`dist/mingw64/opentrim.iss`](opentrim.iss). The version and the folder containing the program deployment files (`opentrim-1.2.0` in the above example)
 
 Run the following from the windows command prompt (`ISCC.exe` must be in the path)
 ```
 ISCC.exe  dist\mingw64\opentrim.iss
-          /DMyAppVersion=1.0.0
-          /DMySourceDir=..\..\build\opentrim-1.0.0
+          /DMyAppVersion=1.2.0
+          /DMySourceDir=..\..\build\opentrim-1.2.0
           /Obuild
 ```
 This will create the installer executable `build\OpenTRIMSetup.exe`.  

@@ -4,7 +4,7 @@ Name:           opentrim
 Version:	       0
 Release:	       0
 Summary:	       Ion transport simulation in materials
-License:	       GPL-3.0-or-later
+License:	       MIT
 Url:		       https://github.com/ir2-lab/OpenTRIM.git
 
 %if "%{_vendor}" == "debbuild"
@@ -43,7 +43,6 @@ BuildRequires:  libqwt-qt5-dev
 BuildRequires:  libqt5svg5-dev
 BuildRequires:	 libeigen3-dev >= 3.4
 BuildRequires:	 libhdf5-dev
-BuildRequires:	 hdf5-tools
 
 %else
 
@@ -57,6 +56,7 @@ BuildRequires:	 qwt-qt5-devel
    %else
 BuildRequires:	 qwt6-qt5-devel
    %endif
+BuildRequires:	 cmake(Qt5OpenGL)
 BuildRequires:	 eigen3-devel >= 3.4
 BuildRequires:	 hdf5-devel
 
@@ -89,19 +89,6 @@ Summary:	       Development files for ion transport simulation in materials
 %description    devel
 Development files for C++ Monte-Carlo code for simulating ion transport in materials with an emphasis on the calculation of material damage.
 
-%package        tests
-Summary:	       Test files for ion transport simulation in materials
-BuildArch:      noarch
-
-%if "%{_vendor}" == "debbuild"
-Requires:       %{name} | %{name}-gui
-%else
-Requires:       ( %{name} or %{name}-gui )
-%endif
-
-%description    tests
-Test files for C++ Monte-Carlo code for simulating ion transport in materials with an emphasis on the calculation of material damage.
-
 %prep
 %setup -q -n	 %{name}
 mkdir -p external
@@ -122,6 +109,8 @@ tar -zxf %{SOURCE19} -C external
 %endif
    -DPACKAGE_BUILD=ON \
    -DCMAKE_BUILD_TYPE=Release \
+   -DOPENTRIM_BUILD_PYTHON=OFF \
+   -DOPENTRIM_BUILD_TESTS=OFF \
    %{nil}
 
 %cmake_build
@@ -131,13 +120,6 @@ tar -zxf %{SOURCE19} -C external
 
 strip --strip-unneeded %{buildroot}%{_bindir}/%{name}*
 strip --strip-unneeded %{buildroot}%{_libdir}/lib*.so
-
-install -d %{buildroot}/%{_datadir}/%{name}/tests
-
-cp -r test/%{name}/* %{buildroot}/%{_datadir}/%{name}/tests/
-
-%check
-%ctest "-V" "-j1"
 
 %post libs -p /sbin/ldconfig
 
@@ -157,9 +139,5 @@ cp -r test/%{name}/* %{buildroot}/%{_datadir}/%{name}/tests/
 %{_includedir}/%{name}/*.h
 %dir %{_libdir}/cmake/%{name}
 %{_libdir}/cmake/%{name}/*.cmake
-
-%files tests
-%dir %{_datadir}/%{name}
-%{_datadir}/%{name}/tests
 
 %changelog

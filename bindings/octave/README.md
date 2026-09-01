@@ -11,41 +11,28 @@ simulations from Octave.
 * A C++17-capable compiler and `mkoctfile`
 * CMake ≥ 3.14 (used once to discover compile/link flags)
 
-## Building the oct-files
-
-```bash
-cd bindings/octave/src
-make                          # uses ~/.local as OpenTRIM install prefix
-# or, if installed elsewhere:
-make CMAKE_PREFIX_PATH=/opt/opentrim
-```
-
-The Makefile runs a one-time `cmake` step that calls
-`find_package(OpenTRIM)` and writes `_cmake_flags/flags.mk` with the
-correct `-I` / `-L` / `-l` flags.  Subsequent `make` runs are incremental.
-
 ## Installing the package
 
 ### From the published release tarball
 
 ```octave
-pkg install https://github.com/gapost/opentrim/releases/download/v1.1.6/opentrim-octave-1.1.6.tar.gz
+pkg install https://github.com/gapost/opentrim/releases/download/v1.2.0/opentrim-octave-1.2.0.tar.gz
 pkg load opentrim
 ```
 
 ### From a locally built tarball
 
-After building the oct-files (see above):
+First create the .tar.gz package file giving the version as input argument:
 
 ```bash
 # From the repository root:
-bash dist/make_oct_package.sh 1.1.6
+bash dist/make_oct_package.sh 1.2.0
 ```
 
 Then in Octave:
 
 ```octave
-pkg install opentrim-octave-1.1.6.tar.gz
+pkg install opentrim-octave-1.2.0.tar.gz
 pkg load opentrim
 ```
 
@@ -109,43 +96,57 @@ res2 = d2.info();
 
 ### `opentrim.config`
 
-| Method | Description |
-|---|---|
-| `config()` | Default construction |
+| Method             | Description                                         |
+| ------------------ | --------------------------------------------------- |
+| `config()`         | Default construction                                |
 | `set(path, value)` | Set option at JSON path; value auto-encoded as JSON |
-| `get(path)` | Read option; returns Octave native type |
-| `validate()` | Returns `true` on success |
-| `to_json()` | Full config as JSON string |
-| `from_json(s)` | Populate from JSON string |
+| `get(path)`        | Read option; returns Octave native type             |
+| `validate()`       | Returns `true` on success                           |
+| `to_json()`        | Full config as JSON string                          |
+| `from_json(s)`     | Populate from JSON string                           |
 
 ### `opentrim.driver`
 
-| Method | Description |
-|---|---|
-| `driver(cfg)` | Construct and initialise from `opentrim.config` |
-| `exec([cb [,ms]])` | Run simulation; optional callback `cb(frac)` every `ms` ms |
-| `info()` | Return `opentrim.info` result tree |
-| `config()` | Return copy of active config |
-| `save(fn)` / `load(fn)` | HDF5 serialisation |
-| `is_running()` / `abort()` / `wait()` / `reset()` | Lifecycle control |
+| Method                                            | Description                                                |
+| ------------------------------------------------- | ---------------------------------------------------------- |
+| `driver(cfg)`                                     | Construct and initialise from `opentrim.config`            |
+| `exec([cb [,ms]])`                                | Run simulation; optional callback `cb(frac)` every `ms` ms |
+| `info()`                                          | Return `opentrim.info` result tree                         |
+| `config()`                                        | Return copy of active config                               |
+| `save(fn)` / `load(fn)`                           | HDF5 serialisation                                         |
+| `is_running()` / `abort()` / `wait()` / `reset()` | Lifecycle control                                          |
 
 ### `opentrim.info`
 
-| Method | Description |
-|---|---|
-| `get(path)` | Retrieve data at path (see types below) |
-| `[V,dV] = get(path)` | For tally nodes, also return SEM errors |
-| `description([path])` | Human-readable description of a node |
+| Method                | Description                             |
+| --------------------- | --------------------------------------- |
+| `get(path)`           | Retrieve data at path (see types below) |
+| `[V,dV] = get(path)`  | For tally nodes, also return SEM errors |
+| `description([path])` | Human-readable description of a node    |
 
 **Returned types:**
 
-| Node type | Octave value |
-|---|---|
-| group | `opentrim.info` sub-tree |
-| real64 / real32 | double / single NDArray |
-| uint64 | uint64 NDArray |
-| string / json | `char` or cell array of `char` |
-| tally_score | `[values, errors]` double arrays |
+| Node type       | Octave value                     |
+| --------------- | -------------------------------- |
+| group           | `opentrim.info` sub-tree         |
+| real64 / real32 | double / single NDArray          |
+| uint64          | uint64 NDArray                   |
+| string / json   | `char` or cell array of `char`   |
+| tally_score     | `[values, errors]` double arrays |
+
+## Funtion reference
+
+Functions for evaluating screened coulomb potential scattering quantities.
+
+| Function                 | Description                             |
+| ------------------------ | --------------------------------------- |
+| `screened_coulomb_theta` | Calculate scattering angle              |
+| `screened_coulomb_ip`    | Calculate impact parameter              |
+| `screened_coulomb_xs`    | Calculate cross-section                 |
+| `screened_coulomb_sn`    | Calculate nuclear energy loss           |
+| `screening_length`       | The screening length for each potential |
+| `dedx`                   | Load tables of electronic stopping      |
+
 
 ## License
 

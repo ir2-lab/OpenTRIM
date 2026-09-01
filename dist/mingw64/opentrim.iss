@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #ifndef MyAppVersion
-#define MyAppVersion "1.1.3"
+#define MyAppVersion "1.2.0"
 #endif
 #ifndef MyLicenseFile
 #define MyLicenseFile "..\..\LICENSE"

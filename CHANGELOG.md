@@ -7,12 +7,26 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Added
+- Python bindings (`opentrim` package, GSoC 2026 Feature A): configure, run and
+  evaluate simulations from Python scripts, Jupyter notebooks or interactive
+  sessions via the `Config`, `Driver` and `Info` classes. Ships type stubs for
+  editor auto-completion, a `pip install .` build (pyproject.toml), example
+  notebooks under `examples/python`, a `pytest` suite and Sphinx API docs.
+- Real-time 3D track visualization in the GUI (GSoC 2026 Feature B): live display
+  of displacement cascades while a simulation runs, with a dedicated "3D Vis" tab,
+  OpenGL track rendering, camera tab with save/load and screenshot export,
+  selectable colormaps, energy- and time-based track colouring, playback and a
+  track-viewer user guide.
+- C++ unit-test framework under `test/cpp` (event-handling and scattering-calc
+  tests).
 - Material Database dialog for picking predefined materials from a JSON database.
 - UserTally configuration UI in the GUI.
 - Contextual Help Panel in the Config view.
 - Octave bindings.
 
 ### Changed
+- Core library extended to stream ion-track and event data to the GUI in real
+  time (`event_stream`, `ion`, `mccore`, `mcdriver`, `tally`).
 - Rewrite of `mcinfo` and change of `mcdriver` behaviour.
 - Unified `Dialogs` helper; GUI migrated to it.
 - Examples reorganised under `examples/json`.

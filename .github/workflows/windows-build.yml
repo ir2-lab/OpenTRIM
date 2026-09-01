@@ -55,7 +55,8 @@ jobs:
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DOPENTRIM_BUILD_GUI=ON \
-            -DOPENTRIM_BUILD_TESTS=OFF
+            -DOPENTRIM_BUILD_TESTS=OFF \
+            -DOPENTRIM_BUILD_PYTHON=OFF
 
       - name: Build
         run: cmake --build build --parallel

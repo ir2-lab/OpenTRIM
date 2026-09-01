@@ -1,8 +1,8 @@
 Name: opentrim
-Version: 1.1.6
-Date: 2026-06-19
+Version: 1.2.0
+Date: 2026-09-01
 Author: OpenTRIM contributors
-Maintainer: George Apostolopoulos <gapost47.com@proton.me>
+Maintainer: George Apostolopoulos <gapost@ipta.demokritos.gr>
 Title: GNU Octave bindings for OpenTRIM
 Description: Provides opentrim.config, opentrim.driver, and opentrim.info
  objects for setting up, running, and reading results from OpenTRIM
