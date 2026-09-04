@@ -1,5 +1,9 @@
 %global         debug_package     %{nil}
 
+# %{python3_sitearch} is provided by python-rpm-macros on rpm distros; define a
+# fallback for environments (e.g. some debbuild setups) that lack it.
+%{!?python3_sitearch: %global python3_sitearch %(python3 -c "import sysconfig; print(sysconfig.get_paths()['platlib'])" 2>/dev/null)}
+
 Name:           opentrim
 Version:	       0
 Release:	       0
@@ -89,6 +93,26 @@ Summary:	       Development files for ion transport simulation in materials
 %description    devel
 Development files for C++ Monte-Carlo code for simulating ion transport in materials with an emphasis on the calculation of material damage.
 
+%package -n     python3-opentrim
+Summary:	       Python bindings for OpenTRIM
+Requires:       libopentrim = %{version}
+Requires:       python3-numpy
+%if "%{_vendor}" == "debbuild"
+BuildRequires:  python3-dev
+BuildRequires:  pybind11-dev
+%else
+BuildRequires:  python3-devel
+BuildRequires:  python3-pybind11-devel
+%endif
+
+%description -n python3-opentrim
+Python 3 bindings for the OpenTRIM Monte-Carlo ion transport simulator:
+configure, run and evaluate simulations from Python via the Config, Driver
+and Info classes.
+The bindings are built in-tree against the freshly built library and installed
+into %{python3_sitearch} (pass -DOPENTRIM_PYTHON_INSTALL_DIR= to override if
+that macro is not defined on the target).
+
 %prep
 %setup -q -n	 %{name}
 mkdir -p external
@@ -109,7 +133,8 @@ tar -zxf %{SOURCE19} -C external
 %endif
    -DPACKAGE_BUILD=ON \
    -DCMAKE_BUILD_TYPE=Release \
-   -DOPENTRIM_BUILD_PYTHON=OFF \
+   -DOPENTRIM_BUILD_PYTHON=ON \
+   -DOPENTRIM_PYTHON_INSTALL_DIR=%{python3_sitearch} \
    -DOPENTRIM_BUILD_TESTS=OFF \
    %{nil}
 
@@ -120,6 +145,7 @@ tar -zxf %{SOURCE19} -C external
 
 strip --strip-unneeded %{buildroot}%{_bindir}/%{name}*
 strip --strip-unneeded %{buildroot}%{_libdir}/lib*.so
+strip --strip-unneeded %{buildroot}%{python3_sitearch}/opentrim/_opentrim_core*.so || :
 
 %post libs -p /sbin/ldconfig
 
@@ -139,5 +165,8 @@ strip --strip-unneeded %{buildroot}%{_libdir}/lib*.so
 %{_includedir}/%{name}/*.h
 %dir %{_libdir}/cmake/%{name}
 %{_libdir}/cmake/%{name}/*.cmake
+
+%files -n python3-opentrim
+%{python3_sitearch}/opentrim/
 
 %changelog

@@ -1,9 +1,10 @@
 -------------------------------------------------------------------
 Tue Sep 01 2026 - Michail Axiotis <psaxioti@gmail.com> - 1.2.0
 
-- Real-time 3D track visualization in the GUI 
+- Real-time 3D track visualization in the GUI
 - Material Database dialog, UserTally configuration UI, contextual Help Panel
 - Octave & Python bindings
+- New python3-opentrim package (built against libopentrim with system pybind11)
 - Packaging: tests no longer built or shipped by the RPM
 
 -------------------------------------------------------------------

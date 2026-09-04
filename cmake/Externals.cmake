@@ -39,11 +39,14 @@ if(NOT external_highfive_POPULATED)
   add_subdirectory(${external_highfive_SOURCE_DIR} ${external_highfive_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
+# Isotope-data has no release tags; pin to a specific commit for reproducible
+# builds (this is the master HEAD as of 2026-09-01).
+# GIT_SHALLOW must be off: not all servers allow shallow-fetching a raw commit.
 FetchContent_Declare(external_isotope
    GIT_REPOSITORY https://github.com/Gregstrq/Isotope-data.git
-   GIT_TAG main
+   GIT_TAG 9dd2180ba3bc6caf67063a59601af3e0960edbae
    GIT_SUBMODULES_RECURSE FALSE
-   GIT_SHALLOW TRUE
+   GIT_SHALLOW FALSE
    EXCLUDE_FROM_ALL
    SOURCE_SUBDIR dummy
 )
@@ -65,11 +68,14 @@ if(PACKAGE_BUILD)
 endif()
 FetchContent_MakeAvailable(external_json)
 
+# Periodic-Table-JSON tags (e.g. v.4.0.0) dropped PeriodicTableCSV.csv, which
+# genptable needs; only master still ships it. Pin to a commit (master HEAD as
+# of 2026-09-01) for reproducible builds.
 FetchContent_Declare(external_periodic
    GIT_REPOSITORY https://github.com/Bowserinator/Periodic-Table-JSON.git
-   GIT_TAG master
+   GIT_TAG ea41119626581350fdcdd9c873de233645a43023
    GIT_SUBMODULES_RECURSE FALSE
-   GIT_SHALLOW TRUE
+   GIT_SHALLOW FALSE
    EXCLUDE_FROM_ALL
    SOURCE_SUBDIR dummy
 )
@@ -78,11 +84,13 @@ if(PACKAGE_BUILD)
 endif()
 FetchContent_MakeAvailable(external_periodic)
 
+# ttk592/spline has no release tags; pin to a commit (master HEAD as of
+# 2026-09-01) for reproducible builds.
 FetchContent_Declare(external_spline
    GIT_REPOSITORY https://github.com/ttk592/spline.git
-   GIT_TAG master
+   GIT_TAG 5894beaf91e9adbfdbe5c6c9a1c60770e380e8e8
    GIT_SUBMODULES_RECURSE FALSE
-   GIT_SHALLOW TRUE
+   GIT_SHALLOW FALSE
    EXCLUDE_FROM_ALL
    SOURCE_SUBDIR dummy
 )
@@ -116,14 +124,21 @@ endif()
 FetchContent_MakeAvailable(external_ieee754_seq)
 
 if(OPENTRIM_BUILD_PYTHON)
-   FetchContent_Declare(external_pybind11
-      GIT_REPOSITORY https://github.com/pybind/pybind11.git
-      GIT_TAG        v3.0.4
-      GIT_SUBMODULES_RECURSE FALSE
-      GIT_SHALLOW    TRUE
-   )
-   if(PACKAGE_BUILD)
-      set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_PYBIND11 ${PROJECT_SOURCE_DIR}/external/ext10)
+   # Prefer a system pybind11 (>= 2.9.1); fall back to a pinned copy.
+   set(PYBIND11_FINDPYTHON ON)
+   find_package(pybind11 2.9.1 CONFIG QUIET)
+   if(NOT pybind11_FOUND)
+      FetchContent_Declare(external_pybind11
+         GIT_REPOSITORY https://github.com/pybind/pybind11.git
+         GIT_TAG        v2.13.6
+         GIT_SUBMODULES_RECURSE FALSE
+         GIT_SHALLOW    TRUE
+      )
+      if(PACKAGE_BUILD)
+         set(FETCHCONTENT_SOURCE_DIR_EXTERNAL_PYBIND11 ${PROJECT_SOURCE_DIR}/external/ext10)
+      endif()
+      FetchContent_MakeAvailable(external_pybind11)
+   else()
+      message(STATUS "Using system pybind11 ${pybind11_VERSION}")
    endif()
-   FetchContent_MakeAvailable(external_pybind11)
 endif()

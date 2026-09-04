@@ -25,6 +25,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Octave bindings.
 
 ### Changed
+- Python bindings can now be built standalone (`cmake -S bindings/python`)
+  against an installed OpenTRIM with a system pybind11, enabling a
+  `python3-opentrim` distribution package. The in-tree `add_subdirectory` build
+  is unchanged and now prefers a system pybind11 (>= 2.9.1) when available,
+  falling back to a pinned copy otherwise.
 - Core library extended to stream ion-track and event data to the GUI in real
   time (`event_stream`, `ion`, `mccore`, `mcdriver`, `tally`).
 - Rewrite of `mcinfo` and change of `mcdriver` behaviour.
