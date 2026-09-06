@@ -140,16 +140,18 @@ void CascadeRecorder::applyGeometry_()
 
 void CascadeRecorder::setPlaybackSpeed(double f)
 {
-    f = qBound(0.1, f, 10.0);
+    // f = qBound(0.1, f, 10.0);
     if (f == clock_.speed())
         return;
     clock_.setSpeed(f);
+    // if (clock_.playbackTime() > tMax_)
+    //     clock_.setPlaybackTime(tMax_);
     emit needsUpdate();
 }
 
 void CascadeRecorder::setNCascades(int n)
 {
-    n = qBound(1, n, 100);
+    // n = qBound(1, n, 100);
     if (n == nCascades_)
         return;
     nCascades_ = n;
@@ -157,14 +159,20 @@ void CascadeRecorder::setNCascades(int n)
     emit needsUpdate();
 }
 
-int CascadeRecorder::memoryCapMB() const
+int CascadeRecorder::memCap() const
 {
-    return capacity_ * sizeof(TrackVertex) / 1024 / 1024;
+    return capacity_ * sizeof(TrackVertex);
 }
-void CascadeRecorder::setMemoryCapMB(int mb)
+
+int CascadeRecorder::memSize() const
 {
-    mb = qBound(0, mb, kMaxCapMB);
-    int cap = mb * 1024 * 1024 / sizeof(TrackVertex);
+    return size_ * sizeof(TrackVertex);
+}
+
+void CascadeRecorder::setMemCap(int bytes)
+{
+    bytes = qBound(0, bytes, kMaxCapMB * 1024 * 1024);
+    int cap = bytes / sizeof(TrackVertex);
     if (cap == capacity_)
         return;
     capacity_ = cap;
@@ -174,9 +182,14 @@ void CascadeRecorder::setMemoryCapMB(int mb)
 
 void CascadeRecorder::setEnergyThreshold(double eV)
 {
-    channel_->setEnergyThreshold(static_cast<float>(std::max(0.0, eV)));
+    float th = std::max(0.0, eV);
+    if (th == energyThreshold_)
+        return;
+    energyThreshold_ = th;
+    channel_->setEnergyThreshold(th);
     bumpFilterEpoch_();
     stateMachine(Clear);
+    emit energyThresholdChanged(th);
 }
 
 int CascadeRecorder::capVerts() const
@@ -203,6 +216,12 @@ void CascadeRecorder::setRingMode(bool on)
     emit needsUpdate();
 }
 
+void CascadeRecorder::setPlaybackTime(double t)
+{
+    clock_.setPlaybackTime(t);
+    emit needsUpdate();
+}
+
 void CascadeRecorder::stateMachine(Event e)
 {
     State old_ = state_;
@@ -218,6 +237,12 @@ void CascadeRecorder::stateMachine(Event e)
             } else {
                 channel_->setCapturing(false);
                 state_ = Paused;
+            }
+            break;
+        case Play:
+            if (!cascade_buffer_.empty()) {
+                clock_.resume();
+                state_ = Playing;
             }
             break;
         case Clear:
@@ -252,6 +277,27 @@ void CascadeRecorder::stateMachine(Event e)
         case Clear:
             clear_();
             clock_.reset();
+            break;
+        default:
+            break;
+        }
+        break;
+    case Playing:
+        switch (e) {
+        case Stop:
+            clock_.pause();
+            state_ = Idle;
+            break;
+        case Update:
+            if (playbackTime() > tMax_) {
+                setPlaybackTime(tMin_);
+            }
+            break;
+        case Clear:
+            clear_();
+            clock_.reset();
+            clock_.pause();
+            state_ = Idle;
             break;
         default:
             break;
@@ -348,6 +394,8 @@ void CascadeRecorder::stateMachine(Event e)
         emit stateChange(old_, state_);
     // if (e == Update)
     statusUpdate_();
+    emit dataChanged();
+
     if (tracksDirty_)
         emit needsUpdate();
 }
@@ -494,6 +542,8 @@ Track3DViewport::Track3DViewport(McDriverObj *driver, QWidget *parent)
     connect(recorder_, &CascadeRecorder::stateChange, this,
             &Track3DViewport::onRecorderStateChange);
     connect(recorder_, &CascadeRecorder::needsUpdate, this, [this]() { update(); });
+    connect(recorder_, &CascadeRecorder::energyThresholdChanged, this,
+            &Track3DViewport::onEnergyThresholdChanged);
 
     connect(driver_, &McDriverObj::configChanged, this, &Track3DViewport::refreshScene);
     connect(driver_, &McDriverObj::simulationCreated, this, [this]() {
@@ -869,8 +919,7 @@ void Track3DViewport::rebuildTrackBuffer()
 
     trackVbo_.bind();
 
-    const int want =
-            recorder_->memoryCapMB() > 0 ? recorder_->memoryCapMB() * 1024 * 1024 : kTrackVboBytes;
+    const int want = recorder_->memCap() > 0 ? recorder_->memCap() : kTrackVboBytes;
     if (want != trackVboBytes_) {
         trackVbo_.allocate(want);
         trackVboBytes_ = want;
@@ -921,10 +970,8 @@ void Track3DViewport::setEnergyLog(bool on)
     update();
 }
 
-void Track3DViewport::setEnergyThreshold(double eV)
+void Track3DViewport::onEnergyThresholdChanged(float eV)
 {
-    energyThreshold_ = static_cast<float>(std::max(0.0, eV));
-    recorder_->setEnergyThreshold(eV);
     updateEnergyRange_();
 }
 
@@ -958,7 +1005,8 @@ void Track3DViewport::updateEnergyRange_()
 {
     if (energyAuto_) {
         const auto &opt = driver_->options();
-        energyDataMin_ = std::max(static_cast<float>(opt.Transport.min_energy), energyThreshold_);
+        energyDataMin_ = std::max(static_cast<float>(opt.Transport.min_energy),
+                                  recorder_->energyThreshold());
         energyDataMax_ = static_cast<float>(opt.IonBeam.energy_distribution.center);
     } else {
         energyDataMin_ = energyUserMin_;

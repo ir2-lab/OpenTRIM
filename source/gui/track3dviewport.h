@@ -48,6 +48,13 @@ public:
     {
         return tsOffset_ + (clockRunning_ ? clock_.elapsed() / 1000.0 * speed_ : 0.0);
     }
+    void setPlaybackTime(double t0)
+    {
+        twOffset_ = 0;
+        tsOffset_ = t0;
+        if (clockRunning_)
+            clock_.restart();
+    }
     void start()
     {
         twOffset_ = tsOffset_ = 0;
@@ -60,6 +67,7 @@ public:
         if (clockRunning_)
             clock_.restart();
     }
+
     void pause()
     {
         if (!clockRunning_)
@@ -92,11 +100,33 @@ private:
 class CascadeRecorder : public QObject
 {
     Q_OBJECT
+    // # of cascades to buffer
     Q_PROPERTY(int nCascades READ nCascades WRITE setNCascades)
+    // buffer memory capacity in bytes
+    Q_PROPERTY(int memCap READ memCap WRITE setMemCap)
+    // current data memory size in bytes
+    Q_PROPERTY(int memSize READ memSize)
+    Q_PROPERTY(double playbackTime READ playbackTime WRITE setPlaybackTime)
     Q_PROPERTY(double playbackSpeed READ playbackSpeed WRITE setPlaybackSpeed)
+    // energy threshold for track capture
+    // ion tracks below this energy are dropped
+    Q_PROPERTY(float energyThreshold READ energyThreshold WRITE setEnergyThreshold NOTIFY
+                       energyThresholdChanged)
 
 public:
-    enum State { Idle, Capturing, Paused, Finishing, Pausing };
+    /* State Machine
+     * Idle
+     * Capturing
+     * Paused: paused while capturing
+     * Finishing: playing back the captured cascades until the end
+     * Pausing: going from Capturing to Paused mode
+     */
+    enum State { Idle, Capturing, Playing, Paused, Finishing, Pausing };
+
+    /* Buffer Mode
+     * - Batch: get N cascades and stop
+     * - Ring: populate a ring buffer of N cascades
+     */
     enum Mode { Batch, Ring };
 
     typedef std::deque<std::shared_ptr<const Cascade>> cascade_buffer_t;
@@ -104,26 +134,32 @@ public:
     explicit CascadeRecorder(McDriverObj *driver, QObject *parent);
 
     int nCascades() const { return nCascades_; }
+    int memCap() const;
+    int memSize() const;
+    double playbackTime() const { return clock_.playbackTime(); }
     double playbackSpeed() const { return clock_.speed(); }
+    float energyThreshold() const { return energyThreshold_; }
     State state() const { return state_; }
+    // tracks need redraw
     bool dirty() const { return tracksDirty_; }
     void clearDirtyFlag() { tracksDirty_ = false; }
+    // channel to get ion track data
     TrackDataChannel *channel() { return channel_; }
     const cascade_buffer_t &cascade_buffer() const { return cascade_buffer_; }
-    double playbackTime() const { return clock_.playbackTime(); }
     bool isRunning() const { return clock_.isRunning(); }
     double tMin() const { return tMin_; }
     double tMax() const { return tMax_; }
-    int memoryCapMB() const;
 
 public slots:
     void capture(bool on) { stateMachine(on ? Start : Stop); }
     void pause(bool on) { stateMachine(on ? Pause : Resume); }
+    void play(bool on) { stateMachine(on ? Play : Stop); }
     void clear() { stateMachine(Clear); }
     void setNCascades(int n);
     void setRingMode(bool on);
+    void setPlaybackTime(double t);
     void setPlaybackSpeed(double f); // f [ps/s]
-    void setMemoryCapMB(int mb);
+    void setMemCap(int bytes);
     void setEnergyThreshold(double eV);
     void setGenCutoff(int g);
     void update() { stateMachine(Update); }
@@ -131,7 +167,9 @@ public slots:
 signals:
     void stateChange(State from, State to);
     void statusUpdate(const QString &s);
+    void dataChanged();
     void needsUpdate();
+    void energyThresholdChanged(float v);
 
 private slots:
     void onCascadeReady();
@@ -140,12 +178,13 @@ private slots:
 private:
     McDriverObj *driver_; // not owned
     TrackDataChannel *channel_;
-    enum Event { Start, Stop, Pause, Resume, Update, Clear };
+    enum Event { Start, Stop, Pause, Resume, Update, Clear, Play };
     State state_{ Idle };
     std::deque<std::shared_ptr<const Cascade>> cascade_buffer_;
     bool tracksDirty_{ false };
     Mode mode_{ Ring };
     int nCascades_{ 10 };
+    float energyThreshold_{ 0.f }; // [eV]
     CascadeRecorderClock clock_;
     double tMin_{ 0.f }; // [ps] start of 1st displayed cascade
     double tMax_{ 0.f }; // [ps] end of last displayed cascade
@@ -206,7 +245,7 @@ public slots:
     void setColorMode(int m);
     void setColorMap(int m);
     void setEnergyLog(bool on);
-    void setEnergyThreshold(double eV);
+    void onEnergyThresholdChanged(float eV);
     void setEnergyAuto(bool on);
     void setEnergyUserMin(double eV);
     void setEnergyUserMax(double eV);
@@ -271,7 +310,6 @@ private:
     int colorMap_{ 0 };
     bool energyLog_{ true };
     bool energyAuto_{ true };
-    float energyThreshold_{ 0.f }; // [eV]
     float energyDataMin_{ 1.f }, energyDataMax_{ 1.e6f }; // [eV]
     float energyUserMin_{ 1.f }, energyUserMax_{ 1.e6f }; // [eV]
 

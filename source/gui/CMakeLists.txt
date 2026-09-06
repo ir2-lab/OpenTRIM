@@ -93,6 +93,11 @@ add_executable(${GUI_TARGET}
   ${GUI_HEADERS}
 )
 
+target_compile_definitions(${GUI_TARGET} PRIVATE
+    $<$<NOT:$<CONFIG:Debug>>:QT_NO_DEBUG_OUTPUT>
+)
+
+
 target_link_libraries(${GUI_TARGET} 
 PRIVATE
     Qt5::Widgets

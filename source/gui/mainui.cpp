@@ -24,6 +24,8 @@
 #include <QFile>
 #include <QButtonGroup>
 #include <QSplitter>
+#include <qpainter.h>
+#include <qsvgrenderer.h>
 
 #define SIDEBAR_W 70
 #define SIDEBAR_H 70
@@ -46,12 +48,20 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     /* Create the sidebar */
     QWidget *sidebar = new QWidget(this);
     QVBoxLayout *sidebarLayout = new QVBoxLayout();
+    /* Add the sidebar layout to the sidebar widget container */
+    sidebar->setLayout(sidebarLayout);
+    sidebar->setObjectName("sidebar");
+    sidebar->setMinimumHeight(sidebarLayout->count() * SIDEBAR_H);
+    sidebar->setStyleSheet(style);
+    sidebarLayout->setSpacing(0);
+    sidebarLayout->setMargin(0);
+    sidebar->ensurePolished();
 
     pageButtonGrp = new QButtonGroup(this);
 
     QString iconFolder = ":/assets/ionicons/";
-    QStringList icons{ "grid-outline.png", "settings-outline.png", "cube-outline.svg",
-                       "list-outline.png", "bar-chart-outline.png" };
+    QStringList icons{ "grid-outline.svg", "settings-outline.svg", "cube-outline.svg",
+                       "list-outline.svg", "bar-chart-outline.svg" };
 
     QStringList titles{ "Welcome", "Config", "3D Vis", "Summary", "Data" };
     for (int i = 0; i < titles.count(); ++i) {
@@ -60,13 +70,6 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     }
     sidebarLayout->addSpacerItem(
             new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
-    sidebarLayout->setSpacing(0);
-    sidebarLayout->setMargin(0);
-    /* Add the sidebar layout to the sidebar widget container */
-    sidebar->setLayout(sidebarLayout);
-    sidebar->setObjectName("sidebar");
-    sidebar->setMinimumHeight(sidebarLayout->count() * SIDEBAR_H);
-    sidebar->setStyleSheet(style);
 
     /* Create the stacked widget + statusbar*/
     _stackedWidget = new QStackedWidget;
@@ -207,10 +210,30 @@ QWidget *MainUI::createTrackViewPage()
 
 QToolButton *MainUI::createSidebarButton(const QString &iconPath, const QString &title)
 {
-    QIcon icon(iconPath);
+    const int iconSize = 32;
+
+    QFile f(iconPath);
+    f.open(QIODevice::ReadOnly);
+    QString data = QString::fromUtf8(f.readAll());
+    // The color here is hardcoded
+    // The value comes from :/styles/default.qss, QToolButton:color
+    data.replace(QLatin1String("currentColor"), QLatin1String("#ededed"));
+
+    QSvgRenderer renderer(data.toUtf8());
+    const qreal dpr = qApp->devicePixelRatio();
+    QPixmap pm(QSize(iconSize, iconSize) * dpr);
+    pm.setDevicePixelRatio(dpr);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    renderer.render(&p);
+    p.end();
+
+    QIcon icon(pm);
+
+    // QIcon icon(iconPath);
     QToolButton *btn = new QToolButton;
     btn->setIcon(icon);
-    btn->setIconSize(QSize(32, 32));
+    btn->setIconSize(QSize(iconSize, iconSize));
     btn->setText(title);
     btn->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     btn->setFixedSize(SIDEBAR_W, SIDEBAR_H);

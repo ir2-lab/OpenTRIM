@@ -13,9 +13,11 @@
 ## Functionality that needs to be completed
 
 ### Grid definition
-- [ ] It should be possible to enter the grid definition in 2 ways:
-  - either origin, size and Ncells, or
-  - X, Y, Z grid vectors
+- [ ] More flexible grid definition should be possible
+  - Not only equally spaced grids along X, Y, Z
+  - **Idea**: Move "/Target/cell_count" to "/Target/regions/0/cell_count", i.e. cell_count becomes a property of each region.
+    - Each region requires its own equally spaced
+    - the grid points at each direction is the union of the points from all regions
 
 ### JSON I/O
 
@@ -27,7 +29,7 @@
 - [ ] Fix high s (impulse approx) region in Bohr, Moliere, KrC
 - [ ] gen_scattering_tbl:  
       generate directly log2(sin2thetaby2) which is used in the simulation. This will eliminate a log2() call from the simulation loop.
-      Currently this is not possible due to errors in high s region for Bohr, Moliere, KrC. The log2 tables conatin NaNs 
+      Currently this is not possible due to errors in high s region for Bohr, Moliere, KrC. The log2 tables contain NaNs 
 
 ### Flight path
 
