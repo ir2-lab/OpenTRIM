@@ -52,7 +52,7 @@ endif()
 
 # Find required dependencies
 find_package(Threads REQUIRED)
-find_package(Eigen3 3.4 REQUIRED)
+find_package(Eigen3 3.4...6.0 REQUIRED)
 find_package(HDF5 REQUIRED COMPONENTS C)
 find_package(libdedx REQUIRED)
 if(OPENTRIM_BUILD_GUI)
