@@ -14,9 +14,6 @@
 
 %if 0%{?is_opensuse} && 0%{?sle_version} == 150600
 %define         __gcc_min_version          11
-%define         __python_package           python311
-%define         __my_python_exe            %{__python311}
-%define         __my_python_site           %{python311_sitearch}
 %endif
 
 ###############################################################################################################################
