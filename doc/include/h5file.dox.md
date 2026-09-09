@@ -64,15 +64,15 @@
 <td>Group<td><td>Description of the 3D spatial grid
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;X
 <td>Numeric
-<td>\f$[N_x]\f$
+<td>\f$[N_x + 1]\f$
 <td>X-axis grid
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Y
 <td>Numeric
-<td>\f$[N_y]\f$
+<td>\f$[N_y + 1]\f$
 <td>Y-axis grid
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Z
 <td>Numeric
-<td>\f$[N_z]\f$
+<td>\f$[N_z + 1]\f$
 <td>Z-axis grid
 <tr><td>&emsp;&emsp;&emsp;&emsp;materials/
 <td>Group<td><td>Target materials definition

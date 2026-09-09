@@ -16,6 +16,7 @@
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QFrame>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QImage>
@@ -28,9 +29,9 @@
 #include <QSizePolicy>
 #include <QFontMetrics>
 #include <QSpinBox>
+#include <QScrollArea>
 #include <QSplitter>
 #include <QStyle>
-#include <QTabWidget>
 #include <QTextBrowser>
 #include <QToolBar>
 #include <QToolButton>
@@ -45,6 +46,7 @@
 #include <qtablewidget.h>
 #include <QHeaderView>
 #include <QResizeEvent>
+#include <QtVectorEdit/qnumberedit.h>
 
 static float jsonNumber(const nlohmann::json &j, const char *key, float fallback)
 {
@@ -200,6 +202,17 @@ QIcon makeRecordIcon(int size)
     return icon;
 }
 
+struct
+{
+    const char *label;
+    const char *unit;
+    double rate;
+} playback_rates[] = { { "1fs/s", "1fs", 0.001 },   { "10fs/s", "10fs", 0.01 },
+                       { "100fs/s", "100fs", 0.1 }, { "1ps/s", "1ps", 1.0 },
+                       { "10ps/s", "10ps", 10.0 },  { "100ps/s", "100ps", 100.0 },
+                       { "1ns/s", "1ns", 1.e3 },    { "10ns/s", "10ns", 1.e4 },
+                       { "100ns/s", "100ns", 1.e5 } };
+
 } // namespace
 
 class PendingBlinker : public QObject
@@ -276,17 +289,6 @@ TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget
         frmLay->addLayout(hbox);
     }
 
-    CascadeRecorder *R = view_->cascadeRecorder();
-    connect(R, &CascadeRecorder::dataChanged, this, &TrackViewWidget::updateCtrls);
-    connect(R, &CascadeRecorder::stateChange, this, &TrackViewWidget::onRecorderStateChange);
-
-    QSplitter *rightSplit = new QSplitter(Qt::Vertical);
-    rightSplit->addWidget(buildOptionsPanel());
-    rightSplit->addWidget(buildInfoPanel());
-    // rightSplit->setStretchFactor(0, 0);
-    rightSplit->setStretchFactor(2, 1);
-    rightSplit->setSizes({ 400, 200 });
-
     QWidget *leftPanel = new QWidget;
     {
         QHBoxLayout *hbox = new QHBoxLayout(leftPanel);
@@ -295,26 +297,26 @@ TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget
         hbox->addWidget(colorBar);
     }
 
-    QWidget *rightPanel = new QWidget;
-    {
-        QVBoxLayout *vbox = new QVBoxLayout(rightPanel);
-        vbox->setContentsMargins(0, 0, 0, 0);
-        vbox->addWidget(rightSplit, 1);
-    }
+    QWidget *rightPanel = buildOptionsPanel();
 
     QSplitter *split = new QSplitter(Qt::Horizontal);
     split->addWidget(leftPanel);
     split->addWidget(rightPanel);
     split->setCollapsible(0, false);
     split->setCollapsible(1, true);
-    split->setStretchFactor(0, 1);
-    split->setSizes({ 720, 280 });
 
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     frm->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     leftPanel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     rightPanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     split->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    // must come after the setSizePolicy() calls above: setStretchFactor() works
+    // by writing the widget's sizePolicy stretch, so a later setSizePolicy()
+    // would wipe it. Left panel takes all extra width; the options panel opens
+    // at its own size hint.
+    split->setStretchFactor(0, 1);
+    split->setStretchFactor(1, 0);
 
     QVBoxLayout *root = new QVBoxLayout(this);
     root->setContentsMargins(0, 0, 0, 0);
@@ -326,12 +328,13 @@ TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget
     settingsAct->setChecked(false);
     split->setSizes({ 1000, 0 });
 
-    connect(settingsAct, &QAction::toggled, split, [split](bool checked) {
+    connect(settingsAct, &QAction::toggled, split, [split, rightPanel](bool checked) {
         QList<int> sizes = split->sizes();
         int total = sizes[0] + sizes[1];
         if (checked) {
             if (sizes[1] == 0) {
-                sizes[1] = qMax(280, total / 3);
+                // open at the controls' own minimum width, not a fixed fraction
+                sizes[1] = qMin(rightPanel->sizeHint().width(), total / 2);
                 sizes[0] = qMax(1, total - sizes[1]);
             }
         } else {
@@ -348,6 +351,14 @@ TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget
             settingsAct->setChecked(open);
         }
     });
+
+    // Connect cascadeRecoredr notifications
+    CascadeRecorder *R = view_->cascadeRecorder();
+    connect(R, &CascadeRecorder::dataChanged, this, &TrackViewWidget::updateCtrls);
+    connect(R, &CascadeRecorder::stateChange, this, &TrackViewWidget::onRecorderStateChange);
+
+    // set initial state to capture ON
+    view_->cascadeRecorder()->capture(true);
 }
 
 QToolBar *TrackViewWidget::buildViewToolBar()
@@ -386,6 +397,15 @@ QToolBar *TrackViewWidget::buildViewToolBar()
     QAction *shot = tb->addAction(QIcon(":/assets/ionicons/camera-outline.svg"), QString());
     shot->setToolTip(tr("Screenshot"));
     connect(shot, &QAction::triggered, this, &TrackViewWidget::saveScreenshot_);
+
+    tb->addSeparator();
+
+    QAction *hud = tb->addAction(QIcon(":/assets/ionicons/list-outline.svg"), QString());
+    hud->setToolTip(tr("Show 3D track buffer info"));
+    hud->setCheckable(true);
+    hud->setChecked(view_->hudVisible());
+    connect(hud, &QAction::toggled, view_, &Track3DViewport::setHudVisible);
+    connect(view_, &Track3DViewport::hudVisibleChanged, hud, &QAction::setChecked);
 
     tb->addSeparator();
 
@@ -441,40 +461,46 @@ QWidget *TrackViewWidget::buildPlaybackToolBar()
     tb->setMovable(false);
     int iconSize = 22;
     tb->setIconSize(QSize(iconSize, iconSize));
-    // tb->setStyleSheet("background: white;");
-    //  tb->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
+    // back
+    backAct = tb->addAction(QIcon(":/assets/ionicons/play-back-circle-outline.svg"), QString());
+    backAct->setToolTip("-1ps");
+    connect(backAct, &QAction::triggered, this, &TrackViewWidget::onBack);
+
+    // Record
     recAct = tb->addAction(makeRecordIcon(iconSize), QString());
     recAct->setCheckable(true);
     recAct->setChecked(true);
     recAct->setToolTip("Capture ion tracks into the 3D memory buffer.");
-
     connect(recAct, &QAction::toggled, R, &CascadeRecorder::capture);
     blinker_ = new PendingBlinker(recAct, tb, this);
 
-    QAction *clr = tb->addAction(QIcon(":/assets/ionicons/close-circle-outline.svg"), QString());
-    clr->setToolTip("Clear ion tracks from 3D memory.");
-    connect(clr, &QAction::triggered, R, &CascadeRecorder::clear);
-
-    tb->addSeparator();
-
+    // Play
     playAct = tb->addAction(QIcon(":/assets/ionicons/play-circle-outline.svg"), QString());
     playAct->setCheckable(true);
     playAct->setEnabled(false);
     playAct->setToolTip("Replay stored ion tracks.");
     connect(playAct, &QAction::toggled, R, &CascadeRecorder::play);
 
+    // forward
+    forwardAct =
+            tb->addAction(QIcon(":/assets/ionicons/play-forward-circle-outline.svg"), QString());
+    forwardAct->setToolTip("+1ps");
+    connect(forwardAct, &QAction::triggered, this, &TrackViewWidget::onForward);
+
+    tb->addSeparator();
+
+    // Clear
+    QAction *clr = tb->addAction(QIcon(":/assets/ionicons/close-circle-outline.svg"), QString());
+    clr->setToolTip("Clear ion tracks from 3D memory.");
+    connect(clr, &QAction::triggered, R, &CascadeRecorder::clear);
+
+    tb->addSeparator();
+
     // Playback speed combo
     {
         QComboBox *cb = new QComboBox;
-        struct
-        {
-            const char *label;
-            double rate;
-        } rates[] = { { "1fs/s", 0.001 }, { "10fs/s", 0.01 }, { "100fs/s", 0.1 },
-                      { "1ps/s", 1.0 },   { "10ps/s", 10.0 }, { "100ps/s", 100.0 },
-                      { "1ns/s", 1.e3 },  { "10ns/s", 1.e4 }, { "100ns/s", 1.e5 } };
-        for (const auto &r : rates) {
+        for (const auto &r : playback_rates) {
             cb->addItem(r.label, r.rate);
         }
         cb->setCurrentIndex(3);
@@ -484,11 +510,19 @@ QWidget *TrackViewWidget::buildPlaybackToolBar()
             R->setPlaybackSpeed(r);
         });
 
-        auto *spacer = new QWidget;
-        spacer->setFixedWidth(6); // or setFixedSize(...)
-        tb->addWidget(spacer);
+        {
+            auto *spacer = new QWidget;
+            spacer->setFixedWidth(6); // or setFixedSize(...)
+            tb->addWidget(spacer);
+        }
 
         tb->addWidget(cb);
+
+        {
+            auto *spacer = new QWidget;
+            spacer->setFixedWidth(6); // or setFixedSize(...)
+            tb->addWidget(spacer);
+        }
     }
 
     tb->addSeparator();
@@ -508,78 +542,83 @@ QWidget *TrackViewWidget::buildOptionsPanel()
     // vbox->setSpacing(0);
     vbox->setContentsMargins(0, 0, 0, 0);
 
+    QFont f = p->font();
+    f.setPointSizeF(f.pointSizeF() * 0.88);
+    p->setFont(f); // inherited by every child
+
     QLabel *title = new QLabel("Visualization Options");
     // title->setFrameShape(QFrame::StyledPanel);
     // title->setFrameShadow(QFrame::Raised);
     title->setStyleSheet("font: bold;");
     vbox->addWidget(title);
 
-    QTabWidget *tabs = new QTabWidget;
-    tabs->addTab(buildBufferTab(), tr("3D Buffer"));
-    tabs->addTab(buildColorTab(), tr("Color"));
-    tabs->addTab(buildCameraTab(), tr("Camera"));
+    // all controls live on a single scrollable panel; the former tabs are now
+    // group boxes stacked vertically
+    QScrollArea *scroll = new QScrollArea;
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    // let the panel's size hint follow the controls instead of the hardcoded
+    // 256x192 default, so the splitter can open it at its minimum width
+    scroll->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 
-    vbox->addWidget(tabs);
+    QWidget *content = new QWidget;
+    QVBoxLayout *cvbox = new QVBoxLayout(content);
+    cvbox->setContentsMargins(0, 0, 0, 0);
+
+    auto wrapGroup = [](const QString &name, QWidget *inner) {
+        QGroupBox *box = new QGroupBox(name);
+        QVBoxLayout *l = new QVBoxLayout(box);
+        l->setContentsMargins(0, 0, 0, 0);
+        l->addWidget(inner);
+        return box;
+    };
+
+    cvbox->addWidget(wrapGroup(tr("3D Buffer"), buildBufferGroup()));
+    cvbox->addWidget(wrapGroup(tr("Color"), buildColorGroup()));
+    cvbox->addWidget(wrapGroup(tr("Camera"), buildCameraGroup()));
+    cvbox->addStretch(1);
+
+    scroll->setWidget(content);
+    vbox->addWidget(scroll, 1);
 
     return p;
 }
 
-QWidget *TrackViewWidget::buildInfoPanel()
+static void compactForm(QFormLayout *f)
 {
-    CascadeRecorder *R = view_->cascadeRecorder();
-
-    // QWidget *w = new QWidget;
-    // QFormLayout *frmLayout = new QFormLayout(w);
-    QWidget *p = new QWidget;
-    QVBoxLayout *vbox = new QVBoxLayout(p);
-    // vbox->setSpacing(0);
-    vbox->setContentsMargins(0, 0, 0, 0);
-
-    QLabel *title = new QLabel("Capture Buffer State");
-    // title->setFrameShape(QFrame::StyledPanel);
-    // title->setFrameShadow(QFrame::Raised);
-    title->setStyleSheet("font: bold;");
-    vbox->addWidget(title);
-
-    infoTable = new InfoTable(4, 2);
-    infoTable->horizontalHeader()->setVisible(false);
-    infoTable->verticalHeader()->setVisible(false);
-    infoTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
-    infoTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-
-    cascadeBar = new QProgressBar;
-    cascadeBar->setFormat("%v / %m");
-    memBar = new QProgressBar;
-    memBar->setFormat("%v / %m MB");
-
-    infoTable->setItem(0, 0, new QTableWidgetItem("Cascades:"));
-    infoTable->setCellWidget(0, 1, cascadeBar);
-    infoTable->setItem(1, 0, new QTableWidgetItem("Memory:"));
-    infoTable->setCellWidget(1, 1, memBar);
-    infoTable->setItem(2, 0, new QTableWidgetItem("Duration:"));
-    infoTable->setItem(2, 1, new QTableWidgetItem("0 ps"));
-    infoTable->setItem(3, 0, new QTableWidgetItem("Current t:"));
-    infoTable->setItem(3, 1, new QTableWidgetItem("0 ps"));
-
-    vbox->addWidget(infoTable);
-
-    return p;
+    f->setContentsMargins(6, 4, 6, 4);
+    f->setHorizontalSpacing(6);
+    f->setVerticalSpacing(2);
+    // f->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    f->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
 }
 
-QWidget *TrackViewWidget::buildBufferTab()
+static void addSeparator(QFormLayout *form)
+{
+    QFrame *frame = new QFrame;
+    frame->setFrameStyle(QFrame::HLine | QFrame::Sunken);
+    frame->setMinimumHeight(7);
+    form->addRow(frame);
+}
+
+QWidget *TrackViewWidget::buildBufferGroup()
 {
     CascadeRecorder *R = view_->cascadeRecorder();
 
     QWidget *w = new QWidget;
     QFormLayout *form = new QFormLayout(w);
+    compactForm(form);
 
-    QPushButton *batchBt = new QPushButton(tr("Batch"));
+    QToolButton *batchBt = new QToolButton();
+    batchBt->setText(tr("Batch"));
     batchBt->setCheckable(true);
-    batchBt->setToolTip(tr("Capture N cascades and stop"));
+    batchBt->setToolTip(tr("Capture N ion cascades and stop"));
 
-    QPushButton *ringBt = new QPushButton(tr("Ring"));
+    QToolButton *ringBt = new QToolButton();
+    ringBt->setText(tr("Ring"));
     ringBt->setCheckable(true);
-    ringBt->setToolTip(tr("Continuously capture cascades in a N-size ring buffer"));
+    ringBt->setToolTip(tr("Continuously capture ion cascades in a N-size ring buffer"));
     ringBt->setChecked(true); // matches CascadeRecorder's default Mode::Ring
 
     QButtonGroup *modeGroup = new QButtonGroup(w);
@@ -594,14 +633,18 @@ QWidget *TrackViewWidget::buildBufferTab()
     modeLay->addWidget(batchBt);
     modeLay->addWidget(ringBt);
     form->addRow(tr("Buffer Mode"), modeLay);
-
     {
-        QFrame *frm = new QFrame;
-        frm->setFrameStyle(QFrame::HLine);
-        form->addRow(frm);
+        QWidget *w = form->labelForField(modeLay);
+        w->setToolTip("Set storage mode for ion tracks");
     }
 
-    form->addRow(new QLabel("Buffer Size"));
+    addSeparator(form);
+
+    {
+        QWidget *w = new QLabel("Buffer Size");
+        form->addRow(w);
+        w->setToolTip("Set the number and size of stored ion cascades.");
+    }
 
     QSpinBox *nBox = new QSpinBox;
     nBox->setRange(1, 1000);
@@ -610,8 +653,8 @@ QWidget *TrackViewWidget::buildBufferTab()
     form->addRow(tr("Cascades"), nBox);
     {
         const char *eTip =
-                "Number of cascades to capture. "
-                "In ring buffer mode, older cascades will be dropped when the buffer is full.";
+                "Number of ion cascades to store for display.\n"
+                "In ring buffer mode, older cascades will be dropped \nwhen the buffer is full.";
         nBox->setToolTip(tr(eTip));
         form->labelForField(nBox)->setToolTip(tr(eTip));
     }
@@ -625,29 +668,30 @@ QWidget *TrackViewWidget::buildBufferTab()
     form->addRow(tr("Mem [MB]"), memBox);
     {
         const char *eTip = "Buffer size in MBs. "
-                           "Cascades will be dropped when the buffer is full.";
+                           "Ion cascades will be dropped when the buffer is full.";
         memBox->setToolTip(tr(eTip));
         form->labelForField(memBox)->setToolTip(tr(eTip));
     }
 
+    addSeparator(form);
+
     {
-        QFrame *frm = new QFrame;
-        frm->setFrameStyle(QFrame::HLine | QFrame::Sunken);
-        form->addRow(frm);
+        QWidget *w = new QLabel("Ion track thresholds");
+        form->addRow(w);
+        w->setToolTip("Set thresholds for ion track display.");
     }
 
-    form->addRow(new QLabel("Ion track thresholds"));
-
-    QDoubleSpinBox *eThrBox = new QDoubleSpinBox;
-    eThrBox->setRange(0.001, 1e9);
-    eThrBox->setDecimals(3);
+    QNumberEdit *eThrBox = new QNumberEdit;
+    eThrBox->setElementType(QNumberEdit::Real);
+    eThrBox->setMinimum(0.001);
+    eThrBox->setMaximum(1e9);
     eThrBox->setValue(view_->energyMin());
-    connect(eThrBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), R,
-            &CascadeRecorder::setEnergyThreshold);
+    connect(eThrBox, &QNumberEdit::valueChanged, R,
+            [R](const QVariant &v) { R->setEnergyThreshold(v.toDouble()); });
     form->addRow(tr("E min [eV]"), eThrBox);
     {
-        const char *eTip = "Ion energy threshold for track capture. "
-                           "Tracks with energy below this value will be dropped.";
+        const char *eTip = "Minimum ion energy to display. "
+                           "Ion tracks with energy below this value will be ignored.";
         eThrBox->setToolTip(tr(eTip));
         form->labelForField(eThrBox)->setToolTip(tr(eTip));
     }
@@ -659,8 +703,8 @@ QWidget *TrackViewWidget::buildBufferTab()
     connect(genBox, QOverload<int>::of(&QSpinBox::valueChanged), R, &CascadeRecorder::setGenCutoff);
     form->addRow(tr("Max Recoil gen."), genBox);
     {
-        const char *eTip = "Maximum recoil generation for track capture. "
-                           "Recoil generations above this value will be dropped.";
+        const char *eTip = "Maximum recoil generation to display. "
+                           "Recoil generations above this value will be ignored.";
         genBox->setToolTip(tr(eTip));
         form->labelForField(genBox)->setToolTip(tr(eTip));
     }
@@ -668,10 +712,11 @@ QWidget *TrackViewWidget::buildBufferTab()
     return w;
 }
 
-QWidget *TrackViewWidget::buildColorTab()
+QWidget *TrackViewWidget::buildColorGroup()
 {
     QWidget *w = new QWidget;
     QFormLayout *form = new QFormLayout(w);
+    compactForm(form);
 
     QComboBox *colorBox = new QComboBox;
     colorBox->addItems({ tr("Recoil Generation"), tr("Energy"), tr("Atomic Species") });
@@ -689,9 +734,9 @@ QWidget *TrackViewWidget::buildColorTab()
         QSignalBlocker block(colorMap);
         colorMap->clear();
         if (mode == Track3DViewport::Energy)
-            colorMap->addItems({ tr("Ramp"), tr("Rainbow"), tr("Turbo") });
+            colorMap->addItems({ tr("Rainbow"), tr("Turbo") });
         else
-            colorMap->addItems({ tr("Default"), tr("Tab10") });
+            colorMap->addItems({ tr("Tab10"), tr("Set1") });
     };
     fillMaps(view_->colorMode());
     connect(colorBox, QOverload<int>::of(&QComboBox::currentIndexChanged), colorMap,
@@ -700,11 +745,7 @@ QWidget *TrackViewWidget::buildColorTab()
                 view_->setColorMap(0);
             });
 
-    {
-        QFrame *frm = new QFrame;
-        frm->setFrameStyle(QFrame::HLine | QFrame::Sunken);
-        form->addRow(frm);
-    }
+    addSeparator(form);
 
     form->addRow(new QLabel("Energy scale"));
 
@@ -717,22 +758,24 @@ QWidget *TrackViewWidget::buildColorTab()
     autoBox->setChecked(view_->energyAuto());
     form->addRow(autoBox);
 
-    QDoubleSpinBox *escaleMin = new QDoubleSpinBox;
-    escaleMin->setRange(0.001, 1e9);
-    escaleMin->setDecimals(3);
+    QNumberEdit *escaleMin = new QNumberEdit;
+    escaleMin->setElementType(QNumberEdit::Real);
+    escaleMin->setMinimum(0.001);
+    escaleMin->setMaximum(1e9);
     escaleMin->setValue(view_->energyMin());
     escaleMin->setEnabled(!view_->energyAuto());
-    connect(escaleMin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), view_,
-            &Track3DViewport::setEnergyUserMin);
+    connect(escaleMin, &QNumberEdit::valueChanged, view_,
+            [this](const QVariant &v) { this->view_->setEnergyUserMin(v.toDouble()); });
     form->addRow(tr("min [eV]"), escaleMin);
 
-    QDoubleSpinBox *escaleMax = new QDoubleSpinBox;
-    escaleMax->setRange(0.001, 1e9);
-    escaleMax->setDecimals(3);
+    QNumberEdit *escaleMax = new QNumberEdit;
+    escaleMax->setElementType(QNumberEdit::Real);
+    escaleMax->setMinimum(0.001);
+    escaleMax->setMaximum(1e9);
     escaleMax->setValue(view_->energyMax());
     escaleMax->setEnabled(!view_->energyAuto());
-    connect(escaleMax, QOverload<double>::of(&QDoubleSpinBox::valueChanged), view_,
-            &Track3DViewport::setEnergyUserMax);
+    connect(escaleMax, &QNumberEdit::valueChanged, view_,
+            [this](const QVariant &v) { this->view_->setEnergyUserMax(v.toDouble()); });
     form->addRow(tr("max [eV]"), escaleMax);
 
     connect(autoBox, &QCheckBox::toggled, view_, &Track3DViewport::setEnergyAuto);
@@ -749,25 +792,38 @@ QWidget *TrackViewWidget::buildColorTab()
     return w;
 }
 
-QWidget *TrackViewWidget::buildCameraTab()
+QWidget *TrackViewWidget::buildCameraGroup()
 {
     QWidget *w = new QWidget;
-    QFormLayout *form = new QFormLayout(w);
+    QHBoxLayout *hbox = new QHBoxLayout(w);
+    hbox->setContentsMargins(6, 4, 6, 4);
+    hbox->setSpacing(0);
 
-    // preset views and Home live on the toolbar; this tab persists the view
-    form->addRow(new QLabel(tr("Camera state")));
-
-    QPushButton *saveBt = new QPushButton(tr("Save to file..."));
-    saveBt->setToolTip(tr("Save the current view to a JSON file"));
+    QPushButton *saveBt = new QPushButton(tr("Save"));
+    saveBt->setToolTip(tr("Save the current state to a JSON file"));
     connect(saveBt, &QPushButton::clicked, this, &TrackViewWidget::saveCamera_);
-    form->addRow(saveBt);
+    hbox->addWidget(saveBt);
 
-    QPushButton *loadBt = new QPushButton(tr("Load from file..."));
-    loadBt->setToolTip(tr("Restore a saved view from a JSON file"));
+    QPushButton *loadBt = new QPushButton(tr("Load"));
+    loadBt->setToolTip(tr("Restore a saved state from a JSON file"));
     connect(loadBt, &QPushButton::clicked, this, &TrackViewWidget::loadCamera_);
-    form->addRow(loadBt);
+    hbox->addWidget(loadBt);
 
     return w;
+}
+
+void TrackViewWidget::advanceTime(double dt)
+{
+    CascadeRecorder *R = view_->cascadeRecorder();
+    double t0 = R->tMin();
+    double t1 = R->tMax();
+    double speed = R->playbackSpeed();
+    double t = R->playbackTime() + dt * speed;
+    if (t > t1)
+        t = t1;
+    else if (t < t0)
+        t = t0;
+    R->setPlaybackTime(t);
 }
 
 void TrackViewWidget::saveCamera_()
@@ -854,14 +910,6 @@ void TrackViewWidget::updateCtrls()
     lblMin->setText(QString("%1ps").arg(t1, 6, 'f', 1));
     lblMax->setText(QString("%1ps").arg(w, 6, 'f', 1));
     playBackSlider->setValue(t1 / w * playBackSlider->maximum());
-
-    cascadeBar->setValue(int(R->cascade_buffer().size()));
-    cascadeBar->setMaximum(R->nCascades());
-    memBar->setValue(R->memSize() / 1024 / 1024);
-    memBar->setMaximum(R->memCap() / 1024 / 1024);
-
-    infoTable->item(2, 1)->setText(QString("%1 ps").arg(w, 10, 'f', 3));
-    infoTable->item(3, 1)->setText(QString("%1 ps").arg(t - tmin, 10, 'f', 3));
 }
 
 void TrackViewWidget::onRecorderStateChange(CascadeRecorder::State, CascadeRecorder::State to)
@@ -883,15 +931,17 @@ void TrackViewWidget::onRecorderStateChange(CascadeRecorder::State, CascadeRecor
         break;
     case CascadeRecorder::Capturing:
         recAct->setChecked(true);
+        playAct->setChecked(true);
         this->blinker_->stop();
         break;
     case CascadeRecorder::Finishing:
-    case CascadeRecorder::Pausing:
         recAct->setChecked(true);
+        playAct->setChecked(true);
         this->blinker_->start();
         break;
     case CascadeRecorder::Paused:
         recAct->setChecked(true);
+        playAct->setChecked(true);
         this->blinker_->stop();
         break;
     case CascadeRecorder::Playing:
@@ -899,6 +949,15 @@ void TrackViewWidget::onRecorderStateChange(CascadeRecorder::State, CascadeRecor
         this->blinker_->stop();
         break;
     }
+}
+
+void TrackViewWidget::onPlaybackRateChanged(int i)
+{
+    CascadeRecorder *R = view_->cascadeRecorder();
+    double r = playback_rates[i].rate;
+    R->setPlaybackSpeed(r);
+    backAct->setToolTip(QString("-%1").arg(playback_rates[i].unit));
+    forwardAct->setToolTip(QString("+%1").arg(playback_rates[i].unit));
 }
 
 void TrackViewWidget::saveScreenshot_()

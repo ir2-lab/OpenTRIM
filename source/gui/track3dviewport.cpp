@@ -23,6 +23,13 @@
 #include <QWheelEvent>
 #include <QtMath>
 
+// set this to 1 to debug CascadeRecorder
+#define CASCADE_RECORDER_DEBUG 1
+
+const char *StateName[] = { "Idle", "Capturing", "Playing", "Paused", "Finishing" };
+
+const char *EventName[] = { "Start", "Stop", "Pause", "Resume", "Update", "Clear", "Play" };
+
 // scene vertex: pos (loc 0) + rgba color (loc 1), interleaved
 static const int kSceneFloats = 7;
 static const int kStride = kSceneFloats * sizeof(float);
@@ -169,6 +176,11 @@ int CascadeRecorder::memSize() const
     return size_ * sizeof(TrackVertex);
 }
 
+const char *CascadeRecorder::stateName() const
+{
+    return StateName[state_];
+}
+
 void CascadeRecorder::setMemCap(int bytes)
 {
     bytes = qBound(0, bytes, kMaxCapMB * 1024 * 1024);
@@ -229,10 +241,9 @@ void CascadeRecorder::stateMachine(Event e)
     case Idle:
         switch (e) {
         case Start:
-            clear_();
-            clock_.reset();
-            if (driver_->status() == McDriverObj::mcRunning) {
+            if (driver_->status() == McDriverObj::mcRunning && enableCap_) {
                 channel_->setCapturing(true);
+                clock_.resume();
                 state_ = Capturing;
             } else {
                 channel_->setCapturing(false);
@@ -261,7 +272,8 @@ void CascadeRecorder::stateMachine(Event e)
             break;
         case Pause:
             channel_->setCapturing(false);
-            state_ = Pausing;
+            clock_.pause();
+            state_ = Paused;
             break;
         case Update:
             if (mode_ == Batch) {
@@ -306,14 +318,13 @@ void CascadeRecorder::stateMachine(Event e)
     case Paused:
         switch (e) {
         case Resume:
-            if (driver_->status() == McDriverObj::mcRunning) {
+            if (driver_->status() == McDriverObj::mcRunning && enableCap_) {
                 clock_.resume();
                 channel_->setCapturing(true);
                 state_ = Capturing;
             }
             break;
         case Stop:
-            clock_.pause();
             channel_->setCapturing(false);
             state_ = Idle;
             break;
@@ -328,9 +339,7 @@ void CascadeRecorder::stateMachine(Event e)
     case Finishing:
         switch (e) {
         case Start:
-            clear_();
-            clock_.reset();
-            if (driver_->get_mcdriver()->is_running()) {
+            if (driver_->status() == McDriverObj::mcRunning && enableCap_) {
                 channel_->setCapturing(true);
                 state_ = Capturing;
             } else {
@@ -357,41 +366,14 @@ void CascadeRecorder::stateMachine(Event e)
             break;
         }
         break;
-    case Pausing:
-        switch (e) {
-        case Start:
-            clear_();
-            clock_.reset();
-            if (driver_->get_mcdriver()->is_running()) {
-                channel_->setCapturing(true);
-                state_ = Capturing;
-            } else {
-                channel_->setCapturing(false);
-                state_ = Paused;
-            }
-            break;
-        case Update:
-            if (clock_.playbackTime() > tMax_) {
-                clock_.pause();
-                state_ = Paused;
-            }
-            break;
-        case Stop:
-            clock_.pause();
-            channel_->setCapturing(false);
-            state_ = Idle;
-            break;
-        case Clear:
-            clear_();
-            clock_.reset();
-            break;
-        default:
-            break;
-        }
-        break;
     }
-    if (old_ != state_)
+    if (old_ != state_) {
+#if (CASCADE_RECORDER_DEBUG)
+        qDebug() << "State change: " << StateName[old_] << " -> " << StateName[state_]
+                 << " event=" << EventName[e];
+#endif
         emit stateChange(old_, state_);
+    }
     // if (e == Update)
     statusUpdate_();
     emit dataChanged();
@@ -640,7 +622,24 @@ void Track3DViewport::paintGL()
         recorder_->clearDirtyFlag();
     }
 
+    // QPainter (HUD) can leave the viewport changed; restore it for the widget.
+    const qreal dpr = devicePixelRatioF();
+    glViewport(0, 0, GLsizei(width() * dpr), GLsizei(height() * dpr));
+
     drawScene_();
+
+    // fps estimate: exponential moving average of the wall-clock frame interval
+    if (frameClock_.isValid()) {
+        double dt = frameClock_.nsecsElapsed() / 1.0e9;
+        if (dt > 0.0) {
+            double inst = 1.0 / dt;
+            fps_ = fps_ > 0.0 ? 0.9 * fps_ + 0.1 * inst : inst;
+        }
+    }
+    frameClock_.restart();
+
+    if (hudVisible_)
+        drawHud_();
 
     recorder_->update();
 
@@ -648,8 +647,102 @@ void Track3DViewport::paintGL()
         update();
 }
 
+void Track3DViewport::drawHud_()
+{
+    const CascadeRecorder *R = recorder_;
+    double t = R->playbackTime();
+    double tmin = R->tMin();
+    double tmax = R->tMax();
+    t = std::min(t, tmax);
+    double w = tmax - tmin;
+    t -= tmin;
+    int ncmax = R->nCascades();
+    int nc = R->cascade_buffer().size();
+    nc = std::min(nc, ncmax); // to avoid showing n+1/n in ring mode
+
+    static const char *kColorMode[] = { "recoil gen.", "energy", "species" };
+
+    // long long verts = 0;
+    // for (int c : count_)
+    //     verts += c;
+
+    QStringList rows;
+    rows << QStringLiteral("state          %1").arg(QLatin1String(R->stateName()))
+         << QStringLiteral("buffer mode    %1")
+                    .arg(R->mode() == CascadeRecorder::Batch ? "batch" : "ring")
+         << QStringLiteral("cascades       %1 / %2").arg(nc).arg(ncmax)
+         << QStringLiteral("memory         %1 / %2 MB")
+                    .arg(R->memSize() / (1024.0 * 1024.0), 0, 'f', 1)
+                    .arg(R->memCap() / (1024 * 1024))
+         << QStringLiteral("total duration %1 ps").arg(w, 0, 'f', 3)
+         << QStringLiteral("<time/cascade> %1 ps").arg(nc ? w / nc : 0.0, 0, 'f', 3)
+         << QStringLiteral("current time   %1 ps").arg(t, 0, 'f', 3)
+         << QStringLiteral("color          %1").arg(QLatin1String(kColorMode[colorMode_ % 3]));
+    //<< QStringLiteral("tracks     %1").arg(first_.size())
+    //<< QStringLiteral("vertices   %1").arg(verts)
+    //<< QStringLiteral("camera     yaw %1°  pitch %2°  d %3")
+    //           .arg(yaw_, 0, 'f', 0)
+    //          .arg(pitch_, 0, 'f', 0)
+    //           .arg(dist_, 0, 'f', 0)
+    //<< QStringLiteral("fps         %1").arg(fps_, 0, 'f', 0);
+
+    QPainter p(this);
+    p.setRenderHint(QPainter::TextAntialiasing);
+
+    QFont f(QStringLiteral("monospace"));
+    f.setStyleHint(QFont::Monospace);
+    f.setPointSizeF(font().pointSizeF() * 0.95);
+    p.setFont(f);
+    const QFontMetrics fm(f);
+
+    int textW = 0;
+    for (const QString &r : rows)
+        textW = qMax(textW, fm.horizontalAdvance(r));
+
+    const int pad = 8;
+    const QRect box(10, 10, textW + 2 * pad, rows.size() * fm.lineSpacing() + 2 * pad);
+
+    p.setPen(Qt::NoPen);
+    p.setBrush(QColor(0, 0, 0, 130));
+    p.drawRoundedRect(box, 4, 4);
+
+    p.setPen(QColor(235, 235, 235));
+    int y = box.top() + pad + fm.ascent();
+    for (const QString &r : rows) {
+        p.drawText(box.left() + pad, y, r);
+        y += fm.lineSpacing();
+    }
+}
+
+void Track3DViewport::setHudVisible(bool on)
+{
+    if (hudVisible_ == on)
+        return;
+    hudVisible_ = on;
+    emit hudVisibleChanged(on);
+    update();
+}
+
 void Track3DViewport::drawScene_()
 {
+    // The HUD overlay paints with QPainter, whose GL paint engine mutates the
+    // context (multisample, depth test, blend func, scissor, colour mask, the
+    // viewport, bound program/VAO ...) and restores almost none of it. That
+    // state leaks into the *next* frame, so re-assert everything the scene
+    // needs here every frame instead of trusting initializeGL(). The viewport
+    // is caller-specific (grabScreenshot renders to a larger FBO), so that one
+    // is reset in paintGL(), not here.
+    glEnable(GL_MULTISAMPLE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_STENCIL_TEST);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if (!prog_ || !prog_->isLinked())
@@ -732,6 +825,10 @@ QImage Track3DViewport::grabScreenshot(int scale)
 void Track3DViewport::showEvent(QShowEvent *e)
 {
     QOpenGLWidget::showEvent(e);
+#if (CASCADE_RECORDER_DEBUG)
+    qDebug() << "showEvent";
+#endif
+    recorder_->setEnableCap(true);
     recorder_->pause(false);
     readSceneFromConfig();
     if (!viewInitialized_) {
@@ -745,7 +842,11 @@ void Track3DViewport::showEvent(QShowEvent *e)
 void Track3DViewport::hideEvent(QHideEvent *e)
 {
     QOpenGLWidget::hideEvent(e);
+#if (CASCADE_RECORDER_DEBUG)
+    qDebug() << "hideEvent";
+#endif
     recorder_->pause(true); // capture pauses when the view is hidden
+    recorder_->setEnableCap(false);
 }
 
 void Track3DViewport::readSceneFromConfig()
@@ -1098,36 +1199,6 @@ static std::vector<double> axisTicks(double lo, double hi, bool log)
     return t;
 }
 
-static QColor genSwatch(int g)
-{
-    switch (g) {
-    case 0:
-        return QColor::fromRgbF(1.0, 0.85, 0.2);
-    case 1:
-        return QColor::fromRgbF(1.0, 0.45, 0.1);
-    case 2:
-        return QColor::fromRgbF(0.9, 0.2, 0.2);
-    case 3:
-        return QColor::fromRgbF(0.6, 0.3, 0.8);
-    default:
-        return QColor::fromRgbF(0.35, 0.6, 1.0);
-    }
-}
-
-QColor TrackColorBar::rampColor(float t)
-{
-    t = qBound(0.f, t, 1.f);
-    static const float c[5][3] = {
-        { 0, 0, 1 }, { 0, 1, 1 }, { 0, 1, 0 }, { 1, 1, 0 }, { 1, 0, 0 }
-    };
-    const float f = t * 4.f;
-    const int i = std::min(int(f), 3);
-    const float u = f - i;
-    return QColor::fromRgbF(c[i][0] * (1 - u) + c[i + 1][0] * u,
-                            c[i][1] * (1 - u) + c[i + 1][1] * u,
-                            c[i][2] * (1 - u) + c[i + 1][2] * u);
-}
-
 // matplotlib 'rainbow' colormap — exact analytic definition.
 // Source: matplotlib _cm.py; License: matplotlib (BSD-compatible)
 static QColor mplRainbow(double x)
@@ -1141,9 +1212,9 @@ static QColor mplRainbow(double x)
 
 QColor TrackColorBar::continuousColor(int map, float t)
 {
-    if (map == 1)
+    if (map == 0)
         return mplRainbow(t);
-    if (map == 2) {
+    else if (map == 1) {
         // turbo, (c) Google LLC, Apache-2.0 (A. Mikhailov / R. Du)
         double x = std::min(std::max(double(t), 0.0), 1.0);
         const double r = 0.13572138 + x * (4.61539260 + x * (-42.66032258 + x * 132.13108234))
@@ -1155,14 +1226,6 @@ QColor TrackColorBar::continuousColor(int map, float t)
         return QColor::fromRgbF(std::min(std::max(r, 0.0), 1.0), std::min(std::max(g, 0.0), 1.0),
                                 std::min(std::max(b, 0.0), 1.0));
     }
-    return rampColor(t);
-}
-
-QColor TrackColorBar::speciesColor(int aid)
-{
-    float h = aid * 0.618034f;
-    h -= std::floor(h);
-    return QColor::fromHsvF(h, 1.0, 1.0);
 }
 
 // Tableau 10 palette; values from matplotlib's BSD-licensed TABLEAU_COLORS ("tab10")
@@ -1173,6 +1236,16 @@ QColor TrackColorBar::tab10(int i)
                                     { 227, 119, 194 }, { 127, 127, 127 }, { 188, 189, 34 },
                                     { 23, 190, 207 } };
     const int *c = rgb[((i % 10) + 10) % 10];
+    return QColor(c[0], c[1], c[2]);
+}
+
+// Set1 palette; values from matplotlib's "Set1" ListedColormap (ColorBrewer, Apache-Style/BSD-compatible)
+QColor TrackColorBar::set1(int i)
+{
+    static const int rgb[9][3] = { { 228, 26, 28 },  { 55, 126, 184 }, { 77, 175, 74 },
+                                   { 152, 78, 163 }, { 255, 127, 0 },  { 255, 255, 51 },
+                                   { 166, 86, 40 },  { 247, 129, 191 }, { 153, 153, 153 } };
+    const int *c = rgb[((i % 9) + 9) % 9];
     return QColor(c[0], c[1], c[2]);
 }
 
@@ -1217,7 +1290,7 @@ void TrackColorBar::paintEvent(QPaintEvent *)
         return;
     }
 
-    const bool tab = view_->colorMap() == 1;
+    const bool tab = view_->colorMap() == 0;
 
     if (view_->colorMode() == Track3DViewport::Generation) {
         p.drawText(m, m + 12, QStringLiteral("Recoil Gen."));
@@ -1225,7 +1298,7 @@ void TrackColorBar::paintEvent(QPaintEvent *)
         for (int i = 0; i < n; ++i) {
             const int y = m + 20 + i * 22;
             const QRect sw(m, y, 16, 16);
-            p.fillRect(sw, tab ? tab10(i) : genSwatch(i));
+            p.fillRect(sw, tab ? tab10(i) : set1(i));
             p.drawRect(sw);
             QString lbl = i == 0 ? QStringLiteral("source")
                                  : (i == 4 ? QStringLiteral("4+") : QString::number(i));
@@ -1242,7 +1315,7 @@ void TrackColorBar::paintEvent(QPaintEvent *)
             for (int i = 0; i < n; ++i) {
                 const int y = m + 20 + i * 22;
                 const QRect sw(m, y, 16, 16);
-                p.fillRect(sw, tab ? tab10(i) : speciesColor(i));
+                p.fillRect(sw, tab ? tab10(i) : set1(i));
                 p.drawRect(sw);
                 p.drawText(sw.right() + 6, y + 13, atom_labels[i].c_str());
             }
@@ -1251,7 +1324,7 @@ void TrackColorBar::paintEvent(QPaintEvent *)
             for (int i = 0; i < n; ++i) {
                 const int y = m + 20 + i * 22;
                 const QRect sw(m, y, 16, 16);
-                p.fillRect(sw, tab ? tab10(i) : speciesColor(i));
+                p.fillRect(sw, tab ? tab10(i) : set1(i));
                 p.drawRect(sw);
                 QString lbl = i == 0 ? QStringLiteral("source")
                                      : (i == 4 ? QStringLiteral("4+") : QString::number(i));

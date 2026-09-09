@@ -26,6 +26,9 @@
 #include <QMouseEvent>
 #include <QEnterEvent>
 
+// set this to 1 to debug help panel eventFilter
+#define HELP_PANEL_DEBUG 0
+
 struct HelpPanel::HelpData
 {
     enum widget_hint_t { label, tabbar, header, table };
@@ -199,24 +202,32 @@ bool HelpPanel::eventFilter(QObject *watched, QEvent *event)
         if (w == currentWidget) {
             // check for combo drop-down
             if (auto *combo = qobject_cast<QComboBox *>(watched)) {
-                // if (event->type() == QEvent::Leave) {
+#if (HELP_PANEL_DEBUG)
                 qDebug() << "Combo + ev=" << event->type();
+#endif
                 if (combo->view() && combo->view()->isVisible()) {
+#if (HELP_PANEL_DEBUG)
                     qDebug() << "view+vis = true, no timer";
+#endif
                     comboPopup = combo->view();
                     comboPopup->installEventFilter(this);
                     return false; // popup open, ignore this Leave
                 } else {
+#if (HELP_PANEL_DEBUG)
                     qDebug() << "view+vis = false, clear timer";
+#endif
                 }
             }
-
+#if (HELP_PANEL_DEBUG)
             qDebug() << "timer after ev=" << event->type();
+#endif
             hideTimer_->start();
         }
 
         if (w == comboPopup) {
+#if (HELP_PANEL_DEBUG)
             qDebug() << "comboPopup timer after ev=" << event->type();
+#endif
             hideTimer_->start();
         }
     } break;
@@ -228,10 +239,14 @@ bool HelpPanel::eventFilter(QObject *watched, QEvent *event)
                 if (section < currentHelpData->path.size() && section >= 0) {
                     setHtml(generateHelpHtml(currentHelpData, section));
                     currentSection = section;
+#if (HELP_PANEL_DEBUG)
                     qDebug() << "section change to " << currentSection
                              << " after ev=" << event->type();
+#endif
                 } else {
+#if (HELP_PANEL_DEBUG)
                     qDebug() << "out of scope section " << section << " after ev=" << event->type();
+#endif
                     hideTimer_->start();
                 }
             }

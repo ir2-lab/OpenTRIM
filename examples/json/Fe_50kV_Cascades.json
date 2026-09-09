@@ -1,0 +1,190 @@
+{
+    "Simulation": {
+        "simulation_type": "CascadesOnly",
+        "electronic_stopping": "Off",
+        "intra_cascade_recombination": true
+    },
+    "Transport": {
+        "flight_path_type": "Constant",
+        "flight_path_const": 1.0
+    },
+    "IonBeam": {
+        "ion": {
+            "symbol": "Fe"
+        },
+        "energy_distribution": {
+            "center": 50000.0
+        },
+        "spatial_distribution": {
+            "geometry": "Volume",
+            "center": [
+                60.0,
+                60.0,
+                60.0
+            ]
+        },
+        "angular_distribution": {
+            "type": "Uniform",
+            "fwhm": 12.67
+        }
+    },
+    "Target": {
+        "size": [
+            120.0,
+            120.0,
+            120.0
+        ],
+        "periodic_bc": [
+            0,
+            0,
+            0
+        ],
+        "materials": [
+            {
+                "id": "Fe",
+                "density": 7.8658,
+                "composition": [
+                    {
+                        "element": {
+                            "symbol": "Fe"
+                        },
+                        "X": 1.0,
+                        "Ed": 40.0,
+                        "El": 3.0,
+                        "Es": 3.0,
+                        "Er": 40.0,
+                        "Rc": 0.8
+                    }
+                ],
+                "color": "#55aaff"
+            }
+        ],
+        "regions": [
+            {
+                "id": "R1",
+                "material_id": "Fe",
+                "size": [
+                    10000.0,
+                    10000.0,
+                    10000.0
+                ]
+            }
+        ]
+    },
+    "Output": {
+        "title": "50keV Fe in Fe cascades",
+        "outfilename": "Fe_50kV_Cascades",
+        "storage_interval": 60000,
+        "store_exit_events": false,
+        "store_pka_events": false,
+        "store_damage_events": false,
+        "store_dedx": true
+    },
+    "Run": {
+        "max_no_ions": 100000
+    },
+    "UserTally": [
+        {
+            "id": "Nfp_0",
+            "description": "# of recoil ions stopped = # of initially created Frenkel pairs",
+            "event": "IonStop",
+            "coordinate_system": {
+                "origin": [
+                    60.0,
+                    60.0,
+                    60.0
+                ]
+            },
+            "bins": {
+                "r": [
+                    0.0,
+                    2.0,
+                    4.0,
+                    6.0,
+                    8.0,
+                    10.0,
+                    12.0,
+                    14.0,
+                    16.0,
+                    18.0,
+                    20.0,
+                    22.0,
+                    24.0,
+                    26.0,
+                    28.0,
+                    30.0,
+                    32.0,
+                    34.0,
+                    36.0,
+                    38.0,
+                    40.0,
+                    42.0,
+                    44.0,
+                    46.0,
+                    48.0,
+                    50.0,
+                    52.0,
+                    54.0,
+                    56.0,
+                    58.0,
+                    60.0
+                ],
+                "atom_id": [
+                    1.0,
+                    2.0
+                ]
+            }
+        },
+        {
+            "id": "Nfp_1",
+            "description": "# of vacancies = # of Frenkel pairs after recombination",
+            "event": "Vacancy",
+            "coordinate_system": {
+                "origin": [
+                    60.0,
+                    60.0,
+                    60.0
+                ]
+            },
+            "bins": {
+                "r": [
+                    0.0,
+                    2.0,
+                    4.0,
+                    6.0,
+                    8.0,
+                    10.0,
+                    12.0,
+                    14.0,
+                    16.0,
+                    18.0,
+                    20.0,
+                    22.0,
+                    24.0,
+                    26.0,
+                    28.0,
+                    30.0,
+                    32.0,
+                    34.0,
+                    36.0,
+                    38.0,
+                    40.0,
+                    42.0,
+                    44.0,
+                    46.0,
+                    48.0,
+                    50.0,
+                    52.0,
+                    54.0,
+                    56.0,
+                    58.0,
+                    60.0
+                ],
+                "atom_id": [
+                    1.0,
+                    2.0
+                ]
+            }
+        }
+    ]
+}

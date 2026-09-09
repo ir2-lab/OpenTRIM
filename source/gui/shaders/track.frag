@@ -7,30 +7,12 @@ flat in int vAid;
 
 uniform float uTime; // playback time [ps]
 uniform int uColorMode; // 0 generation, 1 energy, 2 species
-uniform int uColorMap; // continuous: 0 ramp 1 viridis 2 turbo; discrete: 0 default 1 tab10
+uniform int uColorMap; // continuous: 0 rainbow 1 turbo; discrete: 0 tab10 1 set1
 uniform float uEnergyMin; // [eV]
 uniform float uEnergyMax; // [eV]
 uniform int uEnergyLog; // 1 = log scale
 
 out vec4 fragColor;
-
-// blue -> cyan -> green -> yellow -> red; mirrored in TrackColorBar::rampColor
-vec3 ramp(float t)
-{
-    t = clamp(t, 0.0, 1.0);
-    const vec3 c0 = vec3(0.0, 0.0, 1.0);
-    const vec3 c1 = vec3(0.0, 1.0, 1.0);
-    const vec3 c2 = vec3(0.0, 1.0, 0.0);
-    const vec3 c3 = vec3(1.0, 1.0, 0.0);
-    const vec3 c4 = vec3(1.0, 0.0, 0.0);
-    if (t < 0.25)
-        return mix(c0, c1, t / 0.25);
-    if (t < 0.50)
-        return mix(c1, c2, (t - 0.25) / 0.25);
-    if (t < 0.75)
-        return mix(c2, c3, (t - 0.50) / 0.25);
-    return mix(c3, c4, (t - 0.75) / 0.25);
-}
 
 // turbo, (c) Google LLC, Apache-2.0. Design A. Mikhailov, GLSL approx R. Du
 // (https://gist.github.com/mikhailov-work/0d177465a8151eb6ede1768d51d476c7).
@@ -61,13 +43,6 @@ vec3 mplRainbow(float x)
                 cos(1.57079633 * x));
 }
 
-vec3 continuousColor(int map, float t)
-{
-    if (map == 1) return mplRainbow(t);
-    if (map == 2) return turbo(t);
-    return ramp(t);
-}
-
 // Tableau 10 palette; values from matplotlib's BSD-licensed TABLEAU_COLORS ("tab10").
 vec3 tab10(int i)
 {
@@ -84,22 +59,19 @@ vec3 tab10(int i)
     return vec3(0.090, 0.745, 0.811);
 }
 
-// color by recoil generation
-vec3 genColor(int g)
+// Set1 palette; values from matplotlib's BSD-licensed ("Set1"), ColorBrewer qualitative.
+vec3 set1(int i)
 {
-    if (g <= 0) return vec3(1.0, 0.85, 0.2); // source ion
-    if (g == 1) return vec3(1.0, 0.45, 0.1);
-    if (g == 2) return vec3(0.9, 0.2, 0.2);
-    if (g == 3) return vec3(0.6, 0.3, 0.8);
-    return vec3(0.35, 0.6, 1.0); // deeper recoils
-}
-
-// distinct hue per atom id; mirrored in TrackColorBar::speciesColor
-vec3 speciesColor(int a)
-{
-    float h = fract(float(a) * 0.618034);
-    vec3 p = abs(fract(vec3(h) + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
-    return clamp(p - 1.0, 0.0, 1.0);
+    i = i - 9 * (i / 9); // wrap into [0,9)
+    if (i == 0) return vec3(0.894, 0.102, 0.110);
+    if (i == 1) return vec3(0.216, 0.494, 0.722);
+    if (i == 2) return vec3(0.302, 0.686, 0.290);
+    if (i == 3) return vec3(0.596, 0.306, 0.639);
+    if (i == 4) return vec3(1.000, 0.498, 0.000);
+    if (i == 5) return vec3(1.000, 1.000, 0.200);
+    if (i == 6) return vec3(0.651, 0.337, 0.157);
+    if (i == 7) return vec3(0.969, 0.506, 0.749);
+    return vec3(0.600, 0.600, 0.600);
 }
 
 float energyFraction()
@@ -113,6 +85,11 @@ float energyFraction()
     return (hi > lo) ? (e - lo) / (hi - lo) : 0.0;
 }
 
+vec3 continuousColor(int map, float t)
+{
+    return map == 0 ? mplRainbow(t) : turbo(t);
+}
+
 void main()
 {
     if (vT > uTime) // time evolution: hide vertices not yet reached
@@ -122,8 +99,9 @@ void main()
     if (uColorMode == 1)
         c = continuousColor(uColorMap, energyFraction());
     else if (uColorMode == 2)
-        c = uColorMap == 1 ? tab10(vAid) : speciesColor(vAid);
+        c = uColorMap == 0 ? tab10(vAid) : set1(vAid);
     else
-        c = uColorMap == 1 ? tab10(vRid) : genColor(vRid);
+        c = uColorMap == 0 ? tab10(vRid) : set1(vRid);
+
     fragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
 }

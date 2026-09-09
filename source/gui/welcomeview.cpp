@@ -533,10 +533,11 @@ void WelcomeView::openJson(const QString &path)
     QByteArray json = f.readAll();
 
     // Is it a valid json config ??
+    // parsing with strict=true (unrecognized options not allowed)
     mcconfig opt;
     std::istringstream is(json.constData());
     std::ostringstream os;
-    if (opt.parseJSON(is, false, &os) != 0) {
+    if (opt.parseJSON(is, true, &os) != 0) {
         Dialogs::warning(this, tr("Open JSON File"), tr("Error parsing JSON file:"), { path },
                          QString::fromStdString(os.str()));
         return;

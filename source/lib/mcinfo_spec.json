@@ -116,21 +116,21 @@
                             "type": "Dataset",
                             "datatype": "Numeric",
                             "description": "X-axis grid",
-                            "size": "\\f$[N_x]\\f$"
+                            "size": "\\f$[N_x + 1]\\f$"
                         },
                         {
                             "id": "Y",
                             "type": "Dataset",
                             "datatype": "Numeric",
                             "description": "Y-axis grid",
-                            "size": "\\f$[N_y]\\f$"
+                            "size": "\\f$[N_y + 1]\\f$"
                         },
                         {
                             "id": "Z",
                             "type": "Dataset",
                             "datatype": "Numeric",
                             "description": "Z-axis grid",
-                            "size": "\\f$[N_z]\\f$"
+                            "size": "\\f$[N_z + 1]\\f$"
                         }
                     ]
                 },

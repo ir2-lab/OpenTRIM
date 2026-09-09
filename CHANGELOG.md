@@ -9,28 +9,25 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 - Python bindings (`opentrim` package, GSoC 2026 Feature A): configure, run and
   evaluate simulations from Python scripts, Jupyter notebooks or interactive
-  sessions via the `Config`, `Driver` and `Info` classes. Ships type stubs for
-  editor auto-completion, a `pip install .` build (pyproject.toml), example
-  notebooks under `examples/python`, a `pytest` suite and Sphinx API docs.
+  sessions via the `Config`, `Driver` and `Info` classes. Builds either from
+  root folder, with `pip install .` or standalone (`cmake -S bindings/python`)
+  against an installed OpenTRIM lib. Example notebooks under `examples/python` and 
+  Sphinx API docs.
+- Octave bindings with similar classes as in Python plus functions for screened 
+  Coulomb scattering and electronic stopping calculations. Builds as an octave 
+  package against an installed OpenTRIM lib. Examples under `examples/octave`
 - Real-time 3D track visualization in the GUI (GSoC 2026 Feature B): live display
   of displacement cascades while a simulation runs, with a dedicated "3D Vis" tab,
   OpenGL track rendering, camera tab with save/load and screenshot export,
   selectable colormaps, energy- and time-based track colouring, playback and a
   track-viewer user guide.
-- C++ unit-test framework under `test/cpp` (event-handling and scattering-calc
-  tests).
 - Material Database dialog for picking predefined materials from a JSON database.
 - UserTally configuration UI in the GUI.
 - Contextual Help Panel in the Config view.
-- Octave bindings.
 
 ### Changed
-- Python bindings can now be built standalone (`cmake -S bindings/python`)
-  against an installed OpenTRIM with a system pybind11, enabling a
-  `python3-opentrim` distribution package. The in-tree `add_subdirectory` build
-  is unchanged and now prefers a system pybind11 (>= 2.9.1) when available,
-  falling back to a pinned copy otherwise.
-- Core library extended to stream ion-track and event data to the GUI in real
+- Core library extended to stream ion-track and event data to the GUI or
+  other external programs in real
   time (`event_stream`, `ion`, `mccore`, `mcdriver`, `tally`).
 - Rewrite of `mcinfo` and change of `mcdriver` behaviour.
 - Unified `Dialogs` helper; GUI migrated to it.

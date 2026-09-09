@@ -93,6 +93,8 @@ public:
     bool insertRows(int position, int rows, const QModelIndex &parent = QModelIndex()) override;
     bool removeRows(int position, int rows, const QModelIndex &parent = QModelIndex()) override;
 
+    QString binStatus() const;
+
 private:
     friend class UserTallyBinDelegate;
 
@@ -148,6 +150,7 @@ public slots:
     void setWidgetData();
 
     void addTally();
+    void duplicateTally();
     void removeTally();
     void editTallyName();
     void updateSelectedTally();
@@ -174,6 +177,7 @@ private:
     // header row: id combo + add/remove/rename buttons
     MyComboBox *cbTallyID;
     QToolButton *btAddTally;
+    QToolButton *btDuplicateTally;
     QToolButton *btDelTally;
     QToolButton *btEdtTally;
 
@@ -188,6 +192,7 @@ private:
     QToolButton *btAddBin;
     QToolButton *btRemoveBin;
     QTableView *binsTable;
+    QLabel *binStatus;
     UserTallyBinsModel *binsModel;
     UserTallyBinDelegate *binsDelegate;
     QItemSelectionModel *binsSelectionModel;

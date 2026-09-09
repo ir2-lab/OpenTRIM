@@ -30,16 +30,20 @@ private slots:
     void showGuide_();
     void updateCtrls();
     void onRecorderStateChange(CascadeRecorder::State from, CascadeRecorder::State to);
+    void onBack() { advanceTime(-1.0); }
+    void onForward() { advanceTime(+1.0); }
+    void onPlaybackRateChanged(int i);
 
 private:
     QToolBar *buildViewToolBar();
     QWidget *buildPlaybackSlider();
     QWidget *buildPlaybackToolBar();
     QWidget *buildOptionsPanel();
-    QWidget *buildInfoPanel();
-    QWidget *buildBufferTab();
-    QWidget *buildColorTab();
-    QWidget *buildCameraTab();
+    QWidget *buildBufferGroup();
+    QWidget *buildColorGroup();
+    QWidget *buildCameraGroup();
+    // change world playback time by dt seconds
+    void advanceTime(double dt);
 
     Track3DViewport *view_;
     PendingBlinker *blinker_{ nullptr };
@@ -48,17 +52,14 @@ private:
     // rec/play actions
     QAction *recAct;
     QAction *playAct;
+    QAction *backAct;
+    QAction *forwardAct;
     QAction *settingsAct;
 
     // playback slider control
     QLabel *lblMin;
     QLabel *lblMax;
     QSlider *playBackSlider;
-
-    // info panel
-    QTableWidget *infoTable;
-    QProgressBar *cascadeBar;
-    QProgressBar *memBar;
 };
 
 #endif // TRACKVIEWWIDGET_H

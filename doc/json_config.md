@@ -24,6 +24,7 @@ Some more example configurations can be found here:
 - \subpage 1MeV_H_on_Fe
 - \subpage 2MeV_Fe_on_Fe
 - \subpage 3MeV_Xe_on_UO2
+- \subpage Fe_50kV_Cascades
 
 \include{doc} options.dox.md
 
@@ -44,6 +45,12 @@ JSON config
 JSON config
 
 \include 3MeV_Xe_on_UO2.json
+
+\page Fe_50kV_Cascades 50keV Fe in Fe cascades
+
+JSON config
+
+\include Fe_50kV_Cascades.json
 
 
 

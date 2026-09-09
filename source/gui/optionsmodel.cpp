@@ -14,6 +14,8 @@
 #include <QFile>
 #include "json_defs_p.h"
 
+#include "qstring_vector_serialize.h"
+
 #include <QDebug>
 
 OptionsItem::OptionsItem(OptionsItem *parent) : m_parentItem(parent)
@@ -273,7 +275,9 @@ void VectorOptionsItem::setEditorData(QWidget *editor, const QVariant &v) const
 }
 QVariant VectorOptionsItem::getEditorData(QWidget *editor)
 {
-    return ((QVectorEdit *)editor)->text();
+    QVectorEdit *edt = (QVectorEdit *)(editor);
+    QVector<float> vec = edt->value().value<QVector<float>>();
+    return qstring_serialize<QVector<float>>::toString(vec);
 }
 IVectorOptionsItem::IVectorOptionsItem(int size, int fmin, int fmax, const QString &key,
                                        const QString &name, OptionsItem *parent)
@@ -299,7 +303,9 @@ void IVectorOptionsItem::setEditorData(QWidget *editor, const QVariant &v) const
 }
 QVariant IVectorOptionsItem::getEditorData(QWidget *editor)
 {
-    return ((QVectorEdit *)editor)->text();
+    QVectorEdit *edt = (QVectorEdit *)(editor);
+    QVector<int> vec = edt->value().value<QVector<int>>();
+    return qstring_serialize<QVector<int>>::toString(vec);
 }
 /*********************************************************/
 OptionsItemDelegate::OptionsItemDelegate(QObject *parent) : ValidatingItemDelegate(parent) { }
@@ -344,8 +350,8 @@ bool OptionsItemDelegate::eventFilter(QObject *object, QEvent *event)
             QWidget *editor = qobject_cast<QWidget *>(object);
             if (editor) {
                 bool forward = keyEvent->key() == Qt::Key_Tab;
-                QWidget *next = forward ? editor->nextInFocusChain()
-                                        : editor->previousInFocusChain();
+                QWidget *next =
+                        forward ? editor->nextInFocusChain() : editor->previousInFocusChain();
                 if (next)
                     next->setFocus(forward ? Qt::TabFocusReason : Qt::BacktabFocusReason);
                 return true;
@@ -478,7 +484,7 @@ mcconfig *OptionsModel::options()
 QVariant OptionsModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
-        return {};
+        return { };
 
     OptionsItem *item = static_cast<OptionsItem *>(index.internalPointer());
 
@@ -494,7 +500,7 @@ QVariant OptionsModel::data(const QModelIndex &index, int role) const
             return item->value();
     }
 
-    return {};
+    return { };
 }
 bool OptionsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
@@ -512,18 +518,18 @@ bool OptionsModel::setData(const QModelIndex &index, const QVariant &value, int 
 QVariant OptionsModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role != Qt::DisplayRole)
-        return {};
+        return { };
 
     if (orientation == Qt::Horizontal && (section == 0 || section == 1)) {
         const char *hdr_lbl[] = { "Property", "Value" };
         return hdr_lbl[section];
     } else
-        return {};
+        return { };
 }
 QModelIndex OptionsModel::index(int row, int column, const QModelIndex &parent) const
 {
     if (!hasIndex(row, column, parent))
-        return {};
+        return { };
 
     OptionsItem *parentItem;
 
@@ -536,7 +542,7 @@ QModelIndex OptionsModel::index(int row, int column, const QModelIndex &parent) 
     if (childItem)
         return createIndex(row, column, childItem);
     else
-        return {};
+        return { };
 }
 
 QModelIndex OptionsModel::index(const QString &key, int column, const QModelIndex &parent) const
@@ -561,7 +567,7 @@ QModelIndex OptionsModel::index(const QString &key, int column, const QModelInde
     if (childItem)
         return createIndex(row, column, childItem);
     else
-        return {};
+        return { };
 }
 
 QModelIndex OptionsModel::indexFromPath(const QString &path) const
@@ -579,7 +585,7 @@ QModelIndex OptionsModel::indexFromPath(const QString &path) const
 QModelIndex OptionsModel::parent(const QModelIndex &index) const
 {
     if (!index.isValid())
-        return {};
+        return { };
 
     OptionsItem *childItem = static_cast<OptionsItem *>(index.internalPointer());
     OptionsItem *parentItem = childItem->parent();

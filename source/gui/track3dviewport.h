@@ -112,6 +112,8 @@ class CascadeRecorder : public QObject
     // ion tracks below this energy are dropped
     Q_PROPERTY(float energyThreshold READ energyThreshold WRITE setEnergyThreshold NOTIFY
                        energyThresholdChanged)
+    // capture enable flag - initially false
+    Q_PROPERTY(bool enableCap READ enableCap WRITE setEnableCap)
 
 public:
     /* State Machine
@@ -121,7 +123,7 @@ public:
      * Finishing: playing back the captured cascades until the end
      * Pausing: going from Capturing to Paused mode
      */
-    enum State { Idle, Capturing, Playing, Paused, Finishing, Pausing };
+    enum State { Idle, Capturing, Playing, Paused, Finishing };
 
     /* Buffer Mode
      * - Batch: get N cascades and stop
@@ -136,10 +138,13 @@ public:
     int nCascades() const { return nCascades_; }
     int memCap() const;
     int memSize() const;
+    Mode mode() const { return mode_; }
     double playbackTime() const { return clock_.playbackTime(); }
     double playbackSpeed() const { return clock_.speed(); }
     float energyThreshold() const { return energyThreshold_; }
+    bool enableCap() const { return enableCap_; }
     State state() const { return state_; }
+    const char *stateName() const;
     // tracks need redraw
     bool dirty() const { return tracksDirty_; }
     void clearDirtyFlag() { tracksDirty_ = false; }
@@ -161,6 +166,7 @@ public slots:
     void setPlaybackSpeed(double f); // f [ps/s]
     void setMemCap(int bytes);
     void setEnergyThreshold(double eV);
+    void setEnableCap(bool on) { enableCap_ = on; }
     void setGenCutoff(int g);
     void update() { stateMachine(Update); }
 
@@ -185,6 +191,7 @@ private:
     Mode mode_{ Ring };
     int nCascades_{ 10 };
     float energyThreshold_{ 0.f }; // [eV]
+    bool enableCap_{ false };
     CascadeRecorderClock clock_;
     double tMin_{ 0.f }; // [ps] start of 1st displayed cascade
     double tMax_{ 0.f }; // [ps] end of last displayed cascade
@@ -233,6 +240,7 @@ public:
 
     int colorMode() const { return colorMode_; }
     int colorMap() const { return colorMap_; }
+    bool hudVisible() const { return hudVisible_; }
     bool energyLog() const { return energyLog_; }
     bool energyAuto() const { return energyAuto_; }
     float energyMin() const { return energyDataMin_; } // [eV]
@@ -244,6 +252,7 @@ public slots:
     void refreshScene();
     void setColorMode(int m);
     void setColorMap(int m);
+    void setHudVisible(bool on);
     void setEnergyLog(bool on);
     void onEnergyThresholdChanged(float eV);
     void setEnergyAuto(bool on);
@@ -253,6 +262,7 @@ public slots:
 signals:
     void captureChanged(bool on);
     void colorConfigChanged();
+    void hudVisibleChanged(bool on);
 
 protected:
     void initializeGL() override;
@@ -285,6 +295,7 @@ private:
 
     void rebuildTrackBuffer();
     void drawScene_();
+    void drawHud_();
 
     McDriverObj *driver_; // not owned
     CascadeRecorder *recorder_;
@@ -319,6 +330,10 @@ private:
     float yaw_{ 45.f }, pitch_{ 30.f }; // degrees, +pitch = eye above
     QPoint lastPos_;
     bool viewInitialized_{ false };
+
+    bool hudVisible_{ true };
+    QElapsedTimer frameClock_; // wall-clock between paintGL calls, for the HUD fps
+    double fps_{ 0.0 };
 };
 
 // Legend next to the viewport: an energy gradient in Energy mode, else discrete
@@ -331,10 +346,9 @@ public:
     explicit TrackColorBar(Track3DViewport *view, QWidget *parent = nullptr);
     QSize sizeHint() const override { return QSize(84, 200); }
 
-    static QColor rampColor(float t); // mirrors track.frag ramp()
     static QColor continuousColor(int map, float t); // mirrors track.frag continuousColor()
-    static QColor speciesColor(int aid); // mirrors track.frag speciesColor()
     static QColor tab10(int i); // mirrors track.frag tab10()
+    static QColor set1(int i); // mirrors track.frag set1()
 
 protected:
     void paintEvent(QPaintEvent *e) override;

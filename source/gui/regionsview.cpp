@@ -348,7 +348,8 @@ void RegionDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
     case 2:
     case 3: {
         QVectorEdit *edt = (QVectorEdit *)(editor);
-        v = edt->text();
+        QVector<float> vec = edt->value().value<QVector<float>>();
+        v = qstring_serialize<QVector<float>>::toString(vec);
     } break;
     }
 

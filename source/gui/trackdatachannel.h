@@ -10,16 +10,21 @@
 
 #include "cascadeassembler.h"
 
-// Carries track data from the sim thread to the GUI thread. Finished cascades are
-// queued and cascadeReady() is emitted from the consumer thread (so B-2 must use a
-// queued connection); the GUI thread drains with takeCascades().
+/* Carries track data from the sim thread to the GUI thread.
+ *
+ * Finished cascades are queued and cascadeReady() is emitted
+ * from the consumer thread (must use a queued connection)
+ *
+ * The GUI thread drains with takeCascades().
+ */
 class TrackDataChannel : public QObject
 {
     Q_OBJECT
 public:
     static uint32_t eventMask() { return CascadeAssembler::eventMask(); }
 
-    // the handler; p is a TrackDataChannel*
+    // the mccore::event_handler definition
+    // p is a TrackDataChannel*
     static void onEvent(Event ev, const ion &i, void *p);
 
     explicit TrackDataChannel(QObject *parent = nullptr);

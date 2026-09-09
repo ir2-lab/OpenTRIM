@@ -71,14 +71,14 @@ QMap<QString, FieldSpec> loadUserTallyFieldSpecs(const QString &path)
 // Order matches user_tally::bin_var_t's declaration order in user_tally.h
 // and the field order in parse_json.cpp's
 // MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(user_tally::bin_var_t, ...).
-const char *kBinVarNames[] = { "x",  "y",  "z",  "r",        "rho", "cosTheta", "nx",
-                               "ny", "nz", "E",  "Tdam",     "V",   "atom_id",  "recoil_id" };
+const char *kBinVarNames[] = { "x",  "y",  "z", "r",    "rho", "cosTheta", "nx",
+                               "ny", "nz", "E", "Tdam", "V",   "atom_id",  "recoil_id" };
 const int kBinVarCount = int(sizeof(kBinVarNames) / sizeof(kBinVarNames[0]));
 
 // The 6 event types allowed by options_spec.json's "/UserTally/i/event"
 // (a subset of the full Event enum -- the rest are internal-only events).
-const char *kEventNames[] = { "IonExit",         "IonStop",  "Vacancy",
-                              "Replacement",     "CascadeComplete", "BoundaryCrossing" };
+const char *kEventNames[] = { "IonExit",     "IonStop",         "Vacancy",
+                              "Replacement", "CascadeComplete", "BoundaryCrossing" };
 const int kEventCount = int(sizeof(kEventNames) / sizeof(kEventNames[0]));
 
 Event eventFromName(const QString &s)
@@ -334,10 +334,56 @@ bool UserTallyBinsModel::removeRows(int position, int rows, const QModelIndex &p
     return true;
 }
 
+QString UserTallyBinsModel::binStatus() const
+{
+    if (rowVar_.empty())
+        return "No tally bins defined - the UserTally is invalid.";
+
+    int total_bins = 1;
+    int i = 0;
+    int varIdx = rowVar_[i];
+    const bin_var_spec_t &spec = varSpecs_[varIdx];
+    int nbins = 0;
+    {
+        std::string jsonStr;
+        std::ostringstream os;
+        model_->options()->get(binPath(varIdx).toStdString(), jsonStr, &os);
+        ojson j = ojson::parse(jsonStr);
+        if (j.is_array()) {
+            ojson::array_t a(j);
+            nbins = a.size() - 1;
+        }
+    }
+    QString S = QString("(%1: %2)").arg(spec.name).arg(nbins);
+    total_bins *= nbins;
+    ++i;
+    for (; i < rowVar_.size(); ++i) {
+        varIdx = rowVar_[i];
+        const bin_var_spec_t &spec = varSpecs_[varIdx];
+        nbins = 0;
+        {
+            std::string jsonStr;
+            std::ostringstream os;
+            model_->options()->get(binPath(varIdx).toStdString(), jsonStr, &os);
+            ojson j = ojson::parse(jsonStr);
+            if (j.is_array()) {
+                ojson::array_t a(j);
+                nbins = a.size() - 1;
+            }
+        }
+        S += QString(" × (%1: %2)").arg(spec.name).arg(nbins);
+        total_bins *= nbins;
+    }
+    S += QString(" = %1 total").arg(total_bins);
+
+    return S;
+}
+
 /*****************************************************************************/
 UserTallyBinDelegate::UserTallyBinDelegate(QObject *parent) : ValidatingItemDelegate(parent) { }
 
-QWidget *UserTallyBinDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem & /* option */,
+QWidget *UserTallyBinDelegate::createEditor(QWidget *parent,
+                                            const QStyleOptionViewItem & /* option */,
                                             const QModelIndex &index) const
 {
     if (!index.isValid())
@@ -421,7 +467,8 @@ void UserTallyBinDelegate::setModelData(QWidget *editor, QAbstractItemModel *mod
     } break;
     case 1: {
         QVectorEdit *edt = static_cast<QVectorEdit *>(editor);
-        v = edt->text();
+        QVector<float> vec = edt->value().value<QVector<float>>();
+        v = qstring_serialize<QVector<float>>::toString(vec);
     } break;
     }
 
@@ -455,6 +502,11 @@ UserTallyView::UserTallyView(OptionsView *v, QWidget *parent)
     btAddTally->setIcon(QIcon(":/assets/ionicons/add-outline.svg"));
     btAddTally->setToolTip("Add new UserTally");
 
+    btDuplicateTally = new QToolButton;
+    btDuplicateTally->setIcon(QIcon(":/assets/ionicons/duplicate-outline.svg"));
+    btDuplicateTally->setToolTip("Duplicate the current UserTally");
+    btDuplicateTally->setEnabled(false);
+
     btDelTally = new QToolButton;
     btDelTally->setIcon(QIcon(":/assets/ionicons/remove-outline.svg"));
     btDelTally->setToolTip("Remove UserTally");
@@ -466,12 +518,14 @@ UserTallyView::UserTallyView(OptionsView *v, QWidget *parent)
     btEdtTally->setEnabled(false);
 
     connect(btAddTally, &QToolButton::clicked, this, &UserTallyView::addTally);
+    connect(btDuplicateTally, &QToolButton::clicked, this, &UserTallyView::duplicateTally);
     connect(btDelTally, &QToolButton::clicked, this, &UserTallyView::removeTally);
     connect(btEdtTally, &QToolButton::clicked, this, &UserTallyView::editTallyName);
 
     QHBoxLayout *hbox = new QHBoxLayout;
     hbox->addWidget(cbTallyID);
     hbox->addWidget(btAddTally);
+    hbox->addWidget(btDuplicateTally);
     hbox->addWidget(btDelTally);
     hbox->addWidget(btEdtTally);
     hbox->setSpacing(0);
@@ -565,6 +619,8 @@ UserTallyView::UserTallyView(OptionsView *v, QWidget *parent)
     // --- bins table ---
     QLabel *binsLabel = new QLabel("Bins");
     v->helpPanel->addStaticHelp(binsLabel, "/UserTally/0/bins");
+    binStatus = new QLabel("");
+    v->helpPanel->addStaticHelp(binStatus, "/UserTally/0/bins");
 
     btAddBin = new QToolButton;
     btAddBin->setIcon(QIcon(":/assets/ionicons/add-outline.svg"));
@@ -620,6 +676,7 @@ UserTallyView::UserTallyView(OptionsView *v, QWidget *parent)
     hbox->addWidget(binsLabel);
     hbox->addWidget(btAddBin);
     hbox->addWidget(btRemoveBin);
+    hbox->addWidget(binStatus);
     hbox->addStretch();
 
     vbox->addLayout(hbox);
@@ -676,8 +733,29 @@ void UserTallyView::addTally()
     cbTallyID->setItemData(newIndex, QVariant::fromValue(QVector<int>()), Qt::UserRole);
     cbTallyID->setCurrentIndex(newIndex);
 
+    btDuplicateTally->setEnabled(true);
     btDelTally->setEnabled(true);
     btEdtTally->setEnabled(true);
+
+    notifyChanged();
+}
+
+void UserTallyView::duplicateTally()
+{
+    int i = cbTallyID->currentIndex();
+    if (i < 0)
+        return;
+
+    auto &tallies = model_->options()->UserTally;
+
+    user_tally::parameters newTally(tallies[i]);
+    newTally.id += "_copy";
+    tallies.push_back(newTally);
+
+    cbTallyID->addItem(newTally.id.c_str());
+    int newIndex = cbTallyID->count() - 1;
+    cbTallyID->setItemData(newIndex, QVariant::fromValue(QVector<int>()), Qt::UserRole);
+    cbTallyID->setCurrentIndex(newIndex);
 
     notifyChanged();
 }
@@ -699,6 +777,7 @@ void UserTallyView::removeTally()
     cbTallyID->removeItem(i);
 
     bool empty = cbTallyID->count() == 0;
+    btDuplicateTally->setEnabled(!empty);
     btDelTally->setEnabled(!empty);
     btEdtTally->setEnabled(!empty);
 
@@ -724,6 +803,7 @@ void UserTallyView::editTallyName()
 void UserTallyView::updateSelectedTally()
 {
     int i = cbTallyID->currentIndex();
+    btDuplicateTally->setEnabled(i >= 0);
     btDelTally->setEnabled(i >= 0);
     btEdtTally->setEnabled(i >= 0);
 
@@ -758,6 +838,7 @@ void UserTallyView::updateSelectedTally()
         binsModel->setTallyIdx(-1);
         btAddBin->setEnabled(false);
         btRemoveBin->setEnabled(false);
+
         return;
     }
 
@@ -779,6 +860,8 @@ void UserTallyView::updateSelectedTally()
     binsModel->setTallyIdx(i, savedOrder);
     btAddBin->setEnabled(!binsModel->isFull());
     btRemoveBin->setEnabled(false);
+
+    binStatus->setText(binsModel->binStatus());
 }
 
 void UserTallyView::setDescription()
@@ -804,8 +887,11 @@ void UserTallyView::setOrigin()
     int i = cbTallyID->currentIndex();
     if (i < 0)
         return;
-    qstring_serialize<vector3>::fromString(edtOrigin->text(),
-                                           model_->options()->UserTally[i].coordinate_system.origin);
+
+    QVector<float> vec = edtOrigin->value().value<QVector<float>>();
+    QString s = qstring_serialize<QVector<float>>::toString(vec);
+    qstring_serialize<vector3>::fromString(
+            s, model_->options()->UserTally[i].coordinate_system.origin);
     notifyChanged();
 }
 
@@ -814,7 +900,10 @@ void UserTallyView::setZAxis()
     int i = cbTallyID->currentIndex();
     if (i < 0)
         return;
-    qstring_serialize<vector3>::fromString(edtZAxis->text(),
+
+    QVector<float> vec = edtZAxis->value().value<QVector<float>>();
+    QString s = qstring_serialize<QVector<float>>::toString(vec);
+    qstring_serialize<vector3>::fromString(s,
                                            model_->options()->UserTally[i].coordinate_system.zaxis);
     notifyChanged();
 }
@@ -824,8 +913,11 @@ void UserTallyView::setXZVector()
     int i = cbTallyID->currentIndex();
     if (i < 0)
         return;
+
+    QVector<float> vec = edtXZVector->value().value<QVector<float>>();
+    QString s = qstring_serialize<QVector<float>>::toString(vec);
     qstring_serialize<vector3>::fromString(
-            edtXZVector->text(), model_->options()->UserTally[i].coordinate_system.xzvector);
+            s, model_->options()->UserTally[i].coordinate_system.xzvector);
     notifyChanged();
 }
 
@@ -865,6 +957,8 @@ void UserTallyView::onBinsChanged()
     if (i >= 0)
         cbTallyID->setItemData(i, QVariant::fromValue(binsModel->rowVar()), Qt::UserRole);
     btAddBin->setEnabled(!binsModel->isFull());
+
+    binStatus->setText(binsModel->binStatus());
 }
 
 void UserTallyView::notifyChanged()

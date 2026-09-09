@@ -42,5 +42,9 @@
         <file>assets/ionicons/grid-outline.svg</file>
         <file>assets/ionicons/pause-circle-outline.svg</file>
         <file>assets/ionicons/options-outline.svg</file>
+        <file>assets/ionicons/play-back-circle-outline.svg</file>
+        <file>assets/ionicons/play-forward-circle-outline.svg</file>
+        <file>assets/ionicons/copy-outline.svg</file>
+        <file>assets/ionicons/duplicate-outline.svg</file>
     </qresource>
 </RCC>
