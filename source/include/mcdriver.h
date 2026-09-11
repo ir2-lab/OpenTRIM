@@ -61,8 +61,8 @@ struct mcconfig
         size_t max_no_ions{ 100 };
         /// Maximum cpu time to run (s)
         size_t max_cpu_time{ 0 };
-        /// Number of threads to use
-        int threads{ 1 };
+        /// Number of threads to use. 0 means use all available threads.
+        int threads{ 0 };
         /// Seed for the random number generator
         unsigned int seed{ 123456789 };
     };

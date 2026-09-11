@@ -86,11 +86,9 @@ class NumericDataSet : public AbstractDataSet
 public:
     NumericDataSet(const std::string &name, const std::string &desc, const dim_t &dim,
                     const strvec_t &dn = {}, const strvec_t &dd = {})
-        : AbstractDataSet(name, dim), x_category(dim.size()), x(dim.size()), data(dim)
+        : AbstractDataSet(name, dim, dn, dd), x_category(dim.size()), x(dim.size()), data(dim)
     {
         desc_ = desc;
-        dim_name_ = dn;
-        dim_desc_ = dd;
     }
 
     bool is_x_categorical(size_t d) const override { return !x_category[d].empty(); }

@@ -127,8 +127,6 @@ public:
         info_.update(*this);
         return info_;
     }
-    const ArrayNDd &totals() const { return totals_; }
-    const ArrayNDd &dtotals() const { return dtotals_; }
 
     const tally &getTally() const;
     const mccore *getSim() const;
@@ -205,7 +203,6 @@ private:
 
     // tally totals - to be updated in regular intervals
     void update_tally_();
-    ArrayNDd totals_, dtotals_;
 
     void setStatus(DriverStatus s);
 

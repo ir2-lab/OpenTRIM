@@ -31,9 +31,7 @@ McDriverObj::McDriverObj()
     connect(this, &McDriverObj::saveH5_, this, &McDriverObj::onSaveH5_, Qt::QueuedConnection);
 }
 
-McDriverObj::~McDriverObj()
-{
-}
+McDriverObj::~McDriverObj() { }
 
 void McDriverObj::setEventHandler(mccore::event_handler h, uint32_t mask, void *p)
 {
@@ -122,8 +120,6 @@ void McDriverObj::mc_callback_(const mcdriver *d, void *p)
 
 void McDriverObj::update_tally_()
 {
-    totals_ = driver_->getSim()->getTallyTable(0);
-    dtotals_ = driver_->getSim()->getTallyTableVar(0);
     emit tallyUpdate();
 }
 

@@ -24,7 +24,7 @@
 #include <QtMath>
 
 // set this to 1 to debug CascadeRecorder
-#define CASCADE_RECORDER_DEBUG 1
+#define CASCADE_RECORDER_DEBUG 0
 
 const char *StateName[] = { "Idle", "Capturing", "Playing", "Paused", "Finishing" };
 
@@ -1212,9 +1212,7 @@ static QColor mplRainbow(double x)
 
 QColor TrackColorBar::continuousColor(int map, float t)
 {
-    if (map == 0)
-        return mplRainbow(t);
-    else if (map == 1) {
+    if (map == 1) {
         // turbo, (c) Google LLC, Apache-2.0 (A. Mikhailov / R. Du)
         double x = std::min(std::max(double(t), 0.0), 1.0);
         const double r = 0.13572138 + x * (4.61539260 + x * (-42.66032258 + x * 132.13108234))
@@ -1226,6 +1224,8 @@ QColor TrackColorBar::continuousColor(int map, float t)
         return QColor::fromRgbF(std::min(std::max(r, 0.0), 1.0), std::min(std::max(g, 0.0), 1.0),
                                 std::min(std::max(b, 0.0), 1.0));
     }
+    // else if (map == 0)
+    return mplRainbow(t);
 }
 
 // Tableau 10 palette; values from matplotlib's BSD-licensed TABLEAU_COLORS ("tab10")
@@ -1239,11 +1239,12 @@ QColor TrackColorBar::tab10(int i)
     return QColor(c[0], c[1], c[2]);
 }
 
-// Set1 palette; values from matplotlib's "Set1" ListedColormap (ColorBrewer, Apache-Style/BSD-compatible)
+// Set1 palette; values from matplotlib's "Set1" ListedColormap (ColorBrewer,
+// Apache-Style/BSD-compatible)
 QColor TrackColorBar::set1(int i)
 {
-    static const int rgb[9][3] = { { 228, 26, 28 },  { 55, 126, 184 }, { 77, 175, 74 },
-                                   { 152, 78, 163 }, { 255, 127, 0 },  { 255, 255, 51 },
+    static const int rgb[9][3] = { { 228, 26, 28 },  { 55, 126, 184 },  { 77, 175, 74 },
+                                   { 152, 78, 163 }, { 255, 127, 0 },   { 255, 255, 51 },
                                    { 166, 86, 40 },  { 247, 129, 191 }, { 153, 153, 153 } };
     const int *c = rgb[((i % 9) + 9) % 9];
     return QColor(c[0], c[1], c[2]);

@@ -130,7 +130,6 @@ mcinfo::mcinfo(std::shared_ptr<mcdriver> d) : mcinfo_node({ }, nullptr), driver_
                               (size_t)i.parent()->driver()->getSim()->getTarget().grid().ncells() };
                     },
                     [](const mcinfo_data_node &i, std::vector<float> &s) {
-                        s = i.parent()->driver()->getSim()->getTarget().grid().z();
                         const auto &grid = i.parent()->driver()->getSim()->getTarget().grid();
                         int rows = grid.x().size() - 1;
                         int cols = grid.y().size() - 1;

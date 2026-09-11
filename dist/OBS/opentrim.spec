@@ -10,7 +10,11 @@
 # python3 executable and sitearch macros
 %define         __python_package           python3
 %define         __my_python_exe            %{__python3}
-%define         __my_python_site           %{python3_sitearch}
+# Query the interpreter directly instead of relying on %{python3_sitearch},
+# which comes from python-rpm-macros and is not available on debbuild
+# (Debian/Ubuntu) builds - that gap left this path empty there, so the
+# python3-opentrim package silently shipped with no files.
+%define         __my_python_site           %(python3 -c "import sysconfig; print(sysconfig.get_path('platlib'))")
 
 %if 0%{?is_opensuse} && 0%{?sle_version} == 150600
 %define         __gcc_min_version          11
@@ -95,6 +99,8 @@ GUI C++ Monte-Carlo code for simulating ion transport in materials with an empha
 %package        libs
 Summary:	       Libraries for ion transport simulation in materials
 
+Requires:       libdedx
+
 %description    libs
 Libraries for C++ Monte-Carlo code for simulating ion transport in materials with an emphasis on the calculation of material damage.
 
@@ -130,7 +136,7 @@ BuildRequires:  %{__python_package}-pybind11-devel
 BuildRequires:  %{!?_debbuild:pybind11-devel}      %{?_debbuild:pybind11-dev}
 %endif
 
-Requires:       %{name}-libs = %{version}
+Requires:       %{name}-libs = %{version}-%{release}
 Requires:       %{__python_package}-numpy
 
 %description -n %{__python_package}-opentrim

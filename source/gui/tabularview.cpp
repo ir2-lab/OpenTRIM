@@ -1,5 +1,7 @@
 #include "tabularview.h"
 
+#include <algorithm>
+
 #include "mainui.h"
 #include "optionwidgetmapper.h"
 #include "optionsmodel.h"
@@ -639,8 +641,12 @@ void TabularView::revert()
 
 void TabularView::onTallyUpdate()
 {
-    auto T = mainui_->driverObj()->totals().copy();
-    auto dT = mainui_->driverObj()->dtotals().copy();
+    auto S = mainui_->driverObj()->getSim();
+    if (!S)
+        return;
+
+    auto T = S->getTallyTable(0);
+    auto dT = S->getTallyTableVar(0);
 
     if (T.isNull())
         return;
