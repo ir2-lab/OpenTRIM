@@ -19,7 +19,7 @@ set(GUI_HEADERS
     mcdriverobj.h 
     resultsview.h 
     simcontrolwidget.h 
-    tabularview.h
+    summaryview.h
     value_with_error.h
     jsedit/jsedit.h
     simboxview.h
@@ -71,7 +71,7 @@ set(GUI_SOURCES
     mcdriverobj.cpp
     resultsview.cpp
     simcontrolwidget.cpp
-    tabularview.cpp
+    summaryview.cpp
     jsedit/jsedit.cpp
     simboxview.cpp
     cascadeassembler.cpp

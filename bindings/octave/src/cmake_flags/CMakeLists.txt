@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
-project(opentrim_oct_flags NONE)
+
+# CXX is needed here 
+# NONE would skip compiler detection, which leaves CMAKE_LIBRARY_ARCHITECTURE
+# unset and breaks find_package()'s Debian/Ubuntu multiarch config search
+# (e.g. /usr/lib/x86_64-linux-gnu/cmake/OpenTRIM/), even though a plain
+# ~/.local/lib/cmake/opentrim dev install is unaffected.
+project(opentrim_oct_flags CXX)
 
 find_package(OpenTRIM REQUIRED)
 

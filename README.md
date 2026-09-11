@@ -7,7 +7,7 @@ A C++ Monte-Carlo code for simulating ion transport in materials with an emphasi
 - `opentrim-gui`: A GUI tool to configure, run and evaluate simulations 
 - `opentrim`: A command line program for batch mode 
 - `libopentrim`: A C++ library with all the ion transport code, which can be linked to external applications
-- `opentrim` Python package: A Python module to configure, run and evaluate simulations
+- Python and Octave bindings to configure, run and evaluate simulations in these computing environments
 
 Additionally, the following sub-projects are used internally
 - [screened_coulomb](https://github.com/ir2-lab/screened_coulomb): A header-only C++ library for screened Coulomb scattering calculations with various potentials (ZBL, Moliere, etc) 
@@ -28,15 +28,14 @@ Additionally, the following sub-projects are used internally
 Binary packages and repositories for a number of **Linux** distributions (Ubuntu, RHEL, OpenSUSE, etc.) are built on the [openSUSE Build Service](https://software.opensuse.org//download.html?project=home%3Amaxiotis%3Agapost&package=opentrim). 
 There are different packages for each program component :
 
-    opentrim
-    opentrim-gui
-    opentrim-libs
-    opentrim-tests
-    opentrim-dev
+    opentrim           # CLI 
+    opentrim-gui       # GUI app
+    opentrim-libs      # libopentrim and cross-section data
+    opentrim-dev       # headers and config files for development
     
 Please follow the installation instructions found on the [OBS page](https://software.opensuse.org//download.html?project=home%3Amaxiotis%3Agapost&package=opentrim).
 
-On **Windows**, please download the latest [binary distribution release](https://github.com/ir2-lab/OpenTRIM/releases) provided as a zip file and extract to some location. To be able to run the program from the windows command line, add the program folder to the user path or to the global system path.
+On **Windows**, download the latest [binary distribution release](https://github.com/ir2-lab/OpenTRIM/releases). 
 
 ### Building from source
 
@@ -55,10 +54,10 @@ The command line program can be invoked by
 ```
 > opentrim [options] [-f config.json]
 ```
-The program accepts a JSON-formatted configuration input either
+The program accepts a [JSON-formatted configuration](https://ir2-lab.gitlab.io/opentrim/json_config.html) input either
 directly from a file (with the `-f` option) or from stdin.
 
-To see all available options run `opentrim -h`, which prints
+To see all available options of the CLI program run `opentrim -h`, which prints
 ```
 Monte-Carlo ion transport simulation
 Usage:
@@ -78,47 +77,22 @@ Usage:
 The cli program first checks and validates the configuration input. 
 It then runs the simulation and saves the results into a HDF5 archive.
 
-### Python
+### Language bindings
 
-The Python bindings can be installed from the top source folder by running
+`OpenTRIM` simulations can also be configured, run and evaluated from Python
+and GNU Octave:
 
-```
-pip install .
-```
+- Python: see [`bindings/python/README.md`](bindings/python/README.md)
+- GNU Octave: see [`bindings/octave/README.md`](bindings/octave/README.md)
 
-which requires the same build tools as [building from source](#building-from-source).
-
-A simulation is configured, run and evaluated as in the following example:
-
-```python
-import opentrim
-
-config = opentrim.Config()
-config.IonBeam.ion = opentrim.Element("He")
-config.IonBeam.energy_distribution.center = 2e6   # eV
-# ... define the target and run options ...
-config.validate()
-
-sim = opentrim.Driver(config)
-sim.run()
-sim.wait()
-
-info = opentrim.Info(sim)
-vacancies, sem = info["tally"]["damage_events"]["Vacancies"]
-```
-
-Type information is included with the package, so editors such as VS Code provide auto-completion for the `Config`, `Driver` and `Info` classes. Some example notebooks are provided in the [`examples/python`](examples/python) folder.
-
-## Testing
-
-The examples contained in the GUI app can be used for testing.
+## Benchmarks
 
 Some benchmarks for comparison to other codes are given in folder `test/`.
 The file [`test/README.md`](test/README.md) gives a short description of each benchmark.
 
 The folders [`test/opentrim/b1`](test/opentrim/b1) to [`b7`](test/opentrim/b7) have config files for running the benchmarks with `opentrim -f config.json`.
 
-The file [`test/octave/plot_benchmark.m`](test/octave/plot_benchmark.m) is a MATLAB/OCTAVE script which can be used for plotting benchmark results.
+The file [`test/octave/plot_benchmark.m`](test/octave/plot_benchmark.m) is an Octave script which can be used for plotting benchmark results.
 
 ## Credits
 
@@ -137,9 +111,9 @@ Furthermore, the following general open-source projects are used:
 
 - [JSON for Modern C++](https://github.com/nlohmann/json) by N. Lohmann is used for encoding/decoding program options to/from json.
 
-- The [HDF5 library](https://github.com/HDFGroup/hdf5) with the [HighFive C++ interface](https://github.com/BlueBrain/HighFive) are used for saving results to the HDF5 archive.
-
 - [CLI11](https://github.com/CLIUtils/CLI11) is used for handling cli options.
+
+- The [HDF5 library](https://github.com/HDFGroup/hdf5) with the [HighFive C++ interface](https://github.com/BlueBrain/HighFive) are used for saving results to the HDF5 archive.
 
 - The [Qt C++ toolkit](https://www.qt.io/) is utilized for the GUI implementation.
   

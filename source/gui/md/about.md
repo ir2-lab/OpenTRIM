@@ -26,6 +26,17 @@ Eleni Mitsi <<elmitsi@ipta.demokritos.gr>>
 
 Michael Axiotis <<axiotis@inp.demokritos.gr>>
 
+Dhanavanthesh Shetty https://github.com/dhanavanthesh
+
+Ioannis Choustoulakis https://github.com/yiannischoust
+
+Eridanous https://github.com/Eridanous
+
+Aaryan Dadu https://github.com/Aaryan-Dadu
+
+SteliosSyn https://github.com/SteliosSyn
+
+
 ### Credits
 
 `OpenTRIM` draws heavily on [SRIM](http://www.srim.org/) by J.F. Ziegler, one of the first ion simulation programs created in the 80s and still widely used until today. The electronic energy loss data in `OpenTRIM` have been obtained from the [SRIM-2013](http://www.srim.org/) distribution using the provided utility `SRmodule.exe`.
@@ -43,11 +54,13 @@ Furthermore, the following general open-source projects are used:
 
 - [JSON for Modern C++](https://github.com/nlohmann/json) by N. Lohmann is used for encoding/decoding program options to/from json.
 
-- [cxxopts](https://github.com/jarro2783/cxxopts) by [jarro2783](https://github.com/jarro2783) is used for handling cli options.
+- [CLI11](https://github.com/CLIUtils/CLI11) is used for handling cli options.
 
 - The [HDF5 library](https://github.com/HDFGroup/hdf5) with the [HighFive C++ interface](https://github.com/BlueBrain/HighFive) are used for saving results to the HDF5 archive.
 
 - The [Qt C++ toolkit](https://www.qt.io/) is utilized for the GUI implementation.
+
+- [Qwt](https://qwt.sourceforge.io/) is used for plotting results.
 
 ### License
 <br>     

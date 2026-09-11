@@ -1,7 +1,7 @@
 #ifndef RESULTSVIEW_H
 #define RESULTSVIEW_H
 
-#include "qdatabrowser.h"
+#include "mainui.h"
 
 class QTreeWidget;
 class QTreeWidgetItem;
@@ -10,17 +10,14 @@ class QComboBox;
 class QListWidget;
 class QLabel;
 class QButtonGroup;
+class QDataBrowser;
 
-class QListWidgetItem;
-
-class MainUI;
-
-class ResultsView : public QDataBrowser
+class ResultsView : public Page
 {
 
     Q_OBJECT
 public:
-    explicit ResultsView(MainUI *iui, QWidget *parent = nullptr);
+    explicit ResultsView(MainUI *ui, const QString &title, QWidget *parent = nullptr);
 
 signals:
 
@@ -31,6 +28,7 @@ public slots:
 
 private:
     MainUI *ionsui{ nullptr };
+    QDataBrowser *dataBrowser;
 };
 
 #endif // RESULTSVIEW_H

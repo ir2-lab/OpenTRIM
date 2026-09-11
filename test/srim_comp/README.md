@@ -1,21 +1,21 @@
 # Comparison of SRIM/OpenTRIM damage estimations
 
-We compare the damage estimated by SRIM and OpenTRIM in a number of test cases listed in Li et al. 2023 and Agarwal et al. 2021
+We compare the damage estimated by SRIM and OpenTRIM in a matrix of test cases listed in Li et al. 2023 and Agarwal et al. 2021.
 
-## Running the test simulations
+The matrix comprises of 5 projectiles incident on 15 elemental targets, a total of 75 cases. 
 
-The tests are run with 10000 ion histories.
+The simulations are performed on SRIM and OpenTRIM with identical conditions and 10000 ion histories.
 
 ### SRIM
 
 SRIM is run in 2 different modes:
 
 - Quick Cascade (QC)
-- Full cascade (FC) with $E\_{min} = E_d$
+- Full cascade (FC) with $E_{min} = E_d$
 
 The file [RUN_SRIM_QC.md](RUN_SRIM_QC.md) details the procedure to run the QC simulations.
 
-In the 2nd case we follow this procedure (from Lin2023):
+In the 2nd case we follow the procedure described in Lin2023 to set $E_{min}$:
 
 - Run SRIM-FC for 1 ion and save
 - Open `SRIM Restore/TDATA.sav` and below the line `Lowest E,  Ed(min)  (eV)` set the first number equal to $E_d$. Essentially, this sets the lowest energy of moving ions.
@@ -59,4 +59,11 @@ The `/tally/damage_events/Vacancies` dataset corresponds to the FC data and the 
 
 ## Results
 
+The results can be seen in the following document.
 [compare_opentrim_srim.pdf](./compare_opentrim_srim.pdf)
+
+In general the difference is about 1-3% in QC mode and up to 5% in FC mode if Cu target is excluded. For some unknown reason, in Cu FC mode we get up to 20% discrepancy
+
+## TODO
+
+Due to the larger discrepancies observed for the 1MeV H projectile, we run these simulations also in SRIM monolayer mode, which may play a significant role for H.

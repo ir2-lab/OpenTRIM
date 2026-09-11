@@ -1,5 +1,6 @@
 #include "trackviewwidget.h"
 
+#include "mainui.h"
 #include "track3dviewport.h"
 
 #include <fstream>
@@ -259,34 +260,35 @@ private:
     QPointer<QPropertyAnimation> m_anim; // QPointer: dies with the effect
 };
 
-TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget(parent)
+TrackViewWidget::TrackViewWidget(MainUI *ui, const QString &title, QWidget *parent)
+    : Page(ui, title, true, parent)
 {
     // frame with track view + controls
-    view_ = new Track3DViewport(driver, this);
+    view_ = new Track3DViewport(ui->driverObj(), this);
     TrackColorBar *colorBar = new TrackColorBar(view_);
 
     QFrame *frm = new QFrame;
     frm->setFrameShape(QFrame::StyledPanel);
     frm->setFrameShadow(QFrame::Sunken);
     frm->setStyleSheet("background: white;");
-    QVBoxLayout *frmLay = new QVBoxLayout(frm);
-    frmLay->setContentsMargins(0, 0, 0, 0);
-    frmLay->setSpacing(0);
+    QVBoxLayout *frameLayout = new QVBoxLayout(frm);
+    frameLayout->setContentsMargins(0, 0, 0, 0);
+    frameLayout->setSpacing(0);
     {
         QHBoxLayout *hbox = new QHBoxLayout;
         hbox->addStretch();
         hbox->addWidget(buildViewToolBar());
         hbox->addStretch();
-        frmLay->addLayout(hbox);
+        frameLayout->addLayout(hbox);
     }
-    frmLay->addWidget(view_);
-    frmLay->addWidget(buildPlaybackSlider());
+    frameLayout->addWidget(view_);
+    frameLayout->addWidget(buildPlaybackSlider());
     {
         QHBoxLayout *hbox = new QHBoxLayout;
         hbox->addStretch();
         hbox->addWidget(buildPlaybackToolBar());
         hbox->addStretch();
-        frmLay->addLayout(hbox);
+        frameLayout->addLayout(hbox);
     }
 
     QWidget *leftPanel = new QWidget;
@@ -318,7 +320,7 @@ TrackViewWidget::TrackViewWidget(McDriverObj *driver, QWidget *parent) : QWidget
     split->setStretchFactor(0, 1);
     split->setStretchFactor(1, 0);
 
-    QVBoxLayout *root = new QVBoxLayout(this);
+    QVBoxLayout *root = new QVBoxLayout(content);
     root->setContentsMargins(0, 0, 0, 0);
     root->addWidget(split);
 
@@ -546,7 +548,7 @@ QWidget *TrackViewWidget::buildOptionsPanel()
     f.setPointSizeF(f.pointSizeF() * 0.88);
     p->setFont(f); // inherited by every child
 
-    QLabel *title = new QLabel("Visualization Options");
+    QLabel *title = new QLabel("Visualization Settings");
     // title->setFrameShape(QFrame::StyledPanel);
     // title->setFrameShadow(QFrame::Raised);
     title->setStyleSheet("font: bold;");
@@ -576,7 +578,7 @@ QWidget *TrackViewWidget::buildOptionsPanel()
 
     cvbox->addWidget(wrapGroup(tr("3D Buffer"), buildBufferGroup()));
     cvbox->addWidget(wrapGroup(tr("Color"), buildColorGroup()));
-    cvbox->addWidget(wrapGroup(tr("Camera"), buildCameraGroup()));
+    cvbox->addWidget(wrapGroup(tr("Camera State"), buildCameraGroup()));
     cvbox->addStretch(1);
 
     scroll->setWidget(content);
@@ -886,13 +888,13 @@ void TrackViewWidget::showGuide_()
         guide_->setWindowTitle(tr("OpenTRIM - 3D Viewer Guide"));
         QVBoxLayout *lay = new QVBoxLayout(guide_);
         QLabel *title = new QLabel(tr("OpenTRIM 3D Visualization of ion tracks"));
-        title->setStyleSheet("font-size : 14pt; font-weight : bold;");
+        MainUI::setHeadingFont(title, 3);
         lay->addWidget(title);
         QTextBrowser *browser = new QTextBrowser;
         browser->setSource(QUrl("qrc:./md/track_viewer_guide.md"));
         browser->setOpenExternalLinks(true);
         lay->addWidget(browser);
-        guide_->resize(1240, 840);
+        guide_->resize(600, 800);
     }
     guide_->show();
     guide_->raise();

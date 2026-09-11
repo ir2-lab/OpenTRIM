@@ -1,7 +1,7 @@
 #ifndef SIMULATIONOPTIONSVIEW_H
 #define SIMULATIONOPTIONSVIEW_H
 
-#include <QWidget>
+#include "mainui.h"
 
 class QPushButton;
 class QToolButton;
@@ -18,18 +18,17 @@ class MaterialsDefView;
 class RegionsView;
 class SimBoxView;
 class OptionsModel;
-class MainUI;
 class HelpPanel;
 class UserTallyView;
 
-class OptionsView : public QWidget
+class OptionsView : public Page
 {
     Q_OBJECT
 
     Q_PROPERTY(bool modified READ modified WRITE setModified NOTIFY modifiedChanged FINAL)
 
 public:
-    OptionsView(MainUI *iui, QWidget *parent = nullptr);
+    OptionsView(MainUI *iui, const QString &title, QWidget *parent = nullptr);
 
     bool modified() const { return modified_; }
     OptionWidgetMapper *widgetMapper() const { return mapper; }
@@ -51,7 +50,7 @@ signals:
     void optionsChanged();
 
 public slots:
-    void revert();
+    void revert() override;
     void submit();
     void selectIonZ();
     void validateOptions();
@@ -78,8 +77,6 @@ private:
     MainUI *mainui;
 
     // Widget structure
-    // Top: simulation title view/edit
-    QLineEdit *simTitle;
     // Main splitter: options (left) | help (right - closable)
     QSplitter *splitter;
     // left panel - option tabs
@@ -99,9 +96,6 @@ private:
 
     // read-only view of config
     JSEdit *jsonView;
-
-    // map (editor widget) <-> (option model index)
-    OptionWidgetMapper *mapper;
 
     // materials view
     MaterialsDefView *materialsView;

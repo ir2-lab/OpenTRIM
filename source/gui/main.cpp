@@ -8,6 +8,13 @@
 
 int main(int argc, char *argv[])
 {
+    // The 3D track viewport requires a desktop OpenGL 3.3 core profile
+    // context, which ANGLE (Windows' GLES backend) cannot provide. Forcing
+    // desktop OpenGL avoids depending on Qt's ANGLE DLLs (libEGL,
+    // libGLESv2, d3dcompiler_47), which require a Visual C++ runtime that
+    // may not be present on the target machine.
+    QApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+
     QApplication app(argc, argv);
 
     // QDataBrowser::initResources();

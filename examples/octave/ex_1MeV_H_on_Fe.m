@@ -23,3 +23,6 @@ V = squeeze(V);
 dV = squeeze(dV);
 
 plot(x, V)
+xlabel('Depth x (nm)')
+ylabel('Vacancies per ion')
+title(cfg.Output.title)

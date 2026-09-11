@@ -24,7 +24,7 @@
 #include <QtMath>
 
 // set this to 1 to debug CascadeRecorder
-#define CASCADE_RECORDER_DEBUG 1
+#define CASCADE_RECORDER_DEBUG 0
 
 const char *StateName[] = { "Idle", "Capturing", "Playing", "Paused", "Finishing" };
 
@@ -236,6 +236,7 @@ void CascadeRecorder::setPlaybackTime(double t)
 
 void CascadeRecorder::stateMachine(Event e)
 {
+    static State pausedState = Capturing;
     State old_ = state_;
     switch (state_) {
     case Idle:
@@ -248,6 +249,7 @@ void CascadeRecorder::stateMachine(Event e)
             } else {
                 channel_->setCapturing(false);
                 state_ = Paused;
+                pausedState = Capturing;
             }
             break;
         case Play:
@@ -274,6 +276,7 @@ void CascadeRecorder::stateMachine(Event e)
             channel_->setCapturing(false);
             clock_.pause();
             state_ = Paused;
+            pausedState = Capturing;
             break;
         case Update:
             if (mode_ == Batch) {
@@ -300,6 +303,11 @@ void CascadeRecorder::stateMachine(Event e)
             clock_.pause();
             state_ = Idle;
             break;
+        case Pause:
+            clock_.pause();
+            state_ = Paused;
+            pausedState = Playing;
+            break;
         case Update:
             if (playbackTime() > tMax_) {
                 setPlaybackTime(tMin_);
@@ -318,10 +326,19 @@ void CascadeRecorder::stateMachine(Event e)
     case Paused:
         switch (e) {
         case Resume:
-            if (driver_->status() == McDriverObj::mcRunning && enableCap_) {
-                clock_.resume();
-                channel_->setCapturing(true);
-                state_ = Capturing;
+            if (pausedState == Capturing) {
+                if (driver_->status() == McDriverObj::mcRunning && enableCap_) {
+                    clock_.resume();
+                    channel_->setCapturing(true);
+                    state_ = Capturing;
+                }
+            } else if (pausedState == Playing) {
+                if (!cascade_buffer_.empty()) {
+                    clock_.resume();
+                    state_ = Playing;
+                } else {
+                    state_ = Idle;
+                }
             }
             break;
         case Stop:
@@ -1212,9 +1229,7 @@ static QColor mplRainbow(double x)
 
 QColor TrackColorBar::continuousColor(int map, float t)
 {
-    if (map == 0)
-        return mplRainbow(t);
-    else if (map == 1) {
+    if (map == 1) {
         // turbo, (c) Google LLC, Apache-2.0 (A. Mikhailov / R. Du)
         double x = std::min(std::max(double(t), 0.0), 1.0);
         const double r = 0.13572138 + x * (4.61539260 + x * (-42.66032258 + x * 132.13108234))
@@ -1226,6 +1241,8 @@ QColor TrackColorBar::continuousColor(int map, float t)
         return QColor::fromRgbF(std::min(std::max(r, 0.0), 1.0), std::min(std::max(g, 0.0), 1.0),
                                 std::min(std::max(b, 0.0), 1.0));
     }
+    // else if (map == 0)
+    return mplRainbow(t);
 }
 
 // Tableau 10 palette; values from matplotlib's BSD-licensed TABLEAU_COLORS ("tab10")
@@ -1239,11 +1256,12 @@ QColor TrackColorBar::tab10(int i)
     return QColor(c[0], c[1], c[2]);
 }
 
-// Set1 palette; values from matplotlib's "Set1" ListedColormap (ColorBrewer, Apache-Style/BSD-compatible)
+// Set1 palette; values from matplotlib's "Set1" ListedColormap (ColorBrewer,
+// Apache-Style/BSD-compatible)
 QColor TrackColorBar::set1(int i)
 {
-    static const int rgb[9][3] = { { 228, 26, 28 },  { 55, 126, 184 }, { 77, 175, 74 },
-                                   { 152, 78, 163 }, { 255, 127, 0 },  { 255, 255, 51 },
+    static const int rgb[9][3] = { { 228, 26, 28 },  { 55, 126, 184 },  { 77, 175, 74 },
+                                   { 152, 78, 163 }, { 255, 127, 0 },   { 255, 255, 51 },
                                    { 166, 86, 40 },  { 247, 129, 191 }, { 153, 153, 153 } };
     const int *c = rgb[((i % 9) + 9) % 9];
     return QColor(c[0], c[1], c[2]);

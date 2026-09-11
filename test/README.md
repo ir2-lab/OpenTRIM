@@ -1,11 +1,18 @@
 # Benchmarks
 
-## Damage profiles
+## 1. Damage generation
 
-Compare to Crocombette2019, Lin2023 (Fe → Fe, Xe → UO2) \
-H → Fe is for checking behaviour with light ions \
-Fe cascades in Fe to compare to Nordlund2015
+We compare the damage estimated by SRIM and OpenTRIM in a matrix of test cases listed in Li et al. 2023 and Agarwal et al. 2021.
 
+More information in [srim_comp/README.md](./srim_comp/README.md)
+
+## 2. Damage profiles
+
+- Compare to data from Crocombette2019, Lin2023 (Fe → Fe, Xe → UO2)
+- Profiles of H → Fe for checking behaviour with light ions 
+- Fe cascades in Fe to compare to Nordlund2015
+
+Test cases:
 1. 2 MeV Fe in Fe target, t = 1200 nm
 2. 500 keV Fe in Fe target, t = 600 nm
 3. 3 MeV Xe in UO2 target, t = 1200 nm
@@ -16,10 +23,10 @@ Fe cascades in Fe to compare to Nordlund2015
 8. 50 keV Fe cascade in Fe
 
 The above should be run for comparison in 
-- SRIM FC mode + setting "Lowest E" in `TDATA.sav` equal to $E_d$ - **done!** 
-- SRIM QC - *todo*
-- #6 and #7 also in SRIM ML mode (see below) - **done!**
-- Iradina - **done!**
+- [x] SRIM FC mode + setting $E_{min}$ in `TDATA.sav` equal to $E_d$ 
+- [x] SRIM QC
+- [x] #6 and #7 also in SRIM ML mode (see below)
+- [x] Iradina
 
 N ions = 20000
 
@@ -52,7 +59,7 @@ Thus we must additionally put Es = Ed ??
 
 We should test it in the future
 
-## Multiple scattering
+## 3. Multiple scattering
 
 Compare to the data of Mendenhall-Weller 2005 for 270 keV He and H ions passing through a 100μg/cm2 C foil.
 

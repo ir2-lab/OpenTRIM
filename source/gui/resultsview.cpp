@@ -3,6 +3,8 @@
 #include "mcdriverobj.h"
 #include "mcdatamodel.h"
 
+#include <QDataBrowser>
+
 #include <QBitmap>
 #include <QButtonGroup>
 #include <QComboBox>
@@ -20,10 +22,12 @@
 
 #include "mainui.h"
 
-ResultsView::ResultsView(MainUI *iui, QWidget *parent) : QDataBrowser{ parent }, ionsui(iui)
+ResultsView::ResultsView(MainUI *ui, const QString &title, QWidget *parent)
+    : Page(ui, title, true, parent), ionsui(ui)
 {
-    // setTreeTitle("Data Tables");
-    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    dataBrowser = new QDataBrowser;
+    dataBrowser->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    setContent(dataBrowser);
 
     /* connect signals */
     connect(ionsui->driverObj(), &McDriverObj::simulationCreated, this,
@@ -32,9 +36,6 @@ ResultsView::ResultsView(MainUI *iui, QWidget *parent) : QDataBrowser{ parent },
             &ResultsView::onSimulationDestroyed);
     connect(ionsui->driverObj(), &McDriverObj::tallyUpdate, this, &ResultsView::onTallyUpdate,
             Qt::QueuedConnection);
-
-    /* set the current item to "Vacancies" */
-    // tallyTree->setCurrentItem(curr);
 }
 
 void ResultsView::onSimulationCreated()
@@ -42,15 +43,13 @@ void ResultsView::onSimulationCreated()
     McDriverObj *D = ionsui->driverObj();
 
     McDataModel *m = new McDataModel(D->get_mcdriver(), this);
-    setModel(m);
+    dataBrowser->setModel(m);
 
-    if (!hasSavedState()) {
-        setCurrentDataPath("/tally/damage_events/Vacancies");
-        setCurrentViewType(Plot);
-        setCurrentPlotType(ErrorBar);
+    if (!dataBrowser->hasSavedState()) {
+        dataBrowser->setCurrentDataPath("/tally/damage_events/Vacancies");
+        dataBrowser->setCurrentViewType(QDataBrowser::Plot);
+        dataBrowser->setCurrentPlotType(QDataBrowser::ErrorBar);
     }
-
-    // selectItem("/tally/damage_events/Vacancies");
 }
 
 void ResultsView::onSimulationDestroyed()
@@ -60,5 +59,5 @@ void ResultsView::onSimulationDestroyed()
 
 void ResultsView::onTallyUpdate()
 {
-    model()->setDatasetChanged();
+    dataBrowser->model()->setDatasetChanged();
 }

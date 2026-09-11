@@ -54,19 +54,23 @@ const char *closestIsotopeSymbol(int Z, double M)
     return elmnt.isotopes[i].symbol.c_str();
 }
 
-OptionsView::OptionsView(MainUI *iui, QWidget *parent)
-    : QWidget{ parent }, mainui(iui)
+OptionsView::OptionsView(MainUI *ui, const QString &title, QWidget *parent)
+    : Page(ui, title, true, parent), mainui(ui)
 {
+    // make the top title editable
+    edtSimTitle->setReadOnly(false);
+
+    // create the option tabs
     tabWidget = new QTabWidget;
 
-    OptionsModel *model = mainui->optionsModel;
-    mapper = new OptionWidgetMapper(model, this);
-
-    // need the helpPanel before the option widgets
+    // create the helpPanel
+    // must be done before the option widgets
     // are created, so that helpPanel->addStaticHelp()
     // can be called
     helpPanel = new HelpPanel;
 
+    // create all option categories
+    OptionsModel *model = mainui->optionsModel;
     for (int i = 0; i < model->rowCount(); ++i) {
         QModelIndex idx = model->index(i, 0);
         OptionsItem *item = model->getItem(idx);
@@ -97,21 +101,6 @@ OptionsView::OptionsView(MainUI *iui, QWidget *parent)
             tabWidget,
             { "/Simulation", "/Transport", "/IonBeam", "/Target", "/UserTally", "/Output" });
 
-    // main title widget
-    QLabel *simTitleLabel = new QLabel("Simulation title:");
-    {
-        QModelIndex idxOut = model->index("Output", 0);
-        QModelIndex idxTitle = model->index("title", 0, idxOut);
-        OptionsItem *item = model->getItem(idxTitle);
-        simTitle = (QLineEdit *)item->createEditor(nullptr);
-        simTitleLabel->setToolTip(simTitle->toolTip());
-        simTitleLabel->setWhatsThis(simTitle->whatsThis());
-        mapper->addMapping(simTitle, idxTitle, true, item->editorSignal());
-        mapper->addMapping(simTitleLabel, idxTitle, false);
-        simTitleLabel->setStyleSheet("font-size : 14pt; font-weight : bold;");
-        simTitle->setStyleSheet("font-size : 14pt");
-    }
-
     jsonView = new JSEdit;
     jsonView->setReadOnly(true);
     const char *hlpmsg_json[] = { "Read-only view of current JSON configuration",
@@ -133,15 +122,7 @@ OptionsView::OptionsView(MainUI *iui, QWidget *parent)
     helpPanel->setWidgetMapper(mapper);
 
     /* Layout config page */
-    QVBoxLayout *vbox = new QVBoxLayout;
-    {
-        QHBoxLayout *hbox = new QHBoxLayout;
-        hbox->addWidget(simTitleLabel);
-        hbox->addWidget(simTitle);
-        hbox->addStretch();
-        vbox->addLayout(hbox);
-    }
-    vbox->addSpacing(V_SPACING);
+    QVBoxLayout *vbox = new QVBoxLayout(content);
     {
         splitter = new QSplitter;
         QSizePolicy sizePolicy = splitter->sizePolicy();
@@ -190,7 +171,6 @@ OptionsView::OptionsView(MainUI *iui, QWidget *parent)
     }
 
     vbox->addWidget(buttonBox);
-    setLayout(vbox);
     vbox->setContentsMargins(0, 0, 0, 0);
 
     QPushButton *ba = buttonBox->button(QDialogButtonBox::Apply);

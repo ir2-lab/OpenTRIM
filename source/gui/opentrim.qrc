@@ -31,7 +31,6 @@
         <file>md/about.md</file>
         <file>md/track_viewer_guide.md</file>
         <file>md/images/track_viewer_panel.png</file>
-        <file>md/images/track_viewer_cascade.png</file>
         <file>md/material_card.md</file>
         <file>md/material_card.html</file>
         <file>data/materials.json</file>
@@ -46,5 +45,11 @@
         <file>assets/ionicons/play-forward-circle-outline.svg</file>
         <file>assets/ionicons/copy-outline.svg</file>
         <file>assets/ionicons/duplicate-outline.svg</file>
+        <file>md/images/play-forward-circle-outline.png</file>
+        <file>md/images/play-circle-outline.png</file>
+        <file>md/images/play-back-circle-outline.png</file>
+        <file>md/images/options-outline.png</file>
+        <file>md/images/close-circle-outline.png</file>
+        <file>md/images/rec_button.png</file>
     </qresource>
 </RCC>

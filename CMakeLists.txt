@@ -20,7 +20,7 @@ option (OPENTRIM_BUILD_PYTHON "Build Python bindings" ON)
 
 string(TIMESTAMP CMAKE_BUILD_TIME UTC)
 
-# !! Add this option to allow the compiler to 
+# !! Add this option to allow the compiler to
 #    optimize for the specific build system
 # - Do not use for degugging/code analysis(valgrind)
 # - Do not use for package builds

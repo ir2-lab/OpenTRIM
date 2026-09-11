@@ -33,7 +33,8 @@
 
 #include "jsedit/jsedit.h"
 
-WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ionsui(iui)
+WelcomeView::WelcomeView(MainUI *ui, const QString &title, QWidget *parent)
+    : Page(ui, title, false, parent), ionsui(ui)
 {
     QFontMetrics fm = this->fontMetrics();
     QRect rect = fm.boundingRect("OOOOpen SimulationOOO");
@@ -105,11 +106,11 @@ WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ions
     buttonGrp->addButton(btGettingStarted, 2);
     buttonGrp->addButton(btAbout, 3);
 
-    QHBoxLayout *viewLayout = new QHBoxLayout;
+    QHBoxLayout *viewLayout = new QHBoxLayout(content);
     viewLayout->addLayout(vbox, 0);
     // viewLayout->addWidget(new QWidget,2);
     viewLayout->setContentsMargins(0, 0, 0, 0);
-    setLayout(viewLayout);
+    // setLayout(viewLayout);
 
     /* create right stacked pane */
     stackedWidget = new QStackedWidget;
@@ -241,7 +242,7 @@ WelcomeView::WelcomeView(MainUI *iui, QWidget *parent) : QWidget{ parent }, ions
 
     connect(btNew, &QPushButton::clicked, this, &WelcomeView::onNew);
 
-    connect(btPopupQuickStart, &QPushButton::clicked, iui, &MainUI::showQuickStartWidget);
+    connect(btPopupQuickStart, &QPushButton::clicked, ui, &MainUI::showQuickStartWidget);
 
     connect(ionsui->driverObj(), &McDriverObj::modificationChanged, this,
             &WelcomeView::onDriverStatusChanged);
@@ -291,9 +292,9 @@ void WelcomeView::onOpenJson()
     if (!userDiscardCurrentSim("Open JSON"))
         return;
 
-    QString fileName = Dialogs::getOpenFileName(
-            this, tr("Open JSON configuration"), QString(),
-            tr("Json Files [*.json](*.json);;All Files [*.*](*.*)"));
+    QString fileName =
+            Dialogs::getOpenFileName(this, tr("Open JSON configuration"), QString(),
+                                     tr("Json Files [*.json](*.json);;All Files [*.*](*.*)"));
 
     if (fileName.isNull())
         return; // cancelled by user
@@ -306,9 +307,9 @@ void WelcomeView::onOpenH5()
     if (!userDiscardCurrentSim("Open HDF5"))
         return;
 
-    QString fileName = Dialogs::getOpenFileName(
-            this, tr("Open HDF5 file"), QString(),
-            tr("HDF5 Files [*.h5](*.h5);;All Files [*.*](*.*)"));
+    QString fileName =
+            Dialogs::getOpenFileName(this, tr("Open HDF5 file"), QString(),
+                                     tr("HDF5 Files [*.h5](*.h5);;All Files [*.*](*.*)"));
 
     if (fileName.isNull())
         return; // cancelled by user
@@ -403,8 +404,8 @@ void WelcomeView::onSaveH5As()
     // Let driver save the file
     McDriverObj *D = ionsui->driverObj();
     if (!D->saveH5(selectedFileName)) {
-        Dialogs::warning(this, tr("Save to HDF5"), tr("Error creating file:"),
-                         { selectedFileName }, D->ioErrorMsg());
+        Dialogs::warning(this, tr("Save to HDF5"), tr("Error creating file:"), { selectedFileName },
+                         D->ioErrorMsg());
         return;
     }
 }
@@ -433,13 +434,14 @@ QPushButton *WelcomeView::createButton(const QString &txt, int w, int h, int ch)
 void WelcomeView::pushCenterWidget(const QString &title, QWidget *page)
 {
     QWidget *w = new QWidget;
-    QVBoxLayout *vbox = new QVBoxLayout;
+    // w->setStyleSheet("border: 1px solid black");
+    QVBoxLayout *vbox = new QVBoxLayout(w);
+    vbox->setContentsMargins(6, 0, 0, 0);
     QLabel *lbl = new QLabel(title);
     lbl->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    lbl->setStyleSheet("font-size : 14pt; font-weight : bold;");
+    MainUI::setHeadingFont(lbl, 3);
     vbox->addWidget(lbl);
     vbox->addWidget(page);
-    w->setLayout(vbox);
     stackedWidget->addWidget(w);
 }
 
@@ -557,8 +559,8 @@ void WelcomeView::openH5(const QString &path)
     // Let driver load the file
     McDriverObj *D = ionsui->driverObj();
     if (!D->loadH5File(path)) {
-        Dialogs::warning(this, tr("Open HDF5"), tr("Error opening file:"), { path },
-                         D->ioErrorMsg());
+        Dialogs::critical(this, tr("Open HDF5"), tr("Error opening file:"), { path },
+                          D->ioErrorMsg());
         return;
     }
 

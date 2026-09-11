@@ -234,6 +234,7 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         A[cPKA](k)++;
         // pv = pointer to pka_event struct
         p = reinterpret_cast<const pka_buffer *>(pv);
+        A[cRecombinations](k) += p->Icr(iid - 1);
         A[ePKA](k) += p->recoilE();
         A[dpTdam_LSS](k) += p->Tdam_LSS();
         A[dpVnrt_LSS](k) += p->NRT_LSS();

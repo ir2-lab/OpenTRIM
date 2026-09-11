@@ -18,10 +18,12 @@ class WelcomeView;
 class OptionsView;
 class RunView;
 class ResultsView;
-class TabularView;
-class Track3DViewport;
+class SummaryView;
+class TrackViewWidget;
 
-#define V_SPACING 15
+#define V_SPACING 10
+
+class Page;
 
 class MainUI : public QWidget
 {
@@ -37,7 +39,12 @@ public:
     McDriverObj *driverObj() { return driverObj_; }
 
     void push(const QString &title, QWidget *page);
+    void addPage(Page *page);
     void pop();
+
+    // Sets a heading-style font on w, sized relative to its current font.
+    // headingLevel follows HTML conventions: 1 = h1 (largest) ... 3 = h3.
+    static void setHeadingFont(QWidget *w, int headingLevel, bool bold = true);
 
     enum PageId {
         idWelcomePage = 0,
@@ -62,21 +69,43 @@ protected:
 
 private:
     QToolButton *createSidebarButton(const QString &iconPath, const QString &title);
-    QWidget *createTrackViewPage();
 
     McDriverObj *driverObj_;
 
     WelcomeView *welcomeView;
-    // RunView *runView;
-    Track3DViewport *trackView;
-    TabularView *tblView;
+    TrackViewWidget *trackView;
+    SummaryView *tblView;
     ResultsView *resultsView;
+
     QStackedWidget *_stackedWidget;
+
     QThread runnerThread;
     QButtonGroup *pageButtonGrp;
+
     QWidget *quickStartWidget;
 
     SimControlWidget *ctrlWidget;
+};
+
+class QLabel;
+class QLineEdit;
+class OptionWidgetMapper;
+
+class Page : public QWidget
+{
+    Q_OBJECT
+
+public:
+    Page(MainUI *ui, const QString &title, bool hasSimTitle = true, QWidget *parent = nullptr);
+    void setContent(QWidget *w);
+    QLabel *lblTitle{ nullptr };
+    QLabel *lblSimTitle{ nullptr };
+    QLineEdit *edtSimTitle{ nullptr };
+    QWidget *content{ nullptr };
+    OptionWidgetMapper *mapper;
+
+public slots:
+    virtual void revert();
 };
 
 #endif // IONSUI_H

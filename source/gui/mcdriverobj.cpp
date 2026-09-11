@@ -31,9 +31,7 @@ McDriverObj::McDriverObj()
     connect(this, &McDriverObj::saveH5_, this, &McDriverObj::onSaveH5_, Qt::QueuedConnection);
 }
 
-McDriverObj::~McDriverObj()
-{
-}
+McDriverObj::~McDriverObj() { }
 
 void McDriverObj::setEventHandler(mccore::event_handler h, uint32_t mask, void *p)
 {
@@ -117,14 +115,7 @@ void McDriverObj::mc_callback_(const mcdriver *d, void *p)
 {
     McDriverObj *me = static_cast<McDriverObj *>(p);
 
-    me->update_tally_();
-}
-
-void McDriverObj::update_tally_()
-{
-    totals_ = driver_->getSim()->getTallyTable(0);
-    dtotals_ = driver_->getSim()->getTallyTableVar(0);
-    emit tallyUpdate();
+    me->tallyUpdate();
 }
 
 bool McDriverObj::validateOptions(QString *msg) const
@@ -224,8 +215,9 @@ bool McDriverObj::loadH5File(const QString &path)
         QApplication::processEvents(QEventLoop::AllEvents, 100);
     }
 
-    if (io_ret_ != 0)
+    if (!test_driver_) {
         return false;
+    }
 
     reset();
 
@@ -240,8 +232,8 @@ bool McDriverObj::loadH5File(const QString &path)
     setModified(false);
 
     info_.init(*this);
-    update_tally_();
 
+    emit tallyUpdate();
     emit configChanged();
     emit simulationCreated();
     emit contentsChanged();

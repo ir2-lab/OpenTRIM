@@ -43,7 +43,11 @@ DEFUN_DLD(__opentrim_config__, args, /* nargout */,
 
         } else if (cmd == "validate") {
             mcconfig *cfg = handle_obj<mcconfig>(args(1));
-            int ret = cfg->validate();
+            std::ostringstream err;
+            int ret = cfg->validate(false, &err);
+            if (ret != 0)
+                error("opentrim.config.validate: %s", err.str().c_str());
+
             retval(0) = octave_value(ret == 0);
 
         } else if (cmd == "to_json") {
@@ -57,7 +61,7 @@ DEFUN_DLD(__opentrim_config__, args, /* nargout */,
             const std::string json_str = args(2).string_value();
             std::istringstream ss(json_str);
             std::ostringstream err;
-            int ret = cfg->parseJSON(ss, true, &err, false);
+            int ret = cfg->parseJSON(ss, true, &err);
             if (ret != 0)
                 error("opentrim.config.from_json: %s", err.str().c_str());
 

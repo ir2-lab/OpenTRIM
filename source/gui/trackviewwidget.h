@@ -1,7 +1,7 @@
 #ifndef TRACKVIEWWIDGET_H
 #define TRACKVIEWWIDGET_H
 
-#include <QWidget>
+#include "mainui.h"
 
 #include "track3dviewport.h"
 
@@ -14,12 +14,12 @@ class QSlider;
 class QTableWidget;
 class QProgressBar;
 
-class TrackViewWidget : public QWidget
+class TrackViewWidget : public Page
 {
     Q_OBJECT
 
 public:
-    explicit TrackViewWidget(McDriverObj *driver, QWidget *parent = nullptr);
+    explicit TrackViewWidget(MainUI *ui, const QString &title, QWidget *parent = nullptr);
 
     Track3DViewport *viewport() const { return view_; }
 

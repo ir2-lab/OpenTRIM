@@ -1,7 +1,7 @@
 #ifndef WELCOMEVIEW_H
 #define WELCOMEVIEW_H
 
-#include <QWidget>
+#include "mainui.h"
 
 class QPushButton;
 class QToolButton;
@@ -14,12 +14,12 @@ class QAction;
 
 class MainUI;
 
-class WelcomeView : public QWidget
+class WelcomeView : public Page
 {
     Q_OBJECT
 
 public:
-    WelcomeView(MainUI *iui, QWidget *parent = nullptr);
+    WelcomeView(MainUI *iui, const QString &title, QWidget *parent = nullptr);
 
 signals:
 

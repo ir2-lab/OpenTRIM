@@ -127,8 +127,6 @@ public:
         info_.update(*this);
         return info_;
     }
-    const ArrayNDd &totals() const { return totals_; }
-    const ArrayNDd &dtotals() const { return dtotals_; }
 
     const tally &getTally() const;
     const mccore *getSim() const;
@@ -203,12 +201,7 @@ private:
     running_sim_info info_;
     friend class running_sim_info;
 
-    // tally totals - to be updated in regular intervals
-    void update_tally_();
-    ArrayNDd totals_, dtotals_;
-
     void setStatus(DriverStatus s);
-
     static void mc_callback_(const mcdriver *d, void *p);
 };
 

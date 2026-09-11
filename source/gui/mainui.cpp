@@ -2,11 +2,12 @@
 
 #include "optionsmodel.h"
 #include "optionsview.h"
+#include "optionwidgetmapper.h"
 #include "welcomeview.h"
 #include "mcdriverobj.h"
 #include "simcontrolwidget.h"
 #include "resultsview.h"
-#include "tabularview.h"
+#include "summaryview.h"
 #include "track3dviewport.h"
 #include "trackviewwidget.h"
 #include "dialogs.h"
@@ -17,6 +18,7 @@
 #include <QStackedWidget>
 #include <QTextBrowser>
 #include <QLabel>
+#include <QFont>
 #include <QProgressBar>
 #include <QCloseEvent>
 #include <QGuiApplication>
@@ -63,7 +65,7 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     QStringList icons{ "grid-outline.svg", "settings-outline.svg", "cube-outline.svg",
                        "list-outline.svg", "bar-chart-outline.svg" };
 
-    QStringList titles{ "Welcome", "Config", "3D Vis", "Summary", "Data" };
+    QStringList titles{ "Welcome", "Config", "3D Vis", "Summary", "Results" };
     for (int i = 0; i < titles.count(); ++i) {
         pageButtonGrp->addButton(createSidebarButton(iconFolder + icons.at(i), titles.at(i)), i);
         sidebarLayout->addWidget(pageButtonGrp->button(i));
@@ -89,19 +91,20 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     layout->setContentsMargins(0, 0, 0, 0);
 
     /* Create pages */
-    welcomeView = new WelcomeView(this);
-    push(tr("Welcome"), welcomeView);
+    welcomeView = new WelcomeView(this, tr("Welcome"));
+    addPage(welcomeView);
 
-    optionsView = new OptionsView(this);
-    push(tr("Configuration"), optionsView);
+    optionsView = new OptionsView(this, tr("Configuration"));
+    addPage(optionsView);
 
-    push(tr("3D Visualization"), createTrackViewPage());
+    trackView = new TrackViewWidget(this, tr("3D Visualization"));
+    addPage(trackView);
 
-    tblView = new TabularView(this);
-    push(tr("Summary Tables"), tblView);
+    tblView = new SummaryView(this, tr("Results Summary"));
+    addPage(tblView);
 
-    resultsView = new ResultsView(this);
-    push(tr("Simulation Data"), resultsView);
+    resultsView = new ResultsView(this, tr("Simulation Results"));
+    addPage(resultsView);
 
     optionsView->revert();
 
@@ -118,8 +121,9 @@ MainUI::MainUI(QWidget *parent) : QWidget(parent), quickStartWidget(nullptr)
     QPoint x0 = geometry().center();
     QScreen *scr = QGuiApplication::screenAt(x0);
     // resize(1200, 900);
-    resize(1024, 768);
+    // resize(1024, 768);
     //  resize(600, 600);
+    resize(minimumSizeHint());
 
     show();
 
@@ -179,18 +183,38 @@ void MainUI::closeEvent(QCloseEvent *event)
     }
 }
 
+void MainUI::setHeadingFont(QWidget *w, int headingLevel, bool bold)
+{
+    static const qreal factors[] = { 1.9, 1.6, 1.3 };
+    static const int nFactors = sizeof(factors) / sizeof(factors[0]);
+    int idx = headingLevel - 1;
+    qreal factor = (idx >= 0 && idx < nFactors) ? factors[idx] : 1.0;
+
+    QFont f = w->font();
+    f.setPointSizeF(f.pointSizeF() * factor);
+    f.setBold(bold);
+    w->setFont(f);
+}
+
 void MainUI::push(const QString &title, QWidget *page)
 {
     QWidget *w = new QWidget;
     QVBoxLayout *vbox = new QVBoxLayout;
     QLabel *lbl = new QLabel(title);
-    lbl->setStyleSheet("font-size : 20pt; font-weight : bold;");
+    MainUI::setHeadingFont(lbl, 1);
     vbox->addWidget(lbl);
     vbox->addSpacing(V_SPACING);
     vbox->addWidget(page);
     QSizePolicy szPolicy = page->sizePolicy();
     w->setLayout(vbox);
     _stackedWidget->addWidget(w);
+
+    qDebug() << title << " - min size hint: " << w->minimumSizeHint() << " - " << minimumSizeHint();
+}
+
+void MainUI::addPage(Page *page)
+{
+    _stackedWidget->addWidget(page);
 }
 
 void MainUI::pop()
@@ -199,13 +223,6 @@ void MainUI::pop()
     _stackedWidget->removeWidget(currentWidget);
 
     // delete currentWidget; currentWidget = nullptr;
-}
-
-QWidget *MainUI::createTrackViewPage()
-{
-    TrackViewWidget *page = new TrackViewWidget(driverObj_, this);
-    trackView = page->viewport();
-    return page;
 }
 
 QToolButton *MainUI::createSidebarButton(const QString &iconPath, const QString &title)
@@ -262,7 +279,7 @@ void MainUI::showQuickStartWidget()
         QVBoxLayout *vbox = new QVBoxLayout;
         quickStartWidget->setLayout(vbox);
         QLabel *label = new QLabel("OpenTRIM Quick Start Guide");
-        label->setStyleSheet("font-size : 14pt; font-weight : bold;");
+        MainUI::setHeadingFont(label, 3);
         vbox->addWidget(label);
         QTextBrowser *quickstart = new QTextBrowser;
         quickstart->setSource(QUrl("qrc:./md/quick_start.md"));
@@ -271,4 +288,65 @@ void MainUI::showQuickStartWidget()
         quickStartWidget->resize(800, 800);
         quickStartWidget->show();
     }
+}
+
+Page::Page(MainUI *ui, const QString &title, bool hasSimTitle, QWidget *parent) : QWidget(parent)
+{
+    // create widgets
+    lblTitle = new QLabel(title);
+    MainUI::setHeadingFont(lblTitle, 1);
+    if (hasSimTitle) {
+        lblSimTitle = new QLabel("Simulation Title");
+        // MainUI::setHeadingFont(lblSimTitle, 3, true);
+        lblSimTitle->setStyleSheet("color: gray;");
+        edtSimTitle = new QLineEdit;
+        // MainUI::setHeadingFont(edtSimTitle, 3, false);
+        mapper = new OptionWidgetMapper(ui->optionsModel, this);
+        QModelIndex idxOut = ui->optionsModel->index("Output", 0);
+        QModelIndex idxTitle = ui->optionsModel->index("title", 0, idxOut);
+        OptionsItem *item = ui->optionsModel->getItem(idxTitle);
+        item->prepareWidget(edtSimTitle);
+        lblSimTitle->setToolTip(edtSimTitle->toolTip());
+        lblSimTitle->setWhatsThis(edtSimTitle->whatsThis());
+        mapper->addMapping(edtSimTitle, idxTitle, true, item->editorSignal());
+        mapper->addMapping(lblSimTitle, idxTitle, false);
+
+        edtSimTitle->setReadOnly(true);
+
+        connect(ui->driverObj(), &McDriverObj::configChanged, this, &Page::revert);
+    }
+    content = new QWidget;
+
+    // layout
+    QVBoxLayout *vbox = new QVBoxLayout(this);
+    if (hasSimTitle) {
+        QGridLayout *grid = new QGridLayout;
+        grid->setContentsMargins(0, 0, 0, 0);
+        grid->addWidget(lblTitle, 0, 0);
+        QHBoxLayout *hbox = new QHBoxLayout;
+        hbox->addWidget(lblSimTitle);
+        hbox->addWidget(edtSimTitle);
+        grid->addLayout(hbox, 0, 1);
+        grid->setColumnStretch(0, 1);
+        grid->setColumnStretch(1, 2);
+        vbox->addLayout(grid);
+    } else {
+        vbox->addWidget(lblTitle);
+    }
+    vbox->addWidget(content);
+}
+
+void Page::setContent(QWidget *w)
+{
+    QVBoxLayout *vbox = (QVBoxLayout *)layout();
+    QLayoutItem *i = vbox->replaceWidget(content, w);
+    assert(i);
+    QWidget *w1 = content;
+    content = w;
+    w1->deleteLater();
+}
+
+void Page::revert()
+{
+    mapper->revert();
 }

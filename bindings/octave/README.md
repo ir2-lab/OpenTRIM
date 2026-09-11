@@ -1,4 +1,4 @@
-# opentrim — GNU Octave bindings for OpenTRIM
+# GNU Octave bindings for OpenTRIM
 
 Octave package providing `opentrim.config`, `opentrim.driver`, and
 `opentrim.info` objects for running OpenTRIM ion-in-matter Monte Carlo
@@ -7,13 +7,13 @@ simulations from Octave.
 ## Prerequisites
 
 * Octave ≥ 6.0
-* `libopentrim` installed (default prefix: `~/.local`)
+* `libopentrim` installed 
 * A C++17-capable compiler and `mkoctfile`
 * CMake ≥ 3.14 (used once to discover compile/link flags)
 
 ## Installing the package
 
-### From the published release tarball
+### From the published release tarball (Linux only)
 
 ```octave
 pkg install https://github.com/gapost/opentrim/releases/download/v1.2.0/opentrim-octave-1.2.0.tar.gz
@@ -31,14 +31,14 @@ bash dist/make_oct_package.sh 1.2.0
 
 Then in Octave:
 
-```octave
+```matlab
 pkg install opentrim-octave-1.2.0.tar.gz
 pkg load opentrim
 ```
 
 ## End-to-end example
 
-```octave
+```matlab
 pkg load opentrim
 
 % 1. Create and configure a simulation
@@ -136,7 +136,7 @@ res2 = d2.info();
 
 ## Funtion reference
 
-Functions for evaluating screened coulomb potential scattering quantities.
+Functions for evaluating screened Coulomb potential scattering quantities.
 
 | Function                 | Description                             |
 | ------------------------ | --------------------------------------- |

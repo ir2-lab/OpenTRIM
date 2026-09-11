@@ -31,6 +31,7 @@ public:
     virtual void setEditorData(QWidget *editor, const QVariant &v) const { }
     virtual QVariant getEditorData(QWidget *editor) { return QVariant(); }
     virtual const char *editorSignal() const { return nullptr; }
+    void prepareWidget(QWidget *w) const;
 
     bool isRoot() const { return parent() == nullptr; }
 
@@ -47,7 +48,6 @@ protected:
     OptionsItem(const QString &key, mcconfig::option_type_t t, OptionsItem *parent);
     OptionsItem(const QString &key, const QString &name, mcconfig::option_type_t t,
                 OptionsItem *parent);
-    void prepareWidget(QWidget *w) const;
     std::vector<OptionsItem *> m_childItems;
     OptionsItem *m_parentItem;
     QString key_, name_;
