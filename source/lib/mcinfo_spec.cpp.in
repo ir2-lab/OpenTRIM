@@ -2,7 +2,10 @@
 
 #include "json_defs_p.h"
 
+#include <map>
 #include <sstream>
+#include <string>
+#include <utility>
 
 static const char* mcinfo_spec_str_ =
 R"-(
@@ -17,10 +20,14 @@ std::string mcinfo::info_spec()
     {
         ojson tally_specs(ojson::array({}));
 
-        std::map<std::string, std::map<std::string, int>> tmap;
+        // map: group name -> dataset name -> (tally index, is_sem)
+        // both maps are ordered, which reproduces the ordering seen in the file
+        std::map<std::string, std::map<std::string, std::pair<int, bool>>> tmap;
         int k = 1;
         while (k < tally::std_tallies) {
-            tmap[tally::arrayGroup(k)][tally::arrayName(k)] = k;
+            std::string nm(tally::arrayName(k));
+            tmap[tally::arrayGroup(k)][nm] = { k, false };
+            tmap[tally::arrayGroup(k)][nm + "_sem"] = { k, true };
             k++;
         }
 
@@ -34,10 +41,14 @@ std::string mcinfo::info_spec()
             ojson objects(ojson::array({}));
             for (const auto &tname : tgroup.second) {
                 ojson tally_j(ojson::object({}));
-                int k = tname.second;
+                int k = tname.second.first;
+                bool is_sem = tname.second.second;
+                std::string desc(tally::arrayDescription(k));
+                if (is_sem)
+                    desc += " (SEM)";
                 tally_j["id"] = tname.first;
                 tally_j["type"] = "Dataset";
-                tally_j["description"] = tally::arrayDescription(k);
+                tally_j["description"] = desc;
                 tally_j["datatype"] = "Numeric";
                 tally_j["size"] = "\\f$[N_{at},N_x,N_y,N_z]\\f$";
 
@@ -45,6 +56,37 @@ std::string mcinfo::info_spec()
             }
             group_j["objects"] = objects;
 
+            tally_specs.push_back(group_j);
+        }
+
+        // the table of totals
+        {
+            ojson group_j(ojson::object({}));
+            group_j["id"] = "totals";
+            group_j["type"] = "Group";
+            group_j["description"] = "Tally totals summed over all cells";
+
+            ojson objects(ojson::array({}));
+
+            ojson d(ojson::object({}));
+            d["id"] = "data";
+            d["type"] = "Dataset";
+            d["description"] = "Tally totals per atom";
+            d["datatype"] = "Numeric";
+            d["size"] = "\\f$[N_{tally},N_{at}]\\f$";
+            objects.push_back(d);
+
+            d["id"] = "data_sem";
+            d["description"] = "Tally totals per atom (SEM)";
+            objects.push_back(d);
+
+            d["id"] = "column_names";
+            d["description"] = "Names of the tally totals";
+            d["datatype"] = "Text";
+            d["size"] = "\\f$[N_{tally}]\\f$";
+            objects.push_back(d);
+
+            group_j["objects"] = objects;
             tally_specs.push_back(group_j);
         }
 

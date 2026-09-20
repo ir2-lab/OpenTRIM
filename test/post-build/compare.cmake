@@ -3,8 +3,8 @@ set(physics_datasets
     /tally/damage_events/Recombinations
     /tally/damage_events/Replacements
     /tally/damage_events/Vacancies
-    /tally/energy_deposition/Ionization
-    /tally/energy_deposition/Lattice
+    /tally/energy_deposition/Electronic
+    /tally/energy_deposition/Nuclear
     /tally/energy_deposition/Lost
     /tally/energy_deposition/Stored
     /tally/ion_stat/Collisions
@@ -24,8 +24,8 @@ set(error_datasets
     /tally/damage_events/Recombinations_sem
     /tally/damage_events/Replacements_sem
     /tally/damage_events/Vacancies_sem
-    /tally/energy_deposition/Ionization_sem
-    /tally/energy_deposition/Lattice_sem
+    /tally/energy_deposition/Electronic_sem
+    /tally/energy_deposition/Nuclear_sem
     /tally/energy_deposition/Lost_sem
     /tally/energy_deposition/Stored_sem
     /tally/ion_stat/Collisions_sem

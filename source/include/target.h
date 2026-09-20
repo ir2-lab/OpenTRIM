@@ -77,7 +77,7 @@ public:
         float X{ 1.0f };
         /// Displacement threshold energy (eV) of target atoms
         float Ed{ 40.0f };
-        /// Lattice energy (eV) of target atoms
+        /// Lattice binding energy (eV) of target atoms
         float El{ 3.0f };
         /// Surface binding energy (eV) of target atoms
         float Es{ 10.0f };
@@ -116,7 +116,7 @@ public:
      * Furthermore, most tallies have separate columns for each atom id.
      * This way one can distinguish, e.g.,
      * in the previous example,
-     * how much ionization energy comes by O recoils specifically from ZrO.
+     * how much electronic energy loss is due to O recoils in ZrO.
      *
      * The special id value of 0 is reserved for the atomic species of the ion beam.
      *
@@ -378,8 +378,8 @@ public:
         vector3 size{ 100.f, 100.f, 100.f };
         ivector3 cell_count{ 1, 1, 1 };
         ivector3 periodic_bc{ 0, 1, 1 };
-        std::vector<material::material_desc_t> materials{};
-        std::vector<region> regions{};
+        std::vector<material::material_desc_t> materials{ };
+        std::vector<region> regions{ };
     };
 
 protected:

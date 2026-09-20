@@ -129,7 +129,7 @@ public:
 
 class erg_table : public data_table
 {
-    constexpr static std::array<int, 4> idx{ tally::eIoniz, tally::eLattice, tally::eStored,
+    constexpr static std::array<int, 4> idx{ tally::eElectronic, tally::eNuclear, tally::eStored,
                                              tally::eLost };
 
 public:

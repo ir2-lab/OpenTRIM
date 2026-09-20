@@ -76,8 +76,8 @@ ion::ion()
       grid_(nullptr),
       ncoll_(0),
       path_(0),
-      ioniz_(0),
-      phonon_(0),
+      electronic_(0),
+      nuclear_(0),
       recoil_(0)
 {
 }

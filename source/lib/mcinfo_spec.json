@@ -131,6 +131,13 @@
                             "datatype": "Numeric",
                             "description": "Z-axis grid",
                             "size": "\\f$[N_z + 1]\\f$"
+                        },
+                        {
+                            "id": "cell_xyz",
+                            "type": "Dataset",
+                            "datatype": "Numeric",
+                            "description": "Cell center coordinates, indexed by the flat cell id j = (i_x*N_y + i_y)*N_z + i_z",
+                            "size": "\\f$[3,N_c]\\f$"
                         }
                     ]
                 },
@@ -445,11 +452,11 @@
                             "description": "Bin edges",
                             "objects": [
                                 {
-                                    "id": "bin_name1",
+                                    "id": "0, 1, ...",
                                     "type": "Dataset",
-                                    "description": "Bin edges of variable 1",
+                                    "description": "Bin edges of the j-th tally dimension. One dataset per binning variable, named by the zero-based dimension index. The corresponding variable name is bin_names[j].",
                                     "datatype": "Numeric",
-                                    "size": "\\f$[N_1+1]\\f$"
+                                    "size": "\\f$[N_j+1]\\f$"
                                 }
                             ]
                         }
@@ -479,14 +486,14 @@
                             "type": "Dataset",
                             "description": "Names of event data columns",
                             "datatype": "Text",
-                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                            "size": "\\f$[N_{cols}]\\f$"
                         },
                         {
                             "id": "column_descriptions",
                             "type": "Dataset",
                             "description": "Description of event data columns",
                             "datatype": "Text",
-                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                            "size": "\\f$[N_{cols}]\\f$"
                         }
                     ]
                 },
@@ -507,14 +514,14 @@
                             "type": "Dataset",
                             "description": "Names of event data columns",
                             "datatype": "Text",
-                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                            "size": "\\f$[N_{cols}]\\f$"
                         },
                         {
                             "id": "column_descriptions",
                             "type": "Dataset",
                             "description": "Description of event data columns",
                             "datatype": "Text",
-                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                            "size": "\\f$[N_{cols}]\\f$"
                         }
                     ]
                 },
@@ -535,14 +542,14 @@
                             "type": "Dataset",
                             "description": "Names of event data columns",
                             "datatype": "Text",
-                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                            "size": "\\f$[N_{cols}]\\f$"
                         },
                         {
                             "id": "column_descriptions",
                             "type": "Dataset",
                             "description": "Description of event data columns",
                             "datatype": "Text",
-                            "size": "\\f$[N_{ev},N_{cols}]\\f$"
+                            "size": "\\f$[N_{cols}]\\f$"
                         }
                     ]
                 }

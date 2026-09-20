@@ -74,6 +74,10 @@
 <td>Numeric
 <td>\f$[N_z + 1]\f$
 <td>Z-axis grid
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;cell_xyz
+<td>Numeric
+<td>\f$[3,N_c]\f$
+<td>Cell center coordinates, indexed by the flat cell id j = (i_x*N_y + i_y)*N_z + i_z
 <tr><td>&emsp;&emsp;&emsp;&emsp;materials/
 <td>Group<td><td>Target materials definition
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;name
@@ -192,50 +196,94 @@
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>Implantations & Interstitials
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Implantations_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Implantations & Interstitials (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Recombinations
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>Recombinations
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Recombinations_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Recombinations (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Replacements
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>Replacements
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Replacements_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Replacements (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Vacancies
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>Vacancies
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Vacancies_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Vacancies (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;energy_deposition/
 <td>Group<td><td>
-<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Ionization
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Electronic
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
-<td>Energy deposited to ionization [eV]
-<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Lattice
+<td>Electronic energy loss [eV]
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Electronic_sem
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
-<td>Energy deposited to the lattice as thermal energy [eV]
+<td>Electronic energy loss [eV] (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Lost
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>Energy lost due to ions exiting the simulation [eV]
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Lost_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Energy lost due to ions exiting the simulation [eV] (SEM)
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Nuclear
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Nuclear energy loss [eV]
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Nuclear_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Nuclear energy loss [eV] (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Stored
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>Energy stored in lattice defects [eV]
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Stored_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Energy stored in lattice defects [eV] (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;ion_stat/
 <td>Group<td><td>
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Collisions
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>Ion collisions
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Collisions_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Ion collisions (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Flight_path
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>Flight path [nm]
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Flight_path_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Flight path [nm] (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Lost
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>Ions that exit the simulation volume
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Lost_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Ions that exit the simulation volume (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;pka_damage/
 <td>Group<td><td>
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Pka
@@ -246,6 +294,14 @@
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>PKA recoil energy [eV]
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Pka_energy_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>PKA recoil energy [eV] (SEM)
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Pka_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Primary knock-on atoms (PKAs) (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Tdam
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
@@ -254,6 +310,14 @@
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>Damage energy estimated by the LSS approximation [eV]
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Tdam_LSS_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Damage energy estimated by the LSS approximation [eV] (SEM)
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Tdam_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Damage energy [eV] (SEM)
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Vnrt
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
@@ -262,6 +326,28 @@
 <td>Numeric
 <td>\f$[N_{at},N_x,N_y,N_z]\f$
 <td>Vacancies per the NRT model using Tdam_LSS
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Vnrt_LSS_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Vacancies per the NRT model using Tdam_LSS (SEM)
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Vnrt_sem
+<td>Numeric
+<td>\f$[N_{at},N_x,N_y,N_z]\f$
+<td>Vacancies per the NRT model using Tdam (SEM)
+<tr><td>&emsp;&emsp;&emsp;&emsp;totals/
+<td>Group<td><td>Tally totals summed over all cells
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;data
+<td>Numeric
+<td>\f$[N_{tally},N_{at}]\f$
+<td>Tally totals per atom
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;data_sem
+<td>Numeric
+<td>\f$[N_{tally},N_{at}]\f$
+<td>Tally totals per atom (SEM)
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;column_names
+<td>Text
+<td>\f$[N_{tally}]\f$
+<td>Names of the tally totals
 <tr><td>&emsp;&emsp;user_tally/
 <td>Group<td><td>User defined tallies
 <tr><td>&emsp;&emsp;&emsp;&emsp;tally name/
@@ -310,10 +396,10 @@
 <td>Standard error in the mean of tally bin data
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;bins/
 <td>Group<td><td>Bin edges
-<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;bin_name1
+<tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;0, 1, ...
 <td>Numeric
-<td>\f$[N_1+1]\f$
-<td>Bin edges of variable 1
+<td>\f$[N_j+1]\f$
+<td>Bin edges of the j-th tally dimension. One dataset per binning variable, named by the zero-based dimension index. The corresponding variable name is bin_names[j].
 <tr><td>&emsp;&emsp;events/
 <td>Group<td><td>lists of simulation events
 <tr><td>&emsp;&emsp;&emsp;&emsp;exit/
@@ -324,11 +410,11 @@
 <td>Event data
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;column_names
 <td>Text
-<td>\f$[N_{ev},N_{cols}]\f$
+<td>\f$[N_{cols}]\f$
 <td>Names of event data columns
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;column_descriptions
 <td>Text
-<td>\f$[N_{ev},N_{cols}]\f$
+<td>\f$[N_{cols}]\f$
 <td>Description of event data columns
 <tr><td>&emsp;&emsp;&emsp;&emsp;pka/
 <td>Group<td><td>PKA events
@@ -338,11 +424,11 @@
 <td>Event data
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;column_names
 <td>Text
-<td>\f$[N_{ev},N_{cols}]\f$
+<td>\f$[N_{cols}]\f$
 <td>Names of event data columns
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;column_descriptions
 <td>Text
-<td>\f$[N_{ev},N_{cols}]\f$
+<td>\f$[N_{cols}]\f$
 <td>Description of event data columns
 <tr><td>&emsp;&emsp;&emsp;&emsp;damage/
 <td>Group<td><td>Damage events
@@ -352,11 +438,11 @@
 <td>Event data
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;column_names
 <td>Text
-<td>\f$[N_{ev},N_{cols}]\f$
+<td>\f$[N_{cols}]\f$
 <td>Names of event data columns
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;column_descriptions
 <td>Text
-<td>\f$[N_{ev},N_{cols}]\f$
+<td>\f$[N_{cols}]\f$
 <td>Description of event data columns
 </table>
 

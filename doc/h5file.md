@@ -33,7 +33,7 @@ The order of atoms can be seen in `/target/atoms/labels`.
 - \f$N_e\f$ : # of energy points for energy loss tables
 - \f$N_{ev}\f$ : # of events
 
-To reach a variable in the archive use the complete path, e.g. `/tally/energy_deposition/Ionization`.
+To reach a variable in the archive use the complete path, e.g. `/tally/energy_deposition/Electronic`.
 
 ## OpenTRIM HDF5 output archive structure
 

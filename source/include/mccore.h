@@ -413,7 +413,7 @@ protected:
      * energy \f$T\f$
      *   - If \f$T>E_d\f$, where \f$E_d\f$ is the \ref atom::parameters::Ed "displacement energy",
      * call new_recoil() to create a recoil ion and put it the \ref ion_queue "simulation queue"
-     *   - Otherwise \f$T\f$ is deposited as lattice vibrations
+     *   - Otherwise \f$T\f$ is deposited as sub-threshold nuclear loss
      *
      * The loop is repeated until either the ion exits the target or
      * its energy becomes less than parameters::min_energy whereupon the ion

@@ -73,9 +73,6 @@
         ]
     },
     "Output": {
-        "title": "2MeV Fe on Fe example",
-        "store_pka_events": true,
-        "store_dedx": true,
-        "store_exit_events": true
+        "title": "2MeV Fe on Fe example"
     }
 }

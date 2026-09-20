@@ -118,8 +118,8 @@ private:
     // they are reset when ion changes cell, stops or exits
     size_t ncoll_; // # of collisions
     double path_, // total path length
-            ioniz_, // total E loss to ionization
-            phonon_, // total E loss to phonons
+            electronic_, // total electronic E loss
+            nuclear_, // total nuclear E loss (subthreshold)
             recoil_; // total E loss to recoils
 
     friend class ion_queue;
@@ -217,11 +217,11 @@ public:
     /// Returns a pointer to the \ref atom class describing the atomic species of the current ion
     const atom *myAtom() const { return atom_; }
 
-    /// Subtract energy \a de due to phonon excitation
-    void de_phonon(double de) { sub_erg(de, &phonon_); }
+    /// Subtract energy \a de due to subthreshold nuclear collisions
+    void de_nuclear(double de) { sub_erg(de, &nuclear_); }
 
-    /// Subtract energy \a de due to ionization
-    void de_ioniz(double de) { sub_erg(de, &ioniz_); }
+    /// Subtract energy \a de due to electronic energy loss
+    void de_electronic(double de) { sub_erg(de, &electronic_); }
 
     /// Subtract energy \a de due to recoil generation
     void de_recoil(double de) { sub_erg(de, &recoil_); }
@@ -229,11 +229,11 @@ public:
     /// Subtract energy \a de due to other proccesses
     void de_other(double de) { sub_erg(de, nullptr); }
 
-    /// Returns the amount of ion energy lost to phonons
-    const double &phonon() const { return phonon_; }
+    /// Returns the amount of ion energy lost to subthreshold nuclear collisions
+    const double &nuclear() const { return nuclear_; }
 
-    /// Returns the amount of ion energy lost to ionization
-    const double &ioniz() const { return ioniz_; }
+    /// Returns the amount of electronic energy loss
+    const double &electronic() const { return electronic_; }
 
     /// Returns the amount of ion energy lost to recoils
     const double &recoil() const { return recoil_; }
@@ -315,7 +315,7 @@ public:
     void reset_counters()
     {
         ncoll_ = 0;
-        path_ = ioniz_ = phonon_ = recoil_ = 0.0;
+        path_ = electronic_ = nuclear_ = recoil_ = 0.0;
     }
 
     BoundaryCrossing propagate(float &s);

@@ -94,7 +94,7 @@
 &emsp;&emsp;\ref _Run "\"Run\"": {<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Run_max_no_ions "\"max_no_ions\"": 100,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Run_max_cpu_time "\"max_cpu_time\"": 0,<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Run_threads "\"threads\"": 1,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Run_threads "\"threads\"": 0,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Run_seed "\"seed\"": 123456789<br>
 &emsp;&emsp;},<br>
 &emsp;&emsp;\ref _UserTally "\"UserTally\"": [<br>
@@ -455,7 +455,7 @@
 </ul><tr><th colspan="2">\anchor _Run_threads /Run/threads<tr><td>Label <td>Number of threads
 <tr><td>Type <td>Integer
 <tr><td>Range<td>0...100
-<tr><td>Default Value<td>1<tr><td>Description <td>Number of execution threads.
+<tr><td>Default Value<td>0<tr><td>Description <td>Number of execution threads.
 <h4>Notes</h4><ul><li>0 means that the number of threads is selected automatically.</li>
 </ul><tr><th colspan="2">\anchor _Run_seed /Run/seed<tr><td>Label <td>Random number seed
 <tr><td>Type <td>Integer

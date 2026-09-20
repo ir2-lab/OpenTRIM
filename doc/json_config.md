@@ -25,6 +25,7 @@ Some more example configurations can be found here:
 - \subpage 2MeV_Fe_on_Fe
 - \subpage 3MeV_Xe_on_UO2
 - \subpage Fe_50kV_Cascades
+- \subpage 270keV_He_on_C
 
 \include{doc} options.dox.md
 
@@ -51,6 +52,15 @@ JSON config
 JSON config
 
 \include Fe_50kV_Cascades.json
+
+\page 270keV_He_on_C 270keV He on a carbon foil example
+
+A thin foil transmission example. It defines a \ref tallies-user "user tally" which
+records the angular distribution of the transmitted He ions.
+
+JSON config
+
+\include 270keV_He_on_C.json
 
 
 

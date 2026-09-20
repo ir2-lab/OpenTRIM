@@ -384,7 +384,7 @@ protected:
             de -= (E > 2 * delta) ? delta : 0.5 * E;
         }
 
-        i.de_ioniz(de);
+        i.de_electronic(de);
     }
 
     // get stopping ΔΕ

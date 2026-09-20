@@ -22,10 +22,10 @@ pname = ['b' num2str(nb) '.pdf'];
 titlestr = h5read(fname,'/run_info/title');
 
 # x axis = cell centers
-x = h5read(fname,'/target/grid/cell_xyz')(:,1);
+x = h5read(fname,'/target/grid/X');
+Lx = x(end) - x(1);
+x = x(1:end-1) + diff(x)/2;
 nx = length(x);
-Lx = h5read(fname,'/target/grid/X');
-Lx = Lx(end) - Lx(1);
 
 # atom labels
 atom_labels = h5read(fname,'/target/atoms/label');
@@ -165,46 +165,46 @@ function [titles, shorttitles, ylabels, data] = getOpenTRIMdata(fname, natoms, a
              squeeze(h5read(fname,'/tally/damage_events/Replacements'))(:,1);
   ii++;
 
-  titles{ii} = ['Ionization fraction $E_I/E_0$ by ' atom_labels{1}];
-  shorttitles{ii} = ['EI(' atom_symbols{1} ')/E0'];
+  titles{ii} = ['Electronic energy loss fraction $\Delta E_e/E_0$ by ' atom_labels{1}];
+  shorttitles{ii} = ['ΔEe(' atom_symbols{1} ')/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = squeeze(h5read(fname,'/tally/energy_deposition/Ionization'))(:,1)/E0;
+  data{ii} = squeeze(h5read(fname,'/tally/energy_deposition/Electronic'))(:,1)/E0;
   ii++;
 
-  titles{ii} = ['Ionization fraction $E_I/E_0$ by recoils'];
-  shorttitles{ii} = ['EI(r)/E0'];
+  titles{ii} = ['Electronic energy loss fraction $\Delta E_e/E_0$ by recoils'];
+  shorttitles{ii} = ['ΔEe(r)/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = sum(squeeze(h5read(fname,'/tally/energy_deposition/Ionization'))(:,2:end),2)/E0;
+  data{ii} = sum(squeeze(h5read(fname,'/tally/energy_deposition/Electronic'))(:,2:end),2)/E0;
   ii++;
 
-  titles{ii} = ['Total Ionization fraction $E_I/E_0$'];
-  shorttitles{ii} = ['EI/E0'];
+  titles{ii} = ['Total Electronic energy loss fraction $\Delta E_e/E_0$'];
+  shorttitles{ii} = ['ΔEe(tot)/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = sum(squeeze(h5read(fname,'/tally/energy_deposition/Ionization')),2)/E0;
+  data{ii} = sum(squeeze(h5read(fname,'/tally/energy_deposition/Electronic')),2)/E0;
   ii++;
 
-  titles{ii} = ['Phonon energy fraction $E_{Ph}/E_0$ by ' atom_labels{1}];
-  shorttitles{ii} = ['EPh(' atom_symbols{1} ')/E0'];
+  titles{ii} = ['Nuclear energy loss fraction $\Delta E_{n}/E_0$ by ' atom_labels{1}];
+  shorttitles{ii} = ['ΔEn(' atom_symbols{1} ')/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = squeeze(h5read(fname,'/tally/energy_deposition/Lattice'))(:,1)/E0;
+  data{ii} = squeeze(h5read(fname,'/tally/energy_deposition/Nuclear'))(:,1)/E0;
   ii++;
 
-  titles{ii} = ['Phonon energy fraction $E_{Ph}/E_0$ by recoils'];
-  shorttitles{ii} = ['EPh(r)/E0'];
+  titles{ii} = ['Nuclear energy loss fraction $\Delta E_{n}/E_0$ by recoils'];
+  shorttitles{ii} = ['ΔEn(r)/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = (sum(squeeze(h5read(fname,'/tally/energy_deposition/Lattice'))(:,2:end),2) + ...
+  data{ii} = (sum(squeeze(h5read(fname,'/tally/energy_deposition/Nuclear'))(:,2:end),2) + ...
              sum(squeeze(h5read(fname,'/tally/energy_deposition/Stored'))(:,2:end),2))/E0;
   ii++;
 
-  titles{ii} = ['Total Phonon energy fraction $E_{Ph}/E_0$'];
-  shorttitles{ii} = ['EPh(tot)/E0'];
+  titles{ii} = ['Total Nuclear energy loss fraction $\Delta E_{n}/E_0$'];
+  shorttitles{ii} = ['ΔEn(tot)/E0'];
   ylabels{ii} = '1 / ion';
-  data{ii} = (sum(squeeze(h5read(fname,'/tally/energy_deposition/Lattice')),2) + ...
+  data{ii} = (sum(squeeze(h5read(fname,'/tally/energy_deposition/Nuclear')),2) + ...
              sum(squeeze(h5read(fname,'/tally/energy_deposition/Stored')),2))/E0;
   ii++;
 
-  titles{ii} = ['Total fractional energy deposition $(E_I + E_{Ph})/E_0$'];
-  shorttitles{ii} = ['1-(EI+EPh)/E0'];
+  titles{ii} = ['Total fractional energy loss $(\Delta E_e + \Delta E_{n})/E_0$'];
+  shorttitles{ii} = ['1-(ΔEe+ΔEn)/E0'];
   ylabels{ii} = '1 / ion';
   data{ii} = data{ii-1}+data{ii-4};
   ii++;

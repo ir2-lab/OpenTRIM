@@ -25,7 +25,9 @@ data = h5load(['../opentrim/b' num2str(nb) '.h5']);
 titlestr = data.run_info.title;
 
 # x axis = cell centers
-x = data.target.grid.cell_xyz(:,1);
+x = data.target.grid.X;
+x = x(1:end-1) + diff(x)/2;
+size(x)
 
 # atom labels
 atom_labels = data.target.atoms.label;
@@ -33,23 +35,25 @@ atom_labels = data.target.atoms.label;
 # Figure 1 = Defects vs. x
 figure 1
 clf
+y = squeeze(data.tally.damage_events.Implantations);
+size(y)
 subplot(2,2,1)
-plot(x,data.tally.damage_events.Implantations(:,1))
+plot(x,y(:,1))
 title([titlestr ' - Implanted Ions'])
 legend(atom_labels{1})
 xlabel('x (nm)')
 subplot(2,2,2)
-plot(x,data.tally.damage_events.Implantations(:,2:end))
+plot(x,y(:,2:end))
 title([titlestr ' - I'])
 legend(atom_labels{2:end})
 xlabel('x (nm)')
 subplot(2,2,3)
-plot(x,data.tally.damage_events.Vacancies)
+plot(x,squeeze(data.tally.damage_events.Vacancies))
 title([titlestr ' - V'])
 legend(atom_labels)
 xlabel('x (nm)')
 subplot(2,2,4)
-plot(x,data.tally.damage_events.Replacements)
+plot(x,squeeze(data.tally.damage_events.Replacements))
 title([titlestr ' - R'])
 legend(atom_labels)
 xlabel('x (nm)')
@@ -58,14 +62,14 @@ xlabel('x (nm)')
 figure 2
 clf
 subplot(2,2,1)
-plot(x,data.tally.energy_deposition.Ionization)
-title([titlestr ' - Ionization'])
+plot(x,data.tally.energy_deposition.Electronic)
+title([titlestr ' - Electronic'])
 legend(atom_labels)
 xlabel('x (nm)')
 ylabel('eV')
 subplot(2,2,2)
-plot(x,data.tally.energy_deposition.Lattice)
-title([titlestr ' - Phonons'])
+plot(x,data.tally.energy_deposition.Nuclear)
+title([titlestr ' - Nuclear'])
 legend(atom_labels)
 xlabel('x (nm)')
 ylabel('eV')
@@ -95,11 +99,12 @@ for i=2:length(atom_labels),
 end
 lbls = { lbls{:}, 'Total Eph' };
 
-Tdam1 = data.tally.energy_deposition.Lattice + ...
-        data.tally.energy_deposition.Stored;
+Tdam = squeeze(data.tally.pka_damage.Tdam);
+Tdam1 = squeeze(data.tally.energy_deposition.Nuclear + ...
+        data.tally.energy_deposition.Stored);
 subplot(2,2,1)
-plot(x,data.tally.pka_damage.Tdam(:,2:end), ...
-  x,sum(data.tally.pka_damage.Tdam(:,2:end),2), ...
+plot(x,Tdam(:,2:end), ...
+  x,sum(Tdam(:,2:end),2), ...
   x,Tdam1(:,2:end),...
   x,sum(Tdam1(:,2:end),2))
 title([titlestr ' - Tdam'])
@@ -119,10 +124,12 @@ end
 lbls = { lbls{:}, 'Total FC' };
 
 subplot(2,2,2)
-plot(x,data.tally.pka_damage.Vnrt(:,2:end), ...
-  x,sum(data.tally.pka_damage.Vnrt(:,2:end),2), ...
-  x,data.tally.damage_events.Vacancies(:,2:end),...
-  x,sum(data.tally.damage_events.Vacancies(:,2:end),2))
+Vnrt = squeeze(data.tally.pka_damage.Vnrt);
+V = squeeze(data.tally.damage_events.Vacancies);
+plot(x,Vnrt(:,2:end), ...
+  x,sum(Vnrt(:,2:end),2), ...
+  x,V(:,2:end),...
+  x,sum(V(:,2:end),2))
 title([titlestr ' - Vac'])
 legend(lbls)
 xlabel('x (nm)')
@@ -133,11 +140,12 @@ for i=2:length(atom_labels),
   lbls = { lbls{:}, [atom_labels{i} ' Tdam']};
 end
 lbls = { lbls{:}, 'Total Tdam', 'Total Eph' };
-pka = data.tally.pka_damage.Pka(:,2:end);
+pka = squeeze(data.tally.pka_damage.Pka);
+pka = pka(:,2:end);
 
 subplot(2,2,3)
-plot(x,data.tally.pka_damage.Tdam(:,2:end)./pka, ...
-  x,sum(data.tally.pka_damage.Tdam(:,2:end),2)./sum(pka,2), ...
+plot(x,Tdam(:,2:end)./pka, ...
+  x,sum(Tdam(:,2:end),2)./sum(pka,2), ...
   x,sum(Tdam1(:,2:end),2)./sum(pka,2))
 title([titlestr ' - Tdam/PKA'])
 legend(lbls)
@@ -151,9 +159,9 @@ end
 lbls = { lbls{:}, 'Total FC-NRT', 'Total FC' };
 
 subplot(2,2,4)
-plot(x,data.tally.pka_damage.Vnrt(:,2:end)./pka,...
-     x,sum(data.tally.pka_damage.Vnrt(:,2:end),2)./sum(pka,2),...
-     x,sum(data.tally.damage_events.Vacancies(:,2:end),2)./sum(pka,2))
+plot(x,Vnrt(:,2:end)./pka,...
+     x,sum(Vnrt(:,2:end),2)./sum(pka,2),...
+     x,sum(V(:,2:end),2)./sum(pka,2))
 title([titlestr ' - Vac/PKA'])
 legend(lbls)
 xlabel('x (nm)')
@@ -162,24 +170,24 @@ xlabel('x (nm)')
 figure 4
 clf
 subplot(2,2,1)
-plot(x,data.tally.ion_stat.Collisions)
+plot(x,squeeze(data.tally.ion_stat.Collisions))
 title([titlestr ' - Collisions'])
 legend(atom_labels)
 xlabel('x (nm)')
 subplot(2,2,2)
-plot(x,data.tally.pka_damage.Pka)
+plot(x,squeeze(data.tally.pka_damage.Pka))
 title([titlestr ' - PKAs'])
 legend(atom_labels)
 xlabel('x (nm)')
 
 subplot(2,2,3)
-plot(x,data.tally.ion_stat.Flight_path./data.tally.ion_stat.Collisions)
+plot(x,squeeze(data.tally.ion_stat.Flight_path)./squeeze(data.tally.ion_stat.Collisions))
 title([titlestr ' - mfp'])
 legend(atom_labels)
 xlabel('x (nm)')
 ylabel('nm')
 subplot(2,2,4)
-plot(x,data.tally.ion_stat.Lost)
+plot(x,squeeze(data.tally.ion_stat.Lost))
 title([titlestr ' - Lost ions'])
 legend(atom_labels)
 xlabel('x (nm)')

@@ -110,8 +110,8 @@ private:
                               "Atomic mass [u]",
                               "Atomic fraction (unnormalized)",
                               "Displacement energy [eV]",
-                              "Lattice energy [eV]",
-                              "Surface energy [eV]",
+                              "Lattice binding energy [eV]",
+                              "Surface binding energy [eV]",
                               "Replacement energy [eV]",
                               "FP capture radius [nm]" };
 };

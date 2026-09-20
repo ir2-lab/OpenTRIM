@@ -244,7 +244,7 @@ int mccore::run()
                 }
                 if (par_.recoil_sub_ed) {
                     double de = i->erg() + i->myAtom()->Ed() - T;
-                    i->de_phonon(de);
+                    i->de_nuclear(de);
                 }
                 ion_queue_.push_pka(i);
             } else
@@ -265,8 +265,8 @@ int mccore::run()
             // FullCascade or CascadesOnly
             if (par_.simulation_type != IonsOnly) {
 
-                // reset this to get total ionization in the cascade
-                tion_.resetIonizationCounter();
+                // reset this to get total electronic loss in the cascade
+                tion_.resetELossCounter();
 
                 // create a vacancy at pka position
                 // and store a copy in the vacancy queue
@@ -303,8 +303,8 @@ int mccore::run()
                     }
                 }
 
-                // calc Tdam = Er - Eioniz
-                pka.Tdam() = pka.recoilE() - tion_.ionizationCounter();
+                // calc Tdam = Er - Ee
+                pka.Tdam() = pka.recoilE() - tion_.eLossCounter();
 
                 // count recombinations into pka
                 // clear optional cascade buffers
@@ -433,7 +433,7 @@ int mccore::transport(ion *i)
         // propagate ion, checking also for boundary crossing
         BoundaryCrossing crossing = i->propagate(fp);
 
-        // subtract ionization & straggling
+        // subtract electronic energy loss & straggling
         dedx_calc_(*i, fp, rng);
 
         // handle boundary
@@ -527,7 +527,8 @@ int mccore::transport(ion *i)
              *
              */
             if ((i->myAtom()->Z() == z2->Z()) && (i->erg() < z2->Er())) {
-                // Replacement event, ion energy goes to Phonons
+                // Replacement event, ion energy goes to sub-threshold nuclear losses
+                i->de_nuclear(i->erg());
                 handle_event(Event::Replacement, *i, z2);
                 j->setUid(i->uid());
                 j->setRecoilId(i->recoil_id()); // j keeps the recoil id of i
@@ -557,13 +558,13 @@ int mccore::transport(ion *i)
                 dedx_calc_(*j, z2->Rc());
                 if (par_.recoil_sub_ed) {
                     double de = j->erg() + z2->Ed() - T;
-                    j->de_phonon(de);
+                    j->de_nuclear(de);
                 }
             }
 
         } else { // T<E_d, recoil cannot be displaced
-            // energy goes to phonons
-            i->de_phonon(T);
+            // energy goes to sub-threshold nuclear loss
+            i->de_nuclear(T);
             // register scattering of ion i
             handle_event(Event::Scattering, *i);
         }

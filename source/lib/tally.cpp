@@ -98,8 +98,8 @@ const char *event_description(Event ev)
 const char *tally::arrayName(int i)
 {
     static const char *names[] = {
-        "Totals",   "Vacancies", "Implantations", "Replacements", "Recombinations", "Ionization",
-        "Lattice",  "Stored",    "Lost",          "Pka",          "Pka_energy",     "Tdam",
+        "Totals",   "Vacancies", "Implantations", "Replacements", "Recombinations", "Electronic",
+        "Nuclear",  "Stored",    "Lost",          "Pka",          "Pka_energy",     "Tdam",
         "Tdam_LSS", "Vnrt",      "Vnrt_LSS",      "Flight_path",  "Collisions",     "Lost",
         "X"
     };
@@ -123,8 +123,8 @@ const char *tally::arrayDescription(int i)
                                   "Implantations & Interstitials",
                                   "Replacements",
                                   "Recombinations",
-                                  "Energy deposited to ionization [eV]",
-                                  "Energy deposited to the lattice as thermal energy [eV]",
+                                  "Electronic energy loss [eV]",
+                                  "Nuclear energy loss [eV]",
                                   "Energy stored in lattice defects [eV]",
                                   "Energy lost due to ions exiting the simulation [eV]",
                                   "Primary knock-on atoms (PKAs)",
@@ -181,9 +181,9 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         k = iid * ncells_ + i.prev_cellid();
         A[isCollision](k) += i.ncoll();
         A[isFlightPath](k) += i.path();
-        A[eLattice](k) += i.phonon();
-        A[eIoniz](k) += i.ioniz();
-        ionizationCounter_ += i.ioniz();
+        A[eNuclear](k) += i.nuclear();
+        A[eElectronic](k) += i.electronic();
+        eLossCounter_ += i.electronic();
         break;
 
     case Event::Replacement:
@@ -191,9 +191,9 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         A[cR](k)++; // this atom, current cell
         A[isCollision](k) += i.ncoll();
         A[isFlightPath](k) += i.path();
-        A[eIoniz](k) += i.ioniz();
-        A[eLattice](k) += i.erg() + i.phonon();
-        ionizationCounter_ += i.ioniz();
+        A[eElectronic](k) += i.electronic();
+        A[eNuclear](k) += i.nuclear();
+        eLossCounter_ += i.electronic();
         break;
 
     case Event::Interstitial:
@@ -203,9 +203,9 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
             A[eStored](k) += i.myAtom()->El() / 2; // Add half FP energy here to stored energy
         A[isCollision](k) += i.ncoll();
         A[isFlightPath](k) += i.path();
-        A[eIoniz](k) += i.ioniz();
-        A[eLattice](k) += i.erg() + i.phonon();
-        ionizationCounter_ += i.ioniz();
+        A[eElectronic](k) += i.electronic();
+        A[eNuclear](k) += i.erg() + i.nuclear();
+        eLossCounter_ += i.electronic();
         break;
 
     case Event::Vacancy:
@@ -218,15 +218,15 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         k = iid * ncells_ + i.prev_cellid();
         A[cL](k)++;
         // if it was a recoil
-        // half FP energy is released as lattice thermal energy
+        // half FP energy is released as nuclear energy loss
         if (i.recoil_id())
-            A[eLattice](k) += i.myAtom()->El() / 2;
+            A[eNuclear](k) += i.myAtom()->El() / 2;
         A[isCollision](k) += i.ncoll();
         A[isFlightPath](k) += i.path();
-        A[eIoniz](k) += i.ioniz();
-        A[eLattice](k) += i.phonon();
+        A[eElectronic](k) += i.electronic();
+        A[eNuclear](k) += i.nuclear();
         A[eLost](k) += i.erg();
-        ionizationCounter_ += i.ioniz();
+        eLossCounter_ += i.electronic();
         break;
 
     case Event::CascadeComplete:
@@ -255,10 +255,10 @@ bool tally::debugCheck(int id, double E0)
     size_t ncell = ncells_;
     double *p;
 
-    p = &A[eIoniz](id, 0);
+    p = &A[eElectronic](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sI += *p++;
-    p = &A[eLattice](id, 0);
+    p = &A[eNuclear](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sPh += *p++;
     p = &A[eStored](id, 0);
@@ -281,11 +281,11 @@ bool tally::debugCheck(double E0)
     double *p;
     int id = 0;
 
-    p = &A[eIoniz](id, 0);
+    p = &A[eElectronic](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sI0 += *p++;
 
-    p = &A[eLattice](id, 0);
+    p = &A[eNuclear](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sPh0 += *p++;
     p = &A[eStored](id, 0);
@@ -300,11 +300,11 @@ bool tally::debugCheck(double E0)
     double s(0), sI(0), sPh(0), sL(0);
     size_t n = A[1].size();
 
-    p = A[eIoniz].data();
+    p = A[eElectronic].data();
     for (size_t i = 0; i < n; i++)
         sI += *p++;
 
-    p = A[eLattice].data();
+    p = A[eNuclear].data();
     for (size_t i = 0; i < n; i++)
         sPh += *p++;
     p = A[eStored].data();
@@ -328,10 +328,10 @@ double tally::totalErg(int id)
     size_t ncell = ncells_;
     double *p;
 
-    p = &A[eIoniz](id, 0);
+    p = &A[eElectronic](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sI += *p++;
-    p = &A[eLattice](id, 0);
+    p = &A[eNuclear](id, 0);
     for (size_t i = 0; i < ncell; i++)
         sPh += *p++;
     p = &A[eStored](id, 0);
@@ -350,10 +350,10 @@ double tally::totalErg()
     size_t n = A[1].size();
     double *p;
 
-    p = A[eIoniz].data();
+    p = A[eElectronic].data();
     for (size_t i = 0; i < n; i++)
         sI += *p++;
-    p = A[eLattice].data();
+    p = A[eNuclear].data();
     for (size_t i = 0; i < n; i++)
         sPh += *p++;
     p = A[eStored].data();
