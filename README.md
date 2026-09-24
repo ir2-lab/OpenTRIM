@@ -85,14 +85,11 @@ and GNU Octave:
 - Python: see [`bindings/python/README.md`](bindings/python/README.md)
 - GNU Octave: see [`bindings/octave/README.md`](bindings/octave/README.md)
 
-## Benchmarks
+## Validation
 
-Some benchmarks for comparison to other codes are given in folder `test/`.
-The file [`test/README.md`](test/README.md) gives a short description of each benchmark.
+Some benchmark comparisons to other codes can be found in folder `validation/`. Most of the tests use SRIM as reference.
 
-The folders [`test/opentrim/b1`](test/opentrim/b1) to [`b7`](test/opentrim/b7) have config files for running the benchmarks with `opentrim -f config.json`.
-
-The file [`test/octave/plot_benchmark.m`](test/octave/plot_benchmark.m) is an Octave script which can be used for plotting benchmark results.
+The file [`validation/README.md`](validation/README.md) gives more information for each benchmark.
 
 ## Credits
 

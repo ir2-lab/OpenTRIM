@@ -1,0 +1,75 @@
+{
+    "Transport": {
+        "min_energy": 40,
+        "flight_path_type": "Variable"
+    },
+    "Run": {
+        "max_no_ions": 20000
+    },
+    "IonBeam": {
+        "ion": {
+            "symbol": "H",
+            "atomic_mass": 1.00784
+        },
+        "energy_distribution": {
+            "center": 1e6
+        },
+        "spatial_distribution": {
+            "center": [
+                0,
+                5000,
+                5000
+            ]
+        }
+    },
+    "Target": {
+        "size": [
+            10000,
+            10000,
+            10000
+        ],
+        "cell_count": [
+            100,
+            1,
+            1
+        ],
+        "periodic_bc": [
+            0,
+            1,
+            1
+        ],
+        "materials": [
+            {
+                "id": "Fe",
+                "density": 7.8658, // g/cm^3
+                "composition": [
+                    {
+                        "element": {
+                            "symbol": "Fe"
+                        },
+                        "X": 1,
+                        "Ed": 40,
+                        "El": 3,
+                        "Es": 3,
+                        "Er": 40
+                    }
+                ]
+            }
+        ],
+        "regions": [
+            {
+                "id": "R1",
+                "material_id": "Fe",
+                "size": [
+                    10000,
+                    10000,
+                    10000
+                ]
+            }
+        ]
+    },
+    "Output": {
+        "title": "1 MeV H on Fe",
+        "outfilename": "b7"
+    }
+}

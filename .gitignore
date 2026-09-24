@@ -10,6 +10,7 @@ build/
 .pytest_cache/
 
 playground/
+__old__
 
 doc/html/
 doc/_build/
