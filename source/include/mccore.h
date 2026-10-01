@@ -161,11 +161,10 @@ protected:
     uint32_t utallyMask_{ 0 };
 
     // events
-    event_stream pka_stream_, exit_stream_, damage_stream_;
-    pka_buffer pka;
-    exit_buffer exit_ev;
-    damage_event_buffer damage_ev;
-    uint32_t pka_stream_mask_, exit_stream_mask_, damage_stream_mask_;
+    enum streamId_ { strPka = 0, strExit = 1, strDamage = 2, strTrack = 3, strN = 4 };
+    event_stream event_stream_[strN];
+    event_buffer *event_buffer_[strN];
+    uint32_t event_stream_mask_[strN];
 
     // mask for all active events
     uint32_t globalEventMask_{ 0 };
@@ -259,13 +258,15 @@ public:
     std::vector<user_tally *> &getUserTallyVar() { return dutally_; }
 
     /// Initialize the event streams
-    int init_streams(uint32_t event_mask);
+    int init_streams(const int *f);
     /// Return reference to the pka stream
-    event_stream &pka_stream() { return pka_stream_; }
-    /// Return reference to the exit stream
-    event_stream &exit_stream() { return exit_stream_; }
-    /// Return reference to the exit stream
-    event_stream &damage_stream() { return damage_stream_; }
+    event_stream &pka_stream() { return event_stream_[strPka]; }
+    /// Return reference to the exit ion stream
+    event_stream &exit_stream() { return event_stream_[strExit]; }
+    /// Return reference to the damage event stream
+    event_stream &damage_stream() { return event_stream_[strDamage]; }
+    /// Return reference to the ion track event stream
+    event_stream &track_stream() { return event_stream_[strTrack]; }
 
     // scattering matrix (atoms x materials)
     ArrayND<abstract_scattering_calc *> scattering_matrix() const { return scattering_matrix_; }
@@ -463,7 +464,7 @@ protected:
     // event handling implementation
     void handle_event_impl(Event ev, const ion &i, const void *pv = 0);
 
-public:
+    void init_event_buffers(const mccore *s = nullptr);
 };
 
 inline ion *mccore::new_recoil(const ion *proj, const atom *target, const float &recoil_erg,

@@ -13,6 +13,7 @@ mccore::mccore()
       thread_ion_counter_(0),
       tally_mutex_(new std::mutex)
 {
+    init_event_buffers();
 }
 
 mccore::mccore(const parameters &p, const transport_options &t)
@@ -26,6 +27,7 @@ mccore::mccore(const parameters &p, const transport_options &t)
       thread_ion_counter_(0),
       tally_mutex_(new std::mutex)
 {
+    init_event_buffers();
 }
 
 mccore::mccore(const mccore &s)
@@ -46,15 +48,16 @@ mccore::mccore(const mccore &s)
       dedx_calc_(s.dedx_calc_),
       flight_path_calc_(s.flight_path_calc_),
       scattering_matrix_(s.scattering_matrix_),
-      rng(s.rng),
-      pka(s.pka)
+      rng(s.rng)
 {
+    init_event_buffers(&s);
+
     tally_.clear();
     dtally_.clear();
     tion_.clear();
 
     if (s.utally_.size()) {
-        for (int i = 0; i < s.utally_.size(); ++i) {
+        for (int i = 0; i < int(s.utally_.size()); ++i) {
             auto u = s.utally_[i];
             utally_.push_back(new user_tally(*u));
             dutally_.push_back(new user_tally(*u));
@@ -172,7 +175,8 @@ int mccore::init()
     // prepare event buffers
     std::vector<std::string> atom_labels = target_->atom_labels();
     atom_labels.erase(atom_labels.begin());
-    pka.setNatoms(natoms - 1, atom_labels);
+    pka_buffer *pka = static_cast<pka_buffer *>(event_buffer_[strPka]);
+    pka->setNatoms(natoms - 1, atom_labels);
 
     // setup global event mask
     globalEventMask_ = tion_.eventMask();
@@ -204,6 +208,8 @@ int mccore::run()
                 ? (abstract_cascade *)(new time_ordered_cascade(target_->grid()))
                 : (abstract_cascade *)(new unordered_cascade(target_->grid()));
     }
+
+    pka_buffer *pka = static_cast<pka_buffer *>(event_buffer_[strPka]);
 
     bool cascadesOnly = par_.simulation_type == CascadesOnly;
 
@@ -257,7 +263,7 @@ int mccore::run()
         while (ion *j = ion_queue_.pop_pka()) {
 
             // zero-out the pka buffer
-            pka.init(j);
+            pka->init(j);
 
             // keep a copy of the ion to have initial position
             ion j1(*j);
@@ -289,13 +295,13 @@ int mccore::run()
 
                 // process PKA cascade events
                 {
-                    float *p = &pka.Impl(0);
+                    float *p = &(pka->Impl(0));
                     while (ion *k = ion_queue_.pop_interstitial()) {
                         handle_event(Event::Interstitial, *k);
                         p[k->myAtom()->id() - 1]++;
                         ion_queue_.free_ion(k);
                     }
-                    p = &pka.Vac(0);
+                    p = &(pka->Vac(0));
                     while (ion *k = ion_queue_.pop_vacancy()) {
                         handle_event(Event::Vacancy, *k);
                         p[k->myAtom()->id() - 1]++;
@@ -304,23 +310,23 @@ int mccore::run()
                 }
 
                 // calc Tdam = Er - Ee
-                pka.Tdam() = pka.recoilE() - tion_.eLossCounter();
+                pka->Tdam() = pka->recoilE() - tion_.eLossCounter();
 
                 // count recombinations into pka
                 // clear optional cascade buffers
                 if (cscd) {
-                    cscd->count_riv(&pka.Icr(0), &pka.Icr_corr(0));
-                    cscd->clear(ion_queue_);
+                    cscd->count_riv(&(pka->Icr(0)), &(pka->Icr_corr(0)));
+                    cscd->clear_riv(ion_queue_);
                 }
 
             } // end cascade
 
             // Calc NRT values (using j1 - at initial pos!)
-            pka.calc_nrt(
+            pka->calc_nrt(
                     j1, par_.nrt_calculation == NRT_average ? target_->cell(j1.cellid()) : nullptr);
 
             // CascadeComplete event
-            handle_event(Event::CascadeComplete, j1, &pka);
+            handle_event(Event::CascadeComplete, j1, pka);
 
         } // end pka loop
 
@@ -333,7 +339,7 @@ int mccore::run()
             std::lock_guard<std::mutex> lock(*tally_mutex_);
             tally_ += tion_;
             dtally_.addSquared(tion_);
-            for (int i = 0; i < utally_.size(); ++i) {
+            for (int i = 0; i < int(utally_.size()); ++i) {
                 *(utally_[i]) += *(ution_[i]);
                 dutally_[i]->addSquared(*(ution_[i]));
             }
@@ -555,10 +561,15 @@ int mccore::transport(ion *i)
             // checking also for boundary crossing
             if (par_.move_recoil) {
                 j->move(z2->Rc() * 1.001f);
+                // subtract electronic loss ΔΕe = Rc*dE/dx
                 dedx_calc_(*j, z2->Rc());
+                // subtract Ed from recoil energy
                 if (par_.recoil_sub_ed) {
-                    double de = j->erg() + z2->Ed() - T;
-                    j->de_nuclear(de);
+                    // current ion energy E1 = T - El - ΔΕe
+                    // total energy loss Ed = ΔΕn + ΔΕe + El
+                    // nuclear energy loss ΔΕn = Ed - El - ΔΕe = E1 + Ed - T
+                    double DEn = j->erg() + z2->Ed() - T;
+                    j->de_nuclear(DEn);
                 }
             }
 
@@ -587,22 +598,44 @@ void mccore::handle_event_impl(Event ev, const ion &i, const void *pv)
     }
 
     // send to the event streams
-    if (static_cast<uint32_t>(ev) & damage_stream_mask_) {
-        damage_ev.set(i);
-        damage_stream_.write(&damage_ev);
+    for (int k = 0; k < strN; ++k) {
+        if (static_cast<uint32_t>(ev) & event_stream_mask_[k]) {
+            event_buffer_[k]->set(i);
+            event_stream_[k].write(event_buffer_[k]);
+        }
     }
-    if (static_cast<uint32_t>(ev) & exit_stream_mask_) {
-        exit_ev.set(&i);
-        exit_stream_.write(&exit_ev);
-    }
-    if (static_cast<uint32_t>(ev) & pka_stream_mask_) {
-        pka_stream_.write(&pka);
-    }
+
+    // // send to the event streams
+    // if (static_cast<uint32_t>(ev) & damage_stream_mask_) {
+    //     damage_ev.set(i);
+    //     damage_stream_.write(&damage_ev);
+    // }
+    // if (static_cast<uint32_t>(ev) & exit_stream_mask_) {
+    //     exit_ev.set(i);
+    //     exit_stream_.write(&exit_ev);
+    // }
+    // if (static_cast<uint32_t>(ev) & pka_stream_mask_) {
+    //     pka_stream_.write(&pka);
+    // }
 
     // call an installed event handler
     if (static_cast<uint32_t>(ev) & event_handler_slot_.mask) {
         event_handler_slot_.eh(ev, i, event_handler_slot_.user_data);
     }
+}
+
+void mccore::init_event_buffers(const mccore *s)
+{
+    if (s) {
+        pka_buffer *other = static_cast<pka_buffer *>(s->event_buffer_[strPka]);
+        event_buffer_[strPka] = new pka_buffer(*other);
+    } else
+        event_buffer_[strPka] = new pka_buffer();
+    event_buffer_[strExit] = new exit_buffer();
+    event_buffer_[strDamage] = new damage_event_buffer();
+    event_buffer_[strTrack] = new track_buffer();
+    for (int k = 0; k < strN; ++k)
+        event_stream_[k].set_event_prototype(*event_buffer_[k]);
 }
 
 void mccore::set_event_handler(event_handler eh, uint32_t mask, void *p)
@@ -638,27 +671,34 @@ void mccore::mergeTallies(mccore &other)
 
 void mccore::mergeEvents(mccore &other)
 {
-    pka_stream_.merge(other.pka_stream_);
-    other.pka_stream_.clear();
-    exit_stream_.merge(other.exit_stream_);
-    other.exit_stream_.clear();
-    damage_stream_.merge(other.damage_stream_);
-    other.damage_stream_.clear();
+    for (int k = 0; k < strN; ++k) {
+        event_stream_[k].merge(other.event_stream_[k]);
+        other.event_stream_[k].clear();
+    }
+    // pka_stream_.merge(other.pka_stream_);
+    // other.pka_stream_.clear();
+    // exit_stream_.merge(other.exit_stream_);
+    // other.exit_stream_.clear();
+    // damage_stream_.merge(other.damage_stream_);
+    // other.damage_stream_.clear();
 }
 
 void mccore::mergeEvents(std::vector<mccore *> &other)
 {
     int n = other.size();
-    std::vector<event_stream *> streams(other.size());
-    for (int i = 0; i < n; ++i)
-        streams[i] = &(other[i]->pka_stream_);
-    pka_stream_.merge(streams);
-    for (int i = 0; i < n; ++i)
-        streams[i] = &(other[i]->exit_stream_);
-    exit_stream_.merge(streams);
-    for (int i = 0; i < n; ++i)
-        streams[i] = &(other[i]->damage_stream_);
-    damage_stream_.merge(streams);
+    for (int k = 0; k < n; ++k)
+        mergeEvents(*other[k]);
+
+    // std::vector<event_stream *> streams(other.size());
+    // for (int i = 0; i < n; ++i)
+    //     streams[i] = &(other[i]->pka_stream_);
+    // pka_stream_.merge(streams);
+    // for (int i = 0; i < n; ++i)
+    //     streams[i] = &(other[i]->exit_stream_);
+    // exit_stream_.merge(streams);
+    // for (int i = 0; i < n; ++i)
+    //     streams[i] = &(other[i]->damage_stream_);
+    // damage_stream_.merge(streams);
 }
 
 ArrayNDd mccore::getTallyTable(int i) const
@@ -709,23 +749,18 @@ void mccore::addUserTally(const user_tally::parameters &p)
     ution_.push_back(new user_tally(p));
 }
 
-int mccore::init_streams(uint32_t event_mask)
+int mccore::init_streams(const int *f)
 {
-    if (event_mask & pka_buffer::event_mask) {
-        pka_stream_.set_event_prototype(pka);
-        pka_stream_.open();
-        pka_stream_mask_ = pka_stream_.is_open() ? pka_buffer::event_mask : 0;
+    uint32_t event_mask = 0;
+    for (int k = 0; k < strN; ++k) {
+        event_stream_mask_[k] = 0;
+        if (f[k]) {
+            event_stream_[k].open();
+            event_stream_mask_[k] = event_stream_[k].is_open() ? event_stream_[k].mask() : 0;
+        }
+        event_mask |= event_stream_mask_[k];
     }
-    if (event_mask & damage_event_buffer::event_mask) {
-        damage_stream_.set_event_prototype(damage_ev);
-        damage_stream_.open();
-        damage_stream_mask_ = damage_stream_.is_open() ? damage_event_buffer::event_mask : 0;
-    }
-    if (event_mask & exit_buffer::event_mask) {
-        exit_stream_.set_event_prototype(exit_ev);
-        exit_stream_.open();
-        exit_stream_mask_ = exit_stream_.is_open() ? exit_buffer::event_mask : 0;
-    }
+
     globalEventMask_ |= event_mask;
     return 0;
 }

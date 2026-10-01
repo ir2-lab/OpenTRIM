@@ -63,6 +63,7 @@ public:
     const std::vector<std::string> &columnNames() const { return columnNames_; }
     /// Return the descriptions of the individual event_buffer columns
     const std::vector<std::string> &columnDescriptions() const { return columnDescriptions_; }
+    virtual void set(const ion &) { }
 };
 
 /**
@@ -86,7 +87,7 @@ protected:
     size_t rows_, cols_;
     std::FILE *fs_;
     std::string fname_;
-    event_buffer event_proto_;
+    const event_buffer *event_proto_{ nullptr };
 
 public:
     /// Create an empty event_stream
@@ -110,9 +111,9 @@ public:
     /// Set the event_buffer prototype. The stream must be in the closed state;
     bool set_event_prototype(const event_buffer &ev);
     /// Returns a refence to the event_buffer prototype currently saved in the stream
-    const event_buffer &event_prototype() const { return event_proto_; }
+    const event_buffer *event_prototype() const { return event_proto_; }
     /// A bit mask for the accepted event types
-    uint32_t mask() const { return event_proto_.mask(); }
+    uint32_t mask() const { return event_proto_ ? event_proto_->mask() : 0; }
 
     void rewind();
     void clear();
@@ -242,7 +243,32 @@ public:
 
     exit_buffer();
     /// Set the event buffer to the data of the given \ref ion
-    void set(const ion *i);
+    void set(const ion &i) override;
+};
+
+/**
+ * @brief A class for storing ion track data
+ *
+ * Track events are:
+ * - track start: either source ion or recoil is created
+ * - nuclear scattering: ion changes energy/dir
+ * - track stop: either the ion stops (low E), exits the simulation or
+ *   does a replacement
+ */
+class track_buffer : public event_buffer
+{
+
+    enum offset_t { ofHid = 0, ofRid = 1, ofIid = 2, ofErg = 3, ofTme = 4, ofPos = 5, ofEnd = 8 };
+
+public:
+    static constexpr uint32_t event_mask = static_cast<uint32_t>(Event::NewSourceIon)
+            | static_cast<uint32_t>(Event::NewRecoil) | static_cast<uint32_t>(Event::Scattering)
+            | static_cast<uint32_t>(Event::IonStop) | static_cast<uint32_t>(Event::IonExit)
+            | static_cast<uint32_t>(Event::Replacement);
+
+    track_buffer();
+    /// Set the event buffer to the data of the given \ref ion
+    void set(const ion &i) override;
 };
 
 /**
@@ -274,6 +300,6 @@ public:
     damage_event_buffer();
 
     /// Set the event buffer to the data of the given \ref ion
-    void set(const ion &i);
+    void set(const ion &i) override;
 };
 #endif // EVENT_STREAM_H

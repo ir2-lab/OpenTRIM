@@ -826,6 +826,13 @@
                     "whatsThis": ""
                 },
                 {
+                    "name": "store_ion_track_events",
+                    "label": "Store ion track vertices",
+                    "type": "bool",
+                    "toolTip": "Store a table of ion track data.",
+                    "whatsThis": ""
+                },
+                {
                     "name": "store_dedx",
                     "label": "Store dE/dx",
                     "type": "bool",

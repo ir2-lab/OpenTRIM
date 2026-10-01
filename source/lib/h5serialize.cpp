@@ -124,10 +124,10 @@ int dump_event_stream(h5::File &h5f, const std::string &grp_name, event_stream &
 
     std::string path;
     path = grp_name + "/column_names";
-    const auto &s1 = es.event_prototype().columnNames();
+    const auto &s1 = es.event_prototype()->columnNames();
     dump(h5f, path, s1, { s1.size() }, "Event data column names");
     path = grp_name + "/column_descriptions";
-    const auto &s2 = es.event_prototype().columnDescriptions();
+    const auto &s2 = es.event_prototype()->columnDescriptions();
     dump(h5f, path, s2, { s2.size() }, "Event data column descriptions");
 
     path = grp_name + "/event_data";
@@ -291,6 +291,8 @@ int mcdriver::save(const std::string &h5filename, std::ostream *os)
             dump_event_stream(h5f, page + "exit", s_->exit_stream());
         if (config_.Output.store_damage_events)
             dump_event_stream(h5f, page + "damage", s_->damage_stream());
+        if (config_.Output.store_ion_track_events)
+            dump_event_stream(h5f, page + "ion_track", s_->track_stream());
 
     } catch (h5::Exception &e) {
         if (os)
@@ -393,14 +395,11 @@ std::shared_ptr<mcdriver> mcdriver::load(const std::string &h5filename, std::ost
         }
 
         // prepare to load events
-        uint32_t ev_mask{ 0 };
-        if (D->config_.Output.store_pka_events)
-            ev_mask |= pka_buffer::event_mask;
-        if (D->config_.Output.store_exit_events)
-            ev_mask |= exit_buffer::event_mask;
-        if (D->config_.Output.store_damage_events)
-            ev_mask |= damage_event_buffer::event_mask;
-        S->init_streams(ev_mask);
+        int stream_flags[] = { D->config_.Output.store_pka_events,
+                               D->config_.Output.store_exit_events,
+                               D->config_.Output.store_damage_events,
+                               D->config_.Output.store_ion_track_events };
+        S->init_streams(stream_flags);
 
         // load pka events
         if (D->config_.Output.store_pka_events) {
@@ -415,6 +414,11 @@ std::shared_ptr<mcdriver> mcdriver::load(const std::string &h5filename, std::ost
         // load damage events
         if (D->config_.Output.store_damage_events) {
             load_event_stream(h5f, "/events/damage", S->damage_stream());
+        }
+
+        // load ion track events
+        if (D->config_.Output.store_ion_track_events) {
+            load_event_stream(h5f, "/events/ion_track", S->track_stream());
         }
 
     } catch (h5::Exception &e) {

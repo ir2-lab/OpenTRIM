@@ -1,4 +1,5 @@
 #include "cascade.h"
+#include "target.h"
 
 inline std::ostream &operator<<(std::ostream &os, const ion *d)
 {
@@ -20,16 +21,8 @@ void abstract_cascade::count_riv(float *s, float *sc) const
     }
 }
 
-void abstract_cascade::clear(ion_queue &q)
+void abstract_cascade::clear_riv(ion_queue &q)
 {
-    // for (auto &d : i_)
-    //     q.free_ion(d);
-    // i_.clear();
-
-    // for (auto &d : v_)
-    //     q.free_ion(d);
-    // v_.clear();
-
     for (auto i = riv_.begin(); i != riv_.end(); ++i) {
         q.free_ion(i->first);
         q.free_ion(i->second);
@@ -37,8 +30,9 @@ void abstract_cascade::clear(ion_queue &q)
     riv_.clear();
 }
 
-bool abstract_cascade::recombine_vacancy(ion *d1)
+bool abstract_cascade::try_recombine_vacancy(ion *d1)
 {
+    // find closest recombination partner
     auto it = find_rc_partner(d1, i_);
 
     if (it == i_.end()) {
@@ -53,8 +47,9 @@ bool abstract_cascade::recombine_vacancy(ion *d1)
     }
 }
 
-bool abstract_cascade::recombine_interstitial(ion *d1)
+bool abstract_cascade::try_recombine_interstitial(ion *d1)
 {
+    // find closest recombination partner
     auto it = find_rc_partner(d1, v_);
 
     if (it == v_.end()) {
@@ -78,7 +73,7 @@ abstract_cascade::defect_list_t::iterator abstract_cascade::find_rc_partner(cons
     typedef std::pair<defect_list_t::iterator, float> _T;
     std::priority_queue<_T, std::vector<_T>, defect_distance_cmp<_T>> fpq;
 
-    // go through all vacancies
+    // go through all anti-defects
     auto i = adcont.begin();
     for (; i != adcont.end(); ++i) {
         auto d2 = *i;
@@ -127,10 +122,12 @@ void time_ordered_cascade::intra_cascade_recombination(ion_queue &q)
             print(std::cout, *d);
 #endif
 
+        // try to recombine with pre-existing close anti-defect
+        // if recombination fails, d is stored as free defect
         if (d->type() == ion::interstitial)
-            recombine_interstitial(d);
+            try_recombine_interstitial(d);
         else
-            recombine_vacancy(d);
+            try_recombine_vacancy(d);
     }
 
 #ifdef CASCADE_DEBUG_PRINT
@@ -165,7 +162,7 @@ void unordered_cascade::intra_cascade_recombination(ion_queue &q)
 
     // loop over vacancies and find recombination pairs
     while (ion *d = q.pop_vacancy())
-        recombine_vacancy(d);
+        try_recombine_vacancy(d);
 
     // return all non-recombining Is and Vs back to the ion queue
     for (auto &d : i_)

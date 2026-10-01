@@ -211,7 +211,7 @@ bool event_stream::set_event_prototype(const event_buffer &ev)
 {
     close_();
     cols_ = ev.size();
-    event_proto_ = event_buffer(ev);
+    event_proto_ = &ev;
     return true;
 }
 
@@ -261,18 +261,18 @@ exit_buffer::exit_buffer()
 {
 }
 
-void exit_buffer::set(const ion *i) //, int cellid)
+void exit_buffer::set(const ion &i) //, int cellid)
 {
-    buff_[ofIonId] = i->ion_id();
-    buff_[ofAtomId] = i->myAtom()->id();
-    buff_[ofCellId] = i->prev_cellid();
-    buff_[ofErg] = i->erg();
-    buff_[ofPos] = i->pos().x();
-    buff_[ofPos + 1] = i->pos().y();
-    buff_[ofPos + 2] = i->pos().z();
-    buff_[ofDir] = i->dir().x();
-    buff_[ofDir + 1] = i->dir().y();
-    buff_[ofDir + 2] = i->dir().z();
+    buff_[ofIonId] = i.ion_id();
+    buff_[ofAtomId] = i.myAtom()->id();
+    buff_[ofCellId] = i.prev_cellid();
+    buff_[ofErg] = i.erg();
+    buff_[ofPos] = i.pos().x();
+    buff_[ofPos + 1] = i.pos().y();
+    buff_[ofPos + 2] = i.pos().z();
+    buff_[ofDir] = i.dir().x();
+    buff_[ofDir + 1] = i.dir().y();
+    buff_[ofDir + 2] = i.dir().z();
 }
 
 // { ofHid = 0, ofRid = 1, ofIid = 2, ofCid = 3, ofDid = 4, ofPos = 5, ofEnd = 8 }
@@ -290,6 +290,25 @@ void damage_event_buffer::set(const ion &i)
     buff_[ofRid] = i.recoil_id();
     buff_[ofIid] = i.myAtom()->id();
     buff_[ofDid] = i.type();
+    buff_[ofPos] = i.pos().x();
+    buff_[ofPos + 1] = i.pos().y();
+    buff_[ofPos + 2] = i.pos().z();
+}
+
+track_buffer::track_buffer()
+    : event_buffer(event_mask, ofEnd, { "hid", "rid", "iid", "E", "t", "x", "y", "z" },
+                   { "history id", "recoil id", "ion species id", "energy [eV]", "time [ps]",
+                     "x position [nm]", "y position [nm]", "z position [nm]" })
+{
+}
+
+void track_buffer::set(const ion &i)
+{
+    buff_[ofHid] = i.ion_id();
+    buff_[ofRid] = i.recoil_id();
+    buff_[ofIid] = i.myAtom()->id();
+    buff_[ofErg] = i.erg();
+    buff_[ofTme] = i.t();
     buff_[ofPos] = i.pos().x();
     buff_[ofPos + 1] = i.pos().y();
     buff_[ofPos + 2] = i.pos().z();

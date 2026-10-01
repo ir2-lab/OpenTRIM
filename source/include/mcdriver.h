@@ -82,6 +82,8 @@ struct mcconfig
         bool store_pka_events{ false };
         /// Store the damage events
         bool store_damage_events{ false };
+        /// Store ion track events
+        bool store_ion_track_events{ false };
         /// Store electronic energy loss data
         bool store_dedx{ true };
     };

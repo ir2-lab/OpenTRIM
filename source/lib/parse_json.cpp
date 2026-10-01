@@ -246,7 +246,7 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::run_options, max_no_ions, ma
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcconfig::output_options, title, outfilename,
                                           storage_interval, store_exit_events, store_pka_events,
-                                          store_damage_events, store_dedx)
+                                          store_damage_events, store_ion_track_events, store_dedx)
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(coord_sys, origin, zaxis, xzvector)
 

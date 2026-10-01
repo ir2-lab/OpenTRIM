@@ -1,15 +1,12 @@
-#ifndef CASCADE_QUEUE_H
-#define CASCADE_QUEUE_H
+#ifndef CASCADE_H
+#define CASCADE_H
 
 #include <queue>
 #include <list>
-#include <iostream>
 #include <cassert>
 
 #include "geometry.h"
-#include "target.h"
 #include "ion.h"
-#include "tally.h"
 #include "event_stream.h"
 
 // base class of all cascade objects
@@ -21,14 +18,17 @@ public:
     explicit abstract_cascade(const grid3D &ag) : g(ag) { }
     virtual ~abstract_cascade() { }
 
+    // call this function to perform recombination of cascade ions
+    // ion_queue contains all ions in random order
     virtual void intra_cascade_recombination(ion_queue &q) = 0;
 
     // count I-V recombinations & correlated recombinations
     // s, sc are corresponding buffers to hold counts per atomic id
     void count_riv(float *s, float *sc) const;
 
-    // return all I-V ion buffers to the ion queue
-    void clear(ion_queue &q);
+    // clear all recombined I-V pairs from the ion queue
+    // their buffers become free for re-use by the queue
+    void clear_riv(ion_queue &q);
 
 protected:
     // ref to the grid, for calculating defect distance
@@ -70,11 +70,13 @@ protected:
      */
     defect_list_t::iterator find_rc_partner(const ion *d1, defect_list_t &adcont);
 
-    // recombine a vacancy with the closest vacancy
-    bool recombine_vacancy(ion *d1);
+    // try to recombine a vacancy with the closest interstitial
+    // return true if succesfull
+    bool try_recombine_vacancy(ion *d1);
 
-    // recombine an interstitial with the closest vacancy
-    bool recombine_interstitial(ion *d1);
+    // try to recombine an interstitial with the closest vacancy
+    // return true if succesfull
+    bool try_recombine_interstitial(ion *d1);
 };
 
 /**
