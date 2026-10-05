@@ -40,6 +40,21 @@ NLOHMANN_JSON_SERIALIZE_ENUM(mcconfig::option_type_t,
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mcdriver::run_data, start_time, end_time, ions_per_cpu_s,
                                           cpu_time_s, nthreads, run_ion_count, total_ion_count)
 
+NLOHMANN_JSON_SERIALIZE_ENUM(Event,
+                             { { Event::Invalid, nullptr },
+                               { Event::NewSourceIon, "NewSourceIon" },
+                               { Event::NewRecoil, "NewRecoil" },
+                               { Event::Scattering, "Scattering" },
+                               { Event::IonExit, "IonExit" },
+                               { Event::IonStop, "IonStop" },
+                               { Event::BoundaryCrossing, "BoundaryCrossing" },
+                               { Event::Replacement, "Replacement" },
+                               { Event::Vacancy, "Vacancy" },
+                               { Event::Interstitial, "Interstitial" },
+                               { Event::CascadeComplete, "CascadeComplete" },
+                               { Event::NewFlightPath, "NewFlightPath" },
+                               { Event::NEvent, "NEvent" } })
+
 // return mcconfig options specs as a ojson object
 const ojson &json_options_spec();
 

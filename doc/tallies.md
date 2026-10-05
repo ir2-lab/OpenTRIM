@@ -34,34 +34,34 @@ Scores are accumulated internally in double precision and, in multi-threaded run
 
 OpenTRIM stores 17 standard tally tables for various quantities of interest, plus a table of totals. They are saved under the path `/tally` and are divided in 4 groups:
 
-| Group                     | Tables | Documented in |
-| ------------------------- | ------ | ------------- |
-| `/tally/damage_events`    | 4      | \ref damage-events "Damage events" |
-| `/tally/energy_deposition`| 4      | \ref energy-partition "Energy partition" |
-| `/tally/pka_damage`       | 6      | \ref damage-events "Damage events" |
-| `/tally/ion_stat`         | 3      | below |
+| Group                      | Tables | Documented in                            |
+| -------------------------- | ------ | ---------------------------------------- |
+| `/tally/damage_events`     | 4      | \ref damage-events "Damage events"       |
+| `/tally/energy_deposition` | 4      | \ref energy-partition "Energy partition" |
+| `/tally/pka_damage`        | 6      | \ref damage-events "Damage events"       |
+| `/tally/ion_stat`          | 3      | below                                    |
 
 The complete list of tables is the following:
 
-| Path                                   | Unit   | Description |
-| -------------------------------------- | ------ | ----------- |
-| `damage_events/Vacancies`              | –      | Vacancies created by displacement events |
-| `damage_events/Implantations`          | –      | Stopped recoils (interstitials) and stopped beam ions (implanted atoms) |
-| `damage_events/Replacements`           | –      | Replacement events |
-| `damage_events/Recombinations`         | –      | Frenkel pairs removed by intra-cascade recombination |
-| `energy_deposition/Electronic`         | eV     | Electronic energy loss |
-| `energy_deposition/Nuclear`            | eV     | Sub-threshold nuclear energy loss |
-| `energy_deposition/Stored`             | eV     | Energy stored in lattice defects (Frenkel pairs) |
-| `energy_deposition/Lost`               | eV     | Kinetic energy carried out of the simulation volume by escaping ions |
-| `pka_damage/Pka`                       | –      | Primary knock-on atoms (PKAs) |
-| `pka_damage/Pka_energy`                | eV     | PKA recoil energy |
-| `pka_damage/Tdam`                      | eV     | Damage energy |
-| `pka_damage/Tdam_LSS`                  | eV     | Damage energy estimated by the LSS approximation |
-| `pka_damage/Vnrt`                      | –      | Vacancies per the NRT model using `Tdam` |
-| `pka_damage/Vnrt_LSS`                  | –      | Vacancies per the NRT model using `Tdam_LSS` |
-| `ion_stat/Collisions`                  | –      | Number of ion collisions |
-| `ion_stat/Flight_path`                 | nm     | Total ion flight path |
-| `ion_stat/Lost`                        | –      | Number of ions that exited the simulation volume |
+| #   | Path                           | Unit | Description                                                             |
+| --- | ------------------------------ | ---- | ----------------------------------------------------------------------- |
+| 1   | `damage_events/Vacancies`      | –    | Vacancies created by displacement events                                |
+| 2   | `damage_events/Implantations`  | –    | Stopped recoils (interstitials) and stopped beam ions (implanted atoms) |
+| 3   | `damage_events/Replacements`   | –    | Replacement events                                                      |
+| 4   | `damage_events/Recombinations` | –    | Frenkel pairs removed by intra-cascade recombination                    |
+| 5   | `energy_deposition/Electronic` | eV   | Electronic energy loss                                                  |
+| 6   | `energy_deposition/Nuclear`    | eV   | Nuclear energy loss                                                     |
+| 7   | `energy_deposition/Stored`     | eV   | Energy stored in lattice defects (Frenkel pairs)                        |
+| 8   | `energy_deposition/Lost`       | eV   | Kinetic energy carried out of the simulation volume by escaping ions    |
+| 9   | `pka_damage/Pka`               | –    | Primary knock-on atoms (PKAs)                                           |
+| 10  | `pka_damage/Pka_energy`        | eV   | PKA recoil energy                                                       |
+| 11  | `pka_damage/Tdam`              | eV   | Damage energy                                                           |
+| 12  | `pka_damage/Tdam_LSS`          | eV   | Damage energy estimated by the LSS approximation                        |
+| 13  | `pka_damage/Vnrt`              | –    | Vacancies per the NRT model using `Tdam`                                |
+| 14  | `pka_damage/Vnrt_LSS`          | –    | Vacancies per the NRT model using `Tdam_LSS`                            |
+| 15  | `ion_stat/Flight_path`         | nm   | Total ion flight path                                                   |
+| 16  | `ion_stat/Collisions`          | –    | Number of ion collisions                                                |
+| 17  | `ion_stat/Lost`                | –    | Number of ions that exited the simulation volume                        |
 
 @note There are two tables named `Lost`: `energy_deposition/Lost` is an **energy** in eV, while `ion_stat/Lost` is a **count** of escaping ions.
 
@@ -77,40 +77,26 @@ The atom id is **not** defined by the atomic species alone: the same chemical el
 
 For some tables the projectile (\f$i=0\f$) does not have a meaningful contribution; e.g., vacancies are always assigned to one of the target atoms, never to the projectile. In this case the 0-th slice of the respective table is all zeros. The same is true of every table in a `"CascadesOnly"` simulation, where the source ions are drawn from the target atoms and nothing is ever scored under id 0.
 
-#### Cell geometry {#tallies-indexing-cell}
+@note Tallies are scored **per cell, not per unit volume**. To obtain densities, divide by the corresponding cell volume, \f$\Delta x\, \Delta y\, \Delta z\f$, obtained from the grid arrays.
 
-The cell boundaries along the three axes are given in `/target/grid/X`, `/target/grid/Y` and `/target/grid/Z`, which have \f$N_x+1\f$, \f$N_y+1\f$ and \f$N_z+1\f$ values, respectively. The centre coordinates of every cell are also stored directly, as `/target/grid/cell_xyz`, an array of size \f$[3 \times N_c]\f$ with \f$N_c = N_x N_y N_z\f$.
-
-`cell_xyz` is indexed by the **flat cell id**, which OpenTRIM forms in row-major (C) order,
-\f[
-j = (i_x\, N_y + i_y)\, N_z + i_z
-\f]
-i.e. the natural flattening of the last three dimensions of a tally table. This same id is what the `cid` column of the \ref tallies-events-exit "exit event table" contains, and what \ref grid3D::cellid() returns internally. Tally data does not need it — index the 4-D array instead — but it is needed to attach a position to a cell id coming from elsewhere.
-
-@note Tallies are scored **per cell, not per unit volume**. To obtain densities, divide by the cell volume, which is uniform and equal to \f$\Delta x\, \Delta y\, \Delta z\f$ from the grid arrays.
+@note Multidimensional arrays are stored in C-style row-major ordering in the HDF5 output archive. If the HDF5 is read by a program that follows column-major ordering (Fortran-style), the arrays may appear transposed.
 
 ### Where scoring happens {#tallies-scoring}
 
-The standard \ref tally object is updated at the following \ref Event "events":
+The standard \ref tally tables are updated at the following simulation events:
 
-| Event              | Scored quantities |
-| ------------------ | ----------------- |
-| `BoundaryCrossing` | `Collisions`, `Flight_path`, `Nuclear`, `Electronic` accumulated since the last event, credited to the cell the ion is leaving |
-| `Replacement`      | `Replacements` +1, plus the accumulated path, collision and energy-loss counters |
-| `Interstitial`     | `Implantations` +1, `Stored` += \f$E_l/2\f$ (recoils only), plus the accumulated counters; the ion's remaining kinetic energy goes to `Nuclear` |
-| `Vacancy`          | `Vacancies` +1, `Stored` += \f$E_l/2\f$ |
-| `IonExit`          | `ion_stat/Lost` +1, `energy_deposition/Lost` += remaining kinetic energy, plus the accumulated counters; for recoils the unpaired \f$E_l/2\f$ is released to `Nuclear` |
-| `CascadeComplete`  | `Pka` +1, `Pka_energy`, `Tdam`, `Tdam_LSS`, `Vnrt`, `Vnrt_LSS`, `Recombinations` |
-
-Because path, collision and energy-loss counters are flushed at cell boundaries and at the end of a track, these quantities are attributed to the cell in which they were actually accumulated.
-
-`Vacancy` and `Interstitial` events are not emitted at the moment the defect is created: defects are queued and released at the end of the PKA cascade, after the optional \ref damage-events "intra-cascade recombination" step. Recombined pairs are therefore never scored in `Vacancies` or `Implantations`; they appear only in `Recombinations`.
+| Tally Table                                                                                                | When scored                                                                                   |
+| ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `ion_stat/Collisions`, `ion_stat/Flight_path`, `energy_deposition/Nuclear`, `energy_deposition/Electronic` | When the ion crosses a cell boundary. The score is added to the cell the ion is leaving from. |
+| `ion_stat/Lost`, `energy_deposition/Lost`                                                                  | When the ion leaves the simulation volume. Score goes into the cell the ion is leaving from.  |
+| `damage_events/Vacancies`, `damage_events/Intestitials`, `damage_events/Replacements`                      | When the event occurs. Scored in the cell the defect is created.                              |
+| `pka_damage/*`, `damage_events/Recombinations`                                                             | When the PKA cascade is complete. Scored in the cell the PKA was generated.                   |
 
 @note In an `"IonsOnly"` simulation recoils are not followed. `Pka` and `Pka_energy` are still scored, but `Tdam` and `Vnrt` are zero, and only the LSS estimates `Tdam_LSS` and `Vnrt_LSS` are meaningful. The `damage_events` tables contain only the beam ion implantations.
 
 ### The table of totals {#tallies-totals}
 
-A table stored in `/tally/totals/data` holds the totals of all standard tallies summed over all cells. It has dimensions \f$[N_{tally} \times N_{at}]\f$ with \f$N_{tally} = 18\f$, i.e., each element is the total score of a given quantity for a given atom. The accompanying `/tally/totals/data_sem` holds the corresponding SEM.
+A table stored in `/tally/totals/data` holds the totals of all standard tallies summed over all cells. It has dimensions \f$[N_{tally} \times N_{at}]\f$ with \f$N_{tally} = 17\f$, i.e., each element is the total score of a given quantity for a given atom. The accompanying `/tally/totals/data_sem` holds the corresponding SEM.
 
 The names labelling the first dimension are stored as \f$N_{tally}\f$ strings in `/tally/totals/column_names`:
 
@@ -138,14 +124,14 @@ Each time the selected event occurs, the tally evaluates all of its binning vari
 
 ### Trigger events {#tallies-user-events}
 
-| `event`            | Triggered when |
-| ------------------ | -------------- |
-| `IonStop`          | The ion stops inside the simulation volume (energy below \ref _Transport_min_energy "min_energy" or captured in a replacement) |
-| `IonExit`          | The ion exits the simulation volume |
-| `Vacancy`          | A lattice vacancy is created |
-| `Replacement`      | A replacement event occurs |
-| `CascadeComplete`  | A PKA cascade is completed |
-| `BoundaryCrossing` | An ion crosses an internal cell boundary |
+| `event`            | Triggered when                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------- |
+| `IonStop`          | The ion stops inside the simulation volume (energy below \ref _Transport_min_energy "min_energy") |
+| `IonExit`          | The ion exits the simulation volume                                                               |
+| `Vacancy`          | A lattice vacancy is created                                                                      |
+| `Replacement`      | A replacement event occurs                                                                        |
+| `CascadeComplete`  | A PKA cascade is completed                                                                        |
+| `BoundaryCrossing` | An ion crosses an internal cell boundary                                                          |
 
 Each user tally scores exactly one event type.
 
@@ -155,22 +141,22 @@ Each user tally scores exactly one event type.
 
 ### Binning variables {#tallies-user-bins}
 
-| JSON key    | Name in output | Quantity | Unit |
-| ----------- | -------------- | -------- | ---- |
-| `x`         | `x`            | Position vector x component | nm |
-| `y`         | `y`            | Position vector y component | nm |
-| `z`         | `z`            | Position vector z component | nm |
-| `r`         | `r`            | Radial distance \f$r=\sqrt{x^2+y^2+z^2}\f$ | nm |
-| `rho`       | `rho`          | Cylindrical radial distance \f$\rho=\sqrt{x^2+y^2}\f$ | nm |
-| `cosTheta`  | `costheta`     | Cosine of the polar angle, \f$\cos\theta = z/r\f$ | – |
-| `nx`        | `nx`           | x-axis direction cosine | – |
-| `ny`        | `ny`           | y-axis direction cosine | – |
-| `nz`        | `nz`           | z-axis direction cosine | – |
-| `E`         | `E`            | Ion kinetic energy, or PKA recoil energy for `CascadeComplete` | eV |
-| `Tdam`      | `Tdam`         | Cascade damage energy (`CascadeComplete` only) | eV |
-| `V`         | `V`            | Number of vacancies generated in the cascade (`CascadeComplete` only) | – |
-| `atom_id`   | `atom_id`      | Atomic species id (0 = beam ion) | – |
-| `recoil_id` | `recoil_id`    | Recoil generation id (0 = beam ion, 1 = PKA, >1 = higher order) | – |
+| Name/JSON key | Quantity                                                              | Unit |
+| ------------- | --------------------------------------------------------------------- | ---- |
+| `x`           | Position vector x component                                           | nm   |
+| `y`           | Position vector y component                                           | nm   |
+| `z`           | Position vector z component                                           | nm   |
+| `r`           | Radial distance \f$r=\sqrt{x^2+y^2+z^2}\f$                            | nm   |
+| `rho`         | Cylindrical radial distance \f$\rho=\sqrt{x^2+y^2}\f$                 | nm   |
+| `cosTheta`    | Cosine of the polar angle, \f$\cos\theta = z/r\f$                     | –    |
+| `nx`          | x-axis direction cosine                                               | –    |
+| `ny`          | y-axis direction cosine                                               | –    |
+| `nz`          | z-axis direction cosine                                               | –    |
+| `E`           | Ion kinetic energy, or PKA recoil energy for `CascadeComplete`        | eV   |
+| `Tdam`        | Cascade damage energy (`CascadeComplete` only)                        | eV   |
+| `V`           | Number of vacancies generated in the cascade (`CascadeComplete` only) | –    |
+| `atom_id`     | Atomic species id (0 = beam ion)                                      | –    |
+| `recoil_id`   | Recoil generation id (0 = beam ion, 1 = PKA, >1 = higher order)       | –    |
 
 `Tdam` and `V` are only defined for the `CascadeComplete` event; with any other event they evaluate to 0 and the tally will only score in the bin containing 0, if any.
 
@@ -210,19 +196,19 @@ Ion positions are translated and rotated into this frame, directions are rotated
 
 Each user tally is written to its own group `/user_tally/<id>`:
 
-| Dataset                        | Size | Contents |
-| ------------------------------ | ---- | -------- |
-| `description`                  | scalar | The user supplied description |
-| `event`                        | scalar | Name of the trigger event |
-| `event_description`            | scalar | One-line description of the trigger event |
-| `bin_names`                    | \f$[N_b]\f$ | Variable name of each dimension |
-| `bin_descriptions`             | \f$[N_b]\f$ | Description of each dimension |
-| `bins/0`, `bins/1`, …          | \f$[N_j+1]\f$ | Bin edges of dimension \f$j\f$ |
-| `data`                         | \f$[N_1,\ldots,N_{N_b}]\f$ | Mean counts per source ion |
-| `data_sem`                     | \f$[N_1,\ldots,N_{N_b}]\f$ | SEM of `data` |
-| `coordinate_system/origin`     | [3] | Frame origin |
-| `coordinate_system/zaxis`      | [3] | Frame z-axis |
-| `coordinate_system/xzvector`   | [3] | Vector on the frame xz-plane |
+| Dataset                      | Size                       | Contents                                  |
+| ---------------------------- | -------------------------- | ----------------------------------------- |
+| `description`                | scalar                     | The user supplied description             |
+| `event`                      | scalar                     | Name of the trigger event                 |
+| `event_description`          | scalar                     | One-line description of the trigger event |
+| `bin_names`                  | \f$[N_b]\f$                | Variable name of each dimension           |
+| `bin_descriptions`           | \f$[N_b]\f$                | Description of each dimension             |
+| `bins/0`, `bins/1`, …        | \f$[N_j+1]\f$              | Bin edges of dimension \f$j\f$            |
+| `data`                       | \f$[N_1,\ldots,N_{N_b}]\f$ | Mean counts per source ion                |
+| `data_sem`                   | \f$[N_1,\ldots,N_{N_b}]\f$ | SEM of `data`                             |
+| `coordinate_system/origin`   | [3]                        | Frame origin                              |
+| `coordinate_system/zaxis`    | [3]                        | Frame z-axis                              |
+| `coordinate_system/xzvector` | [3]                        | Vector on the frame xz-plane              |
 
 ### Example {#tallies-user-example}
 
@@ -257,11 +243,11 @@ Event tables record individual Monte-Carlo events instead of accumulating them i
 
 Three event tables are available, each enabled by its own option in the `Output` section of the \ref json_config "JSON configuration":
 
-| Option | Group | Contents |
-| ------ | ----- | -------- |
-| \ref _Output_store_pka_events "store_pka_events"       | `/events/pka`    | One row per PKA cascade |
+| Option                                                 | Group            | Contents                                      |
+| ------------------------------------------------------ | ---------------- | --------------------------------------------- |
+| \ref _Output_store_pka_events "store_pka_events"       | `/events/pka`    | One row per PKA cascade                       |
 | \ref _Output_store_exit_events "store_exit_events"     | `/events/exit`   | One row per ion leaving the simulation volume |
-| \ref _Output_store_damage_events "store_damage_events" | `/events/damage` | One row per vacancy or interstitial created |
+| \ref _Output_store_damage_events "store_damage_events" | `/events/damage` | One row per vacancy or interstitial created   |
 
 All three are disabled by default. A group is absent from the output file if its option is off.
 
@@ -269,11 +255,11 @@ All three are disabled by default. A group is absent from the output file if its
 
 Each group contains three datasets:
 
-| Dataset               | Size | Contents |
-| --------------------- | ---- | -------- |
-| `event_data`          | \f$[N_{ev} \times N_{cols}]\f$ | The event data, one row per event |
-| `column_names`        | \f$[N_{cols}]\f$ | Short name of each column |
-| `column_descriptions` | \f$[N_{cols}]\f$ | Description and unit of each column |
+| Dataset               | Size                           | Contents                            |
+| --------------------- | ------------------------------ | ----------------------------------- |
+| `event_data`          | \f$[N_{ev} \times N_{cols}]\f$ | The event data, one row per event   |
+| `column_names`        | \f$[N_{cols}]\f$               | Short name of each column           |
+| `column_descriptions` | \f$[N_{cols}]\f$               | Description and unit of each column |
 
 `event_data` is a 32-bit float dataset, stored chunked and deflate-compressed. Unlike tallies, the values are **raw, un-normalized** data: no division by the number of histories takes place.
 
@@ -289,19 +275,19 @@ The column layout of each table is described below; `column_names` and `column_d
 
 `/events/pka` has \f$7 + 4\,N_t\f$ columns, where \f$N_t = N_{at}-1\f$ is the number of target atomic species. A row is written when a PKA cascade is complete, so the defect counts refer to the whole cascade.
 
-| Column | Name | Description |
-| ------ | ---- | ----------- |
-| 0 | `hid` | History id of the source ion that generated the PKA |
-| 1 | `pid` | Atom id of the PKA species |
-| 2–4 | `x`, `y`, `z` | Position where the PKA was created [nm] |
-| 5 | `E` | PKA recoil energy [eV] |
-| 6 | `Tdam` | Damage energy of the cascade [eV] |
-| 7 … | `V1` … `V`\f$N_t\f$ | Vacancies of each target species generated in the cascade |
-| … | `I1` … `I`\f$N_t\f$ | Interstitials of each target species |
-| … | `ICR1` … `ICR`\f$N_t\f$ | Intra-cascade recombinations of each target species |
-| … | `Corr. ICR1` … | Correlated intra-cascade recombinations of each target species |
+| Column | Name                    | Description                                                    |
+| ------ | ----------------------- | -------------------------------------------------------------- |
+| 0      | `hid`                   | History id of the source ion that generated the PKA            |
+| 1      | `pid`                   | Atom id of the PKA species                                     |
+| 2–4    | `x`, `y`, `z`           | Position where the PKA was created [nm]                        |
+| 5      | `E`                     | PKA recoil energy [eV]                                         |
+| 6      | `Tdam`                  | Damage energy of the cascade [eV]                              |
+| 7 …    | `V1` … `V`\f$N_t\f$     | Vacancies of each target species generated in the cascade      |
+| …      | `I1` … `I`\f$N_t\f$     | Interstitials of each target species                           |
+| …      | `ICR1` … `ICR`\f$N_t\f$ | Intra-cascade recombinations of each target species            |
+| …      | `Corr. ICR1` …          | Correlated intra-cascade recombinations of each target species |
 
-The `ICR` and `Corr. ICR` columns are zero unless \ref _Simulation_intra_cascade_recombination "intra_cascade_recombination" is enabled. The `V` and `I` counts are the numbers surviving recombination.
+The `ICR` and `Corr. ICR` columns are zero unless \ref _Simulation_defect_recombination "defect_recombination" is enabled. The `V` and `I` counts are the number of defects surviving recombination. `ICR` is the count of recombination events. `Corr. ICR` is the number of correlated recombinations (when the vacancy recombines with the same atom that left from the vacant site). Correlated recombinations are counted also in the total number, `ICR`
 
 `E` is the recoil energy \f$T\f$ transferred in the collision, before subtraction of the lattice binding energy \f$E_l\f$. In a `"CascadesOnly"` simulation, where the source ions are themselves the PKAs, `E` is the source ion energy after subtraction of \f$E_l\f$.
 
@@ -313,14 +299,14 @@ The cell id is not stored; it can be recovered from the position and the grid ar
 
 `/events/exit` has 10 columns and one row for every ion — beam ion or recoil — that leaves the simulation volume through an external boundary.
 
-| Column | Name | Description |
-| ------ | ---- | ----------- |
-| 0 | `hid` | History id |
-| 1 | `iid` | Atom id of the exiting ion |
-| 2 | `cid` | Id of the cell the ion occupied before exiting |
-| 3 | `E` | Kinetic energy at the moment of exit [eV] |
-| 4–6 | `x`, `y`, `z` | Position on the boundary [nm] |
-| 7–9 | `nx`, `ny`, `nz` | Direction cosines at exit |
+| Column | Name             | Description                                    |
+| ------ | ---------------- | ---------------------------------------------- |
+| 0      | `hid`            | History id                                     |
+| 1      | `iid`            | Atom id of the exiting ion                     |
+| 2      | `cid`            | Id of the cell the ion occupied before exiting |
+| 3      | `E`              | Kinetic energy at the moment of exit [eV]      |
+| 4–6    | `x`, `y`, `z`    | Position on the boundary [nm]                  |
+| 7–9    | `nx`, `ny`, `nz` | Direction cosines at exit                      |
 
 This table is the natural input for transmission, backscattering and sputtering analysis. The same events are tallied in `/tally/ion_stat/Lost` and `/tally/energy_deposition/Lost`.
 
@@ -330,13 +316,13 @@ This table is the natural input for transmission, backscattering and sputtering 
 
 `/events/damage` has 7 columns and one row for every defect that survives to be tallied. It gives the full spatial distribution of the generated damage.
 
-| Column | Name | Description |
-| ------ | ---- | ----------- |
-| 0 | `hid` | History id |
-| 1 | `rid` | Recoil generation id: 0 for beam ions, 1 for PKAs, >1 for higher-order recoils |
-| 2 | `iid` | Atom id of the interstitial species, or of the atom that occupied the vacated site |
-| 3 | `did` | Defect type: 0 = vacancy, 1 = interstitial |
-| 4–6 | `x`, `y`, `z` | Position of the defect [nm] |
+| Column | Name          | Description                                                                        |
+| ------ | ------------- | ---------------------------------------------------------------------------------- |
+| 0      | `hid`         | History id                                                                         |
+| 1      | `rid`         | Recoil generation id: 0 for beam ions, 1 for PKAs, >1 for higher-order recoils     |
+| 2      | `iid`         | Atom id of the interstitial species, or of the atom that occupied the vacated site |
+| 3      | `did`         | Defect type: 0 = vacancy, 1 = interstitial                                         |
+| 4–6    | `x`, `y`, `z` | Position of the defect [nm]                                                        |
 
 Rows are written when the cascade completes, after intra-cascade recombination; recombined pairs do not appear. Within a cascade the interstitials are written first, followed by the vacancies.
 

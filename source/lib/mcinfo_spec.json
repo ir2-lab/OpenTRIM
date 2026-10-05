@@ -454,7 +454,7 @@
                                 {
                                     "id": "0, 1, ...",
                                     "type": "Dataset",
-                                    "description": "Bin edges of the j-th tally dimension. One dataset per binning variable, named by the zero-based dimension index. The corresponding variable name is bin_names[j].",
+                                    "description": "Bin edges of the j-th tally dimension.",
                                     "datatype": "Numeric",
                                     "size": "\\f$[N_j+1]\\f$"
                                 }

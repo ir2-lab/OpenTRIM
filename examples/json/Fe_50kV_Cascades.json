@@ -2,7 +2,7 @@
     "Simulation": {
         "simulation_type": "CascadesOnly",
         "electronic_stopping": "Off",
-        "intra_cascade_recombination": true
+        "defect_recombination": true
     },
     "Transport": {
         "flight_path_type": "Constant",

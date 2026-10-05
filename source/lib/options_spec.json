@@ -138,14 +138,14 @@
                     ]
                 },
                 {
-                    "name": "intra_cascade_recombination",
-                    "label": "Intra-cascade recombination",
+                    "name": "defect_recombination",
+                    "label": "Defect recombination",
                     "type": "bool",
-                    "toolTip": "Enable intra-cascade recombination of Frenkel pairs.",
+                    "toolTip": "Enable intra-cascade recombination of defects.",
                     "whatsThis": [
-                        "When this option is enabled the Frenkel pairs within a PKA cascade may recombine under certain conditions.",
-                        "Moving ions with E < Er can recombine with vacancies if their mutual distance R is below the recombination radius Rc (defined in the Target options for each atomic species).",
-                        "The ion must be of the same atomic type as the one that was originally in the vacant site."
+                        "When this option is enabled, defects created within a PKA cascade may recombine under certain conditions.",
+                        "Recombination is possible between a vacancy and an interstitial atom of the same atomic type.",
+                        "The vacancy-interstitial distance R must be smaller than the recombination radius Rc for the given atomic type."
                     ]
                 },
                 {
@@ -702,7 +702,7 @@
                                             "digits": 3,
                                             "toolTip": "Recombination radius [nm].",
                                             "whatsThis": [
-                                                "The recombination radius is used when intra-cascade recombination is active (/Simulation/intra_cascade_recombination = true)",
+                                                "The recombination radius is used when intra-cascade recombination is active (/Simulation/defect_recombination = true)",
                                                 "When a vacancy is at a distance R < Rc from an interstitial atom, they recombine spontaneously.",
                                                 "The interstitial must be of the same atomic type as the atom that was in the vacant site."
                                             ]
@@ -927,6 +927,7 @@
                             "IonExit",
                             "IonStop",
                             "Vacancy",
+                            "Interstitial",
                             "Replacement",
                             "CascadeComplete",
                             "BoundaryCrossing"
@@ -935,6 +936,7 @@
                             "IonExit",
                             "IonStop",
                             "Vacancy",
+                            "Interstitial",
                             "Replacement",
                             "CascadeComplete",
                             "BoundaryCrossing"
@@ -943,6 +945,7 @@
                             "The ion exits the simulation volume",
                             "The ion stops inside the simulation volume",
                             "A lattice vacancy is created",
+                            "A lattice interstitial is created",
                             "A replacement event occurs",
                             "A PKA cascade is completed",
                             "An ion crosses an internal cell boundary"

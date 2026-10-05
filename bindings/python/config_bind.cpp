@@ -271,9 +271,8 @@ void bind_config(py::module_ &m)
                            "Electronic straggling model (Straggling).")
             .def_readwrite("nrt_calculation", &mccore::parameters::nrt_calculation,
                            "NRT vacancy method (NRT_Impl).")
-            .def_readwrite("intra_cascade_recombination",
-                           &mccore::parameters::intra_cascade_recombination,
-                           "Allow intra-cascade Frenkel pair recombination.")
+            .def_readwrite("defect_recombination", &mccore::parameters::defect_recombination,
+                           "Allow intra-cascade defect recombination.")
             .def("__repr__", [](const mccore::parameters &s) {
                 return "SimulationParams(simulation_type=" + enum_name(s.simulation_type)
                         + ", electronic_stopping=" + enum_name(s.electronic_stopping) + ")";

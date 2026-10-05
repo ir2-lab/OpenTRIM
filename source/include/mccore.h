@@ -107,7 +107,7 @@ public:
         /// Way to calculate NRT vacancies in multielement materials
         nrt_calculation_t nrt_calculation{ NRT_element };
         /// Allow intra cascade Frenkel pair recombination
-        bool intra_cascade_recombination{ false };
+        bool defect_recombination{ false };
         /****  Experimental stuff ****/
         bool time_ordered_cascades{ true };
         // Allow same Frenkel pair recombination

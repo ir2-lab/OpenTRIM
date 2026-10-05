@@ -73,6 +73,7 @@ SimControlWidget::SimControlWidget(MainUI *ui, QWidget *parent)
     idx = model->index("threads", 0, driverOptionsIdx);
     item = model->getItem(idx);
     sbNThreads = (QSpinBox *)item->createEditor(this);
+    sbNThreads->setSpecialValueText(tr("Auto"));
     simCtrls.push_back(sbNThreads);
 
     QModelIndex outputOptionsIdx = model->index("Output");

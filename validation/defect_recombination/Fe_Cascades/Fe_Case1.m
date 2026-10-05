@@ -74,7 +74,7 @@ for i=1:length(E),
   cfg.Simulation.electronic_stopping = stopping{i};
 
   for j=1:length(recomb),
-    cfg.Simulation.intra_cascade_recombination = recomb(j);
+    cfg.Simulation.defect_recombination = recomb(j);
     D = opentrim.driver(cfg);
     D.exec(); 
     [X, dX] = D.info().get('/tally/totals/data');

@@ -89,7 +89,7 @@ abstract_cascade::defect_list_t::iterator abstract_cascade::find_rc_partner(cons
 
 // #define CASCADE_DEBUG_PRINT
 
-void time_ordered_cascade::intra_cascade_recombination(ion_queue &q)
+void time_ordered_cascade::defect_recombination(ion_queue &q)
 {
     assert(i_.empty());
     assert(v_.empty());
@@ -150,7 +150,7 @@ void time_ordered_cascade::intra_cascade_recombination(ion_queue &q)
     v_.clear();
 }
 
-void unordered_cascade::intra_cascade_recombination(ion_queue &q)
+void unordered_cascade::defect_recombination(ion_queue &q)
 {
     assert(i_.empty());
     assert(v_.empty());

@@ -194,21 +194,6 @@ NLOHMANN_JSON_SERIALIZE_ENUM(flight_path_calc::flight_path_type_t,
                                { flight_path_calc::Constant, "Constant" },
                                { flight_path_calc::Variable, "Variable" } })
 
-NLOHMANN_JSON_SERIALIZE_ENUM(Event,
-                             { { Event::Invalid, nullptr },
-                               { Event::NewSourceIon, "NewSourceIon" },
-                               { Event::NewRecoil, "NewRecoil" },
-                               { Event::Scattering, "Scattering" },
-                               { Event::IonExit, "IonExit" },
-                               { Event::IonStop, "IonStop" },
-                               { Event::BoundaryCrossing, "BoundaryCrossing" },
-                               { Event::Replacement, "Replacement" },
-                               { Event::Vacancy, "Vacancy" },
-                               { Event::Interstitial, "Interstitial" },
-                               { Event::CascadeComplete, "CascadeComplete" },
-                               { Event::NewFlightPath, "NewFlightPath" },
-                               { Event::NEvent, "NEvent" } })
-
 // option struct serialization
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(target::region, id, material_id, origin, size)
@@ -233,7 +218,7 @@ MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ion_beam::parameters, ion, energy_dist
 
 MY_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(mccore::parameters, simulation_type, screening_type,
                                           electronic_stopping, electronic_straggling,
-                                          nrt_calculation, intra_cascade_recombination,
+                                          nrt_calculation, defect_recombination,
                                           time_ordered_cascades, correlated_recombination,
                                           move_recoil, recoil_sub_ed)
 
@@ -367,13 +352,6 @@ void from_json(const ojson &j, mcconfig &p)
         }
     }
 }
-
-// void from_json(const ojson &nlohmann_json_j, user_tally::parameters &nlohmann_json_t)
-// {
-//     const user_tally::parameters nlohmann_json_default_obj{};
-
-//     NLOHMANN_JSON_FROM_WITH_DEFAULT(coordinates);
-// }
 
 void mcconfig::printJSON(std::ostream &os) const
 {

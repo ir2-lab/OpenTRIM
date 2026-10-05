@@ -399,7 +399,7 @@
 <tr><td>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;0, 1, ...
 <td>Numeric
 <td>\f$[N_j+1]\f$
-<td>Bin edges of the j-th tally dimension. One dataset per binning variable, named by the zero-based dimension index. The corresponding variable name is bin_names[j].
+<td>Bin edges of the j-th tally dimension.
 <tr><td>&emsp;&emsp;events/
 <td>Group<td><td>lists of simulation events
 <tr><td>&emsp;&emsp;&emsp;&emsp;exit/

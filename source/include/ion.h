@@ -94,33 +94,38 @@ public:
     enum ion_type { vacancy = 0, interstitial = 1, other };
 
 private:
-    ion_type type_;
     vector3 pos_; // position = x,y,z in nm
     vector3 pos0_; // initial position (start of track)
     vector3 dir_; // direction cosines
+    ivector3 icell_;
     double erg_; // energy in eV
     double erg0_; // initial energy
     double t_; // time in ps
     double t0_; // start time in ps (relative to source ion)
     double s_erg_to_t_;
-    ivector3 icell_;
-    int cellid_, // current cell id
-            prev_cellid_, // previous cell id
-            cellid0_; // initial cell id (start of track)
+
     size_t ion_id_; // ion history id
-    int recoil_id_; // recoil id (generation), 0=ion, 1=PKA, ...
     size_t uid_; // unique recoil id
-    bool source_ion_; // true for source generated ions
     const atom *atom_;
     const grid3D *grid_;
 
-    // counters
+    // cell accumulators
     // they are reset when ion changes cell, stops or exits
     size_t ncoll_; // # of collisions
     double path_, // total path length
             electronic_, // total electronic E loss
             nuclear_, // total nuclear E loss (subthreshold)
             recoil_; // total E loss to recoils
+
+    // vacancy or interstitial
+    ion_type type_;
+
+    int cellid_, // current cell id
+            prev_cellid_, // previous cell id
+            cellid0_; // initial cell id (start of track)
+
+    int recoil_id_; // recoil id (generation), 0=ion, 1=PKA, ...    
+    bool source_ion_; // true for source generated ions
 
     friend class ion_queue;
 
@@ -406,6 +411,13 @@ class ion_queue
         return i;
     }
 
+    bool check()
+    {
+        return ion_buffer_.size() + recoil_queue_.size() + pka_queue_.size() + v_queue_.size()
+                + i_queue_.size()
+                == sz_;
+    }
+
 public:
     explicit ion_queue() : sz_(0), uctr_(0) { }
 
@@ -448,7 +460,11 @@ public:
     ion *pop_interstitial() { return pop_one_(i_queue_); }
 
     /// Release a used ion object
-    void free_ion(ion *i) { ion_buffer_.push(i); }
+    void free_ion(ion *i)
+    {
+        ion_buffer_.push(i);
+        assert(check());
+    }
 
     /// Clear all allocated ion objects from memory
     void clear()

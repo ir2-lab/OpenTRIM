@@ -203,7 +203,7 @@ void mccore::arm(size_t N, size_t id1, size_t id_stride)
 int mccore::run()
 {
     abstract_cascade *cscd = nullptr;
-    if (par_.intra_cascade_recombination) {
+    if (par_.defect_recombination) {
         cscd = par_.time_ordered_cascades
                 ? (abstract_cascade *)(new time_ordered_cascade(target_->grid()))
                 : (abstract_cascade *)(new unordered_cascade(target_->grid()));
@@ -291,7 +291,7 @@ int mccore::run()
 
                 // optional cascade recombination
                 if (cscd)
-                    cscd->intra_cascade_recombination(ion_queue_);
+                    cscd->defect_recombination(ion_queue_);
 
                 // process PKA cascade events
                 {
@@ -319,7 +319,10 @@ int mccore::run()
                     cscd->clear_riv(ion_queue_);
                 }
 
-            } // end cascade
+                // end cascade
+            } else { // IonsOnly - do nothing
+                ion_queue_.free_ion(j);
+            }
 
             // Calc NRT values (using j1 - at initial pos!)
             pka->calc_nrt(
@@ -605,19 +608,6 @@ void mccore::handle_event_impl(Event ev, const ion &i, const void *pv)
         }
     }
 
-    // // send to the event streams
-    // if (static_cast<uint32_t>(ev) & damage_stream_mask_) {
-    //     damage_ev.set(i);
-    //     damage_stream_.write(&damage_ev);
-    // }
-    // if (static_cast<uint32_t>(ev) & exit_stream_mask_) {
-    //     exit_ev.set(i);
-    //     exit_stream_.write(&exit_ev);
-    // }
-    // if (static_cast<uint32_t>(ev) & pka_stream_mask_) {
-    //     pka_stream_.write(&pka);
-    // }
-
     // call an installed event handler
     if (static_cast<uint32_t>(ev) & event_handler_slot_.mask) {
         event_handler_slot_.eh(ev, i, event_handler_slot_.user_data);
@@ -675,12 +665,6 @@ void mccore::mergeEvents(mccore &other)
         event_stream_[k].merge(other.event_stream_[k]);
         other.event_stream_[k].clear();
     }
-    // pka_stream_.merge(other.pka_stream_);
-    // other.pka_stream_.clear();
-    // exit_stream_.merge(other.exit_stream_);
-    // other.exit_stream_.clear();
-    // damage_stream_.merge(other.damage_stream_);
-    // other.damage_stream_.clear();
 }
 
 void mccore::mergeEvents(std::vector<mccore *> &other)
@@ -688,17 +672,6 @@ void mccore::mergeEvents(std::vector<mccore *> &other)
     int n = other.size();
     for (int k = 0; k < n; ++k)
         mergeEvents(*other[k]);
-
-    // std::vector<event_stream *> streams(other.size());
-    // for (int i = 0; i < n; ++i)
-    //     streams[i] = &(other[i]->pka_stream_);
-    // pka_stream_.merge(streams);
-    // for (int i = 0; i < n; ++i)
-    //     streams[i] = &(other[i]->exit_stream_);
-    // exit_stream_.merge(streams);
-    // for (int i = 0; i < n; ++i)
-    //     streams[i] = &(other[i]->damage_stream_);
-    // damage_stream_.merge(streams);
 }
 
 ArrayNDd mccore::getTallyTable(int i) const

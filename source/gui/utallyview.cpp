@@ -77,45 +77,23 @@ const int kBinVarCount = int(sizeof(kBinVarNames) / sizeof(kBinVarNames[0]));
 
 // The 6 event types allowed by options_spec.json's "/UserTally/i/event"
 // (a subset of the full Event enum -- the rest are internal-only events).
-const char *kEventNames[] = { "IonExit",     "IonStop",         "Vacancy",
+const char *kEventNames[] = { "IonExit",     "IonStop",         "Vacancy",         "Interstitial",
                               "Replacement", "CascadeComplete", "BoundaryCrossing" };
 const int kEventCount = int(sizeof(kEventNames) / sizeof(kEventNames[0]));
 
 Event eventFromName(const QString &s)
 {
-    if (s == QLatin1String("IonExit"))
-        return Event::IonExit;
-    if (s == QLatin1String("IonStop"))
-        return Event::IonStop;
-    if (s == QLatin1String("Vacancy"))
-        return Event::Vacancy;
-    if (s == QLatin1String("Replacement"))
-        return Event::Replacement;
-    if (s == QLatin1String("CascadeComplete"))
-        return Event::CascadeComplete;
-    if (s == QLatin1String("BoundaryCrossing"))
-        return Event::BoundaryCrossing;
-    return Event::IonStop;
+    Event ev;
+    ojson j(s.toLatin1().constData());
+    from_json(j, ev);
+    return ev;
 }
 
 QString eventToName(Event e)
 {
-    switch (e) {
-    case Event::IonExit:
-        return QStringLiteral("IonExit");
-    case Event::IonStop:
-        return QStringLiteral("IonStop");
-    case Event::Vacancy:
-        return QStringLiteral("Vacancy");
-    case Event::Replacement:
-        return QStringLiteral("Replacement");
-    case Event::CascadeComplete:
-        return QStringLiteral("CascadeComplete");
-    case Event::BoundaryCrossing:
-        return QStringLiteral("BoundaryCrossing");
-    default:
-        return QStringLiteral("IonStop");
-    }
+    assert(e != Event::Invalid && e != Event::NEvent);
+    const char *name = event_name(e);
+    return QString(name);
 }
 
 } // namespace

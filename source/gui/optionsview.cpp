@@ -353,6 +353,8 @@ QWidget *OptionsView::createIonBeamTab(const QModelIndex &parent)
             QModelIndex idx1 = model->index(0, 0, idx);
             mapper->addMapping(btSelectIon, idx1, false);
             mapper->addMapping(ionLabel, idx1, false);
+            btSelectIon->setToolTip("Select the beam ion");
+            ionLabel->setToolTip("Current beam ion");
         }
     }
 
@@ -430,8 +432,10 @@ QFormLayout *OptionsView::createForm(const QModelIndex &parent, QWidget *widgetP
         QWidget *w = item->createEditor(widgetParent);
         if (w) {            
             flayout->addRow(item->name(), w);
+            QWidget *lbl = flayout->labelForField(w);
+            lbl->setToolTip(w->toolTip());
             mapper->addMapping(w, i, true, item->editorSignal());
-            mapper->addMapping(flayout->labelForField(w), i, false);
+            mapper->addMapping(lbl, i, false);
         }
     }
     return flayout;

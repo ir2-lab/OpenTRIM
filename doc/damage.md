@@ -1,10 +1,12 @@
 # Damage Events {#damage-events}
 
-## Damage parameters
+## Damage model
 
 Damage generation in OpenTRIM is modelled based on a set of energy parameters, as is done in SRIM and other Monte-Carlo and BCA codes. They are the **displacement energy** \f$E_d\f$, the **lattice binding energy** \f$E_l\f$ and the **recombination energy** \f$E_r\f$. Their meaning becomes apparent when we consider the sequence of steps that leads to the generation of atomic displacements.
 
-\f$E_d\f$, \f$E_l\f$ and \f$E_r\f$ are characteristic of the material and have different values for each atomic species in the given material.
+Additionally, there is also a spatial parameter, the **recombination radius** \f$R_c\f$. This comes into play when we consider defect recombination (see below).
+
+\f$E_d\f$, \f$E_l\f$, \f$E_r\f$ and \f$R_c\f$ are characteristic of the material and have different values for each atomic species in the material's composition.
 
 In the OpenTRIM JSON configuration, their values are set by parameters with the mnemonic codes \ref _Target_materials_0_composition_0_Ed "Ed", \ref _Target_materials_0_composition_0_El "El" and \ref _Target_materials_0_composition_0_Er "Er", respectively, for each element in the material composition definition. For example, for Fe the definition would be:
 ```javascript
@@ -21,27 +23,29 @@ In the OpenTRIM JSON configuration, their values are set by parameters with the 
                         "X": 1,
                         "Ed": 40,
                         "El": 3,
-                        "Er": 40
+                        "Er": 40,
+                        "Rc": 0.8
                     }
                 ]
             }
         ]
 ```
-See the examples in the \ref json_config section for more details.
+The energy parameters are in eV while \f$R_c\f$ in nm. See the examples in the \ref json_config section for more details.
 
 ## The displacement event
 
 A displacement damage event occurs as follows:
 
-- An incoming ion A with kinetic energy \f$E\f$ collides with a target atom B and transfers to it a recoil energy \f$T\f$. A emerges from the collision with energy \f$E' = E - T\f$.
+- An incoming ion A with kinetic energy \f$E\f$ collides with a target atom B initially at rest and transfers to it a recoil energy \f$T\f$. A emerges from the collision with energy \f$E' = E - T\f$.
 - If \f$T\f$ is at or above B's displacement threshold, \f$T \geq E_d^B\f$: 
   - B is displaced from its lattice site and a lattice vacancy is created at the position of atom B. 
   - B starts moving as a new recoil ion with kinetic energy \f$T - E_l^B\f$, where \f$E_l^B\f$ is the lattice binding energy of atom B.
   - if \f$E' < E_r^B\f$ and A is the of the same atomic species as B, then A replaces B in its lattice site. This constitutes a *replacement event*: the recoil B is still emitted and followed, but **no vacancy and no interstitial are recorded**, since the site is immediately re-occupied. The track of A ends here and its remaining energy \f$E'\f$ is deposited as sub-threshold nuclear energy loss ("Phonons" in SRIM terminology).
   - Otherwise, A continues its track with energy \f$E'\f$
-- If \f$T < E_d^B\f$, B is not displaced and \f$T\f$ is deposited as sub-threshold nuclear energy loss.
+- Otherwise, if \f$T < E_d^B\f$, B is not displaced and \f$T\f$ is deposited as sub-threshold nuclear energy loss.
 
-When an atom is displaced, a vacancy-interstitial pair, or Frenkel pair, is created. This defect has a certain formation energy, which is a characteristic of the material and of the species of the interstitial. This is essentially the lattice binding energy, \f$E_l\f$, which is termed this way for compatibility with the terminology of previous codes.
+When an atom is displaced, a vacancy-interstitial pair, or Frenkel pair, is created. This defect has a certain formation energy, which is a characteristic of the material and of the species of the interstitial. This is essentially the lattice binding energy, \f$E_l\f$, which is termed this way for compatibility with the terminology of previous codes. The damage model assumes that the FP formation energy is taken from the kinetic energy of the recoil; this is why \f$E_l\f$ is subtracted from $T$. The formation energy of all generated defects is added to the "Stored" energy of the system (see \ref energy-partition).
+
 In principle, the Frenkel pair formation energy is the sum of the energies needed to form the vacancy and the interstitial, which need not be equal. However, for simplicity, OpenTRIM assigns a formation energy of \f$E_l/2\f$ to both the vacancy and the interstitial atom.
 
 The value of \f$E_r\f$ is typically set equal to \f$E_d\f$.
@@ -54,23 +58,24 @@ An ion track is terminated when the ion's kinetic energy drops below the cutoff 
 
 An ion stopping inside the simulation volume comes to rest at an interstitial position:
 
-- If it is a target recoil, it is recorded as an **interstitial**, completing the Frenkel pair whose vacancy was recorded at the recoil's original site.
-- If it is a beam ion, it is recorded as an **implanted** atom.
+- If it is a target recoil, it is considered an **interstitial**, completing the Frenkel pair whose vacancy was recorded at the recoil's original site.
+- If it is a beam ion, it is considered an **implanted** atom.
 
 Both are scored in the same tally table, `Implantations`, since they are physically the same kind of event: a foreign atom at rest in an interstitial site.
 
 If instead the ion escapes through an external boundary of the simulation volume, no interstitial is recorded. For a recoil this means the vacancy it left behind remains unpaired, and the half Frenkel pair energy \f$E_l/2\f$ that had been assigned to the interstitial is released as nuclear energy loss. See \ref energy-partition "Energy partition" for the full energy bookkeeping.
 
-## Intra-cascade recombination
+## Defect recombination
 
-Optionally, OpenTRIM can let the Frenkel pairs generated within a single PKA cascade recombine before they are tallied. This is enabled by the option \ref _Simulation_intra_cascade_recombination "/Simulation/intra_cascade_recombination" (disabled by default) and is still an **experimental** feature.
+Optionally, OpenTRIM can simulate recombination of the Frenkel pairs generated within a single PKA cascade. This is enabled by the option \ref _Simulation_defect_recombination "/Simulation/defect_recombination" (disabled by default) and is still an **experimental** feature.
 
-When active, at the end of each PKA cascade the vacancies and interstitials of that cascade are matched up: an interstitial recombines with a vacancy if
+Defect recombination is modelled as follows:
+- At the end of a PKA cascade, vacancies and interstitials are sorted in a list with increasing creation time
+- A vacancy's creation time is the instant an atom was displaced from its lattice site due to a collision. An interstitial's creation time is the moment the kinetic energy of a moving ion falls below the cutoff \f$E_c\f$ and the atom stops. 
+- We traverse the defect list from the initially created defect, going upwards in creation time. For each defect, we search among pre-existing defects to find anti-defects within the recombination radius $R_c$.
+- The defect recombines with the closest anti-defect of the same atomic type. We delete both from the defect list.
 
-- the two are of the same atomic species, and
-- their mutual distance \f$R\f$ is below the recombination radius \f$R_c\f$ of that species, set by \ref _Target_materials_0_composition_0_Rc "Rc" in the target options.
-
-Recombined pairs are removed from the vacancy and interstitial counts and scored instead in the `Recombinations` table. 
+Recombinations are scored in the `/tally/damage_events/Recombinations` table. 
 
 ## Damage event tallies
 
@@ -81,7 +86,7 @@ The damage events described above are scored per atomic species and per simulati
 | `Vacancies`      | Vacancies created by displacement events                                |
 | `Implantations`  | Stopped recoils (interstitials) and stopped beam ions (implanted atoms) |
 | `Replacements`   | Replacement events                                                      |
-| `Recombinations` | Frenkel pairs removed by intra-cascade recombination                    |
+| `Recombinations` | Frenkel pair recombinations                                             |
 
 All tallies are accumulated over the simulated histories and reported per source ion, together with their statistical uncertainty. See \ref tallies for details.
 
@@ -100,7 +105,7 @@ OpenTRIM pays special attention to PKA events and keeps separate records of the 
 | `Vnrt`       | Vacancies per the NRT model using `Tdam`                                       |
 | `Vnrt_LSS`   | Vacancies per the NRT model using `Tdam_LSS`                                   |
 
-Since these are tallies, the stored values are sums over all PKAs divided by the number of source ions. Thus, `Pka` gives the number of PKAs per ion, while the mean PKA energy is obtained as the ratio `Pka_energy`/`Pka`, and similarly for the other quantities.
+The stored values are sums over all PKAs divided by the number of source ions. Thus, `Pka` gives the number of PKAs per ion, while the mean PKA energy is obtained as the ratio `Pka_energy`/`Pka`, and similarly for the other quantities.
 
 The damage energy \f$T_{dam}\f$ is obtained directly from the Monte-Carlo simulation as the PKA recoil energy minus all electronic energy losses incurred in the cascade:
 
@@ -112,7 +117,7 @@ where the sum runs over the PKA and all of its secondary recoils. It thus includ
 
 ## NRT implementation
 
-To aid in comparisons to standard damage calculations or to neutron irradiation, OpenTRIM employs the standard Norgett-Robinson-Torrens (NRT) model to give an independent estimation of the generated defects. The number of vacancies produced by a recoil of damage energy \f$T_{dam}\f$ is
+To aid in comparisons to standard damage calculations or to neutron irradiation, OpenTRIM employs the standard Norgett-Robinson-Torrens (NRT) model to give an independent estimation of the generated defects. According to NRT, the number of vacancies produced by a recoil of damage energy \f$T_{dam}\f$ is
 
 $$
 \nu_{NRT}(T_{dam}) = \begin{cases}
@@ -122,7 +127,7 @@ $$
 \end{cases}
 $$
 
-The model is applied to two different estimates of the damage energy:
+The model is applied to two different estimates of the damage energy within OpenTRIM:
 
 - The damage energy of the PKA cascade as found by the Monte-Carlo simulation. This is reported in the tally table `/tally/pka_damage/Vnrt`.
 - The damage energy estimated by the LSS partition. This is reported in `/tally/pka_damage/Vnrt_LSS` and can be used for comparison to other codes, e.g., SRIM.

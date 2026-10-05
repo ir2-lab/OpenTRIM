@@ -25,7 +25,7 @@ Nh = 100;
 cfg = opentrim.config();
 cfg.Simulation.simulation_type = 'CascadesOnly';
 cfg.Simulation.electronic_stopping = 'Off';
-cfg.Simulation.intra_cascade_recombination = true;
+cfg.Simulation.defect_recombination = true;
 
 cfg.Transport.flight_path_type = 'Variable';
 cfg.Transport.min_energy = Ec;

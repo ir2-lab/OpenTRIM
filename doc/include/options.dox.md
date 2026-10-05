@@ -8,7 +8,7 @@
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_electronic_stopping "\"electronic_stopping\"": "SRIM13",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_electronic_straggling "\"electronic_straggling\"": "Off",<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_nrt_calculation "\"nrt_calculation\"": "NRT_element",<br>
-&emsp;&emsp;&emsp;&emsp;\ref _Simulation_intra_cascade_recombination "\"intra_cascade_recombination\"": false,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Simulation_defect_recombination "\"defect_recombination\"": false,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_time_ordered_cascades "\"time_ordered_cascades\"": true,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_correlated_recombination "\"correlated_recombination\"": true,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Simulation_move_recoil "\"move_recoil\"": false,<br>
@@ -89,6 +89,7 @@
 &emsp;&emsp;&emsp;&emsp;\ref _Output_store_exit_events "\"store_exit_events\"": false,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_store_pka_events "\"store_pka_events\"": false,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_store_damage_events "\"store_damage_events\"": false,<br>
+&emsp;&emsp;&emsp;&emsp;\ref _Output_store_ion_track_events "\"store_ion_track_events\"": false,<br>
 &emsp;&emsp;&emsp;&emsp;\ref _Output_store_dedx "\"store_dedx\"": true<br>
 &emsp;&emsp;},<br>
 &emsp;&emsp;\ref _Run "\"Run\"": {<br>
@@ -160,12 +161,12 @@
 <tr><td>Values<td> NRT_element | NRT_average
 <tr><td>Default Value<td>"NRT_element"<tr><td>Description <td>Define how to implement NRT in multielemental targets.
 <h4>Options</h4><ul><li><strong>NRT_element</strong> [NRT per element] - NRT calculated per recoil atom</li><li><strong>NRT_average</strong> [NRT per material average] - NRT calculated using material average values</li></ul><h4>Notes</h4><ul><li>Material average Ed is calculated as 1/Ed = Σi{Xi / Edi} according to Ghoniem &amp; Chou JNM1988</li>
-</ul><tr><th colspan="2">\anchor _Simulation_intra_cascade_recombination /Simulation/intra_cascade_recombination<tr><td>Label <td>Intra-cascade recombination
+</ul><tr><th colspan="2">\anchor _Simulation_defect_recombination /Simulation/defect_recombination<tr><td>Label <td>Defect recombination
 <tr><td>Type <td>Boolean
-<tr><td>Default Value<td>false<tr><td>Description <td>Enable intra-cascade recombination of Frenkel pairs.
-<h4>Notes</h4><ul><li>When this option is enabled the Frenkel pairs within a PKA cascade may recombine under certain conditions.</li>
-<li>Moving ions with E &lt; Er can recombine with vacancies if their mutual distance R is below the recombination radius Rc (defined in the Target options for each atomic species).</li>
-<li>The ion must be of the same atomic type as the one that was originally in the vacant site.</li>
+<tr><td>Default Value<td>false<tr><td>Description <td>Enable intra-cascade recombination of defects.
+<h4>Notes</h4><ul><li>When this option is enabled, defects created within a PKA cascade may recombine under certain conditions.</li>
+<li>Recombination is possible between a vacancy and an interstitial atom of the same atomic type.</li>
+<li>The vacancy-interstitial distance R must be smaller than the recombination radius Rc for the given atomic type.</li>
 </ul><tr><th colspan="2">\anchor _Simulation_time_ordered_cascades /Simulation/time_ordered_cascades<tr><td>Label <td>Time ordered recombinations in cascades [Experimental]
 <tr><td>Type <td>Boolean
 <tr><td>Default Value<td>true<tr><td>Description <td>Time ordered recombinations in cascades [Experimental]
@@ -384,7 +385,7 @@
 <tr><td>Type <td>Real Number
 <tr><td>Range<td>0.001...1000
 <tr><td>Default Value<td>0.946<tr><td>Description <td>Recombination radius [nm].
-<h4>Notes</h4><ul><li>The recombination radius is used when intra-cascade recombination is active (/Simulation/intra_cascade_recombination = true)</li>
+<h4>Notes</h4><ul><li>The recombination radius is used when intra-cascade recombination is active (/Simulation/defect_recombination = true)</li>
 <li>When a vacancy is at a distance R &lt; Rc from an interstitial atom, they recombine spontaneously.</li>
 <li>The interstitial must be of the same atomic type as the atom that was in the vacant site.</li>
 </ul><tr><th colspan="2">\anchor _Target_regions /Target/regions<tr><td>Label <td>Target regions definition
@@ -435,6 +436,9 @@
 <tr><th colspan="2">\anchor _Output_store_damage_events /Output/store_damage_events<tr><td>Label <td>Store defects
 <tr><td>Type <td>Boolean
 <tr><td>Default Value<td>false<tr><td>Description <td>Store a table of generated vacancies and interstitials.
+<tr><th colspan="2">\anchor _Output_store_ion_track_events /Output/store_ion_track_events<tr><td>Label <td>Store ion track vertices
+<tr><td>Type <td>Boolean
+<tr><td>Default Value<td>false<tr><td>Description <td>Store a table of ion track data.
 <tr><th colspan="2">\anchor _Output_store_dedx /Output/store_dedx<tr><td>Label <td>Store dE/dx
 <tr><td>Type <td>Boolean
 <tr><td>Default Value<td>true<tr><td>Description <td>Store electronic stopping tables for each ion/material combination.

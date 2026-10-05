@@ -20,7 +20,7 @@ cfg = opentrim.config();
 
 cfg.Simulation.simulation_type = 'CascadesOnly';
 cfg.Simulation.electronic_stopping = 'Off';
-cfg.Simulation.intra_cascade_recombination = true;
+cfg.Simulation.defect_recombination = true;
 cfg.Simulation.time_ordered_cascades = true;
 
 cfg.Transport.min_energy = Ec(1);

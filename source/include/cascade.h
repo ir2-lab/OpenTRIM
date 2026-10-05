@@ -18,9 +18,10 @@ public:
     explicit abstract_cascade(const grid3D &ag) : g(ag) { }
     virtual ~abstract_cascade() { }
 
-    // call this function to perform recombination of cascade ions
-    // ion_queue contains all ions in random order
-    virtual void intra_cascade_recombination(ion_queue &q) = 0;
+    // call this function to perform recombination of cascade
+    // interstitials & vacancies
+    // ion_queue contains all defects in random order
+    virtual void defect_recombination(ion_queue &q) = 0;
 
     // count I-V recombinations & correlated recombinations
     // s, sc are corresponding buffers to hold counts per atomic id
@@ -87,7 +88,7 @@ class time_ordered_cascade : public abstract_cascade
 public:
     explicit time_ordered_cascade(const grid3D &g) : abstract_cascade(g) { }
 
-    void intra_cascade_recombination(ion_queue &q) override;
+    void defect_recombination(ion_queue &q) override;
 
 protected:
     // defect time comparison operator
@@ -109,7 +110,7 @@ class unordered_cascade : public abstract_cascade
 public:
     explicit unordered_cascade(const grid3D &g) : abstract_cascade(g) { }
 
-    void intra_cascade_recombination(ion_queue &q) override;
+    void defect_recombination(ion_queue &q) override;
 };
 
 #endif // CASCADE_QUEUE_H

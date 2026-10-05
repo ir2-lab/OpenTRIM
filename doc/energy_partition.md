@@ -8,7 +8,7 @@ The interaction with the nuclei is treated explicitly, as a sequence of binary c
 
 If the recoil energy \f$T\f$ imparted to a target nucleus is above the displacement threshold \f$E_d\f$, the atom is displaced from its lattice site and becomes a moving ion, which loses energy by exactly the same processes. The potential energy needed to remove the atom from its lattice site and place it at an interstitial position, or, equivalently, the formation energy of the created Frenkel pair, is the lattice binding energy \f$E_l\f$. This energy is subtracted from the kinetic energy of the recoiling ion and remains stored in the lattice. See \ref damage-events "Damage events" for more details.
 
-If, on the other hand, \f$T\f$ is below \f$E_d\f$, or whenever the kinetic energy of a moving ion drops below the absolute minimum energy \f$E_{min}\f$ (\ref _Transport_min_energy "Transport.min_energy"), the recoil or ion history is not followed any further and the remaining energy is added to the sub-threshold nuclear energy loss, \f$\Delta E_n\f$.
+If, on the other hand, \f$T\f$ is below \f$E_d\f$, or whenever the kinetic energy of a moving ion drops below cuttof \f$E_c\f$ (\ref _Transport_min_energy "Transport.min_energy"), the recoil or ion history is not followed any further and the remaining energy is added to the sub-threshold nuclear energy loss, \f$\Delta E_n\f$.
 
 OpenTRIM records the energy deposited by the above processes per simulation cell and atom type in the standard tally `/tally/energy_deposition`, which has the following components:
 
