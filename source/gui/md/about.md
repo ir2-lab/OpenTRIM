@@ -39,7 +39,7 @@ SteliosSyn https://github.com/SteliosSyn
 
 ### Credits
 
-`OpenTRIM` draws heavily on [SRIM](http://www.srim.org/) by J.F. Ziegler, one of the first ion simulation programs created in the 80s and still widely used until today. The electronic energy loss data in `OpenTRIM` have been obtained from the [SRIM-2013](http://www.srim.org/) distribution using the provided utility `SRmodule.exe`.
+`OpenTRIM` draws heavily on [SRIM](http://www.srim.org/) by [J.F. Ziegler](ziegler[at]srim.org), one of the first ion simulation programs created in the 80s and still widely used until today. The electronic energy loss data in `OpenTRIM` have been obtained from the [SRIM-2013](http://www.srim.org/) distribution using the provided utility `SRmodule.exe`.
 
 Many ideas, techniques and code were taken from the following open-source ion simulation programs:
 
@@ -59,7 +59,7 @@ Furthermore, the following general open-source projects are used:
 - The [HDF5 library](https://github.com/HDFGroup/hdf5) with the [HighFive C++ interface](https://github.com/BlueBrain/HighFive) are used for saving results to the HDF5 archive.
 
 - The [Qt C++ toolkit](https://www.qt.io/) is utilized for the GUI implementation.
-
+  
 - [Qwt](https://qwt.sourceforge.io/) is used for plotting results.
 
 ### License
@@ -68,7 +68,7 @@ Furthermore, the following general open-source projects are used:
 > ```
 > MIT License
 >
-> Copyright (c) 2024-2025, National Centre for Scientific Research "Demokritos" and OpenTRIM contributors.
+> Copyright (c) 2024-2026, National Centre for Scientific Research "Demokritos" and OpenTRIM contributors.
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal

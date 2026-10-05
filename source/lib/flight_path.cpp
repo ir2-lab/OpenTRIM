@@ -132,23 +132,6 @@ int flight_path_calc::init(const mccore &s)
                     umin = std::exp(-fpmax / mfp);
                 }
 
-                // Calc dedxn for  T<T0 = N*sum_i { X_i * Sn(E,T0) }
-                // Add this to dedx
-                /// @todo: this is very slow. dedxn is very small, can be ignored
-                // We need to re-calc T0 from mfp
-                /// @todo: solve ipmax^2 = sum_i { X_i * ipmax_i(e,T0) } for T0
-                //                int z2 = m->atoms().front()->id();
-                //                float s1,c1;
-                //                scattering_matrix_(z1,z2)->scatter(E,ipmax,T0,s1,c1);
-                //                dedxn = 0;
-                //                for(const atom* a : m->atoms()) {
-                //                    int z2 = a->id();
-                //                    dedxn += scattering_matrix_(z1,z2)->stoppingPower(E,T0) *
-                //                    a->X();
-                //                }
-                //                dedxn *= N;
-                //                if (tr_opt_.flight_path_type == MyFFP) dedx_(z1,im,ie) += dedxn;
-
             } // energy
         } // material
     } // Z1

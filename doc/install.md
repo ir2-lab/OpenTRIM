@@ -8,7 +8,6 @@ There are different packages for each program component :
     opentrim
     opentrim-gui
     opentrim-libs
-    opentrim-tests
     opentrim-dev
     
 Please follow the installation instructions found on the [OBS page](https://software.opensuse.org//download.html?project=home%3Amaxiotis%3Agapost&package=opentrim).

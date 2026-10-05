@@ -32,6 +32,11 @@ The documentation is divided in the following parts
 George Apostolopoulos <gapost@ipta.demokritos.gr> \n
 Eleni Mitsi <elmitsi@ipta.demokritos.gr> \n
 Michael Axiotis <axiotis@inp.demokritos.gr> \n
+Dhanavanthesh Shetty https://github.com/dhanavanthesh \n
+Ioannis Choustoulakis https://github.com/yiannischoust \n
+Eridanous https://github.com/Eridanous \n
+Aaryan Dadu https://github.com/Aaryan-Dadu \n
+SteliosSyn https://github.com/SteliosSyn \n
 
 \section credits Credits
 
@@ -42,22 +47,28 @@ Many ideas, techniques and code were taken from the following open-source ion si
 - The program [iradina](https://sourceforge.net/projects/iradina/) written by Ch. Borschel & C. Ronning and extended by J.P. Crocombette & Ch. Van Wambeke.
 - The program [Corteo](http://www.lps.umontreal.ca/%7Eschiette/index.php?n=Recherche.Corteo) by F. Schiettekatte.
 
-The [Eigen](http://eigen.tuxfamily.org/) library by B. Jacob & G. Guennebaud is used for 3D vector math.
+Furthermore, the following general open-source projects are used:
 
-The [Xoshiro256+](https://prng.di.unimi.it/) algorithm by D. Blackman and S. Vigna is used for random number generation.
+- The [Eigen](http://eigen.tuxfamily.org/) library by B. Jacob & G. Guennebaud is used for 3D vector math.
 
-[JSON for Modern C++](https://github.com/nlohmann/json) by N. Lohmann is used for encoding/decoding program options to/from json.
+- The [Xoshiro256+](https://prng.di.unimi.it/) algorithm by D. Blackman and S. Vigna is used for random number generation.
 
-[cxxopts](https://github.com/jarro2783/cxxopts) by [jarro2783](https://github.com/jarro2783) is used for handling cli options.
+- [JSON for Modern C++](https://github.com/nlohmann/json) by N. Lohmann is used for encoding/decoding program options to/from json.
 
-The [HDF5 library](https://github.com/HDFGroup/hdf5) with the [HighFive C++ interface](https://github.com/BlueBrain/HighFive) are used for saving results to the HDF5 archive.
+- [CLI11](https://github.com/CLIUtils/CLI11) is used for handling cli options.
+
+- The [HDF5 library](https://github.com/HDFGroup/hdf5) with the [HighFive C++ interface](https://github.com/BlueBrain/HighFive) are used for saving results to the HDF5 archive.
+
+- The [Qt C++ toolkit](https://www.qt.io/) is utilized for the GUI implementation.
+  
+- [Qwt](https://qwt.sourceforge.io/) is used for plotting results.
 
 \section License
 
  ```
  MIT License
 
- Copyright (c) 2024-2025, National Centre for Scientific Research "Demokritos" and penTRIM contributors.
+ Copyright (c) 2024-2026, National Centre for Scientific Research "Demokritos" and penTRIM contributors.
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal

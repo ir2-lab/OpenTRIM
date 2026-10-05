@@ -34,7 +34,7 @@ for i = 1:92,
   m = struct();
   m.id = elements(i).symbol;
   m.title = elements(i).name;
-  m.density = elements(i).density;
+  m.density = elements(i).density_g_cm3;
   m.comment = sprintf("Phase: %s\nCategory: %s", elements(i).phase, elements(i).category);
   m.source = "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>";
   Z = zeros(1, 1);

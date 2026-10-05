@@ -4,7 +4,7 @@ All notable changes to OpenTRIM are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0]
 
 ### Added
 - Python bindings (`opentrim` package, GSoC 2026 Feature A): configure, run and
@@ -19,11 +19,19 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Real-time 3D track visualization in the GUI (GSoC 2026 Feature B): live display
   of displacement cascades while a simulation runs, with a dedicated "3D Vis" tab,
   OpenGL track rendering, camera tab with save/load and screenshot export,
-  selectable colormaps, energy- and time-based track colouring, playback and a
+  selectable colormaps, energy- and time-based track coloring, playback and a
   track-viewer user guide.
-- Material Database dialog for picking predefined materials from a JSON database.
-- UserTally configuration UI in the GUI.
+- Material Database dialog for picking predefined materials from a database.
+- UserTally configuration in the GUI.
 - Contextual Help Panel in the Config view.
+- Ion track event stream: new `Output.store_ion_track_events` option stores a
+  table of ion track vertices (track start, nuclear scattering, track stop)
+  under `/events/ion_track` in the HDF5 output.
+- `validation/` folder collecting all benchmarks (damage generation, damage
+  profiles, defect recombination, multiple scattering), moved from `test/` and
+  restructured. Multiple scattering tests now use a UserTally; the defect
+  recombination benchmarks were reworked.
+- `Fe_50kV_Cascades` Python example notebook and a README for the Python bindings.
 
 ### Changed
 - Core library extended to stream ion-track and event data to the GUI or
@@ -34,6 +42,24 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Examples reorganised under `examples/json`.
 - Core config parsing and validation reworked.
 - Windows CI pins the toolchain and dependency versions.
+- **Breaking:** energy deposition channels renamed to follow the standard
+  naming in the literature: "Ionization" becomes "Electronic" and "Lattice"
+  becomes "Nuclear" (tally names, HDF5 datasets, GUI). Benchmark results
+  regenerated accordingly.
+- **Breaking:** the `Simulation.intra_cascade_recombination` option is renamed
+  to `Simulation.defect_recombination`.
+- Default number of threads (`Run.threads`) is now 0, meaning use all available
+  threads.
+- Event stream handling unified and simplified in the core library.
+- GUI: tabular results view replaced by a new Summary view; common page layout
+  for the main views; updated track-viewer guide.
+- Windows GUI build uses desktop OpenGL (`Qt::AA_UseDesktopOpenGL`), so the
+  ANGLE DLLs are no longer needed.
+- Documentation for energy partition, damage and tallies updated and expanded.
+
+### Fixed
+- Wrong `cell_xyz` vector returned by the library.
+- `ion_queue` buffers not released in `IonsOnly` simulations.
 
 ## [1.1.6] - 2026-06-09
 
@@ -144,7 +170,7 @@ potentials (ZBL, Moliere, ...), electronic stopping and straggling from
 SRIM-2013 data, Corteo-style tabulated cross sections, multi-threading, 
 and a set of benchmarks against SRIM and iradina.
 
-[Unreleased]: https://github.com/ir2-lab/OpenTRIM/compare/v1.1.6...HEAD
+[1.2.0]: https://github.com/ir2-lab/OpenTRIM/compare/v1.1.6...v1.2.0
 [1.1.6]: https://github.com/ir2-lab/OpenTRIM/compare/v1.1.5...v1.1.6
 [1.1.5]: https://github.com/ir2-lab/OpenTRIM/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/ir2-lab/OpenTRIM/compare/v1.1.3...v1.1.4

@@ -5,7 +5,7 @@
             {
                 "id": "H",
                 "title": "Hydrogen",
-                "density": 0.08988,
+                "density": 0.00008988,
                 "comment": "Phase: Gas\nCategory: diatomic nonmetal",
                 "source": "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>",
                 "Z": 1,
@@ -15,7 +15,7 @@
             {
                 "id": "He",
                 "title": "Helium",
-                "density": 0.1786,
+                "density": 0.0001786,
                 "comment": "Phase: Gas\nCategory: noble gas",
                 "source": "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>",
                 "Z": 2,
@@ -65,7 +65,7 @@
             {
                 "id": "N",
                 "title": "Nitrogen",
-                "density": 1.251,
+                "density": 0.001251,
                 "comment": "Phase: Gas\nCategory: diatomic nonmetal",
                 "source": "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>",
                 "Z": 7,
@@ -75,7 +75,7 @@
             {
                 "id": "O",
                 "title": "Oxygen",
-                "density": 1.429,
+                "density": 0.001429,
                 "comment": "Phase: Gas\nCategory: diatomic nonmetal",
                 "source": "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>",
                 "Z": 8,
@@ -85,7 +85,7 @@
             {
                 "id": "F",
                 "title": "Fluorine",
-                "density": 1.696,
+                "density": 0.001696,
                 "comment": "Phase: Gas\nCategory: diatomic nonmetal",
                 "source": "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>",
                 "Z": 9,
@@ -95,7 +95,7 @@
             {
                 "id": "Ne",
                 "title": "Neon",
-                "density": 0.9002,
+                "density": 0.0009002,
                 "comment": "Phase: Gas\nCategory: noble gas",
                 "source": "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>",
                 "Z": 10,
@@ -165,7 +165,7 @@
             {
                 "id": "Cl",
                 "title": "Chlorine",
-                "density": 3.2,
+                "density": 0.0032,
                 "comment": "Phase: Gas\nCategory: diatomic nonmetal",
                 "source": "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>",
                 "Z": 17,
@@ -175,7 +175,7 @@
             {
                 "id": "Ar",
                 "title": "Argon",
-                "density": 1.784,
+                "density": 0.001784,
                 "comment": "Phase: Gas\nCategory: noble gas",
                 "source": "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>",
                 "Z": 18,
@@ -355,7 +355,7 @@
             {
                 "id": "Kr",
                 "title": "Krypton",
-                "density": 3.749,
+                "density": 0.003749,
                 "comment": "Phase: Gas\nCategory: noble gas",
                 "source": "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>",
                 "Z": 36,
@@ -535,7 +535,7 @@
             {
                 "id": "Xe",
                 "title": "Xenon",
-                "density": 5.894,
+                "density": 0.005894,
                 "comment": "Phase: Gas\nCategory: noble gas",
                 "source": "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>",
                 "Z": 54,
@@ -855,7 +855,7 @@
             {
                 "id": "Rn",
                 "title": "Radon",
-                "density": 9.73,
+                "density": 0.00973,
                 "comment": "Phase: Gas\nCategory: noble gas",
                 "source": "<a href=\"https://github.com/Bowserinator/Periodic-Table-JSON\" target=\"_blank\">github.com/Bowserinator/Periodic-Table-JSON</a>",
                 "Z": 86,

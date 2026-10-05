@@ -70,10 +70,10 @@ FetchContent_MakeAvailable(external_json)
 
 # Periodic-Table-JSON tags (e.g. v.4.0.0) dropped PeriodicTableCSV.csv, which
 # genptable needs; only master still ships it. Pin to a commit (master HEAD as
-# of 2026-09-01) for reproducible builds.
+# of 2026-10-04) for reproducible builds.
 FetchContent_Declare(external_periodic
    GIT_REPOSITORY https://github.com/Bowserinator/Periodic-Table-JSON.git
-   GIT_TAG ea41119626581350fdcdd9c873de233645a43023
+   GIT_TAG 9090b1c472a1e68f7295e77280f374f8d125cefc
    GIT_SUBMODULES_RECURSE FALSE
    GIT_SHALLOW FALSE
    EXCLUDE_FROM_ALL

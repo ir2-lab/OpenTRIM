@@ -10,11 +10,17 @@
 # python3 executable and sitearch macros
 %define         __python_package           python3
 %define         __my_python_exe            %{__python3}
-# Query the interpreter directly instead of relying on %{python3_sitearch},
-# which comes from python-rpm-macros and is not available on debbuild
-# (Debian/Ubuntu) builds - that gap left this path empty there, so the
-# python3-opentrim package silently shipped with no files.
+# %%{python3_sitearch} comes from python-rpm-macros and is not available on
+# debbuild (Debian/Ubuntu) builds - that gap left this path empty there, so the
+# python3-opentrim package silently shipped with no files.  Query the
+# interpreter directly on debbuild only: on rpm distros sysconfig's default
+# scheme points to /usr/local outside of an rpm build environment (and this
+# macro is expanded at spec parse time), which is not a packageable location.
+%if "%{_vendor}" == "debbuild"
 %define         __my_python_site           %(python3 -c "import sysconfig; print(sysconfig.get_path('platlib'))")
+%else
+%define         __my_python_site           %{python3_sitearch}
+%endif
 
 %if 0%{?is_opensuse} && 0%{?sle_version} == 150600
 %define         __gcc_min_version          11
@@ -112,19 +118,6 @@ Requires:       %{name}-libs
 %description    devel
 Development files for C++ Monte-Carlo code for simulating ion transport in materials with an emphasis on the calculation of material damage.
 
-%package        tests
-Summary:	       Test files for ion transport simulation in materials
-BuildArch:      noarch
-
-%if "%{_vendor}" == "debbuild"
-Requires:       %{name} | %{name}-gui
-%else
-Requires:       ( %{name} or %{name}-gui )
-%endif
-
-%description    tests
-Test files for C++ Monte-Carlo code for simulating ion transport in materials with an emphasis on the calculation of material damage.
-
 %package -n     %{__python_package}-opentrim
 Summary:	       Python bindings for OpenTRIM
 
@@ -189,10 +182,8 @@ strip --strip-unneeded %{buildroot}%{_bindir}/%{name}*
 strip --strip-unneeded %{buildroot}%{_libdir}/lib*.so
 strip --strip-unneeded %{buildroot}%{__my_python_site}/%{name}/_opentrim_core*.so || :
 
-install -d %{buildroot}/%{_datadir}/%{name}/tests
 install -d %{buildroot}/%{_datadir}/%{name}/examples
 
-cp -r test/%{name}/* %{buildroot}/%{_datadir}/%{name}/tests/
 cp -r examples/*     %{buildroot}/%{_datadir}/%{name}/examples/
 
 #%%check
@@ -221,10 +212,6 @@ cp -r examples/*     %{buildroot}/%{_datadir}/%{name}/examples/
 %{_includedir}/%{name}/*.h
 %dir %{_libdir}/cmake/%{name}
 %{_libdir}/cmake/%{name}/*.cmake
-
-%files tests
-%dir %{_datadir}/%{name}/tests
-%{_datadir}/%{name}/tests
 
 %files -n %{__python_package}-opentrim
 %{__my_python_site}/opentrim/

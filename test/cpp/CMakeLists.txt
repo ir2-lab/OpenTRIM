@@ -31,7 +31,7 @@ PRIVATE
 
 target_compile_definitions(test_event_handling
 PRIVATE
-    CONFIG_JSON="${CMAKE_SOURCE_DIR}/test/opentrim/b1.json"
+    CONFIG_JSON="${CMAKE_SOURCE_DIR}/validation/damage_profiles/opentrim/b1.json"
 )
 
 target_link_libraries(test_event_handling

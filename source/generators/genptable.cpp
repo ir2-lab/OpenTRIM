@@ -7,6 +7,8 @@
 #include <map>
 #include <cmath>
 #include <limits>
+#include <algorithm>
+#include <cstdlib>
 
 using namespace std;
 
@@ -226,50 +228,45 @@ int loadIsotopeTable(const char *fname)
     return elements_.size();
 }
 
-/* Column data in PeriodicTableJSON.csv
-    name	0
-    appearance	1
-    atomic_mass	2
-    boil	3
-    category	4
-    density	5
-    discovered_by	6
-    melt	7
-    molar_heat	8
-    named_by	9
-    number	10
-    period	11
-    group	12
-    phase	13
-    source	14
-    bohr_model_image	15
-    bohr_model_3d	16
-    spectral_img	17
-    summary	18
-    symbol	19
-    xpos	20
-    ypos	21
-    wxpos	22
-    wypos	23
-    shells	24
-    electron_configuration	25
-    electron_configuration_semantic	26
-    electron_affinity	27
-    electronegativity_pauling	28
-    ionization_energies	29
-    cpk-hex	30
-      block	31
-      image.title	32
-      image.url	33
-      image.attribution	34
+/* Columns used from PeriodicTableCSV.csv
+
+    name, atomic_mass, density_g_cm3, number, phase, symbol
+
+   The columns are located by their name in the header line, so that
+   the generator does not depend on the column order, which has
+   changed between versions of Periodic-Table-JSON.
+
+   density_g_cm3 is the density in g/cm^3 for all elements, irrespective of phase.
 */
+
+// return the index of the column named "name" in the csv header
+int csv_column(const vector<string> &header, const char *name, const char *fname)
+{
+    for (int i = 0; i < header.size(); ++i)
+        if (header[i] == name)
+            return i;
+    cerr << fname << ": column \"" << name << "\" not found" << endl;
+    exit(1);
+}
 
 int loadPTableCSV(const char *fname)
 {
     std::ifstream f(fname);
     std::string s;
 
-    std::getline(f, s); // skip headers
+    std::getline(f, s); // headers
+    std::vector<std::string> header;
+    parse_csv_line(s, header);
+    const int iname = csv_column(header, "name", fname);
+    const int imass = csv_column(header, "atomic_mass", fname);
+    const int idensity = csv_column(header, "density_g_cm3", fname);
+    const int inumber = csv_column(header, "number", fname);
+    const int iphase = csv_column(header, "phase", fname);
+    const int isymbol = csv_column(header, "symbol", fname);
+    int ncols = 0;
+    for (int i : { iname, imass, idensity, inumber, iphase, isymbol })
+        ncols = std::max(ncols, i + 1);
+
     int k = 1;
     while (!f.eof()) {
         std::getline(f, s);
@@ -278,8 +275,12 @@ int loadPTableCSV(const char *fname)
             break;
         std::vector<std::string> tokens;
         parse_csv_line(s, tokens);
+        if (tokens.size() < ncols) {
+            cerr << fname << ", line " << k << ": too few columns" << endl;
+            exit(1);
+        }
 
-        int Z = std::stoi(tokens[10]);
+        int Z = std::stoi(tokens[inumber]);
         while (elements_.size() <= Z) {
             elements_.push_back(element({ -1 }));
         }
@@ -287,16 +288,16 @@ int loadPTableCSV(const char *fname)
         element &E = elements_[Z];
         if (E.Z != Z) {
             E.Z = Z;
-            E.name = tokens[0];
-            if (!tokens[2].empty())
-                E.mass = stod(tokens[2]);
-            E.symbol = tokens[19];
+            E.name = tokens[iname];
+            if (!tokens[imass].empty())
+                E.mass = stod(tokens[imass]);
+            E.symbol = tokens[isymbol];
         }
-        if (!tokens[2].empty() && E.mass == 0)
-            E.mass = stod(tokens[2]);
-        if (!tokens[5].empty())
-            E.density = stod(tokens[5]);
-        E.phase = tokens[13];
+        if (!tokens[imass].empty() && E.mass == 0)
+            E.mass = stod(tokens[imass]);
+        if (!tokens[idensity].empty())
+            E.density = stod(tokens[idensity]);
+        E.phase = tokens[iphase];
     }
 
     return elements_.size();
