@@ -293,7 +293,7 @@ int mccore::run()
                 if (cscd)
                     cscd->defect_recombination(ion_queue_);
 
-                // process PKA cascade events
+                // process all defect events
                 {
                     float *p = &(pka->Impl(0));
                     while (ion *k = ion_queue_.pop_interstitial()) {
@@ -309,10 +309,8 @@ int mccore::run()
                     }
                 }
 
-                // calc Tdam = Er - Ee
-                pka->Tdam() = pka->recoilE() - tion_.eLossCounter();
-
-                // count recombinations into pka
+                // count recombinations into pka buffer
+                // process recombination events
                 // clear optional cascade buffers
                 if (cscd) {
                     cscd->count_riv(&(pka->Icr(0)), &(pka->Icr_corr(0)));
@@ -322,7 +320,11 @@ int mccore::run()
                     cscd->clear_riv(ion_queue_);
                 }
 
-                // end cascade
+                // calc Tdam = Er - Ee
+                pka->Tdam() = pka->recoilE() - tion_.eLossCounter();
+
+                // end of cascade
+
             } else { // IonsOnly - do nothing
                 ion_queue_.free_ion(j);
             }

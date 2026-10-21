@@ -25,10 +25,15 @@ The simulation is based on the following models and approximations:
   \sa \ref dedx
 
 - **Screened Coulomb interactions**
-
-  The interaction between projectile and target atoms is described by a screened Coulomb potential. 
-  The scattering is considered elastic and it is approximated by classical kinematics. 
+  
+  The interaction between projectile and target atoms is described by a screened Coulomb potential.  
   \sa \ref XS, https://ir2-lab.github.io/screened_coulomb/
+
+- **Classical scattering kinematics**
+  
+  The projectile-target atom scattering is described by classical kinematics. This is partly due to the fact that
+  the quantum-mechanical scattering cross-section for the Coulomb potential is identical to the classical Rutherford
+  cross-section. 
 
 \page kmc-algorithm Kinetic Monte-Carlo algorithm
 
@@ -47,7 +52,8 @@ The simulation of ion transport typically proceeds in the following manner:
 5. Calculate scattering angle and recoil energy. \n
    This is implemented in \ref scattering_calc::scatter().
 6. If the energy transfer is above the displacement threshold, generate a recoil ion and store in the \ref ion_queue "ion queue" to be processed later.
-7. Repeat the sequence from step 2 until either
+7. Calculate the new direction and energy of the particle
+8. Repeat from step 1 until either
   - the ion exits the simulation volume, or,
   - the ion energy goes below the cutoff (\ref _Transport_min_energy "Transport.min_energy" \f$\sim 1\f$ eV), whereupon it stops and remains implanted in the target
 

@@ -4,7 +4,17 @@ All notable changes to OpenTRIM are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0]
+## [1.2.1] - 2026-10-21
+
+### Changed
+- Removed the Bohr straggling option which was unphysical (constant straggling over
+  ion energy) and could cause program crash
+- Removed percent units from some summary tables in the GUI
+
+### Fixed
+- Correct the energy deposition counting when defect recombination is on
+
+## [1.2.0] - 2026-10-06
 
 ### Added
 - Python bindings (`opentrim` package, GSoC 2026 Feature A): configure, run and

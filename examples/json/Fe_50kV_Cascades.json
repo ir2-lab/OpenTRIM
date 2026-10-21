@@ -5,8 +5,8 @@
         "defect_recombination": true
     },
     "Transport": {
-        "flight_path_type": "Constant",
-        "flight_path_const": 1.0
+        "min_energy": 10.0,
+        "flight_path_type": "Variable"
     },
     "IonBeam": {
         "ion": {
@@ -18,21 +18,21 @@
         "spatial_distribution": {
             "geometry": "Volume",
             "center": [
-                60.0,
-                60.0,
-                60.0
+                100.0,
+                100.0,
+                100.0
             ]
         },
         "angular_distribution": {
             "type": "Uniform",
-            "fwhm": 12.67
+            "fwhm": 12.57
         }
     },
     "Target": {
         "size": [
-            120.0,
-            120.0,
-            120.0
+            200.0,
+            200.0,
+            200.0
         ],
         "periodic_bc": [
             0,
@@ -76,18 +76,18 @@
         "outfilename": "Fe_50kV_Cascades"
     },
     "Run": {
-        "max_no_ions": 100000
+        "max_no_ions": 10000
     },
     "UserTally": [
         {
-            "id": "Nfp_0",
-            "description": "# of recoil ions stopped = # of initially created Frenkel pairs",
-            "event": "IonStop",
+            "id": "Nv",
+            "description": "Radial concentration of vacancies",
+            "event": "Vacancy",
             "coordinate_system": {
                 "origin": [
-                    60.0,
-                    60.0,
-                    60.0
+                    100.0,
+                    100.0,
+                    100.0
                 ]
             },
             "bins": {
@@ -131,14 +131,14 @@
             }
         },
         {
-            "id": "Nfp_1",
-            "description": "# of vacancies = # of Frenkel pairs after recombination",
-            "event": "Vacancy",
+            "id": "Ni",
+            "description": "Radial concentration of interstitials",
+            "event": "Interstitial",
             "coordinate_system": {
                 "origin": [
-                    60.0,
-                    60.0,
-                    60.0
+                    100.0,
+                    100.0,
+                    100.0
                 ]
             },
             "bins": {
