@@ -97,21 +97,18 @@
                     "type": "enum",
                     "values": [
                         "Off",
-                        "Bohr",
                         "Chu",
                         "Yang"
                     ],
                     "valueLabels": [
                         "Off",
-                        "Bohr",
                         "Chu",
                         "Yang"
                     ],
                     "valueDescriptions": [
                         "No electronic straggling.",
-                        "According to the Bohr model",
-                        "According to the model of Chu et al.",
-                        "According to the model of Yang et al."
+                        "According to Chu PhysRevA1976",
+                        "According to empirical relations by Yang et al NIMB1991"
                     ],
                     "toolTip": "Calculation of electronic straggling.",
                     "whatsThis": ""

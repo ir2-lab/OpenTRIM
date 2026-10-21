@@ -39,3 +39,15 @@ target_link_libraries(test_event_handling
 )
 
 add_test(NAME event_handling COMMAND test_event_handling)
+
+add_executable(test_straggling 
+    test_straggling.cpp
+)
+
+target_include_directories(test_straggling 
+PRIVATE
+    ${CMAKE_SOURCE_DIR}/source/include
+)
+target_link_libraries(test_straggling
+  opentrim
+)

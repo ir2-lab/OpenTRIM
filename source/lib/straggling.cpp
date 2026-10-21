@@ -2,8 +2,6 @@
 
 #include <cmath>
 
-#define E2 1.43996445 /* e^2 / 4 pi eps0 = e^2 c^2 in [eV][nm] */
-
 /*
  * Bohr straggling correction parameter according to
  * W. K. Chu, Phys. Rev. A13 (1976) 2057; values extracted
@@ -67,16 +65,14 @@ static const float chu_coef[][4] = {
  * @brief Calculate ion straggling
  *
  * Calculates the ion straggling parameters for an ion Z1
- * traveling in a target with atomic number Z2 and sheet density Ns.
+ * traveling in a target with atomic number Z2 and density Ns.
  *
- * Straggling is calculated for ion energies spanning the corteo dedx_index.
+ * The calculated straggling parameter \f$\Omega_s^2\f$ is essentially
+ * the variance of energy loss fluctuation per unit travel length.
  *
- * The calculated straggling parameter \f$\Delta E_s\f$ is essentially the std of energy loss
- * fluctuation per square root of \f$x/R_{at}\f$, where \f$x\f$ is the travelled
- * ion path and \f$R_{at}\f$ the atomic radius. \f$\Delta E_s\f$ is given in eV
- * if \f$N_s = N\cdot R_{at}\f$ is given in at/nm^2
+ * \f$\Omega_s^2\f$ is in units of eV^2/nm.
  *
- * In a MC simulation, the actual straggling value is \f$\Delta E_s\cdot u\f$,
+ * In a MC simulation, the actual straggling value is \f$\Omega_s\cdot u\f$,
  * where \f$u\f$ is sampled from the normal distribution \f$N(0,1)\f$.
  *
  * @param dedx_ion ion stopping interpolator
@@ -84,34 +80,36 @@ static const float chu_coef[][4] = {
  * @param Z1 is the projectile atomic number
  * @param M1 is the projectile atomic mass
  * @param Z2 target atomic number
- * @param Ns target sheet density [at/nm^2]
+ * @param N atomic concentration [at/nm^3]
  * @param model straggling model
- * @param strag pointer to table to receive straggling values [eV]
+ * @param strag pointer to table to add straggling values
  */
 void calcStraggling(const dedx_interp &dedx_ion, const dedx_interp &dedx_H, int Z1, const float &M1,
-                    int Z2, const float &Ns, StragglingModel model, float *strag)
+                    int Z2, const float &N, StragglingModel model, float *strag)
 
 {
-    /*
-     * Start by calculating squared Bohr straggling
-     * (all other models need this anyway)
-     */
-    double OmegaBohr2 = 4 * M_PI * Z1 * Z1 * Z2 * E2 * E2 * Ns; /* eV^2 */
-    ;
+    const double E2 = 1.43996445; /* e^2 / 4 pi eps0 = e^2 c^2 in [eV][nm] */
+    float OmegaBohr2 = 4 * M_PI * Z1 * Z1 * Z2 * E2 * E2 * N; /* Bohr straggling squared eV^2/nm */
 
     for (dedx_iterator ie; ie != ie.end(); ie++) {
         double energy = *ie;
+        double energy_H = *ie / M1; // eV/amu, energy of H at the same velocity
         double stopping_ion = dedx_ion(*ie);
-        double stopping_H = dedx_H(*ie / M1);
+        double stopping_H = dedx_H(energy_H);
 
         /*
-         * the effective charge state is obtained from comparing
-         * stopping of the ion and the hydrogen:
-         * chargestate^2 = stopping(H)/stopping(ion) Z_ion^2
-         * for stopping at same speed
+         * the effective charge state gamma is obtained by assuming
+         *
+         * S_ion/(gamma*Z_ion)^2 = S_H
+         *
+         * where S_x is the stopping power of ion or H at the same velocity.
+         *
+         * Thus
+         *
+         * gamma^2 = S_ion / S_H / Z_ion^2
+         *
          */
         double chargestate2 = stopping_ion / stopping_H / Z1 / Z1;
-        // double chargestate2 = dedx1[je]/stopping/Z1/Z1;
 
         /*
          * Calculate the Chu correction factor.
@@ -120,7 +118,7 @@ void calcStraggling(const dedx_interp &dedx_ion, const dedx_interp &dedx_H, int 
          * Chu values undefined for target_Z==1, because the Chu table
          * has no data on hydrogen --> use Bohr.
          */
-        double MEV_energy_amu = energy * 1e-6 / M1;
+        double MEV_energy_amu = energy_H * 1e-6;
         double Chu_factor = 1.0;
         if (Z2 > 1) {
             const float *cc = chu_coef[Z2];
@@ -156,14 +154,10 @@ void calcStraggling(const dedx_interp &dedx_ion, const dedx_interp &dedx_H, int 
          * but well... we'll probably use Yang's model in most cases
          */
         switch (model) {
-        case StragglingModel::Bohr: /* Bohr */
-            strag[ie] += OmegaBohr2;
-            break;
+        case StragglingModel::Yang: /* Yang correction */
+            strag[ie] += OmegaBohr2 * Yang;
         case StragglingModel::Chu: /* Chu */
-            strag[ie] += OmegaBohr2 * Chu_factor;
-            break;
-        case StragglingModel::Yang: /* Chu + Yang correction */
-            strag[ie] += OmegaBohr2 * (chargestate2 * Chu_factor + Yang);
+            strag[ie] += OmegaBohr2 * chargestate2 * Chu_factor;
             break;
         default:
             assert(0); // never get here

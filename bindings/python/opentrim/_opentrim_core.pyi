@@ -187,13 +187,10 @@ class Straggling:
     
       Off : Default.
     
-      Bohr
-    
       Chu
     
       Yang
     """
-    Bohr: typing.ClassVar[Straggling]
     Chu: typing.ClassVar[Straggling]
     Off: typing.ClassVar[Straggling]
     Yang: typing.ClassVar[Straggling]

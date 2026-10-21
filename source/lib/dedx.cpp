@@ -107,12 +107,10 @@ int straggling_interp::init(StoppingModel mstop, StragglingModel mstrag, int Z1,
 
     std::vector<float> buff(dedx_erange::count, 0.f);
 
-    float Rat = std::pow(3.0 / 4.0 / M_PI / atomicDensity, 1.0 / 3);
-    float Nl0 = atomicDensity * Rat;
     for (int i = 0; i < Z2.size(); i++)
-        calcStraggling(dedx_ion, dedx_H, Z1, M1, Z2[i], Nl0 * X2[i], mstrag, buff.data());
+        calcStraggling(dedx_ion, dedx_H, Z1, M1, Z2[i], X2[i] * atomicDensity, mstrag, buff.data());
     for (dedx_iterator ie; ie < dedx_erange::count; ie++)
-        buff[ie] = std::sqrt(buff[ie] / Rat);
+        buff[ie] = std::sqrt(buff[ie]);
 
     set(buff);
 

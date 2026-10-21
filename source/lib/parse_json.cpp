@@ -180,7 +180,6 @@ NLOHMANN_JSON_SERIALIZE_ENUM(dedx_calc::electronic_stopping_t,
 NLOHMANN_JSON_SERIALIZE_ENUM(dedx_calc::electronic_straggling_t,
                              { { dedx_calc::electronic_straggling_t::Invalid, nullptr },
                                { dedx_calc::electronic_straggling_t::Off, "Off" },
-                               { dedx_calc::electronic_straggling_t::Bohr, "Bohr" },
                                { dedx_calc::electronic_straggling_t::Chu, "Chu" },
                                { dedx_calc::electronic_straggling_t::Yang, "Yang" } })
 

@@ -154,9 +154,9 @@
 <tr><td>Default Value<td>"SRIM13"<tr><td>Description <td>Calculation of electronic stopping.
 <h4>Options</h4><ul><li><strong>Off</strong> - No electronic stopping</li><li><strong>SRIM96</strong> - Using the SRIM parametrization, v. 1996</li><li><strong>SRIM13</strong> - Using the SRIM parametrization, v. 2013</li><li><strong>DPASS</strong> - Using the DPASS parametrization, v. 21.06</li></ul><tr><th colspan="2">\anchor _Simulation_electronic_straggling /Simulation/electronic_straggling<tr><td>Label <td>Electronic Straggling
 <tr><td>Type <td>Enumerator
-<tr><td>Values<td> Off | Bohr | Chu | Yang
+<tr><td>Values<td> Off | Chu | Yang
 <tr><td>Default Value<td>"Off"<tr><td>Description <td>Calculation of electronic straggling.
-<h4>Options</h4><ul><li><strong>Off</strong> - No electronic straggling.</li><li><strong>Bohr</strong> - According to the Bohr model</li><li><strong>Chu</strong> - According to the model of Chu et al.</li><li><strong>Yang</strong> - According to the model of Yang et al.</li></ul><tr><th colspan="2">\anchor _Simulation_nrt_calculation /Simulation/nrt_calculation<tr><td>Label <td>NRT calculation
+<h4>Options</h4><ul><li><strong>Off</strong> - No electronic straggling.</li><li><strong>Chu</strong> - According to Chu PhysRevA1976</li><li><strong>Yang</strong> - According to empirical relations by Yang et al NIMB1991</li></ul><tr><th colspan="2">\anchor _Simulation_nrt_calculation /Simulation/nrt_calculation<tr><td>Label <td>NRT calculation
 <tr><td>Type <td>Enumerator
 <tr><td>Values<td> NRT_element | NRT_average
 <tr><td>Default Value<td>"NRT_element"<tr><td>Description <td>Define how to implement NRT in multielemental targets.
@@ -480,9 +480,9 @@
 <h4>Notes</h4><ul><li>Gives a short explanation of the tally, its purpose, expected information, etc.</li>
 </ul><tr><th colspan="2">\anchor _UserTally_0_event /UserTally/0/event<tr><td>Label <td>Type of simulation event to tally
 <tr><td>Type <td>Enumerator
-<tr><td>Values<td> IonExit | IonStop | Vacancy | Replacement | CascadeComplete | BoundaryCrossing
+<tr><td>Values<td> IonExit | IonStop | Vacancy | Interstitial | Replacement | CascadeComplete | BoundaryCrossing
 <tr><td>Default Value<td>"IonStop"<tr><td>Description <td>Simulation event that will trigger a tally score.
-<h4>Options</h4><ul><li><strong>IonExit</strong> - The ion exits the simulation volume</li><li><strong>IonStop</strong> - The ion stops inside the simulation volume</li><li><strong>Vacancy</strong> - A lattice vacancy is created</li><li><strong>Replacement</strong> - A replacement event occurs</li><li><strong>CascadeComplete</strong> - A PKA cascade is completed</li><li><strong>BoundaryCrossing</strong> - An ion crosses an internal cell boundary</li></ul><tr><th colspan="2">\anchor _UserTally_0_coordinate_system /UserTally/0/coordinate_system<tr><td>Label <td>Tally coordinate system
+<h4>Options</h4><ul><li><strong>IonExit</strong> - The ion exits the simulation volume</li><li><strong>IonStop</strong> - The ion stops inside the simulation volume</li><li><strong>Vacancy</strong> - A lattice vacancy is created</li><li><strong>Interstitial</strong> - A lattice interstitial is created</li><li><strong>Replacement</strong> - A replacement event occurs</li><li><strong>CascadeComplete</strong> - A PKA cascade is completed</li><li><strong>BoundaryCrossing</strong> - An ion crosses an internal cell boundary</li></ul><tr><th colspan="2">\anchor _UserTally_0_coordinate_system /UserTally/0/coordinate_system<tr><td>Label <td>Tally coordinate system
 <tr><td>Type <td>Option Group
 <tr><td>Description <td>Local coordinate system used to interpret the tally's bin coordinates.
 <h4>Notes</h4><ul><li>Ion positions and directions are transformed into the UserTally coordinate system before binning.</li>

@@ -173,9 +173,8 @@ public:
  *  @ingroup dedx
  */
 enum class StragglingModel {
-    Bohr = 0, /**< Bohr straggling model */
-    Chu = 1, /**< Chu straggling model */
-    Yang = 2, /**< Yang straggling model */
+    Chu = 0, /**< Chu straggling model */
+    Yang = 1, /**< Yang straggling model */
     Invalid = -1
 };
 
@@ -187,10 +186,15 @@ enum class StragglingModel {
  *
  * Monoatomic and polyatomic targets are covered by
  * the two different constructors. In polyatomic materials the Bragg
- * mixing rule is applied.
+ * mixing rule is applied
+ * \f[
+ * \Omega_s^2 = N\sum_i{X_i \Omega_{s,i}^2}
+ * \f]
+ * where \f$X_i\f$ is the atomic fraction of each element.
  *
  * Call the base class \ref log_log_interp::operator() to obtain the straggling
- * coefficient \f$\Omega(E)\f$ in eV/nm^(1/2) at a given projectile energy \f$E\f$ in eV. The value
+ * coefficient \f$\Omega_s(E)\f$ in eV/nm^(1/2) at a given projectile energy \f$E\f$ in eV.
+ * The value
  * is obtained by log-log interpolation on the tabulated data stored internally.
  *
  * data() returns a pointer to the first element in the internal
@@ -220,7 +224,7 @@ public:
      *
      * The total straggling is given by the Bragg mixing rule:
      * \f[
-     * \Omega^2 = N\sum_i{X_i \Omega_i^2}
+     * \Omega_s^2 = N\sum_i{X_i \Omega_{s,i}^2}
      * \f]
      * where the sum is over all atomic species in the target.
      *
@@ -264,8 +268,7 @@ public:
     };
 
     enum class electronic_straggling_t {
-        Off = 3,
-        Bohr = int(StragglingModel::Bohr),
+        Off = 2,
         Chu = int(StragglingModel::Chu),
         Yang = int(StragglingModel::Yang),
         Invalid = -1
@@ -332,7 +335,9 @@ public:
         if (straggling_ != electronic_straggling_t::Off) {
             float E = i.erg();
             dedx_iterator ie(E);
-            de += straggling_interp_->data()[ie] * rng.normal() * std::sqrt(fp);
+            float de_strag = straggling_interp_->data()[ie] * rng.normal() * std::sqrt(fp);
+
+            de += de_strag;
         }
 
         __impl_de__(i, de);
