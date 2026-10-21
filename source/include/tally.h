@@ -27,9 +27,10 @@ enum class Event : int32_t {
     Replacement = 1 << 6, /**< A replacement event occurs. */
     Vacancy = 1 << 7, /**< A vacancy is created. */
     Interstitial = 1 << 8, /**< An interstitial atom is created. */
-    CascadeComplete = 1 << 9, /**< A PKA cascade is complete. */
-    NewFlightPath = 1 << 10,
-    NEvent = 1 << 11,
+    Recombination = 1 << 9, /**< An interstitial atom is created. */
+    CascadeComplete = 1 << 10, /**< A PKA cascade is complete. */
+    NewFlightPath = 1 << 11,
+    NEvent = 1 << 12,
     Invalid = -1
 };
 
@@ -139,7 +140,8 @@ protected:
     uint32_t EventMask_{
         static_cast<uint32_t>(Event::BoundaryCrossing) | static_cast<uint32_t>(Event::Replacement)
         | static_cast<uint32_t>(Event::Interstitial) | static_cast<uint32_t>(Event::Vacancy)
-        | static_cast<uint32_t>(Event::IonExit) | static_cast<uint32_t>(Event::CascadeComplete)
+        | static_cast<uint32_t>(Event::Recombination) | static_cast<uint32_t>(Event::IonExit)
+        | static_cast<uint32_t>(Event::CascadeComplete)
     };
 
     size_t ncells_{ 0 };

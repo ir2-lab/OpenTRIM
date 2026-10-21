@@ -13,8 +13,15 @@
 // defines public interface of cascade objects
 class abstract_cascade
 {
-protected:
 public:
+    // frenkel pair type
+    // frenkel_pair_t::first: interstitial
+    // frenkel_pair_t::second: vacancy
+    typedef std::pair<ion *, ion *> frenkel_pair_t;
+
+    // container of frenkel pairs
+    typedef std::vector<frenkel_pair_t> pair_buff_t;
+
     explicit abstract_cascade(const grid3D &ag) : g(ag) { }
     virtual ~abstract_cascade() { }
 
@@ -31,17 +38,12 @@ public:
     // their buffers become free for re-use by the queue
     void clear_riv(ion_queue &q);
 
+    // get a const ref to the recombined pairs vector
+    const pair_buff_t &riv() const { return riv_; }
+
 protected:
     // ref to the grid, for calculating defect distance
     const grid3D &g;
-
-    // frenkel pair type
-    // first: interstitial
-    // second: vacancy
-    typedef std::pair<ion *, ion *> frenkel_pair_t;
-
-    // container of frenkel pairs
-    typedef std::vector<frenkel_pair_t> pair_buff_t;
 
     // defect container
     // std::list is used for optimized removal of items regardless of their position

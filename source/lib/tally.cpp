@@ -32,6 +32,9 @@ const char *event_name(Event ev)
     case Event::Interstitial:
         return "Interstitial";
         break;
+    case Event::Recombination:
+        return "Recombination";
+        break;
     case Event::CascadeComplete:
         return "CascadeComplete";
         break;
@@ -77,11 +80,17 @@ const char *event_description(Event ev)
     case Event::Vacancy:
         return "A vacancy is created.";
         break;
+    case Event::Interstitial:
+        return "An interstitial is created.";
+        break;
+    case Event::Recombination:
+        return "A Frenkel pair recombination occured.";
+        break;
     case Event::CascadeComplete:
         return "A PKA cascade is complete.";
         break;
     case Event::NewFlightPath:
-        return "";
+        return "A new flight path started";
         break;
     case Event::NEvent:
         return "";
@@ -174,6 +183,7 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
     int iid = i.myAtom()->id();
     size_t k;
     const pka_buffer *p;
+    const ion *v;
 
     switch (ev) {
 
@@ -214,6 +224,18 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         A[eStored](k) += i.myAtom()->El() / 2; // Add half FP energy here to stored energy
         break;
 
+    case Event::Recombination:
+        // i is the interstitial
+        k = iid * ncells_ + i.cellid();
+        A[cRecombinations](k)++;
+        A[isCollision](k) += i.ncoll();
+        A[isFlightPath](k) += i.path();
+        A[eElectronic](k) += i.electronic();
+        // the FP energy + remaining kinetic energy go to "nuclear" energy loss
+        A[eNuclear](k) += i.erg() + i.nuclear() + i.myAtom()->El();
+        eLossCounter_ += i.electronic();
+        break;
+
     case Event::IonExit:
         k = iid * ncells_ + i.prev_cellid();
         A[cL](k)++;
@@ -234,7 +256,6 @@ void tally::operator()(Event ev, const ion &i, const void *pv)
         A[cPKA](k)++;
         // pv = pointer to pka_event struct
         p = reinterpret_cast<const pka_buffer *>(pv);
-        A[cRecombinations](k) += p->Icr(iid - 1);
         A[ePKA](k) += p->recoilE();
         A[dpTdam_LSS](k) += p->Tdam_LSS();
         A[dpVnrt_LSS](k) += p->NRT_LSS();

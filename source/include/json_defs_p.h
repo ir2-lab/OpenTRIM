@@ -51,6 +51,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Event,
                                { Event::Replacement, "Replacement" },
                                { Event::Vacancy, "Vacancy" },
                                { Event::Interstitial, "Interstitial" },
+                               { Event::Recombination, "Recombination" },
                                { Event::CascadeComplete, "CascadeComplete" },
                                { Event::NewFlightPath, "NewFlightPath" },
                                { Event::NEvent, "NEvent" } })

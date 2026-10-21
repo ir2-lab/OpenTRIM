@@ -316,6 +316,9 @@ int mccore::run()
                 // clear optional cascade buffers
                 if (cscd) {
                     cscd->count_riv(&(pka->Icr(0)), &(pka->Icr_corr(0)));
+                    for (auto iv : cscd->riv()) {
+                        handle_event(Event::Recombination, *iv.first);
+                    }
                     cscd->clear_riv(ion_queue_);
                 }
 

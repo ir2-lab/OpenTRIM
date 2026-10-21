@@ -143,7 +143,7 @@ public:
     virtual QWidget *createButtonsWidget() override
     {
         unitSelector_ = new QButtonGroup(tbl_);
-        QPushButton *bt = new QPushButton("eV/ion");
+        QPushButton *bt = new QPushButton("eV per Ion");
         bt->setCheckable(true);
         bt->setChecked(true);
         unitSelector_->addButton(bt, tblErg);
@@ -222,7 +222,7 @@ class dmg_events_table : public data_table
                                                  tally::cRecombinations };
 
 public:
-    enum { tblCntsPerIon, tblCntsPerPka, tblPercent };
+    enum { tblCntsPerIon, tblCntsPerPka };
     dmg_events_table() : data_table("Damage Events", drows) { }
 
     virtual const char *rowLabel(int i) const override { return tally::arrayName(idx[i]); }
@@ -230,18 +230,14 @@ public:
     {
         unitSelector_ = new QButtonGroup(tbl_);
         QPushButton *bt;
-        bt = new QPushButton("cnts/ion");
+        bt = new QPushButton("per Ion");
         bt->setCheckable(true);
         bt->setChecked(true);
         unitSelector_->addButton(bt, tblCntsPerIon);
-        bt = new QPushButton("cnts/pka");
+        bt = new QPushButton("per PKA");
         bt->setCheckable(true);
         bt->setChecked(false);
         unitSelector_->addButton(bt, tblCntsPerPka);
-        bt = new QPushButton("Percent (%)");
-        bt->setCheckable(true);
-        bt->setChecked(false);
-        unitSelector_->addButton(bt, tblPercent);
 
         QWidget *w = new QWidget;
         QHBoxLayout *hbox = new QHBoxLayout(w);
@@ -289,10 +285,6 @@ public:
         for (int i = 0; i < rows_; ++i) {
             double f2{ 1.0 };
             switch (unitSelector_->checkedId()) {
-            case tblPercent:
-                if (buff(0, i, cols - 1) > 0.0)
-                    f2 = 100.0 / buff(0, i, cols - 1);
-                break;
             case tblCntsPerPka:
                 if (Npka > 0.0)
                     f2 = 1.0 / Npka;
@@ -331,7 +323,7 @@ class dmg_parameters_table : public data_table
                                                                  "NRT-LSS displacements" };
 
 public:
-    enum { tblCntsPerIon, tblCntsPerPka, tblPercent };
+    enum { tblCntsPerIon, tblCntsPerPka };
     // colShift = 1: this section has no projectile column, so its own column 0
     // (first recoil) lands on the shared table's column 1; its own last column
     // (Total) lands exactly on the shared Total column.
@@ -351,10 +343,6 @@ public:
         bt->setCheckable(true);
         bt->setChecked(false);
         unitSelector_->addButton(bt, tblCntsPerPka);
-        bt = new QPushButton("Percent (%)");
-        bt->setCheckable(true);
-        bt->setChecked(false);
-        unitSelector_->addButton(bt, tblPercent);
 
         QWidget *w = new QWidget;
         QHBoxLayout *hbox = new QHBoxLayout(w);
@@ -402,10 +390,6 @@ public:
         for (int i = 0; i < rows_; ++i) {
             double f2{ 1.0 };
             switch (unitSelector_->checkedId()) {
-            case tblPercent:
-                if (buff(0, i, cols - 1) > 0.0)
-                    f2 = 100.0 / buff(0, i, cols - 1);
-                break;
             case tblCntsPerPka:
                 if (Npka > 0.0)
                     f2 = 1.0 / Npka;
@@ -597,8 +581,7 @@ SummaryView::SummaryView(MainUI *ui, const QString &title, QWidget *parent)
 
     // Absolute minimum column width: must fit a fully-formatted value+error
     // string, e.g. "1.000000(2)e100", regardless of how few columns there are.
-    minDataColWidth_ =
-            QFontMetrics(tabularDataFont()).horizontalAdvance("1.000000(2)e100") + 12;
+    minDataColWidth_ = QFontMetrics(tabularDataFont()).horizontalAdvance("1.000000(2)e100") + 12;
 
     // Initial empty state: a generic "Ion" column plus "Total".
     QStringList initialLbls;
@@ -606,7 +589,7 @@ SummaryView::SummaryView(MainUI *ui, const QString &title, QWidget *parent)
     rebuildColumns(1, initialLbls);
 
     QLabel *infoLbl = new QLabel(
-            tr("Results for beam ion and target recoils, integrated over the simulation volume"));
+            tr("Results for beam ion and target atoms, integrated over the simulation volume"));
 
     exportBtn_ = new QToolButton;
     exportBtn_->setText(tr("Export"));
@@ -810,7 +793,7 @@ QString SummaryView::buildExportText(bool numeric) const
 void SummaryView::exportCsv(bool numeric)
 {
     QString path = QFileDialog::getSaveFileName(this, tr("Export table to CSV"), QString(),
-                                                 tr("CSV files [*.csv](*.csv);; All files (*.*)"));
+                                                tr("CSV files [*.csv](*.csv);; All files (*.*)"));
     if (path.isEmpty())
         return;
     if (QFileInfo(path).suffix().isEmpty())

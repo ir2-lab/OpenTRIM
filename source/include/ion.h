@@ -463,7 +463,6 @@ public:
     void free_ion(ion *i)
     {
         ion_buffer_.push(i);
-        assert(check());
     }
 
     /// Clear all allocated ion objects from memory
@@ -473,6 +472,7 @@ public:
             ion *i = ion_buffer_.front();
             ion_buffer_.pop();
             delete i;
+            assert(sz_);
             sz_--;
         }
         assert(sz_ == 0);
